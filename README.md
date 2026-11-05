@@ -4,7 +4,7 @@
 
 **Physical-test finding:** server focus can differ from the tab visible in Rex. Shared controls are now disabled by default (`focusRoutingVerified: false`) until a reliable app-focus read path is verified. Do not enable that flag merely because a server-focus check passes. Agent status keys now always request app-level session/tab selection; Rex Remote Control must be enabled by the user.
 
-Five agent keys show project, agent type and native status. Press one to focus its exact Rex pane. Shared controls resolve the currently focused pane on every action and reject ordinary shells. Common prompts stage without submission; a separate Send key submits after review.
+Five agent keys show project, agent type and native status. Press one to select its Rex tab and bring the Rex window to the foreground. Repeated presses keep Rex visible; they never toggle it hidden. Set `bringToFront` to `false` to disable app activation. Shared controls resolve the currently focused pane on every action and reject ordinary shells. Common prompts stage without submission; a separate Send key submits after review.
 
 | Agent 1 | Agent 2 | Agent 3 | Agent 4 | Agent 5 |
 | --- | --- | --- | --- | --- |
@@ -87,3 +87,5 @@ Elgato's [ChatGPT & Codex](https://marketplace.elgato.com/product/chatgpt-codex-
 References: [Rex CLI](https://www.superlogical.com/rex/docs/reference/cli), [program status](https://www.superlogical.com/rex/docs/build/program-status), [Stream Deck SDK](https://docs.elgato.com/streamdeck/sdk/), [Claude controls](https://code.claude.com/docs/en/model-config), [Codex CLI](https://learn.chatgpt.com/docs/codex/cli).
 
 Third-party dependency: `ws` (MIT), pinned by package-lock.json. Local glyphs are custom vector artwork rather than bundled vendor logos. Product and company names belong to their respective owners. No project license has been selected yet.
+
+Window activation uses macOS LaunchServices (`open -a /Applications/Rex Beta.app`) after successful Rex app-level tab selection. Software testing verified the selected Codex terminal had focus in the foreground Rex window. Physical activation from another app remains to be confirmed. Run `node test-focus.js` for activation ordering, repeat presses, opt-out, and failed-selection behavior.

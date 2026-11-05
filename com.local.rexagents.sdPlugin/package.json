@@ -4,7 +4,7 @@
   "private": true,
   "description": "Guarded local Stream Deck controls for terminal coding agents",
   "scripts": {
-    "test": "node ../test.js && node ../test-controls.js"
+    "test": "node ../test.js && node ../test-controls.js && node ../test-focus.js"
   },
   "dependencies": {
     "ws": "8.22.1"
