@@ -32,6 +32,8 @@ if (dest/'config.json').exists():
     for k,v in old.items():
         if isinstance(v,dict) and isinstance(config.get(k),dict):config[k].update(v)
         else:config[k]=v
+# A previous setting cannot opt back into the disproven server-focus assumption.
+config['focusRoutingVerified']=False
 shutil.copytree(src,dest,dirs_exist_ok=True)
 (dest/'config.json').write_text(json.dumps(config,indent=2)+'\n')
 p=profile(root/'dist',device)

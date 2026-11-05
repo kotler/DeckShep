@@ -2,6 +2,8 @@
 
 **One deck. Many agents.** A local Stream Deck control surface for coding agents, starting with Rex on macOS and leaving room for future Herdr support.
 
+**Physical-test finding:** server focus can differ from the tab visible in Rex. Shared controls are now disabled by default (`focusRoutingVerified: false`) until a reliable app-focus read path is verified. Do not enable that flag merely because a server-focus check passes. Agent status keys now always request app-level session/tab selection; Rex Remote Control must be enabled by the user.
+
 Five agent keys show project, agent type and native status. Press one to focus its exact Rex pane. Shared controls resolve the currently focused pane on every action and reject ordinary shells. Common prompts stage without submission; a separate Send key submits after review.
 
 | Agent 1 | Agent 2 | Agent 3 | Agent 4 | Agent 5 |
@@ -65,7 +67,7 @@ Plan stages an ordinary request for a plan. It does **not** enable native plan m
 
 `test.js` covers identity, stale status, draft staging, focus changes, one-shot submission, shell rejection, blocked state, offline behavior and multiple sessions. `test-controls.js` covers model/effort staging, native picker keys, session-only apply, verification gates, expiry, SVG escaping and animation timing. Tests use simulated Rex responses and never send prompts to active agents.
 
-Live local checks verified Codex discovery/native idle status, exact pane focus with restoration of the original focus, Stream Deck rendering, and disposable Codex picker navigation/session-only effort apply. Existing Default Profile files compared byte-for-byte equal after installation.
+Live local checks verified Codex discovery/native idle status, Stream Deck rendering, and disposable Codex picker navigation/session-only effort apply. The earlier server-only focus check was insufficient: physical testing showed it did not switch the visible tab. App-level selection now replaces that fallback and physical retesting is pending. Existing Default Profile files compared byte-for-byte equal after installation.
 
 ## Integration roadmap
 

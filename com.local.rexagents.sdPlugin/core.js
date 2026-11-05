@@ -44,6 +44,7 @@ class Bridge{
     this.agents=agents;this.lastClient=client;return agents;
   }
   async focused(){
+    if(!this.config.focusRoutingVerified)throw new Error('Visible Rex focus is not verified; input disabled');
     const c=await this.client();
     // This Rex version exposes attachments, not the client's selected session.
     // Never guess when several sessions are attached.
@@ -57,7 +58,7 @@ class Bridge{
   async checked(t,ready=false){const a=await this.focused();if(token(a)!==token(t))throw new Error('Focus or process changed');if(ready&&!['idle','done','error'].includes(a.state))throw new Error('Agent not ready for a prompt');return a;}
   async focus(t){
     const c=await this.client();const a=await this.agent(t);if(!a)throw new Error('Agent closed');
-    if(c.session_ids?.length!==1||c.session_ids[0]!==t.session) await this.run(['-C',c.client_id,'do','session.select',`session_id=${t.session}`,`window_id=${t.window}`]);
+    await this.run(['-C',c.client_id,'do','session.select',`session_id=${t.session}`,`window_id=${t.window}`]);
     await this.run(['focus','-s',t.session,t.block]);this.draft=null;this.picker=null;
   }
   async navigate(delta){await this.discover();const a=await this.focused();const i=this.agents.findIndex(x=>token(x)===token(a));if(i<0||!this.agents.length)throw new Error('No agents');await this.focus(this.agents[(i+delta+this.agents.length)%this.agents.length]);}
