@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build a portable plugin directory and generic 15-key Stream Deck profile."""
 from pathlib import Path
-import json,shutil,uuid,zipfile
+import json,shutil,uuid,zipfile,subprocess,platform,sys
 ROOT=Path(__file__).resolve().parent
 PROFILE='DCA673F9-ADDB-49C8-99BB-78B1D0BF20F2'
 PAGE='E8BFFB55-B717-4984-B8B1-CBC9BB7E5877'
@@ -18,6 +18,9 @@ if __name__=='__main__':
     out=ROOT/'dist';out.mkdir(exist_ok=True)
     src=ROOT/'com.local.rexagents.sdPlugin'
     if not (src/'node_modules/ws').is_dir():raise SystemExit('Run npm ci --prefix com.local.rexagents.sdPlugin first.')
+    if sys.platform!='darwin':raise SystemExit('The clipboard helper must be built on macOS.')
+    (src/'bin').mkdir(exist_ok=True)
+    subprocess.run(['swiftc','-O','-target',platform.machine()+'-apple-macosx13.0','-module-cache-path',str(out/'swift-cache'),str(ROOT/'native/visible-pane.swift'),'-o',str(src/'bin/visible-pane')],check=True)
     shutil.copytree(src,out/src.name,dirs_exist_ok=True)
     # Template only. Install binds a generated copy to a locally discovered device.
     p=profile(out,{'Model':'20GBL9901','UUID':'@(0)[]'})

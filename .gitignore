@@ -8,3 +8,5 @@ __pycache__/
 .env.*
 *.log
 config.local.json
+
+com.local.rexagents.sdPlugin/bin/

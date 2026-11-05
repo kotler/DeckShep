@@ -4,7 +4,7 @@
   "draftMaxAgeMs": 300000,
   "aliases": {},
   "sendKeys": {
-    "codex": "tab",
+    "codex": "enter",
     "claude-code": "enter"
   },
   "prompts": {
@@ -32,6 +32,6 @@
     "error": "#a32f46",
     "unknown": "#42475a"
   },
-  "focusRoutingVerified": false,
-  "bringToFront": true
+  "bringToFront": true,
+  "allowClipboardFocus": false
 }

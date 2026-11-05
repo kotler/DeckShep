@@ -11,6 +11,12 @@ function cli(args,input){return new Promise((resolve,reject)=>{
 function activateRex(){return new Promise((resolve,reject)=>{
   execFile('/usr/bin/open',['-a','/Applications/Rex Beta.app'],{timeout:5000},e=>e?reject(new Error('Could not bring Rex to front')):resolve());
 });}
+function visiblePane(clientId){return new Promise((resolve,reject)=>{
+  execFile(path.join(__dirname,'bin','visible-pane'),[REX,clientId],{timeout:4500,maxBuffer:2048},(e,out)=>{
+    if(e)return reject(new Error('Visible pane query failed; no input sent'));
+    try{const r=JSON.parse(out);if(!/^block:[0-9a-f-]{36}$/i.test(r.block_id)||r.clipboard_restored!==true)throw Error();resolve(r.block_id);}catch{reject(new Error('Invalid visible pane result'));}
+  });
+});}
 function identify(p){
   const f=p.foreground;if(!f||f.user_id!==process.getuid())return null;
   const n=path.basename(f.path||'');const s=f.script||'';
@@ -27,7 +33,7 @@ function state(records,agent,now=Date.now(),maxAge=86400000){
 }
 const token=t=>[t.session,t.block,t.app,t.pid,t.name].join('|');
 class Bridge{
-  constructor(config,run=cli,activate=activateRex){this.config=config;this.run=run;this.activate=activate;this.slots=[];this.draft=null;}
+  constructor(config,run=cli,activate=activateRex,readVisible=visiblePane){this.config=config;this.run=run;this.activate=activate;this.readVisible=readVisible;this.slots=[];this.draft=null;}
   async client(){
     const {clients=[]}=await this.run(['client','ls','--json']);
     const apps=clients.filter(c=>c.info?.kind==='app'&&c.info?.platform==='macos'&&c.info?.name==='Rex Beta'&&c.connection_state==='connected'&&(!this.config.clientLabel||c.info.label===this.config.clientLabel));
@@ -47,16 +53,17 @@ class Bridge{
     this.agents=agents;this.lastClient=client;return agents;
   }
   async focused(){
-    if(!this.config.focusRoutingVerified)throw new Error('Visible Rex focus is not verified; input disabled');
+    if(!this.config.allowClipboardFocus)throw new Error('Clipboard focus query not authorized; input disabled');
     const c=await this.client();
-    // This Rex version exposes attachments, not the client's selected session.
-    // Never guess when several sessions are attached.
-    if(c.session_ids?.length!==1)throw new Error('Multiple sessions: select one Rex session / detach others');
-    const session=c.session_ids[0];const ins=await this.run(['session','inspect',session,'--json']);
-    const w=ins.windows.find(w=>w.window_id===ins.active_window_id);
-    if(!w?.focused_block_id)throw new Error('No focused Rex pane');
-    const a=await this.agent({session,window:w.window_id,block:w.focused_block_id});
-    if(!a)throw new Error('Focused pane is not an agent');return a;
+    const block=await this.readVisible(c.client_id);
+    // Resolve the app-selected block across sessions, never session.active_window_id.
+    const {sessions=[]}=await this.run(['ls','--json']);const matches=[];
+    for(const session of sessions){const ins=await this.run(['session','inspect',session.session_id,'--json']);
+      for(const w of ins.windows||[])for(const l of w.layers||[])for(const b of l.blocks||[])
+        if(b.block_id===block&&b.creator_name==='com.superlogical.terminal')matches.push({session:session.session_id,window:w.window_id,block});
+    }
+    if(matches.length!==1)throw new Error('Visible pane is closed or ambiguous');
+    const a=await this.agent(matches[0]);if(!a)throw new Error('Visible pane is not a supported agent');return a;
   }
   async checked(t,ready=false){const a=await this.focused();if(token(a)!==token(t))throw new Error('Focus or process changed');if(ready&&!['idle','done','error'].includes(a.state))throw new Error('Agent not ready for a prompt');return a;}
   async focus(t){
