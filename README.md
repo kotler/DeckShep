@@ -61,13 +61,13 @@ Plan stages an ordinary request for a plan. It does **not** enable native plan m
 - Prompt buttons append bracketed paste without clearing existing text. Review the **entire composer** before Send. Send requires a recent plugin-staged draft in the same pane/process. Manual edits, submission and draft clearing are not tracked; do not manually submit a draft and then press Send.
 - A process can exit after the final identity check and before a write. Rex has no atomic compare-process-and-send operation. Native status also cannot prove the agent is in its composer rather than a manually opened dialog.
 - Status processing is local. No transcript capture, terminal scraping, prompt logging, credential collection or network status service is used. Stream Deck's loopback WebSocket and the supported Rex CLI are the integration boundaries.
-- Physical-button tests, authenticated Claude tests, live working interruption and hardware animation tests remain outstanding. Software verification does not establish those behaviors.
+- Physical More/Main page switching and both Codex agent-selection keys passed user testing. Shared-input button tests, authenticated Claude tests, live working interruption and hardware animation tests remain outstanding. Software verification does not establish those behaviors.
 
 ## Verification
 
 `test.js` covers identity, stale status, draft staging, focus changes, one-shot submission, shell rejection, blocked state, offline behavior and multiple sessions. `test-controls.js` covers model/effort staging, native picker keys, session-only apply, verification gates, expiry, SVG escaping and animation timing. Tests use simulated Rex responses and never send prompts to active agents.
 
-Live local checks verified Codex discovery/native idle status, Stream Deck rendering, and disposable Codex picker navigation/session-only effort apply. The earlier server-only focus check was insufficient: physical testing showed it did not switch the visible tab. App-level selection now replaces that fallback and physical retesting is pending. Existing Default Profile files compared byte-for-byte equal after installation.
+Live local checks verified Codex discovery/native idle status, Stream Deck rendering, and disposable Codex picker navigation/session-only effort apply. The earlier server-only focus check was insufficient: physical testing showed it did not switch the visible tab. App-level selection now replaces that fallback. User physical testing passed More/Main page switching, first-key selection from Claude to Codex, and second-key selection to the other Codex tab after manually selecting Claude with the mouse. These results verify selection commands, not the ability to read visible focus after arbitrary mouse or keyboard changes. Shared input remains disabled. Existing Default Profile files compared byte-for-byte equal after installation.
 
 ## Integration roadmap
 
