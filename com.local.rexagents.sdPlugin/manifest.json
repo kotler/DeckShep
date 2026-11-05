@@ -1,0 +1,43 @@
+{
+  "Name": "Rex Agents",
+  "UUID": "com.local.rexagents",
+  "Author": "Local integration",
+  "Version": "1.1.0.0",
+  "Description": "Local guarded Rex agent controls",
+  "Icon": "icon",
+  "Category": "Rex Agents",
+  "CategoryIcon": "icon",
+  "CodePath": "plugin.js",
+  "SDKVersion": 2,
+  "Nodejs": {
+    "Version": "20"
+  },
+  "OS": [
+    {
+      "Platform": "mac",
+      "MinimumVersion": "13"
+    }
+  ],
+  "Software": {
+    "MinimumVersion": "6.6"
+  },
+  "Actions": [
+    {
+      "Name": "Rex Agent Key",
+      "UUID": "com.local.rexagents.key",
+      "Icon": "icon",
+      "Controllers": [
+        "Keypad"
+      ],
+      "PropertyInspectorPath": "inspector.html",
+      "States": [
+        {
+          "Image": "icon",
+          "TitleAlignment": "middle",
+          "FontSize": 10,
+          "ShowTitle": true
+        }
+      ]
+    }
+  ]
+}

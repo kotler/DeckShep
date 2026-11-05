@@ -1,0 +1,19 @@
+'use strict';
+const esc=s=>String(s||'').replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const paths={
+ codex:'<path d="m39 22-23 18 23 18m26-36 23 18-23 18M57 16 47 64"/>',
+ 'claude-code':Array.from({length:12},(_,i)=>`<path d="M52 15v15" transform="rotate(${i*30} 52 40)"/>`).join(''),
+ grok:'<circle cx="52" cy="40" r="25"/><path d="m27 65 50-50M42 44l22-8-8 22"/>',
+ model:'<path d="m52 13 32 17-32 17-32-17Zm-32 30 32 17 32-17M20 57l32 17 32-17"/>',
+ effort:'<path d="M22 59a30 30 0 0 1 60 0M52 54l19-24M29 59h-7m53 0h7M52 22v7"/><circle cx="52" cy="56" r="5"/>',
+ previous:'<path d="M75 40H24m20-20L24 40l20 20"/>', next:'<path d="M29 40h51M60 20l20 20-20 20"/>',
+ interrupt:'<rect x="28" y="16" width="48" height="48" rx="8"/>',zoom:'<rect x="19" y="10" width="66" height="60" rx="8"/><path d="m27 34 16-16m-16 0h16v16m34 12L61 62m0-16v16h16"/>',
+ more:'<circle cx="25" cy="40" r="4"/><circle cx="52" cy="40" r="4"/><circle cx="79" cy="40" r="4"/>',
+ plan:'<path d="M32 14h45v54H27V22h5M39 29h25M39 41h25M39 53h14"/>',review:'<circle cx="45" cy="32" r="21"/><path d="m60 48 23 22m-50-38 8 8 15-17"/>',
+ tests:'<path d="M36 12h32M42 12v20L23 62q-3 6 6 6h46q9 0 6-6L62 32V12M34 48h36"/>',continue:'<path d="m36 14 42 26-42 26Z"/>',send:'<path d="m18 17 69 23-69 23 10-23Zm10 23h59"/>',
+ up:'<path d="M52 68V13m-23 23 23-23 23 23"/>',down:'<path d="M52 12v55M29 44l23 23 23-23"/>',left:'<path d="M83 40H21m22-22L21 40l22 22"/>',right:'<path d="M21 40h62M61 18l22 22-22 22"/>',escape:'<path d="m30 18 44 44m0-44L30 62"/>',bankprev:'<path d="m50 17-23 23 23 23m28-46L55 40l23 23"/>',banknext:'<path d="m26 17 23 23-23 23m28-46 23 23-23 23"/>'};
+function svg({icon='more',lines=[],color='#24394b',pulse=0,badge=''}){
+ return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144"><rect x="2" y="2" width="140" height="140" rx="17" fill="${color}"/><rect x="2" y="2" width="140" height="140" rx="17" fill="white" opacity="${Math.max(0,Math.min(.22,pulse))}"/><rect x="3" y="3" width="138" height="138" rx="16" fill="none" stroke="#ffffff" stroke-opacity=".22" stroke-width="2"/><g transform="translate(20 0)" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">${paths[icon]||paths.more}</g>${lines.slice(0,3).map((s,i)=>`<text x="72" y="${94+i*19}" fill="white" text-anchor="middle" font-family="Arial" font-size="${i===0?17:15}" font-weight="${i===0?'bold':'normal'}">${esc(s).slice(0,140)}</text>`).join('')}${badge?`<circle cx="125" cy="17" r="7" fill="#ffd66c"/>`:''}</svg>`;
+}
+function pulse(state,elapsed,config){if(!config?.enabled)return 0;if(state==='working')return .09+.09*Math.sin(elapsed*2*Math.PI/(config.workingPeriodMs||2200));if(state==='done'&&elapsed<(config.completePulseMs??15000))return .12+.1*Math.sin(elapsed*2*Math.PI/1500);if(state==='blocked')return .07+.07*Math.sin(elapsed*2*Math.PI/3000);return 0;}
+module.exports={svg,pulse,paths};

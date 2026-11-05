@@ -1,0 +1,35 @@
+{
+  "clientLabel": "",
+  "statusMaxAgeMs": 86400000,
+  "draftMaxAgeMs": 300000,
+  "aliases": {},
+  "sendKeys": {
+    "codex": "tab",
+    "claude-code": "enter"
+  },
+  "prompts": {
+    "plan": "Propose a plan for the current task. Explain the steps and validation. Wait for my review before implementing.",
+    "review": "Review the current changes for correctness, regressions, and missing validation. Report findings with file references before making changes.",
+    "tests": "Run the relevant tests for the current changes and report results and any failures.",
+    "continue": "Continue the current agreed task from where you left off, respecting existing constraints."
+  },
+  "controlVerified": {
+    "codex": true,
+    "claude-code": false
+  },
+  "animation": {
+    "enabled": true,
+    "frameMs": 250,
+    "workingPeriodMs": 2200,
+    "completePulseMs": 15000
+  },
+  "palette": {
+    "ready": "#167348",
+    "idle": "#303d50",
+    "working": "#145ba0",
+    "done": "#1c8b5c",
+    "blocked": "#a7660c",
+    "error": "#a32f46",
+    "unknown": "#42475a"
+  }
+}
