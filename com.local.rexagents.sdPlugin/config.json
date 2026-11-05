@@ -32,5 +32,6 @@
     "error": "#a32f46",
     "unknown": "#42475a"
   },
-  "focusRoutingVerified": false
+  "focusRoutingVerified": false,
+  "bringToFront": true
 }

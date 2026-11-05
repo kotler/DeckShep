@@ -8,6 +8,9 @@ function cli(args,input){return new Promise((resolve,reject)=>{
     try{resolve(out.trim()?JSON.parse(out):null);}catch{resolve(out.trim());}
   }); if(input!==undefined)p.stdin.end(input);
 });}
+function activateRex(){return new Promise((resolve,reject)=>{
+  execFile('/usr/bin/open',['-a','/Applications/Rex Beta.app'],{timeout:5000},e=>e?reject(new Error('Could not bring Rex to front')):resolve());
+});}
 function identify(p){
   const f=p.foreground;if(!f||f.user_id!==process.getuid())return null;
   const n=path.basename(f.path||'');const s=f.script||'';
@@ -24,7 +27,7 @@ function state(records,agent,now=Date.now(),maxAge=86400000){
 }
 const token=t=>[t.session,t.block,t.app,t.pid,t.name].join('|');
 class Bridge{
-  constructor(config,run=cli){this.config=config;this.run=run;this.slots=[];this.draft=null;}
+  constructor(config,run=cli,activate=activateRex){this.config=config;this.run=run;this.activate=activate;this.slots=[];this.draft=null;}
   async client(){
     const {clients=[]}=await this.run(['client','ls','--json']);
     const apps=clients.filter(c=>c.info?.kind==='app'&&c.info?.platform==='macos'&&c.info?.name==='Rex Beta'&&c.connection_state==='connected'&&(!this.config.clientLabel||c.info.label===this.config.clientLabel));
@@ -60,6 +63,7 @@ class Bridge{
     const c=await this.client();const a=await this.agent(t);if(!a)throw new Error('Agent closed');
     await this.run(['-C',c.client_id,'do','session.select',`session_id=${t.session}`,`window_id=${t.window}`]);
     await this.run(['focus','-s',t.session,t.block]);this.draft=null;this.picker=null;
+    if(this.config.bringToFront!==false)await this.activate();
   }
   async navigate(delta){await this.discover();const a=await this.focused();const i=this.agents.findIndex(x=>token(x)===token(a));if(i<0||!this.agents.length)throw new Error('No agents');await this.focus(this.agents[(i+delta+this.agents.length)%this.agents.length]);}
   async stage(action){
