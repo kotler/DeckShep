@@ -2,7 +2,7 @@
   "Name": "Rex Agents",
   "UUID": "com.local.rexagents",
   "Author": "Local integration",
-  "Version": "1.2.0.0",
+  "Version": "1.2.1.0",
   "Description": "Local guarded Rex and experimental Herdr agent controls",
   "Icon": "icon",
   "Category": "Rex Agents",

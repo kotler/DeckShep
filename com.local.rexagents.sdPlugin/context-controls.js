@@ -1,7 +1,7 @@
 'use strict';
 function isBackground(agent){return agent?.app==='codex'&&agent.state==='working'&&agent.backgroundOnly===true&&typeof agent.statusAt==='string'&&agent.activityStatusAt===agent.statusAt&&Array.isArray(agent.backgroundIds)&&agent.backgroundIds.length>0&&!!agent.backgroundTurnId;}
 function modeOf(agent){
- if(!agent||agent.app!=='codex')return'unknown';
+ if(!agent||agent.app!=='codex'||agent.backend==='herdr'&&agent.nativeVerified===false)return'unknown';
  if(isBackground(agent))return'background';
  if(['idle','done','error'].includes(agent.state))return'ready';
  if(agent.state==='working')return'working';
@@ -10,8 +10,8 @@ function modeOf(agent){
  return'unknown';
 }
 const actor=a=>a&&[a.session,a.block,a.app,a.pid,a.name,a.terminalId||''].join('|');
-function stamp(agent,page=0){return JSON.stringify([actor(agent),modeOf(agent),agent?.state==='blocked'?agent.statusAt:null,agent?.chatId||null,agent?.runId||null,page,...isBackground(agent)?[agent.backgroundTurnId,agent.backgroundIds]:[]]);}
-function snapshot(agent){if(!agent)return null;return Object.fromEntries(['session','window','block','terminalId','backend','composerSupported','pid','name','app','cwd','state','kind','statusAt','chatId','runId','backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt'].filter(k=>agent[k]!==undefined).map(k=>[k,Array.isArray(agent[k])?[...agent[k]]:agent[k]]));}
+function stamp(agent,page=0){return JSON.stringify([actor(agent),modeOf(agent),agent?.state==='blocked'?agent.statusAt:null,agent?.chatId||null,agent?.runId||null,agent?.nativeIdentity||null,page,...isBackground(agent)?[agent.backgroundTurnId,agent.backgroundIds]:[]]);}
+function snapshot(agent){if(!agent)return null;return Object.fromEntries(['session','window','block','terminalId','backend','composerSupported','pid','name','app','cwd','state','kind','statusAt','chatId','nativeVerified','nativeIdentity','runId','backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt'].filter(k=>agent[k]!==undefined).map(k=>[k,Array.isArray(agent[k])?[...agent[k]]:agent[k]]));}
 function assertContext(context,current){
  const target=context?.target;
  if(!target||actor(target)!==actor(current)){const error=Error('Reselect agent on deck');error.code='SELECTION_CHANGED';throw error;}

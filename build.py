@@ -11,7 +11,7 @@ def profile(destination,device):
     (root/'manifest.json').write_text(json.dumps({'Device':device,'Name':'Rex Agents','Pages':{'Current':PAGE.lower(),'Default':PAGE.lower(),'Pages':[PAGE.lower()]},'Version':'3.0'},indent=2))
     actions={}
     for i in range(15):
-        actions[f'{i%5},{i//5}']={'ActionID':str(uuid.uuid5(uuid.NAMESPACE_URL,f'agent-switchboard/key/{i}')),'LinkedTitle':True,'Name':'Rex Agent Key','Plugin':{'Name':'Rex Agents','UUID':'com.local.rexagents','Version':'1.1.0.0'},'Settings':{},'State':0,'States':[{'Title':'','FontSize':10,'ShowTitle':False,'TitleAlignment':'middle','TitleColor':'#ffffff'}],'UUID':'com.local.rexagents.key'}
+        actions[f'{i%5},{i//5}']={'ActionID':str(uuid.uuid5(uuid.NAMESPACE_URL,f'agent-switchboard/key/{i}')),'LinkedTitle':True,'Name':'Rex Agent Key','Plugin':{'Name':'Rex Agents','UUID':'com.local.rexagents','Version':json.loads((ROOT/'com.local.rexagents.sdPlugin/manifest.json').read_text())['Version']},'Settings':{},'State':0,'States':[{'Title':'','FontSize':10,'ShowTitle':False,'TitleAlignment':'middle','TitleColor':'#ffffff'}],'UUID':'com.local.rexagents.key'}
     (page/'manifest.json').write_text(json.dumps({'Controllers':[{'Type':'Keypad','Actions':actions}],'Name':'','Icon':''},indent=2))
     return root
 if __name__=='__main__':

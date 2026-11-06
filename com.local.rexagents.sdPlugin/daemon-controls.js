@@ -71,7 +71,7 @@ class DaemonRpc{
   this.ws.on('error',()=>this.fail());this.ws.on('close',()=>this.fail());
  }
  fail(){for(const p of this.pending.values()){clearTimeout(p.timer);p.reject(Error('CLI daemon disconnected; verify any requested change'));}this.pending.clear();}
- async connect(){await this.opened;const initialized=await this.request('initialize',{clientInfo:{name:'agent_switchboard',title:'Agent Switchboard',version:'1.2.0'},capabilities:{experimentalApi:true}});this.serverVersion=/^[^\s/]+\/(\d+\.\d+\.\d+)(?:\s|$)/.exec(initialized?.userAgent||'')?.[1]||null;this.ws.send(JSON.stringify({method:'initialized',params:{}}));}
+ async connect(){await this.opened;const initialized=await this.request('initialize',{clientInfo:{name:'agent_switchboard',title:'Agent Switchboard',version:'1.2.1'},capabilities:{experimentalApi:true}});this.serverVersion=/^[^\s/]+\/(\d+\.\d+\.\d+)(?:\s|$)/.exec(initialized?.userAgent||'')?.[1]||null;this.ws.send(JSON.stringify({method:'initialized',params:{}}));}
  request(method,params){
   if(!['initialize','thread/loaded/list','thread/read','thread/turns/list','thread/resume','model/list','thread/settings/update','thread/backgroundTerminals/list','thread/backgroundTerminals/terminate'].includes(method))return Promise.reject(Error('Unsupported daemon method'));
   if(method.startsWith('thread/backgroundTerminals/')){
@@ -188,7 +188,7 @@ class DaemonControls{
    }
    confirmed??=await readPermissionSettings(rpc,id);
    if(!confirmed||!sameExceptEffort(current,confirmed,target))throw Error('Effort or preserved settings unconfirmed; check Codex');
-   this.b.lastEffort={session:agent.session,block:agent.block,pid:agent.pid,...agent.terminalId?{terminalId:agent.terminalId}:{},chatId:id,effort:target,at:Date.now()};
+   this.b.lastEffort={session:agent.session,block:agent.block,pid:agent.pid,...agent.terminalId?{terminalId:agent.terminalId}:{},...agent.nativeIdentity?{nativeIdentity:agent.nativeIdentity}:{},chatId:id,effort:target,at:Date.now()};
    return{kind:'effort',label:target};
   }finally{rpc.close();}
  }
@@ -207,7 +207,7 @@ class DaemonControls{
    await rpc.request('thread/settings/update',{threadId:id,model:chosen.id});
    for(let i=0;i<10;i++){
     const confirmed=await loadedThread(rpc,id);
-    if(confirmed.model===chosen.id&&confirmed.effort===current.effort){this.b.lastModel={session:agent.session,block:agent.block,pid:agent.pid,...agent.terminalId?{terminalId:agent.terminalId}:{},chatId:id,model:chosen.id,at:Date.now()};return {kind:'model',label:chosen.label};}
+    if(confirmed.model===chosen.id&&confirmed.effort===current.effort){this.b.lastModel={session:agent.session,block:agent.block,pid:agent.pid,...agent.terminalId?{terminalId:agent.terminalId}:{},...agent.nativeIdentity?{nativeIdentity:agent.nativeIdentity}:{},chatId:id,model:chosen.id,at:Date.now()};return {kind:'model',label:chosen.label};}
     await pause(100);
    }
    throw Error('Model change unconfirmed; check Codex');
@@ -236,7 +236,7 @@ class DaemonControls{
    }
    confirmed??=await readPermissionSettings(rpc,id);
    if(!confirmed||confirmed.reviewer!==target||!sameOtherSettings(current,confirmed))throw Error('Reviewer or permission boundaries unconfirmed; check Codex');
-   this.b.lastReviewer={session:agent.session,block:agent.block,pid:agent.pid,...agent.terminalId?{terminalId:agent.terminalId}:{},chatId:id,reviewer:target,at:Date.now()};
+   this.b.lastReviewer={session:agent.session,block:agent.block,pid:agent.pid,...agent.terminalId?{terminalId:agent.terminalId}:{},...agent.nativeIdentity?{nativeIdentity:agent.nativeIdentity}:{},chatId:id,reviewer:target,at:Date.now()};
    return {kind:'permissions',label:target==='user'?'Ask me':'Approve for me'};
   }finally{rpc.close();}
  }

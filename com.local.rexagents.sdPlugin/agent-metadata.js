@@ -2,11 +2,12 @@
 const path=require('node:path');
 const {DaemonRpc,socketFor,readFooter,readPermissionSettings}=require('./daemon-controls');
 const {latestTurn,backgroundState}=require('./background-controls');
-const key=agent=>[agent.session,agent.block,agent.pid,agent.cwd,agent.terminalId||'',agent.herdrChatId||''].join('|');
+const key=agent=>[agent.session,agent.block,agent.pid,agent.cwd,agent.terminalId||'',agent.herdrChatId||'',agent.nativeIdentity||''].join('|');
 const activityFields=['backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt'];
 function restore(agent,value){
- for(const [field,item]of Object.entries(value))if(!activityFields.includes(field)||value.activityStatusAt===agent.statusAt)agent[field]=item;
- if(value.activityStatusAt!==agent.statusAt){agent.backgroundOnly=false;agent.backgroundIds=[];agent.backgroundTurnId=null;}
+ const native=agent.backend==='herdr',authoritative=[...activityFields,'runId'];
+ for(const [field,item]of Object.entries(value))if(!(native&&authoritative.includes(field))&&(!activityFields.includes(field)||value.activityStatusAt===agent.statusAt))agent[field]=item;
+ if(!native&&value.activityStatusAt!==agent.statusAt){agent.backgroundOnly=false;agent.backgroundIds=[];agent.backgroundTurnId=null;}
 }
 class AgentMetadata{
  constructor(bridge,dependencies={}){this.b=bridge;this.cache=new Map();this.now=dependencies.now||Date.now;this.socketFor=dependencies.socketFor||socketFor;this.footer=dependencies.footer||readFooter;this.settings=dependencies.settings||readPermissionSettings;this.connect=dependencies.connect||(async endpoint=>{const rpc=new DaemonRpc(endpoint.socket);try{await rpc.connect();return rpc;}catch(error){rpc.close();throw error;}});}
@@ -24,7 +25,7 @@ class AgentMetadata{
    const result=await rpc.request('thread/read',{threadId:id,includeTurns:false}),thread=result?.thread;
    if(thread?.id!==id||typeof thread.cwd!=='string'||thread.cwd!==agent.cwd||await this.footer(this.b,agent)!==id)throw Error('Chat identity changed');
    let runId=null,activity={backgroundOnly:false,backgroundIds:[],backgroundTurnId:null,activityStatusAt:agent.statusAt};
-   if(thread.status?.type==='active'||agent.state==='working')try{
+   if(this.b.backend!=='herdr'&&(thread.status?.type==='active'||agent.state==='working'))try{
     const turn=await latestTurn(rpc,id);if(turn.status==='inProgress'&&thread.status?.type==='active')runId=turn.id;
     else{const background=await backgroundState(rpc,id,thread,turn);if(background&&await this.footer(this.b,agent)===id)Object.assign(activity,background);}
    }catch{}
@@ -40,7 +41,7 @@ class AgentMetadata{
  async refresh(agents,force=false){
   const live=new Set(agents.map(key));for(const id of this.cache.keys())if(!live.has(id))this.cache.delete(id);
   this.hydrate(agents);
-  for(const agent of agents){if(agent.app!=='codex')continue;const id=key(agent),cached=this.cache.get(id),now=this.now(),ttl=this.b.config.metadataRefreshMs??4000;
+  for(const agent of agents){if(agent.app!=='codex'||agent.backend==='herdr'&&agent.nativeVerified!==true)continue;const id=key(agent),cached=this.cache.get(id),now=this.now(),ttl=this.b.config.metadataRefreshMs??4000;
    if(!force&&cached&&now-cached.at<ttl&&cached.statusAt===agent.statusAt){restore(agent,cached.value);continue;}
    try{const value=await this.read(agent);this.cache.set(id,{at:now,statusAt:agent.statusAt,value});restore(agent,value);}
    catch{if(cached){cached.value={...cached.value,backgroundOnly:false,backgroundIds:[],backgroundTurnId:null};restore(agent,cached.value);}else if(this.b.backend!=='herdr'||!agent.chatName)agent.chatName='Name unavailable';}

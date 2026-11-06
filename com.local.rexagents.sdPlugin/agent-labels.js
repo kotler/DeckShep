@@ -12,7 +12,7 @@ function agentLines(agent,aliases={}){
  return[ellipsize(aliases[agent.block]||agent.chatName||(agent.app==='codex'?'Name unavailable':'Untitled agent'),120,26),ellipsize(agent.project||'Unknown folder',120,22),status];
 }
 function shortModel(model){return clean(model).replace(/^gpt[- ]?/i,'').replace(/[-_]+/g,' ').replace(/\b[a-z]/g,c=>c.toUpperCase());}
-function sameTarget(a,b){return a&&b&&a.session===b.session&&a.block===b.block&&a.pid===b.pid&&(a.terminalId||null)===(b.terminalId||null);}
+function sameTarget(a,b){return a&&b&&a.session===b.session&&a.block===b.block&&a.pid===b.pid&&(a.terminalId||null)===(b.terminalId||null)&&(a.nativeIdentity||null)===(b.nativeIdentity||null);}
 function modeLines(bridge){
  const agent=bridge.agents?.find(a=>sameTarget(bridge.lastTarget,a));
  if(!agent)return['Mode'];

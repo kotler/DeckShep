@@ -7,7 +7,7 @@ const {controlAccent}=require('./signal-visuals');
 const {CompletionDisplay}=require('./completion-display');
 const preferences=require('./preferences');
 const configPath=path.join(__dirname,'config.json');let diskConfig=JSON.parse(fs.readFileSync(configPath)),config=diskConfig;
-const backendKey=c=>(c.backend||'rex')+'|'+(c.backend==='herdr'?c.herdr?.socketPath||'':'');
+const backendKey=c=>(c.backend||'rex')+'|'+(c.backend==='herdr'?[c.herdr?.socketPath||'',c.herdr?.titleIdentity===true].join('|'):'');
 function makeBridge(c){const b=c.backend==='herdr'?new(require('./herdr-bridge').HerdrBridge)(c):new Bridge(c);b.backendKey=backendKey(c);return b;}
 let bridge=makeBridge(config),metadata=new AgentMetadata(bridge),actionBusy=false;
 const completion=new CompletionDisplay();
@@ -46,7 +46,7 @@ function render(){
    if(a){const shown=completion.agent(a),prior=transitions.get(a.block);if(!prior||prior.state!==shown.state||prior.pid!==a.pid||prior.statusAt!==a.statusAt)transitions.set(a.block,{state:shown.state,pid:a.pid,statusAt:a.statusAt,at:now});icon=a.app;lines=agentLines(shown,config.aliases);color=C.isBackground(shown)?'#126b78':config.palette[shown.state==='idle'?'ready':shown.state]||config.palette.unknown;p=pulse(C.isBackground(shown)?'idle':shown.state,now-transitions.get(a.block).at,config.animation);if(sameTarget(bridge.lastTarget,a))badge='selected';}
    else{icon='empty';lines=offline?[backendName()+' offline','UNKNOWN']:slot?['Closed']:['No agent'];color=offline?config.palette.error:config.palette.idle;}
   }else{
-   const gaps=bridge.slotGaps(),names={collapse:['Collapse',...(offline?[backendName()+' offline']:gaps?[`${gaps} gap${gaps===1?'':'s'}`]:[])],banknext:bankLines(),next:['Next agent'],model:modelLines(bridge),effort:effortLines(bridge),effortIncrease:['Effort +'],effortDecrease:['Effort −'],permissions:reviewerLines(bridge),plan:modeLines(bridge),interrupt:['Interrupt',mode==='working'?'running':'not running'],stopTerminals:['Stop terminals',`${target?.backgroundIds?.length||0} running`],steer:['Steer','typed message'],queue:['Queue','typed message'],zoom:['Zoom'],up:['Up'],down:['Down'],left:['Left'],right:['Right'],questionPrev:['Shift+Tab','question'],questionNext:['Tab','question'],answer:['Confirm','Enter'],escape:['Esc','question'],approvalUp:['Up','approval'],approvalDown:['Down','approval'],approvalConfirm:['Confirm','shown choice'],approvalEscape:['Esc','approval'],review:['Review','draft'],tests:['Tests','draft'],continue:['Continue','draft'],send:bridge.draft?['Send',bridge.draft.action]:['Send','no draft'],more:[`Page ${page+1}/3`,['Home','Questions','Prompts'][page],page===0?({ready:'Ready',working:'Working',background:'Background',question:'Question',approval:'Approval',unknown:target?'Check Rex':'Select agent'})[mode]:'next page'],questions:['Questions'],prompts:['Prompts'],back:['Back','Questions'],none:[],inputInfo:['Use Herdr','keyboard'],status:target?['Check '+backendName(),target.kind==='auth'?'Authentication':'']:[bridge.selectionNotice?'Reselect':'Select','agent']};
+   const gaps=bridge.slotGaps(),names={collapse:['Collapse',...(offline?[backendName()+' offline']:gaps?[`${gaps} gap${gaps===1?'':'s'}`]:[])],banknext:bankLines(),next:['Next agent'],model:modelLines(bridge),effort:effortLines(bridge),effortIncrease:['Effort +'],effortDecrease:['Effort −'],permissions:reviewerLines(bridge),plan:modeLines(bridge),interrupt:['Interrupt',mode==='working'?'running':'not running'],stopTerminals:['Stop terminals',`${target?.backgroundIds?.length||0} running`],steer:['Steer','typed message'],queue:['Queue','typed message'],zoom:['Zoom'],up:['Up'],down:['Down'],left:['Left'],right:['Right'],questionPrev:['Shift+Tab','question'],questionNext:['Tab','question'],answer:['Confirm','Enter'],escape:['Esc','question'],approvalUp:['Up','approval'],approvalDown:['Down','approval'],approvalConfirm:['Confirm','shown choice'],approvalEscape:['Esc','approval'],review:['Review','draft'],tests:['Tests','draft'],continue:['Continue','draft'],send:bridge.draft?['Send',bridge.draft.action]:['Send','no draft'],more:[`Page ${page+1}/3`,['Home','Questions','Prompts'][page],page===0?({ready:'Ready',working:'Working',background:'Background',question:'Question',approval:'Approval',unknown:target?'Check '+backendName():'Select agent'})[mode]:'next page'],questions:['Questions'],prompts:['Prompts'],back:['Back','Questions'],none:[],inputInfo:['Use Herdr','keyboard'],status:target?['Check '+backendName(),target.kind==='auth'?'Authentication':'']:[bridge.selectionNotice?'Reselect':'Select','agent']};
    lines=names[action]||[action.toUpperCase()];
    if((action==='collapse'&&(offline||!gaps))||(action==='interrupt'&&mode!=='working')||action==='none')color='#38414b';
    if(action==='stopTerminals'||action==='interrupt'&&mode==='working')color='#813c42';
@@ -64,7 +64,7 @@ function render(){
 }
 async function refreshMetadata(force=false){
  if(metadataBusy){metadataAgain=metadataAgain||force;return;}metadataBusy=true;
- try{const agents=await metadata.refresh(bridge.agents||[],force);for(const agent of agents){const live=bridge.agents?.find(a=>sameTarget(a,agent));if(live&&live.cwd===agent.cwd&&!(live.metadataAt>agent.metadataAt))for(const field of['chatId','chatName','project','model','effort','collaborationMode','reviewer','runId','backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt','metadataAt'])if(Object.hasOwn(agent,field)&&(!['backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt'].includes(field)||live.statusAt===agent.statusAt))live[field]=agent[field];}render();}
+ try{const agents=await metadata.refresh(bridge.agents||[],force);for(const agent of agents){const live=bridge.agents?.find(a=>sameTarget(a,agent));if(live&&live.cwd===agent.cwd&&(config.backend!=='herdr'||live.chatId===agent.chatId&&live.nativeIdentity===agent.nativeIdentity)&&!(live.metadataAt>agent.metadataAt))for(const field of['chatId','chatName','project','model','effort','collaborationMode','reviewer','runId','backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt','metadataAt'])if(!(config.backend==='herdr'&&['runId','backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt'].includes(field))&&Object.hasOwn(agent,field)&&(!['backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt'].includes(field)||live.statusAt===agent.statusAt))live[field]=agent[field];}render();}
  finally{metadataBusy=false;if(metadataAgain){metadataAgain=false;void refreshMetadata(true);}}
 }
 async function refresh(forceMetadata=false){
@@ -115,7 +115,7 @@ async function initialize(){await refresh();if(!startupSelectionRead&&(config.ba
 function inspectorStatus(context,message){
  if(message!==undefined)inspectorMessage=message;
  const a=selected(),agents=bridge.agents||[];
- emit('sendToPropertyInspector',context,{kind:'status',backend:config.backend||'rex',preferences:preferences.view(config),offline,agents:agents.length,codex:agents.filter(a=>a.app==='codex').length,metadata:agents.filter(a=>a.app==='codex'&&a.chatId).length,selected:a?{app:a.app,state:a.state,mode:a.collaborationMode||null}:null,selectionNotice:!!bridge.selectionNotice,setupBusy,message:inspectorMessage||settingsError});
+ emit('sendToPropertyInspector',context,{kind:'status',backend:config.backend||'rex',preferences:preferences.view(config),offline,agents:agents.length,codex:agents.filter(a=>a.app==='codex').length,metadata:agents.filter(a=>a.app==='codex'&&a.chatId).length,selected:a?{app:a.app,state:a.state,mode:a.collaborationMode||null,...config.backend==='herdr'?{identityMessage:a.nativeError||'',nativeVerified:a.nativeVerified===true}:{}}:null,selectionNotice:!!bridge.selectionNotice,setupBusy,message:inspectorMessage||settingsError});
 }
 async function inspectorRequest(e){
  if(!keys.has(e.context))return;
@@ -124,7 +124,7 @@ async function inspectorRequest(e){
  if(setupBusy){inspectorStatus(e.context,'Setup already running');return;}
  const a=selected();setupBusy=true;inspectorStatus(e.context,'Configuring the selected agent in Rex…');
  try{
-  if(config.backend==='herdr')throw Error('Enable the Herdr Codex integration for native chat IDs');
+  if(config.backend==='herdr')throw Error('Run /title thread-id in Codex and enable title matching in preferences');
   if(!config.allowClipboardFocus)throw Error('Enable visible-pane checks first');
   if(a?.app!=='codex'||!['idle','done'].includes(a.state))throw Error('Select a ready Codex agent on the deck');
   const display={target:C.snapshot(a),verifyChat:false};

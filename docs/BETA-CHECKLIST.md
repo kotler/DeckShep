@@ -2,7 +2,7 @@
 
 ## Completed locally
 
-- The validated Rex baseline has 24 automated test groups. This Herdr development branch adds three groups (27 total); live Herdr validation is tracked separately in HERDR.md.
+- The validated Rex baseline has 24 automated test groups. This Herdr development branch adds four groups (28 total); live Herdr validation is tracked separately in HERDR.md.
 - Settings panel connected in the installed Stream Deck editor; both Codex chats identified, existing opt-in preserved, prompt fields populated. Preferences were inspected without changing their values.
 - Automated routing, stale state/request, process/focus replacement and malformed metadata tests.
 - Staged Send checks edited/cleared/manually submitted drafts, cursor/chat/turn changes, read failures and uncertain writes; no retry after an uncertain submission.
