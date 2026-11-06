@@ -9,9 +9,9 @@ Five agent keys show project, agent type and native status. Press one to select 
 | Agent 1 | Agent 2 | Agent 3 | Agent 4 | Agent 5 |
 | --- | --- | --- | --- | --- |
 | Previous | Next | Interrupt | Model | More |
-| Plan prompt | Review | Effort | Continue | Send |
+| Plan / Regular | Review | Effort | Permissions | Send |
 
-More contains Zoom, Tests, additional banks of agents, and menu navigation. Control mappings have property-inspector overrides. Prompts, aliases, palette, animation and bindings are configurable in the installed plugin's `config.json`.
+More contains Zoom, Tests, Continue, the original planning prompt, optional native pickers, additional banks of agents, and menu navigation. Control mappings have property-inspector overrides. Prompts, aliases, palette, animation and bindings are configurable in the installed plugin's `config.json`.
 
 ## Status and icons
 
@@ -40,19 +40,36 @@ The installer discovers the local device, backs up profiles and any previous plu
 
 The plugin keeps the original `com.local.rexagents` identifier so existing installations can upgrade without replacing their profile.
 
-## Model and effort
+## One-press controls (Codex CLI 0.166.0)
 
-Verified with Codex CLI 0.166.0 in a disposable session:
+The main keys use native shortcuts and settings-only presets. There is no separate Send/Apply step:
 
-1. Start with an empty agent composer. Press Model or Effort to stage `/model`; review it in Rex.
-2. Press Send to open the native picker.
-3. Repeated Model presses move down through native model choices. Effort advances to the reasoning picker; subsequent presses move down through its choices. Model returns to the model picker when currently choosing effort.
-4. Apply (the Send key) advances from model to effort, then applies the selected reasoning configuration to this session with Codex's native `s` binding. Extended reasoning submenus may require the keyboard.
-5. More → Esc backs out one picker level. Picker tracking expires after 60 seconds, focus/process changes or disconnection.
+| Key | Action |
+| --- | --- |
+| Model | Sol → Astra → Luna → repeat |
+| Effort | low → medium → high → xhigh → repeat |
+| Plan | Native Shift+Tab toggles Plan/Regular collaboration mode |
+| Permissions | Approve for me → Ask me → repeat, without changing the captured sandbox/profile or approval policy |
 
-The terminal picker is the source of truth. The plugin does not scrape screen contents or claim to know the selected model. Keep the actual picker open while using these controls; after manual modal changes, finish or cancel using the keyboard. Claude's model/effort implementation remains disabled behind `controlVerified.claude-code` until authenticated testing verifies the installed version's controls.
+Model and effort commands apply for the current session only and preserve unfinished drafts. Native presets 1–3 hold model favorites, 4–7 hold effort levels, and 8–9 hold the two reviewer settings. Slot 0 is not reserved. Favorites and effort choices are editable in `cycles` in config.json; rerun setup after changes. The first press requests the first configured choice; cycle positions are per process/pane, not a live readout of manual setting changes. The brief label after a press reports the requested choice. Codex's own confirmation is the source of truth.
 
-Plan stages an ordinary request for a plan. It does **not** enable native plan mode or cycle permission policies. Menu keys never automatically approve permissions.
+Plan is independent of Permissions. Plan changes collaboration mode; it does not change the approval reviewer. The original request-for-a-plan prompt remains in More. Native Plan mode can use Codex's own separate model/effort preferences. No Full Access preset or approval-menu acceptance key is configured.
+
+### Setup without restarting running agents
+
+After installation and clipboard-focus consent, run:
+
+```sh
+node com.local.rexagents.sdPlugin/setup-presets.js "$HOME/Library/Application Support/com.elgato.StreamDeck/Plugins/com.local.rexagents.sdPlugin"
+```
+
+This focuses each idle supported Codex process, saves native settings presets in its live TUI, registers its process identity, then restores the original tab. It does not restart Codex or apply model, effort, or reviewer changes during setup. Presets persist in Codex config; local process registrations stay in the plugin's ignored `state/` directory. The development Mac's two live Codex processes were configured and their PIDs verified unchanged.
+
+Existing user preset slots are rejected rather than overwritten. Only entries already recorded as managed settings may be replaced. Permissions setup snapshots the current native permission selection and changes only `--reviewer` in the two saved commands. If `cycles.autoSetupNewSessions` is true, a previously unregistered process gets this one-time setup on its first cycle press. This can briefly show configuration dialogs before applying the requested setting; subsequent presses directly run the preset. Busy agents are rejected until ready. New Codex launches read the saved preset list, but each process is registered independently so old caches are not mistaken for configured sessions.
+
+One-time setup inspects **only the current terminal viewport** to recognize configuration-dialog titles, never historical headings in scrollback. No terminal text is written to files or printed. It begins new presets from a native settings-generated single line rather than the user's composer, so multiline drafts are not copied into saved presets. If a dialog is unexpected, setup stops rather than sending an unverified confirmation. Do not interact with the agent while its setup dialogs are being navigated.
+
+The older model/effort pickers remain available in More as a fallback. Claude one-press controls remain disabled until authenticated testing verifies that agent's native behavior.
 
 ## Safety and known limits
 
@@ -60,7 +77,7 @@ Plan stages an ordinary request for a plan. It does **not** enable native plan m
 - Shared actions query the app-selected block ID, then resolve that unique ID across sessions and validate its foreground agent. They do not use server active-window focus or pane labels. Rex Remote Control is required for the focus query and app tab selection; if unavailable, input is refused. Background status refreshes never touch the clipboard.
 - Prompt buttons append bracketed paste without clearing existing text. Review the **entire composer** before Send. Send requires a recent plugin-staged draft in the same pane/process. Manual edits, submission and draft clearing are not tracked; do not manually submit a draft and then press Send.
 - A process can exit after the final identity check and before a write. Rex has no atomic compare-process-and-send operation. Native status also cannot prove the agent is in its composer rather than a manually opened dialog.
-- Status processing is local. No transcript capture, terminal scraping, prompt logging, credential collection or network status service is used. Stream Deck's loopback WebSocket and the supported Rex CLI are the integration boundaries.
+- Status processing is local. Runtime routing/status does not scrape terminal text; one-time preset setup reads configuration-dialog viewport titles only. No prompt logging, credential collection or network status service is used. Stream Deck's loopback WebSocket and the supported Rex CLI are the integration boundaries.
 - Physical More/Main page switching and both Codex agent-selection keys passed user testing. Physical staging, model-picker opening, one-step model/effort cycling and session-only apply passed in the disposable SD Test tab. Authenticated Claude tests, live working interruption and hardware animation tests remain outstanding. Software verification does not establish those behaviors.
 
 ## Verification
@@ -99,3 +116,7 @@ The helper is called only on action presses (and repeat identity checks), not po
 Live checks verified the helper followed mouse selection to Claude and keyboard selection to the other Codex tab, while restoring the clipboard data. In a disposable Codex tab, a fixed prompt staged without submission; switching the visible tab blocked Send; returning to the test tab submitted using Enter, reported Working then Complete, and returned the fixed response without tool use. Model/effort picker navigation passed and was cancelled without applying a change. The original pane was restored. This corrects the earlier assumption that Tab was the normal Codex Submit binding; the shipped default is now Enter.
 
 `test.js` now deliberately supplies stale server focus and multiple sessions to verify the visible block ID wins; it also tests failed clipboard queries, closed panes, shells, owner mismatch, focus-change rejection and draft guards. User physical testing subsequently passed Model staging, Send opening the model picker, one-step-and-stop model cycling, Effort opening its picker, one-step-and-stop effort cycling, and Apply confirming a session-only change. Rex displays a copy toast for the focus query; this is a known UX cost of the supported `pane.copy_id` action. No silent-query alternative is implemented. Claude authenticated controls and working interruption are still unverified.
+
+## One-press verification update
+
+Tests cover independent cycle wraparound, Plan's native shortcut, preserving captured permission boundaries, refusal after preset changes, and process readiness. The setup regression test ensures old scrollback headings cannot be mistaken for current dialogs. In disposable-session tests, one-press model, effort and reviewer presets preserved a multiline draft without submitting it; the actual reviewer changed to auto review and back to user review. Native Plan toggled both directions. The two existing agents were subsequently configured in place with the original processes retained. The new layout is rendered in Stream Deck; physical one-press testing is pending.

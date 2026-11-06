@@ -1,0 +1,3 @@
+'use strict';
+const assert=require('node:assert/strict');const {Setup}=require('./com.local.rexagents.sdPlugin/setup-presets');
+(async()=>{const calls=[];const b={method:async()=>({rows:2}),run:async args=>{calls.push(args);return{content:'Presets\nStart preset from current settings\nCURRENT VIEW\nnot a dialog\n'};}};const s=new Setup(b);const viewport=await s.screen({session:'s',block:'b'});assert.equal(viewport,'CURRENT VIEW\nnot a dialog');assert(!viewport.includes('Presets'));assert(calls[0].at(-1).includes('"trim":false'));b.run=async()=>({id:2,content:'truncated'});await assert.rejects(()=>s.screen({session:'s',block:'b'}));console.log('PASS setup checks only the visible viewport and rejects incomplete terminal data');})();

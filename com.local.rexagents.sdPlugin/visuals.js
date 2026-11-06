@@ -4,6 +4,7 @@ const paths={
  codex:'<path d="m39 22-23 18 23 18m26-36 23 18-23 18M57 16 47 64"/>',
  'claude-code':Array.from({length:12},(_,i)=>`<path d="M52 15v15" transform="rotate(${i*30} 52 40)"/>`).join(''),
  grok:'<circle cx="52" cy="40" r="25"/><path d="m27 65 50-50M42 44l22-8-8 22"/>',
+ permissions:'<path d="M52 9 80 20v20c0 19-28 32-28 32S24 59 24 40V20Z"/><path d="m38 39 10 10 19-22"/>',
  model:'<path d="m52 13 32 17-32 17-32-17Zm-32 30 32 17 32-17M20 57l32 17 32-17"/>',
  effort:'<path d="M22 59a30 30 0 0 1 60 0M52 54l19-24M29 59h-7m53 0h7M52 22v7"/><circle cx="52" cy="56" r="5"/>',
  previous:'<path d="M75 40H24m20-20L24 40l20 20"/>', next:'<path d="M29 40h51M60 20l20 20-20 20"/>',

@@ -10,3 +10,5 @@ __pycache__/
 config.local.json
 
 com.local.rexagents.sdPlugin/bin/
+
+com.local.rexagents.sdPlugin/state/

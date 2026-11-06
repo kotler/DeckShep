@@ -21,7 +21,7 @@ if __name__=='__main__':
     if sys.platform!='darwin':raise SystemExit('The clipboard helper must be built on macOS.')
     (src/'bin').mkdir(exist_ok=True)
     subprocess.run(['swiftc','-O','-target',platform.machine()+'-apple-macosx13.0','-module-cache-path',str(out/'swift-cache'),str(ROOT/'native/visible-pane.swift'),'-o',str(src/'bin/visible-pane')],check=True)
-    shutil.copytree(src,out/src.name,dirs_exist_ok=True)
+    shutil.copytree(src,out/src.name,dirs_exist_ok=True,ignore=shutil.ignore_patterns('state','config.local.json'))
     # Template only. Install binds a generated copy to a locally discovered device.
     p=profile(out,{'Model':'20GBL9901','UUID':'@(0)[]'})
     with zipfile.ZipFile(out/'Rex Agents.streamDeckProfile','w',zipfile.ZIP_DEFLATED) as z:

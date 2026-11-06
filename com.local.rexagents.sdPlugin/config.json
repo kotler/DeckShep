@@ -33,5 +33,28 @@
     "unknown": "#42475a"
   },
   "bringToFront": true,
-  "allowClipboardFocus": false
+  "allowClipboardFocus": false,
+  "cycles": {
+    "models": [
+      {
+        "id": "gpt-6.1-sol",
+        "label": "Sol"
+      },
+      {
+        "id": "gpt-6-astra",
+        "label": "Astra"
+      },
+      {
+        "id": "gpt-6-luna",
+        "label": "Luna"
+      }
+    ],
+    "efforts": [
+      "low",
+      "medium",
+      "high",
+      "xhigh"
+    ],
+    "autoSetupNewSessions": true
+  }
 }

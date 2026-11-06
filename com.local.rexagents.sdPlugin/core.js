@@ -1,6 +1,7 @@
 'use strict';
 const {execFile}=require('node:child_process');
 const path=require('node:path');
+const P=require('./presets');
 const REX='/Applications/Rex Beta.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex';
 function cli(args,input){return new Promise((resolve,reject)=>{
   const p=execFile(REX,['--autostart=false','--timeout','2s',...args],{timeout:3500,maxBuffer:2e6,env:{...process.env,REX_SESSION:'',REX_BLOCK:'',REX_CLIENT:''}},(e,out)=>{
@@ -100,7 +101,7 @@ class Bridge{
     try{await this.checked(p.target,true);}catch(e){this.picker=null;throw e;}p.at=Date.now();return p;
   }
   async pickerKey(p,key){await this.run(['send-key','-s',p.target.session,'-b',p.target.block,key]);}
-  async cycleControl(kind){
+  async cyclePicker(kind){
     const a=await this.focused();
     if(!this.config.controlVerified?.[a.app])throw new Error('Verify model controls on this agent first');
     if(!this.picker){await this.stage(kind);return;}
@@ -110,6 +111,25 @@ class Bridge{
       if(kind==='effort'&&p.phase==='model'){await this.pickerKey(p,'enter');p.phase='effort';return;}
       await this.pickerKey(p,'down');
     }else await this.pickerKey(p,kind==='effort'?'right':'down');
+  }
+  async cycleControl(kind){
+    if(!['model','effort','permissions'].includes(kind))throw new Error('Unsupported cycle');
+    const a=await this.focused();await this.checked(a,true);
+    if(a.app!=='codex'||!this.config.controlVerified?.codex)throw new Error('Cycle controls not verified for this agent');
+    if(this.picker)throw new Error('Close the native picker first');
+    const file=path.join(__dirname,'state','native-presets.json');let registry=P.readRegistry(file),record=registry.agents[token(a)];
+    if(!record&&this.config.cycles?.autoSetupNewSessions){await new (require('./setup-presets').Setup)(this).configure(a,this.config.cycles,file);registry=P.readRegistry(file);record=registry.agents[token(a)];}
+    if(!record||record.signature!==P.signature(this.config.cycles))throw new Error('Native presets need setup in this session');
+    const entries=record.entries.filter(e=>e.kind===kind);if(!entries.length)throw new Error('No cycle entries');P.validateOnDisk(entries);
+    const i=(record.indices[kind]||0)%entries.length,entry=entries[i];await this.checked(a,true);
+    await this.run(['send-key','-s',a.session,'-b',a.block,'ctrl+x','p',entry.slot]);
+    record.indices[kind]=(i+1)%entries.length;P.saveRegistry(file,registry);return {kind,label:entry.label};
+  }
+  async togglePlan(){
+    const a=await this.focused();await this.checked(a,true);
+    if(a.app!=='codex'||!this.config.controlVerified?.codex)throw new Error('Plan toggle not verified for this agent');
+    if(this.picker)throw new Error('Close the native picker first');
+    await this.run(['send-key','-s',a.session,'-b',a.block,'shift+tab']);return {kind:'plan',label:'Plan / Regular'};
   }
   async applyPicker(){
     const p=await this.pickerTarget();
