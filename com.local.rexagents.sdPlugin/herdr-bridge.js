@@ -5,6 +5,12 @@ const uuid=s=>typeof s==='string'&&/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}
 const changed=()=>Object.assign(Error('Reselect agent on deck'),{code:'SELECTION_CHANGED'});
 const isFocused=(s,a)=>a?.serverFocused===true&&s.focused_pane_id===a.block&&s.focused_tab_id===a.window&&s.focused_workspace_id===a.workspaceId;
 const target=a=>Object.fromEntries(['session','window','block','app','pid','name','terminalId'].map(k=>[k,a[k]]));
+function waitingDigest(view){
+ // Selection markers may move as the user navigates. Bind a press to the
+ // question or command body, rather than Herdr's terminal-generation revision.
+ const body=view.split('\n').map(line=>line.replace(/^(\s*)[›>●○✓✔](?=\s+\d+[.)]\s)/,'$1 ')).join('\n');
+ return crypto.createHash('sha256').update(body).digest('hex');
+}
 function ownProcess(pid){return new Promise((resolve,reject)=>execFile('/bin/ps',['-p',String(pid),'-o','uid='],{timeout:1500,maxBuffer:256},(error,out)=>{if(error||!/^\d+$/.test(out.trim()))reject(Error('Herdr foreground owner unavailable'));else resolve(out.trim()===String(process.getuid()));}));}
 function nativeReference(info){const ref=info.agent_session;return info.agent==='codex'&&ref?.source==='herdr:codex'&&ref.agent==='codex'&&ref.kind==='id'&&uuid(ref.value)?ref.value.toLowerCase():null;}
 function foreground(info,processInfo){
@@ -65,6 +71,7 @@ class HerdrBridge extends Bridge{
    if(status?.runId)a.runId=status.runId;
    if(status?.backgroundOnly&&Array.isArray(status.backgroundIds)&&status.backgroundIds.length&&status.backgroundTurnId){a.state='working';a.backgroundOnly=true;a.backgroundIds=[...status.backgroundIds];a.backgroundTurnId=status.backgroundTurnId;a.activityStatusAt=a.statusAt;}
   }
+  if(a.nativeVerified&&a.state==='blocked'&&a.atBottom)a.statusAt+=':'+waitingDigest(await this.readView(rpc,a,'text'));
   return a;
  }
  async agent(t){return this.use(async rpc=>{if(t.session&&t.session!==rpc.endpoint.scope)throw changed();const a=await this.readAgent(rpc,t.block);if(t.terminalId&&a?.terminalId!==t.terminalId)throw changed();return a;});}
@@ -84,12 +91,12 @@ class HerdrBridge extends Bridge{
   return agents;
  }
  async focused(){return this.use(async rpc=>{const s=await this.snapshot(rpc);if(!paneId(s.focused_pane_id))throw changed();const a=await this.readAgent(rpc,s.focused_pane_id);if(!a||!isFocused(s,a))throw changed();
-  if(this.actionContext){C.assertContext(this.actionContext,a);if(this.actionContext.verifyChat&&(!a.herdrChatId||a.herdrChatId!==this.actionContext.target.chatId))throw Error('Selected chat changed');}
+  if(this.actionContext){if(a.state==='blocked'&&!a.atBottom&&this.actionContext.action!=='zoom')throw Error('Scroll the Herdr pane to bottom');C.assertContext(this.actionContext,a);if(this.actionContext.verifyChat&&(!a.herdrChatId||a.herdrChatId!==this.actionContext.target.chatId))throw Error('Selected chat changed');}
   this.lastTarget=target(a);this.lastChecked=a;return a;
  });}
  async checked(t,ready=false){const a=await this.focused();if(C.actor(a)!==C.actor(t))throw changed();if(ready&&!['idle','done','error'].includes(a.state))throw Error('Agent not ready');return a;}
  async focus(t){return this.use(async rpc=>{if(t.session!==rpc.endpoint.scope)throw changed();const a=await this.readAgent(rpc,t.block);if(!a||C.actor(a)!==C.actor(t))throw changed();await rpc.request('agent.focus',{target:a.block});const s=await this.snapshot(rpc);if(s.focused_pane_id!==a.block)throw Error('Herdr focus unconfirmed');const confirmed=await this.readAgent(rpc,a.block);if(C.actor(a)!==C.actor(confirmed)||!isFocused(s,confirmed))throw changed();this.lastTarget=target(confirmed);this.lastChecked=confirmed;this.draft=null;this.picker=null;this.selectionNotice=false;});}
- async nativeChatId(t){const a=await this.agent(t);if(!a||C.actor(a)!==C.actor(t)||!a.herdrChatId)throw Error('Herdr Codex session ID unavailable; enable its integration');return a.herdrChatId;}
+ async nativeChatId(t){const a=await this.agent(t);if(!a||C.actor(a)!==C.actor(t)||!a.herdrChatId)throw Error('Herdr native chat ID unavailable; check Codex integration and daemon mode');return a.herdrChatId;}
  async readView(rpc,a,format='ansi'){
   const result=await rpc.request('agent.read',{target:a.block,source:'visible',format,strip_ansi:format==='text'}),r=result?.read;
   if(result?.type!=='pane_read'||r?.pane_id!==a.block||r.workspace_id!==a.workspaceId||r.tab_id!==a.window||r.source!=='visible'||r.format!==format||r.truncated!==false||typeof r.text!=='string'||!r.text||Buffer.byteLength(r.text)>960000)throw Error('Herdr viewport incomplete');return r.text;

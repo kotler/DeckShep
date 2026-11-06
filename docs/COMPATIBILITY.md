@@ -12,7 +12,7 @@
 | Codex Model | Metadata-only reads and model-only updates with explicit identity/effort checks | No blind fallbacks or empty settings updates |
 | Codex Effort | Current level is read from native metadata; effort-only updates cycle the model's supported levels | Changing effort needs a persisted chat for the full settings-preservation check |
 | Claude Code | Process identification/basic status exists | Authenticated controls not verified; not a supported beta integration |
-| Herdr TUI 0.9.5 / protocol 22 | Experimental opt-in adapter; protocol/fixture tests | Live validation pending; composer submissions unavailable; local Mac only |
+| Herdr TUI 0.9.5 / protocol 22 | Experimental adapter; live API discovery, six-agent navigation, focus and Zoom | Native-control validation blocked by missing combined chat identity/daemon access; physical keys and composer submissions unverified; local Mac only |
 | Other terminals / Windows | No adapter | Future work, no compatibility claim |
 
 Effort uses supported levels from the native daemon model catalog and an effort-only settings update, verified on Codex 0.166/0.167. Plan/Default uses the native Codex shortcut. Keyboard remapping, very narrow terminals, missing session-ID footers, manually opened native dialogs or truncated view data can prevent verification. It refuses unverified actions and leaves the input for review in Rex.

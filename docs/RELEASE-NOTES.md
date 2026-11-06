@@ -3,7 +3,8 @@
 - Opt-in local Herdr 0.9.5 / protocol 22 backend with explicit session selection and foreground/process/session guards.
 - Native Codex controls reuse the guarded daemon path; Herdr focus checks use its API without the clipboard.
 - Send, Steer, Queue and prompt staging stay unavailable until a trustworthy composer cursor is exposed.
-- 27 automated groups cover the Rex baseline and new Herdr transport, routing and controller-switch tests. Live Herdr and physical validation remain pending; see HERDR.md.
+- Live testing fixed the one-response-per-connection transport, retained known Herdr titles when daemon metadata is unavailable, and strengthened waiting-request guards.
+- 27 automated groups cover the Rex baseline and new Herdr transport, routing and controller-switch tests. Live Herdr API discovery, six-agent navigation, closed-slot/Collapse behavior, focus and Zoom passed. Native-control validation is blocked by the tested integration/daemon combination; physical validation remains pending. See HERDR.md.
 
 # Local beta changes — November 5, 2026
 

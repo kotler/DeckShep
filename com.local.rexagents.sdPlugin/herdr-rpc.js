@@ -27,29 +27,50 @@ function validate(method,p){
  if(keys!=='pane_id'||!paneId(p.pane_id))throw Error('Explicit Herdr pane required');
 }
 class HerdrRpc{
- constructor(socketPath,deps={}){this.socketPath=socketPath;this.resolve=deps.endpoint||endpoint;this.open=deps.connect||((file)=>net.createConnection(file));this.nextId=0;this.pending=new Map();this.buffer='';this.decoder=new StringDecoder('utf8');this.verified=false;this.timeout=deps.timeout||4000;}
+ constructor(socketPath,deps={}){this.socketPath=socketPath;this.resolve=deps.endpoint||endpoint;this.open=deps.connect||((file)=>net.createConnection(file));this.nextId=0;this.pending=new Map();this.verified=false;this.closed=false;this.timeout=deps.timeout||4000;}
  async connect(){
-  this.endpoint=this.resolve(this.socketPath);this.socket=this.open(this.endpoint.file);
-  await new Promise((resolve,reject)=>{const timer=setTimeout(()=>{this.close();reject(Error('Herdr connection timed out'));},this.timeout);this.socket.once('connect',()=>{clearTimeout(timer);resolve();});this.socket.once('error',()=>{clearTimeout(timer);reject(Error('Herdr session unavailable'));});});
-  this.socket.on('data',chunk=>this.receive(chunk));this.socket.on('error',()=>this.fail());this.socket.on('close',()=>this.fail());
-  if(this.resolve(this.socketPath).identity!==this.endpoint.identity){this.close();throw Error('Herdr session changed while connecting');}
-  const pong=await this.request('ping',{});
-  if(pong?.type!=='pong'||pong.protocol!==22||!/^0\.9\.5(?:[-+].*)?$/.test(pong.version||'')){this.close();throw Error('Herdr version/protocol not verified');}
-  this.verified=true;return this;
- }
- receive(chunk){
-  this.buffer+=this.decoder.write(chunk);if(Buffer.byteLength(this.buffer)>4e6){this.close();return;}
-  let end;while((end=this.buffer.indexOf('\n'))>=0){const line=this.buffer.slice(0,end);this.buffer=this.buffer.slice(end+1);let message;try{message=JSON.parse(line);}catch{this.close();return;}
-   const pending=this.pending.get(message.id);if(!pending){this.close();return;}this.pending.delete(message.id);clearTimeout(pending.timer);
-   if(message.error)pending.reject(Error('Herdr request refused; verify the session'));else if(!message.result||typeof message.result!=='object')pending.reject(Error('Invalid Herdr response'));else pending.resolve(message.result);
-  }
+  this.endpoint=this.resolve(this.socketPath);
+  try{
+   const pong=await this.exchange('ping',{});
+   if(pong?.type!=='pong'||pong.protocol!==22||!/^0\.9\.5(?:[-+].*)?$/.test(pong.version||''))throw Error('Herdr version/protocol not verified');
+   this.verified=true;return this;
+  }catch(error){this.close();throw error;}
  }
  request(method,params){
-  try{validate(method,params);if(method!=='ping'&&!this.verified)throw Error('Herdr connection is not verified');if(!this.socket||this.socket.destroyed)throw Error('Herdr session offline');if(this.resolve(this.socketPath).identity!==this.endpoint.identity)throw Error('Herdr session replaced');}catch(error){return Promise.reject(error);}
-  const id='switchboard-'+(++this.nextId);
-  return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{this.pending.delete(id);reject(Error('Herdr timeout; verify any requested change'));this.close();},this.timeout);this.pending.set(id,{resolve,reject,timer});this.socket.write(JSON.stringify({id,method,params})+'\n',error=>{if(error)this.fail();});});
+  try{validate(method,params);if(!this.verified||this.closed)throw Error('Herdr connection is not verified');}catch(error){return Promise.reject(error);}
+  return this.exchange(method,params);
  }
- fail(){for(const p of this.pending.values()){clearTimeout(p.timer);p.reject(Error('Herdr disconnected; verify any requested change'));}this.pending.clear();this.verified=false;}
- close(){this.fail();this.socket?.destroy();}
+ exchange(method,params){
+  // Ordinary Herdr 0.9.5 requests use one connection each. The server closes
+  // after its response; only subscription requests keep a stream open.
+  const id='switchboard-'+(++this.nextId);
+  return new Promise((resolve,reject)=>{
+   let socket,done=false,buffer='';const decoder=new StringDecoder('utf8');
+   const finish=(error,result)=>{if(done)return;done=true;clearTimeout(timer);this.pending.delete(id);socket?.destroy();error?reject(error):resolve(result);};
+   const timer=setTimeout(()=>finish(Error('Herdr timeout; verify any requested change')),this.timeout);
+   this.pending.set(id,{cancel:()=>finish(Error('Herdr disconnected; verify any requested change'))});
+   try{
+    if(this.closed||this.resolve(this.socketPath).identity!==this.endpoint.identity)throw Error('Herdr session replaced or offline');
+    socket=this.open(this.endpoint.file);
+    socket.on('error',()=>finish(Error('Herdr disconnected; verify any requested change')));
+    socket.on('end',()=>finish(Error('Herdr disconnected; verify any requested change')));
+    socket.on('close',()=>finish(Error('Herdr disconnected; verify any requested change')));
+    socket.on('connect',()=>{try{
+     if(this.resolve(this.socketPath).identity!==this.endpoint.identity)throw Error('Herdr session changed while connecting');
+     socket.write(JSON.stringify({id,method,params})+'\n',error=>{if(error)finish(Error('Herdr write failed; verify any requested change'));});
+    }catch(error){finish(error);}});
+    socket.on('data',chunk=>{
+     buffer+=decoder.write(chunk);if(Buffer.byteLength(buffer)>4e6){finish(Error('Herdr response too large'));return;}
+     const end=buffer.indexOf('\n');if(end<0)return;
+     let message;try{message=JSON.parse(buffer.slice(0,end));}catch{finish(Error('Invalid Herdr response'));return;}
+     if(message.id!==id){finish(Error('Unexpected Herdr response'));return;}
+     if(message.error)finish(Error('Herdr request refused; verify the session'));
+     else if(!message.result||typeof message.result!=='object')finish(Error('Invalid Herdr response'));
+     else finish(null,message.result);
+    });
+   }catch(error){finish(error);}
+  });
+ }
+ close(){this.closed=true;this.verified=false;for(const p of [...this.pending.values()])p.cancel();}
 }
 module.exports={HerdrRpc,endpoint,validate,paneId};

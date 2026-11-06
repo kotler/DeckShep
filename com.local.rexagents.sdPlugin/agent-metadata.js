@@ -43,7 +43,7 @@ class AgentMetadata{
   for(const agent of agents){if(agent.app!=='codex')continue;const id=key(agent),cached=this.cache.get(id),now=this.now(),ttl=this.b.config.metadataRefreshMs??4000;
    if(!force&&cached&&now-cached.at<ttl&&cached.statusAt===agent.statusAt){restore(agent,cached.value);continue;}
    try{const value=await this.read(agent);this.cache.set(id,{at:now,statusAt:agent.statusAt,value});restore(agent,value);}
-   catch{if(cached){cached.value={...cached.value,backgroundOnly:false,backgroundIds:[],backgroundTurnId:null};restore(agent,cached.value);}else agent.chatName='Name unavailable';}
+   catch{if(cached){cached.value={...cached.value,backgroundOnly:false,backgroundIds:[],backgroundTurnId:null};restore(agent,cached.value);}else if(this.b.backend!=='herdr'||!agent.chatName)agent.chatName='Name unavailable';}
   }
   return agents;
  }

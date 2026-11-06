@@ -25,6 +25,7 @@ function fixture(){
  f.thread.cwd='/other';await f.reader.refresh([copy],true);assert.equal(copy.chatName,'Untitled chat');assert.equal(f.closed(),4);
  const changed=fixture();let n=0;changed.reader.footer=async()=>++n===1?id:'different';await changed.reader.refresh([changed.agent]);assert.equal(changed.agent.chatName,'Name unavailable');assert.equal(changed.closed(),1);
  const unknown=fixture();unknown.rpc.request=async()=>({data:[]});await unknown.reader.refresh([unknown.agent]);assert.equal(unknown.agent.chatName,'Name unavailable');assert(!unknown.reader.cache.size);
+ const herdr=fixture();herdr.bridge.backend='herdr';herdr.agent.chatName='Known Herdr title';herdr.rpc.request=async()=>({data:[]});await herdr.reader.refresh([herdr.agent]);assert.equal(herdr.agent.chatName,'Known Herdr title');assert.equal(herdr.agent.model,undefined);
  const alias=fixture();alias.bridge.config.projectAliases={[alias.agent.cwd]:'Product'};await alias.reader.refresh([alias.agent]);assert.equal(alias.agent.project,'Product');
  await alias.reader.refresh([]);assert.equal(alias.reader.cache.size,0);
  assert.deepEqual(agentLines({...f.agent,chatName:'Short',state:'blocked',kind:'permission'},{b:'My chat'}),['My chat','my-project','APPROVAL']);

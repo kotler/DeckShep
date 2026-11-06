@@ -10,7 +10,7 @@ const {HerdrRpc,endpoint}=require('./com.local.rexagents.sdPlugin/herdr-rpc');
   if(m.method==='agent.get'&&mode==='error'){socket.write(JSON.stringify({id:m.id,error:{message:'PRIVATE_RESPONSE'}})+'\n');continue;}
   const result=m.method==='ping'?{type:'pong',protocol:mode==='unsupported'?23:22,version:'0.9.5'}:{type:'agent_info',agent:{name:'測試'}};
   const response=Buffer.from(JSON.stringify({id:m.id,result})+'\n');const split=response.indexOf(Buffer.from('測'))+1;
-  if(m.method==='agent.get'){socket.write(response.subarray(0,split));setImmediate(()=>socket.write(response.subarray(split)));}else socket.write(response);
+  if(m.method==='agent.get'){socket.write(response.subarray(0,split));setImmediate(()=>socket.write(response.subarray(split)));}else socket.end(response);
  } });});
  try{
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(file,resolve);});fs.chmodSync(file,0o600);

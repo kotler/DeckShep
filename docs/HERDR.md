@@ -6,7 +6,7 @@ The adapter uses Herdr's documented public socket API and the schema bundled wit
 
 ## Setup
 
-1. Run a local Herdr session and enable its official Codex integration. The integration supplies the agent's native chat ID.
+1. Run a local Herdr session and enable its official Codex integration. Advanced controls require both its native chat ID and a verified connection from that foreground Codex process to the local daemon. This combination is not yet verified in live Herdr testing; see the validation gap below.
 2. In a Stream Deck key's settings, choose **Controller → Herdr (experimental)**.
 3. Enter the session socket, for example `~/.config/herdr/herdr.sock` or `~/.config/herdr/sessions/NAME/herdr.sock`.
 4. Select the agent on the deck. The local foreground process must be owned by the current user, and its native chat must agree with the reported process directory.
@@ -19,8 +19,8 @@ Herdr focus checks use its API; they do not use the clipboard. Switching control
 | --- | --- |
 | Agent row, bank, Next agent, Collapse | Herdr topology and foreground identity; stable slot behavior shared with Rex |
 | Zoom | Explicit pane target through Herdr |
-| Model, Effort, Reviewer | Existing guarded Codex daemon controls, bound to Herdr's official native session reference |
-| Plan / Default | One native Shift+Tab key; verified native mode readback |
+| Model, Effort, Reviewer | Implemented through the guarded Codex daemon path; live validation blocked by native identity/transport availability |
+| Plan / Default | Implemented as one native Shift+Tab key; live mode readback not yet verified |
 | Interrupt | Active native turn verification, then one explicit Escape key |
 | Stop terminals | Existing ended-turn and exact terminal-ID checks |
 | Questions and approval choices | Native Codex waiting flags, foreground ownership, pane identity and current-view checks |
@@ -35,17 +35,27 @@ Backend focus is the session API's focused pane, not proof of which of several a
 
 ## Verification
 
-Automated tests cover the real newline-delimited Unix-socket transport against isolated fake servers, including split UTF-8 frames, endpoint permissions, unsupported versions, malformed replies, disconnects, timeouts and no mutation replay. Fixture tests cover foreground/process/session replacement, native waiting states, explicit pane actions, stale presses, changed approval views, scroll position and controller changes during an active action. These are not evidence of live Herdr or physical-key compatibility.
+Ordinary requests use a fresh Unix-socket connection because Herdr 0.9.5 closes it after one response. Live testing caught and corrected an initial persistent-connection assumption. Automated tests cover this lifecycle and the real newline-delimited transport against isolated fake servers, including split UTF-8 frames, endpoint permissions, unsupported versions, malformed replies, disconnects, timeouts and no mutation replay. Fixture tests cover foreground/process/session replacement, native waiting states, explicit pane actions, stale presses, changed approval views, scroll position and controller changes during an active action. Waiting-context tests bind presses to the prompt body, preserving whitespace and ignoring only numbered-option selection markers. A changed approval selection style during an action is also refused. These fixture tests are not evidence of physical-key compatibility.
 
-Remaining live checks, in a named disposable session:
+Live API checks on November 6, 2026 used a separate named headless session, leaving the user's open Herdr session untouched:
 
-- [ ] Confirm actual foreground identity, integration chat ID, focus and display labels.
-- [ ] Exercise banks, Next agent wraparound, stable gaps and Collapse.
-- [ ] Verify Zoom and host-terminal presentation.
-- [ ] Verify model, effort, reviewer and Plan readback with full permission boundaries unchanged.
-- [ ] Exercise Interrupt and background-terminal Stop separately.
-- [ ] Exercise native multiple-choice and approval prompts; confirm view/selection guards.
-- [ ] Verify reconnect/version refusal and switching back to Rex.
+- [x] Actual 0.9.5/protocol 22 handshake, topology, foreground process ownership and directories.
+- [x] Official `herdr:codex` chat references from embedded agents after their first completed turn; titles retained when daemon metadata is unavailable.
+- [x] Six live agents, forward Next-agent wraparound, a stable closed slot and explicit Collapse preserving relative order.
+- [x] Explicit pane focus and Zoom round-trip in a split layout.
+- [x] Missing native identity refused a settings operation before any write.
+- [x] After stopping the owned test session, offline discovery was refused without discarding known slots.
+- [x] Test session stopped; original Rex agent PIDs remained running. Global Codex configuration and hooks matched their original SHA-256 hashes.
+- [ ] Physical keys, bank captions and outer-terminal presentation.
+- [ ] Native model, effort, reviewer and Plan changes with full settings readback.
+- [ ] Interrupt, background-terminal Stop, multiple-choice and approval prompts in Herdr.
+- [ ] Actual reconnect, multiple attached clients and installed controller switching.
+
+### Native-control validation gap
+
+The installed Codex 0.166.0 warning explains that command-line configuration overrides (`-c`, `--enable`, `--disable`, `--search`) require embedded mode. The isolated agents started with `-c` supplied official Herdr chat references after a harmless first turn, but had no accessible shared daemon. A fresh agent started without these overrides did connect to the existing daemon, but Herdr did not report its native chat reference, including after a completed turn. An explicit remote-daemon connection also lacked the reference. No user agent or existing daemon was restarted to change this behavior.
+
+Native controls require both independently verified pieces. The adapter refuses to guess a chat from its title, footer text, directory or the daemon's loaded-chat list. Further integration work is required before claiming Herdr native-control compatibility. The source branch and package remain experimental; the installed validated Rex plugin has not been replaced.
 
 Full draft-submission parity requires an API exposing a trustworthy input cursor and terminal mode alongside a consistent current-pane snapshot.
 
