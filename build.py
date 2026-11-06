@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build a portable plugin directory and generic 15-key Stream Deck profile."""
 from pathlib import Path
-import json,shutil,uuid,zipfile,subprocess,platform,sys
+import argparse,json,shutil,uuid,zipfile,subprocess,platform,sys,tempfile
 ROOT=Path(__file__).resolve().parent
 PROFILE='DCA673F9-ADDB-49C8-99BB-78B1D0BF20F2'
 PAGE='E8BFFB55-B717-4984-B8B1-CBC9BB7E5877'
@@ -15,13 +15,27 @@ def profile(destination,device):
     (page/'manifest.json').write_text(json.dumps({'Controllers':[{'Type':'Keypad','Actions':actions}],'Name':'','Icon':''},indent=2))
     return root
 if __name__=='__main__':
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--universal',action='store_true',help='Build the helper for Apple Silicon and Intel Macs')
+    options=parser.parse_args()
     out=ROOT/'dist';out.mkdir(exist_ok=True)
     src=ROOT/'com.local.rexagents.sdPlugin'
     if not (src/'node_modules/ws').is_dir():raise SystemExit('Run npm ci --prefix com.local.rexagents.sdPlugin first.')
     if sys.platform!='darwin':raise SystemExit('The clipboard helper must be built on macOS.')
     (src/'bin').mkdir(exist_ok=True)
-    subprocess.run(['swiftc','-O','-target',platform.machine()+'-apple-macosx13.0','-module-cache-path',str(out/'swift-cache'),str(ROOT/'native/visible-pane.swift'),'-o',str(src/'bin/visible-pane')],check=True)
-    shutil.copytree(src,out/src.name,dirs_exist_ok=True,ignore=shutil.ignore_patterns('state','config.local.json'))
+    with tempfile.TemporaryDirectory(dir=out,prefix='helper-build-') as temporary:
+        binaries=[]
+        for arch in (['arm64','x86_64'] if options.universal else [platform.machine()]):
+            binary=Path(temporary)/arch;binaries.append(binary)
+            subprocess.run(['swiftc','-O','-target',arch+'-apple-macosx13.0','-module-cache-path',str(out/'swift-cache'),str(ROOT/'native/visible-pane.swift'),'-o',str(binary)],check=True)
+        if options.universal:
+            subprocess.run(['lipo','-create',*[str(p) for p in binaries],'-output',str(src/'bin/visible-pane')],check=True)
+            subprocess.run(['codesign','--force','--sign','-',str(src/'bin/visible-pane')],check=True)
+        else:shutil.copy2(binaries[0],src/'bin/visible-pane')
+    # Rebuild from a clean directory so an earlier local run cannot leak state.
+    destination=out/src.name
+    if destination.exists():shutil.rmtree(destination)
+    shutil.copytree(src,destination,ignore=shutil.ignore_patterns('state','config.local.json','.env','.env.*','*.log','.DS_Store'))
     # Template only. Install binds a generated copy to a locally discovered device.
     p=profile(out,{'Model':'20GBL9901','UUID':'@(0)[]'})
     with zipfile.ZipFile(out/'Rex Agents.streamDeckProfile','w',zipfile.ZIP_DEFLATED) as z:

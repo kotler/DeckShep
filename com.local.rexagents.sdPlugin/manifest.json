@@ -6,7 +6,7 @@
   "Description": "Local guarded Rex agent controls",
   "Icon": "icon",
   "Category": "Rex Agents",
-  "CategoryIcon": "icon",
+  "CategoryIcon": "action-icon",
   "CodePath": "plugin.js",
   "SDKVersion": 2,
   "Nodejs": {
@@ -25,14 +25,14 @@
     {
       "Name": "Rex Agent Key",
       "UUID": "com.local.rexagents.key",
-      "Icon": "icon",
+      "Icon": "action-icon",
       "Controllers": [
         "Keypad"
       ],
       "PropertyInspectorPath": "inspector.html",
       "States": [
         {
-          "Image": "icon",
+          "Image": "loading",
           "TitleAlignment": "middle",
           "FontSize": 10,
           "ShowTitle": true

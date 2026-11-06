@@ -1,4 +1,33 @@
-<!doctype html><meta charset="utf-8"><style>body{background:#262626;color:#eee;font:13px system-ui;padding:12px}select{width:100%}</style><p>Default mapping follows the key's position. Override below:</p><select id="action"><option value="">Position default</option></select><p>Prompts append to the current input without submitting. Review the full input in Rex before Send. Plan is a prompt, not native plan mode.</p><p>Edit config.json in the plugin folder to customize prompts, send bindings, client label, and agent aliases. Changes reload automatically.</p><p>Menu arrows require native blocked state. Approve explicitly using your keyboard. No automatic approval key.</p><script>
-let ws,ctx;for(const a of ['permissions','planPrompt','modelPicker','effortPicker','model','effort','agent:0','agent:1','agent:2','agent:3','agent:4','previous','next','interrupt','zoom','more','plan','review','tests','continue','send','up','down','left','right','escape'])action.add(new Option(a,a));
-function connectElgatoStreamDeckSocket(port,uuid,event,info,actionInfo){ctx=uuid;const ai=JSON.parse(actionInfo);action.value=ai.payload.settings.action||'';ws=new WebSocket('ws://127.0.0.1:'+port);ws.onopen=()=>ws.send(JSON.stringify({event,uuid}));action.onchange=()=>ws.send(JSON.stringify({event:'setSettings',context:ctx,payload:{action:action.value}}));}
-</script>
+<!doctype html>
+<meta charset="utf-8">
+<style>
+body{background:#262626;color:#eee;font:13px system-ui,sans-serif;margin:0;padding:14px}h2{font-size:14px;margin:18px 0 8px}h2:first-child{margin-top:0}p{line-height:1.5;margin:7px 0;color:#c4c7ce}label{display:block;margin:10px 0;line-height:1.5}input[type=checkbox]{vertical-align:middle;margin-right:7px}select,textarea,button{box-sizing:border-box;font:inherit;color:#eee;background:#373941;border:1px solid #626571;border-radius:5px;padding:7px}select,textarea{width:100%}textarea{resize:vertical;min-height:68px}button{margin:5px 0}button:disabled{opacity:.45}details{margin-top:18px}summary{font-weight:600}#message{color:#f1d39a;min-height:20px}#connection{color:#eee}code{font-size:12px;overflow-wrap:anywhere}.note{font-size:12px;color:#b7bbc5}
+</style>
+<h2>Rex Agents</h2>
+<p id="connection" role="status" aria-live="polite">Connecting to plugin…</p>
+<p id="selection"></p>
+<p id="message" role="status" aria-live="polite"></p>
+<button id="refresh" type="button">Refresh status</button>
+<h2>Setup and preferences</h2>
+<p class="note">Preferences apply to every Rex Agents key. Changes save automatically.</p>
+<label><input id="allowClipboardFocus" type="checkbox" disabled>Enable visible-pane checks</label>
+<p class="note">Required for controls. Rex temporarily copies its pane ID; the helper restores your clipboard formats. Rex may show a copy notification. Background status checks do not use the clipboard.</p>
+<p class="note">Enable Remote Control in Rex first. Select a ready Codex agent on the deck, then configure its status line once.</p>
+<button id="setup" type="button" disabled>Set up selected Codex agent</button>
+<p class="note">Setup opens Codex settings dialogs and saves the session-ID footer. Your process and unsent input stay in place. Leave Rex alone until setup finishes.</p>
+<label><input id="bringToFront" type="checkbox" disabled>Bring Rex forward when selecting an agent</label>
+<label><input id="animationEnabled" type="checkbox" disabled>Animate working and waiting status</label>
+<details><summary>Prompt shortcuts</summary>
+<p>These append text in Rex. Send checks the same chat, input and turn before submitting. After editing or submitting manually, use the Rex keyboard.</p>
+<label>Review<textarea id="review" maxlength="4000" rows="3" disabled></textarea></label>
+<label>Tests<textarea id="tests" maxlength="4000" rows="3" disabled></textarea></label>
+<label>Continue<textarea id="continue" maxlength="4000" rows="3" disabled></textarea></label>
+<p class="note">Single-line prompts, up to 4000 characters. Saved when you leave the field.</p>
+</details>
+<details><summary>This key’s action</summary>
+<p>The default follows the key’s position. Override only to customize your layout.</p>
+<label>Action<select id="action"><option value="">Position default</option></select></label>
+</details>
+<p class="note">Home’s third row follows the selected agent. Page cycles Home → Questions → Prompts. Reviewer shows and switches between Ask me and Approve for me; request Confirm acts only on the native choice shown in Rex.</p>
+<script src="preferences.js"></script>
+<script src="inspector.js"></script>

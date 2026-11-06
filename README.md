@@ -1,132 +1,91 @@
 # Agent Switchboard
 
-**One deck. Many agents.** A local Stream Deck control surface for coding agents, starting with Rex on macOS and leaving room for future Herdr support.
+A local Stream Deck control surface for **existing Codex CLI agents in Rex on macOS**. Select an agent, see its chat/project/status, and use controls that follow its current state. Agent processes stay running; the integration does not launch a replacement conversation.
 
-**Visible focus:** shared controls now use Rex's supported `pane.copy_id` app action, via a native clipboard-preserving helper. This follows mouse/keyboard tab selection rather than server focus. Clipboard use is opt-in (`allowClipboardFocus: true`) and is enabled on the development Mac with the user's authorization. New installations default to off until their user opts in.
+This is a **local beta**, not a published release. The implemented profile targets the 15-key Stream Deck MK.2. See [compatibility](docs/COMPATIBILITY.md), [release notes](docs/RELEASE-NOTES.md), and the [beta verification checklist](docs/BETA-CHECKLIST.md).
 
-Five agent keys show project, agent type and native status. Press one to select its Rex tab and bring the Rex window to the foreground. Repeated presses keep Rex visible; they never toggle it hidden. Set `bringToFront` to `false` to disable app activation. Shared controls resolve the currently focused pane on every action and reject ordinary shells. Common prompts stage without submission; a separate Send key submits after review.
+## Layout
 
 | Agent 1 | Agent 2 | Agent 3 | Agent 4 | Agent 5 |
 | --- | --- | --- | --- | --- |
-| Previous | Next | Interrupt | Model | More |
-| Plan / Regular | Review | Effort | Permissions | Send |
+| Collapse | Agent bank | Next agent | Reviewer | Page |
+| Contextual | Contextual | Contextual | Contextual | Interrupt |
 
-More contains Zoom, Tests, Continue, the original planning prompt, optional native pickers, additional banks of agents, and menu navigation. Control mappings have property-inspector overrides. Prompts, aliases, palette, animation and bindings are configurable in the installed plugin's `config.json`.
+Home’s third row follows the agent with the white selection dot:
 
-## Status and icons
+| Agent state | Key 1 | Key 2 | Key 3 | Key 4 | Key 5 |
+| --- | --- | --- | --- | --- | --- |
+| Ready / complete / error | Model | Effort (current level) | Zoom | Plan / Default | Interrupt, inactive |
+| Working | Steer | Queue | Zoom | Empty | Interrupt |
+| Background commands only | Empty | Empty | Zoom | Empty | Stop terminals |
+| Question | Up | Down | Confirm | Esc | Interrupt, inactive |
+| Approval request | Up | Down | Confirm shown choice | Esc | Interrupt, inactive |
+| Unknown / authentication | Status | Empty | Zoom | Empty | Interrupt, inactive |
 
-- **Ready:** green; native idle for an identified foreground agent.
-- **Working:** blue with a gentle pulse.
-- **Complete:** green with a 15-second pulse after an observed transition.
-- **Waiting:** amber, slowly pulsing; permission and input labels differ.
-- **Error:** red. **Unknown:** gray. Empty or closed slots show **Idle**.
+Page stays in row two, column five and cycles **Home → Questions → Prompts → Home**. Questions includes native directional keys, Tab, Shift+Tab, Confirm and Esc. Prompts includes Review, Tests, Continue, Send and Zoom. Status changes do not switch pages automatically.
 
-Vector glyphs cover controls, Codex and Claude. A Grok glyph is included as an asset; Grok routing is not implemented. Animation uses SVG frames at four frames per second and can be disabled.
+**Interrupt** stops the agent turn; background commands can continue. When a verified ended turn still has running terminals, the agent key says **BACKGROUND** and the bottom-right key becomes **Stop terminals**. That action stops only the terminal IDs shown for the selected chat, rechecking focus, chat, turn and terminal membership before each request. It never submits text or changes permissions.
 
-## Install on macOS
+Signal uses consistent Lucide control icons, dark control surfaces and thick colored accents inset from the recessed key edges. Agent keys have full status-color backgrounds, larger chat/project/status text, and a faint monochrome Codex watermark. The Effort key uses a brain icon and shows its current native value; the mode key displays the verified **Plan** or **Default** mode. Empty slots say No agent or Closed, without an Idle label. Complete acknowledges locally as Ready after two continuous seconds selected; native agent state is unchanged.
 
-Requires Rex Beta in `/Applications`, Stream Deck 6.6+ (verified on 7.6.1), a 15-key MK.2 with an existing profile, Python 3, Node 20+, and Xcode Command Line Tools (`swiftc`) for building. The native helper is compiled for the build Mac architecture with a macOS 13 deployment target. Stream Deck supplies the plugin runtime.
+## Install a local beta
+
+1. Install Rex and Stream Deck, and authenticate Codex CLI with its existing local daemon.
+2. Open `com.local.rexagents.streamDeckPlugin` in Stream Deck. Import `Rex Agents.streamDeckProfile` and assign it to the MK.2.
+3. Enable **Remote Control** in Rex. Select a Rex Agents key in the Stream Deck editor to open its settings.
+4. Explicitly enable **visible-pane checks**. The helper uses Rex’s `pane.copy_id`, temporarily copying a pane ID and restoring the original clipboard formats. Rex may show a copy notification; background status updates do not query clipboard focus.
+5. Press a live agent key on the deck. If chat metadata is unavailable, use **Set up selected Codex agent** in the settings panel while it is ready. Setup opens native settings dialogs, saves a session-ID/model footer and preserves unsent input. Leave Rex alone until it finishes. It sends no user prompt and does not restart the process.
+
+A full initial install from a downloaded package has not yet been validated on another Mac. The helper is ad-hoc signed and not notarized for public distribution. This beta uses version-sensitive Codex integration paths; unsupported settings versions are refused rather than guessed.
+
+For development installation, with Stream Deck quit:
 
 ```sh
 npm ci --prefix com.local.rexagents.sdPlugin
-node test.js
-node test-controls.js
 python3 build.py
-# Quit Stream Deck, then:
 python3 install.py
 ```
 
-The installer discovers the local device, backs up profiles and any previous plugin, preserves existing profiles and plugin customizations, and adds the separate **Rex Agents** profile. For multiple MK.2 devices use `--device-uuid`. Start Stream Deck and select the profile. No Rex sessions are closed or renamed. Backups and build artifacts are ignored by Git. After reviewing the clipboard-helper tradeoffs below, opt in to shared controls by setting `allowClipboardFocus` to `true` in the installed plugin config; do not enable it for someone else without their consent.
+The development installer backs up existing profiles/plugin files, preserves local configuration and copies a device-bound profile only if it does not already exist. It requires an existing MK.2 profile to identify the device. It does not change Rex sessions or Codex permissions.
 
-The plugin keeps the original `com.local.rexagents` identifier so existing installations can upgrade without replacing their profile.
+## Preferences
 
-## One-press controls (Codex CLI 0.166.0)
+Select any Rex Agents key in the Stream Deck editor. Shared settings include visible-pane checks, bringing Rex forward, status animation, and the Review/Tests/Continue prompt text. Preferences save through Stream Deck global settings and apply to all keys. Prompt text must be plain single-line text, up to 4000 characters. Setup status shows agent discovery, available Codex chat metadata, and selection readiness. Per-key action overrides are under the advanced section.
 
-The main keys use native shortcuts and settings-only presets. There is no separate Send/Apply step:
+Advanced defaults remain in `config.json`: chat/folder aliases, model catalog filters, key bindings and palette. Existing disk customizations are retained by the development installer; explicit shared preferences override their corresponding defaults. No preference in the UI accepts sandbox or approval-policy fields. New installations leave clipboard checks off until enabled by their user.
 
-| Key | Action |
-| --- | --- |
-| Model | Sol → Astra → Luna → repeat |
-| Effort | low → medium → high → xhigh → repeat |
-| Plan | Native Shift+Tab toggles Plan/Regular collaboration mode |
-| Permissions | Approve for me → Ask me → repeat, without changing the captured sandbox/profile or approval policy |
+## Controls and input
 
-Model and effort commands apply for the current session only and preserve unfinished drafts. By default, Model discovers the picker-visible catalog using the focused native Codex executable's `debug models` command. Hidden models are excluded. Each press exports the focused TUI's **current** model settings through Codex's supported settings-preset UI, then applies the next discovered choice. Manual model/effort changes, and a new chat in the same process, are read again on the next press; the cycle does not depend on a remembered index. Current model/effort settings are not polled or displayed continuously.
+- **Model** uses the already-running local Codex daemon. It writes only the selected model and preserves compatible effort. **Reviewer** shows the current request evaluator and switches between Ask me and Approve for me, with before/after boundary checks; it does not change sandbox or approval policy. Empty chats without persisted history may not support Reviewer, effort changes or mode metadata yet.
+- **Zoom** stays in the middle of the third row when the agent is ready, running or has background terminals. **Effort** shows the current level and cycles through the selected model’s supported efforts, wrapping at the end. It writes only effort through the running native daemon and verifies the other settings remain unchanged. **Plan/Default** sends native Shift+Tab once, then waits for a fresh settings read. Unavailable metadata shows Mode or Updating rather than guessing.
+- **Steer** submits already-typed plain text into the running turn with native Enter. **Queue** uses native Tab. Both verify agent/chat/active turn, visible composer, stable input digest and cursor. Empty input and slash/shell commands are refused. Identical uncertain submissions are not retried.
+- **Question and approval controls** require their corresponding native waiting state. Approval Confirm acts on the choice actually shown in Rex; it never guesses an approval scope or automatically selects Always Allow.
+- **Review/Tests/Continue** append a prompt without submitting it. **Send** requires the same chat, latest completed-turn marker, composer digest and cursor captured after staging. It checks twice and rechecks focus before submission. Editing, clearing, manually submitting, changing chats or a failed read invalidates the staged Send. Use Rex’s keyboard after manual editing. Reselecting an agent on the deck clears plugin draft tracking without clearing native input.
 
-These actions take one physical press, but native preset dialogs briefly appear while reading and applying the setting. Wait for the result before typing or using the mouse in Codex. Preset 0 is reserved as a shared, settings-only scratch slot. A preexisting user preset or an externally modified scratch slot causes refusal; it is never silently overwritten. The native New preset dialog supplies the live `/model` settings field; it is read and cancelled without saving. No transcript is parsed or saved. Dialog checks and the settings-field parser use only the current viewport.
+No prompt/input text is persisted by the draft checks. Only hashes, cursor coordinates and chat/turn identity are held in memory. Normal button feedback replaces the key’s label; successful presses do not show Stream Deck checkmarks.
 
-Customize `modelDiscovery.include` to an ordered list of discovered model IDs, or leave it empty for all visible models. `modelDiscovery.effortLevels` limits the catalog-advertised effort levels to low/medium/high/xhigh by default; an empty list permits every advertised level. Effort preserves the current model. Changing models leaves effort selection to Codex's own validation/default behavior. The exact native binary is required; wrapper-only or incompatible versions fail closed. Catalog discovery uses the CLI's configuration context and sign-in; custom launch-profile overrides may differ, and Codex remains responsible for validating availability at application time.
+## Selection, slots and known limits
 
-The old `cycles.models` and `cycles.efforts` lists are used only when `modelDiscovery.enabled` is explicitly false, and for existing fixed-preset setup compatibility. In that fallback, positions are remembered per process. Presets 8–9 retain the permission reviewer commands. The brief label after a press reports the requested choice; Codex's own confirmation is the source of truth.
+The white dot is the last deck-selected or focus-verified agent. Startup performs one visible-pane check when already opted in. Manual Rex mouse/keyboard tab changes cannot silently update it with the currently exposed client API. Each contextual action checks actual focus; a detected focus/process mismatch clears the stale dot and staged tracking and asks you to **Reselect agent**. No background clipboard polling is performed.
 
-Plan is independent of Permissions. Plan changes collaboration mode; it does not change the approval reviewer. The original request-for-a-plan prompt remains in More. Native Plan mode can use Codex's own separate model/effort preferences. No Full Access preset or approval-menu acceptance key is configured.
+Slots stay stable during a plugin run. Closed agents leave holes and new agents append into later banks. **Collapse** refreshes discovery, removes closed slots and brings overflow forward without changing relative agent order, Rex tabs or focus. Failed/incomplete discovery never compacts slots. Agent bank and Next agent cycle forward and wrap. Slots rebuild from discovery when the plugin restarts; persistent ordering is not implemented.
 
-### Setup without restarting running agents
+The Rex API does not offer an atomic compare-process-and-send operation, so a narrow final-check/write race remains. Native status cannot prove the composer is visible; message controls therefore verify its viewport/cursor separately. The clipboard helper also cannot make clipboard restoration OS-atomic. Authenticated Claude controls, other terminals, Windows and alternative deck layouts are not supported by this beta.
 
-After installation and clipboard-focus consent, run:
+## Build and verify
 
 ```sh
-node com.local.rexagents.sdPlugin/setup-presets.js "$HOME/Library/Application Support/com.elgato.StreamDeck/Plugins/com.local.rexagents.sdPlugin"
+npm test --prefix com.local.rexagents.sdPlugin
+npm ci --prefix tools
+python3 package.py
 ```
 
-This focuses each idle supported Codex process, saves native settings presets in its live TUI, registers its process identity, then restores the original tab. It does not restart Codex or apply model, effort, or reviewer changes during setup. Presets persist in Codex config; local process registrations stay in the plugin's ignored `state/` directory. The development Mac's two live Codex processes were configured and their PIDs verified unchanged.
+`package.py` builds Apple Silicon/Intel helper slices, uses the pinned official Elgato CLI to validate and package the plugin, checks the installer for local paths/development state, and produces a local beta ZIP plus SHA-256 checksums under `dist/`. It never uploads or publishes. Intel execution and clean-machine installation still require validation.
 
-Existing user preset slots are rejected rather than overwritten. Only entries already recorded as managed settings may be replaced. Permissions setup snapshots the current native permission selection and changes only `--reviewer` in the two saved commands. If `cycles.autoSetupNewSessions` is true, a previously unregistered process gets this one-time setup on its first cycle press. This can briefly show configuration dialogs before applying the requested reviewer setting; subsequent Permissions presses directly run the preset. Model/Effort use the live-discovery path described above. Busy agents are rejected until ready. New Codex launches read the saved preset list, but each process is registered independently so old caches are not mistaken for configured sessions.
+Automated suites exercise state/focus changes, request identity, input privacy, duplicate suppression, native settings preservation, shared preferences, startup selection, labels and multi-bank lifecycle. Passing fixtures does not establish end-to-end hardware behavior. Live read-only checks and the remaining manual checks are recorded in [the beta checklist](docs/BETA-CHECKLIST.md).
 
-One-time setup inspects **only the current terminal viewport** to recognize configuration-dialog titles, never historical headings in scrollback. No terminal text is written to files or printed. It begins new presets from a native settings-generated single line rather than the user's composer, so multiline drafts are not copied into saved presets. If a dialog is unexpected, setup stops rather than sending an unverified confirmation. Do not interact with the agent while its setup dialogs are being navigated.
+## Project status and attribution
 
-The older model/effort pickers remain available in More as a fallback. Claude one-press controls remain disabled until authenticated testing verifies that agent's native behavior.
+No project license has been selected, and public release/branding remain decisions for the owner. See [third-party notices](THIRD-PARTY-NOTICES.md). No account, hosted status service or separate OpenAI API key is required by the plugin. Status comes from native Rex program-status records; metadata and controls use the supported Rex CLI and the existing local Codex daemon.
 
-## Safety and known limits
-
-- Native OSC 7501 status is checked against foreground process PID, name and app. Missing, mismatched, or older-than-24-hour status becomes Unknown. Only identified Codex and Claude processes receive input; ancestor identity alone is insufficient.
-- Shared actions query the app-selected block ID, then resolve that unique ID across sessions and validate its foreground agent. They do not use server active-window focus or pane labels. Rex Remote Control is required for the focus query and app tab selection; if unavailable, input is refused. Background status refreshes never touch the clipboard.
-- Prompt buttons append bracketed paste without clearing existing text. Review the **entire composer** before Send. Send requires a recent plugin-staged draft in the same pane/process. Manual edits, submission and draft clearing are not tracked; do not manually submit a draft and then press Send.
-- A process can exit after the final identity check and before a write. Rex has no atomic compare-process-and-send operation. Native status also cannot prove the agent is in its composer rather than a manually opened dialog.
-- Status processing is local. Runtime routing/status does not scrape terminal text; preset setup and live Model/Effort controls read known configuration dialogs and their model-settings field. No prompt logging, credential collection or network status service is used. Stream Deck's loopback WebSocket and the supported Rex CLI are the integration boundaries.
-- Physical More/Main page switching and both Codex agent-selection keys passed user testing. Physical staging, model-picker opening, one-step model/effort cycling and session-only apply passed in the disposable SD Test tab. Authenticated Claude tests, live working interruption and hardware animation tests remain outstanding. Software verification does not establish those behaviors.
-
-## Verification
-
-`test.js` covers identity, stale status, draft staging, focus changes, one-shot submission, shell rejection, blocked state, offline behavior and multiple sessions. `test-controls.js` covers model/effort staging, native picker keys, session-only apply, verification gates, expiry, SVG escaping and animation timing. Tests use simulated Rex responses and never send prompts to active agents.
-
-Live local checks verified Codex discovery/native idle status, Stream Deck rendering, and disposable Codex picker navigation/session-only effort apply. The earlier server-only focus check was insufficient: physical testing showed it did not switch the visible tab. App-level selection now replaces that fallback. User physical testing passed More/Main page switching, first-key selection from Claude to Codex, and second-key selection to the other Codex tab after manually selecting Claude with the mouse. These results verify selection commands, not the ability to read visible focus after arbitrary mouse or keyboard changes. Shared input was disabled after that finding; the new opt-in app-focus helper replaces the server-focus read. Existing Default Profile files compared byte-for-byte equal after installation.
-
-## Integration roadmap
-
-| Integration | Status |
-| --- | --- |
-| Rex + Codex CLI | Implemented; verification limits above |
-| Rex + Claude Code | Identification/status/prompt paths implemented; authenticated controls pending |
-| Herdr | Future candidate; no adapter or API assumptions yet |
-| Grok and other agents | Icon assets can be extended; input requires verified process identity and controls |
-
-Rex currently lives in `core.js`. A future Herdr adapter should implement discovery, exact focus, current focus, process identity, status, and guarded input independently. Keep provider state out of the renderer and never substitute heuristic pane-name matching for identity.
-
-## Vendor plugin comparison
-
-Elgato's [ChatGPT & Codex](https://marketplace.elgato.com/product/chatgpt-codex-fb6a7052-2b1a-4500-ba2a-13996edf0b47) plugin supports Activity, New Chat, Dictate, Send Prompt, Steer, Run Skill, Stop, Model, Effort, Speed, Usage and Toggle Panel. Stream Deck + adds dial actions; Neo has infobars. It connects to the ChatGPT desktop app and does not advertise CLI-pane routing in Rex. It is Elgato-developed and explicitly not affiliated with or endorsed by OpenAI. This project remains independent of that plugin.
-
-References: [Rex CLI](https://www.superlogical.com/rex/docs/reference/cli), [program status](https://www.superlogical.com/rex/docs/build/program-status), [Stream Deck SDK](https://docs.elgato.com/streamdeck/sdk/), [Claude controls](https://code.claude.com/docs/en/model-config), [Codex CLI](https://learn.chatgpt.com/docs/codex/cli).
-
-Third-party dependency: `ws` (MIT), pinned by package-lock.json. Local glyphs are custom vector artwork rather than bundled vendor logos. Product and company names belong to their respective owners. No project license has been selected yet.
-
-Window activation uses macOS LaunchServices (`open -a /Applications/Rex Beta.app`) after successful Rex app-level tab selection. Software testing verified the selected Codex terminal had focus in the foreground Rex window. The user also confirmed physical activation from another app. Run `node test-focus.js` for activation ordering, repeat presses, opt-out, and failed-selection behavior.
-
-## Clipboard focus helper and live validation
-
-With the user's authorization, the native helper snapshots every available clipboard item/type into memory, calls Rex's `pane.copy_id`, validates a fresh `block:UUID`, restores the saved formats, and verifies their data matches. It prints only the block ID and a restoration-success flag. No clipboard data is logged or saved to disk. Concurrent helper runs are rejected using a local lock; unsupported clipboard types, missing panes, remote-control refusal or restoration failure block input. If another observed clipboard change occurs, it avoids overwriting it. Clipboard comparison/restoration is not an OS-atomic transaction, so an extremely narrow concurrent-copy race remains; clipboard-history managers may record the temporary pane ID. Do not enable this method if those side effects are unacceptable.
-
-The helper is called only on action presses (and repeat identity checks), not polling. The old background focus dot is suppressed rather than pretending to track focus continuously. Source is `native/visible-pane.swift`; the compiled per-machine binary is ignored by Git and included in local `dist/` builds.
-
-Live checks verified the helper followed mouse selection to Claude and keyboard selection to the other Codex tab, while restoring the clipboard data. In a disposable Codex tab, a fixed prompt staged without submission; switching the visible tab blocked Send; returning to the test tab submitted using Enter, reported Working then Complete, and returned the fixed response without tool use. Model/effort picker navigation passed and was cancelled without applying a change. The original pane was restored. This corrects the earlier assumption that Tab was the normal Codex Submit binding; the shipped default is now Enter.
-
-`test.js` now deliberately supplies stale server focus and multiple sessions to verify the visible block ID wins; it also tests failed clipboard queries, closed panes, shells, owner mismatch, focus-change rejection and draft guards. User physical testing subsequently passed Model staging, Send opening the model picker, one-step-and-stop model cycling, Effort opening its picker, one-step-and-stop effort cycling, and Apply confirming a session-only change. Rex displays a copy toast for the focus query; this is a known UX cost of the supported `pane.copy_id` action. No silent-query alternative is implemented. Claude authenticated controls and working interruption are still unverified.
-
-## One-press verification update
-
-Tests cover independent cycle wraparound, Plan's native shortcut, preserving captured permission boundaries, refusal after preset changes, and process readiness. The setup regression test ensures old scrollback headings cannot be mistaken for current dialogs. In disposable-session tests, one-press model, effort and reviewer presets preserved a multiline draft without submitting it; the actual reviewer changed to auto review and back to user review. Native Plan toggled both directions. The two existing agents were subsequently configured in place with the original processes retained. The new layout is rendered in Stream Deck; physical one-press testing is pending.
-
-### Dynamic model discovery verification
-
-Discovery tests cover hidden-model filtering, ordered custom subsets, manual state changes, catalog-supported effort choices, malformed snapshots, scratch-slot ownership, and process identity. A disposable Codex TUI verified actual model/effort application after external native setting changes, while preserving a two-line draft without submission. No existing agent was restarted or sent a test prompt. Physical testing of this updated path remains pending.
+References: [Rex CLI](https://www.superlogical.com/rex/docs/reference/cli), [program status](https://www.superlogical.com/rex/docs/build/program-status), [Stream Deck SDK](https://docs.elgato.com/streamdeck/sdk/).

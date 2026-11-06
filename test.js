@@ -23,6 +23,7 @@ const defaults=require('./com.local.rexagents.sdPlugin/config.json');
     return null;
   };
   const b=new Bridge(config,run,async()=>{},async()=>focus);
+  let composerRead=0;b.readStagedComposer=async()=>({chatId:'fixture-chat',turnStamp:'turn-1',hash:composerRead++?'staged':'empty',cursor:{row:2,column:8},empty:composerRead===1});
   assert.equal((await b.focused()).block,'b1'); // Visible ID wins over stale server focus, even with multiple sessions.
   await b.stage('plan');assert(calls.some(x=>x.args[0]==='send'&&x.input.startsWith('\x1b[200~')));
   focus='b2';await assert.rejects(()=>b.send(),/Focus or process changed/);
