@@ -57,6 +57,27 @@ The installed Codex 0.166.0 warning explains that command-line configuration ove
 
 Native controls require both independently verified pieces. The adapter refuses to guess a chat from its title, footer text, directory or the daemon's loaded-chat list. Further integration work is required before claiming Herdr native-control compatibility. The source branch and package remain experimental; the installed validated Rex plugin has not been replaced.
 
+### Chat-ID investigation — November 6, 2026
+
+The missing reference matches an existing upstream limitation, rather than a missing hook installation. Herdr 0.9.5's managed Codex hook v10 requires `HERDR_ENV=1`, `HERDR_SOCKET_PATH` and `HERDR_PANE_ID` in its own process environment. The installed hook matches the upstream implementation. The existing Codex daemon had none of these three variables. Codex 0.167.0's hook registry snapshots the server process environment, and its command runner replays that snapshot when launching hooks. Its daemon README explicitly states that per-client environment isolation is not provided. A new terminal's correct pane environment therefore does not supply the missing hook context.
+
+An isolated reproduction ran the installed hook against a private capture socket with fixture IDs, without calling any real Herdr API. With no Herdr environment it exited successfully and sent zero reports. Supplying the pane context produced one report. A mismatched inherited `CODEX_THREAD_ID` and a missing transcript path each produced zero reports. This establishes the hook's gates; it does not claim to have instrumented a real SessionStart invocation inside the user's daemon.
+
+Herdr tracks this in [#4649](https://github.com/herdrdev/herdr/issues/4649) and [#4814](https://github.com/herdrdev/herdr/issues/4814). The maintainer identifies the shared daemon's inherited environment as the problem and is waiting on Codex. The relevant Codex requests are [hook-specific client context #44902](https://github.com/openai/codex/issues/44902) and [terminal misattribution #48500](https://github.com/openai/codex/issues/48500). Their proposed configuration is not an available setting. Disabling the daemon is the documented temporary workaround, but removes the daemon access required by this plugin's native controls. Restarting the shared daemon from one Herdr pane would also not establish independent identities for other panes.
+
+Upstream reports also describe existing hook references pointing to the wrong pane or a child thread. That was not reproduced on this host, whose daemon has no Herdr context. It nevertheless means a reported `herdr:codex` ID plus matching directory is not independent proof of the displayed chat. The experimental adapter needs client-bound corroboration before its advanced controls can be treated as supported, even on a machine where the hook ID is populated.
+
+A bounded alternative was probed in two disposable daemon-backed TUIs in the same project:
+
+- The native session-only command `/title thread-id` made Herdr expose distinct thread-ID prefixes for both panes. Each prefix uniquely matched a loaded ID in that foreground process's daemon; the full ID, directory and displayed native footer agreed in this controlled test.
+- Codex 0.166.0 truncates each title item to 32 characters: a 29-character UUID prefix followed by `...`. Any future resolver must require an explicit title-ID mode, a complete unique match, stable foreground/process/server identity and fresh title reads. It must refuse missing, truncated-beyond-recognition or ambiguous matches and subagent references. A human chat-name match is not equivalent.
+- After `/new` and choosing the current worktree, the session-only title setting reset to the default project title. Reapplying `/title thread-id` exposed the new ID without changing the TUI PID; the other pane retained its original ID. Automatic new/resume/fork tracking is not validated.
+- The title route is not implemented or enabled in the plugin. It would need deliberate setup and further transition tests; it would not repair Herdr's own saved native session references.
+
+Both disposable TUIs and their named server were removed. Global Codex configuration and hooks retained their original hashes, and the original Rex agents remained running. No runtime or installed-plugin change was made for this investigation.
+
+Source references: [Herdr v0.9.5 hook](https://github.com/herdrdev/herdr/blob/v0.9.5/src/integration/assets/codex/herdr-agent-state.sh), [Codex v0.167.0 hook registry](https://github.com/openai/codex/blob/rust-v0.167.0/codex-rs/hooks/src/registry.rs), [Codex daemon environment contract](https://github.com/openai/codex/blob/rust-v0.167.0/codex-rs/app-server-daemon/README.md), [native title commands](https://learn.chatgpt.com/docs/developer-commands#configure-terminal-title-items-with-title).
+
 Full draft-submission parity requires an API exposing a trustworthy input cursor and terminal mode alongside a consistent current-pane snapshot.
 
 References: [Herdr socket API](https://herdr.dev/tui/docs/socket-api/), [agent identity and lifecycle](https://herdr.dev/tui/docs/agents/). Protocol details were also checked against the installed 0.9.5 schema.
