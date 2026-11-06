@@ -4,7 +4,7 @@
   "private": true,
   "description": "Guarded local Stream Deck controls for terminal coding agents",
   "scripts": {
-    "test": "node ../test.js && node ../test-controls.js && node ../test-focus.js && node ../test-onepress.js && node ../test-preset-setup.js"
+    "test": "node ../test.js && node ../test-controls.js && node ../test-focus.js && node ../test-onepress.js && node ../test-preset-setup.js && node ../test-model-discovery.js"
   },
   "dependencies": {
     "@iarna/toml": "2.2.5",

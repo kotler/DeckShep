@@ -13,18 +13,28 @@ class Setup{
  async wait(a,test,message){for(let i=0;i<35;i++){const s=await this.screen(a);if(test(s))return;await pause(80);}throw Error(message);}
  async key(a,...keys){await this.b.checked(a,true);await this.b.run(['send-key','-s',a.session,'-b',a.block,...keys]);}
  async menu(a){await this.key(a,'ctrl+x','p');await this.wait(a,s=>/^\s*Presets\s*$/m.test(s),'Presets dialog not open');}
+ async currentModel(a){
+  await this.menu(a);await this.key(a,'s');await this.wait(a,s=>s.includes('Start preset from current settings'),'Settings preset dialog missing');
+  await this.key(a,'enter');await this.wait(a,s=>/^\s*New preset\s*$/m.test(s),'New preset dialog missing');
+  const view=await this.screen(a),field=view.split(/^\s*New preset\s*$/m).at(-1);
+  const matches=[...field.matchAll(/^\s*› (\/model [a-zA-Z0-9][a-zA-Z0-9._:/-]*(?: --reasoning=[a-zA-Z0-9_-]+)?(?: --speed=[a-zA-Z0-9_-]+)?)\s*$/gm)];
+  // Read only the known native settings field; never a transcript or the user's composer.
+  for(let i=0;i<4;i++){const s=await this.screen(a);if(!/^\s*(New preset|Start preset from current settings|Presets)\s*$/m.test(s))break;await this.key(a,'escape');}
+  await this.wait(a,s=>!/^\s*(New preset|Start preset from current settings|Presets)\s*$/m.test(s),'Settings dialog did not close');
+  if(matches.length!==1)throw Error('Native model settings field unavailable');return matches[0][1];
+ }
  async store(a,slot,input,snapshot=false){
   await this.menu(a);
   // Start from a settings-generated single line, never from the user's composer draft.
   await this.key(a,'s');await this.wait(a,s=>s.includes('Start preset from current settings'),'Settings preset dialog missing');
-  if(snapshot)await this.key(a,'down','enter');else await this.key(a,'enter');
+  if(snapshot===true||snapshot==='permissions')await this.key(a,'down','enter');else await this.key(a,'enter');
   await this.wait(a,s=>/^\s*New preset\s*$/m.test(s),'New preset dialog missing');
   if(!snapshot){await this.key(a,'ctrl+u');await this.b.checked(a,true);await this.b.run(['send','-s',a.session,'-b',a.block],'\x1b[200~'+input+'\x1b[201~');}
   await this.key(a,'enter');await this.wait(a,s=>s.includes('Save preset to slot'),'Slot picker missing');
   const before=fs.statSync(P.codexFile()).mtimeMs;await this.key(a,slot);
   await this.wait(a,s=>s.includes('Replace preset '+slot+'?')||(!s.includes('Save preset to slot')&&!/^\s*New preset\s*$/m.test(s)),'Slot selection incomplete');
   const s=await this.screen(a);if(s.includes('Replace preset '+slot+'?'))await this.key(a,'enter');
-  for(let i=0;i<35;i++){const v=P.readPresets()[slot]?.input;if(v&&(snapshot?v.startsWith('/permissions '):v===input)&&fs.statSync(P.codexFile()).mtimeMs!==before)return v;await pause(80);}
+  for(let i=0;i<35;i++){const v=P.readPresets()[slot]?.input;if(v&&(snapshot?(snapshot==='model'?/^\/model [a-zA-Z0-9][a-zA-Z0-9._:/-]*.* --speed=\S+$/.test(v):v.startsWith('/permissions ')):v===input)&&fs.statSync(P.codexFile()).mtimeMs!==before)return v;await pause(80);}
   throw Error('Preset save not confirmed');
  }
  async configure(a,config,file){
@@ -32,7 +42,7 @@ class Setup{
   const registry=P.readRegistry(file);const key=token(a);
   if(registry.agents[key]?.signature===P.signature(config)){P.validateOnDisk(registry.agents[key].entries);return;}
   // Existing slots are never replaced unless they are managed settings, not user prompts.
-  const known=Object.values(registry.agents).flatMap(x=>x.entries||[]);
+  const known=[...Object.values(registry.agents).flatMap(x=>x.entries||[]),...(registry.scratch?[registry.scratch]:[])];
   for(const [slot,v]of Object.entries(P.readPresets()))if(v.input&&!known.some(e=>e.slot===slot&&e.input===v.input))throw Error('Existing user preset slots need manual allocation');
   const baseline=await this.store(a,'9',null,true);const entries=P.choices(config,baseline);
   // Slot 9 is already the exact baseline snapshot. Other commands are saved, not executed.

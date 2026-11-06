@@ -56,5 +56,15 @@
       "xhigh"
     ],
     "autoSetupNewSessions": true
+  },
+  "modelDiscovery": {
+    "enabled": true,
+    "include": [],
+    "effortLevels": [
+      "low",
+      "medium",
+      "high",
+      "xhigh"
+    ]
   }
 }

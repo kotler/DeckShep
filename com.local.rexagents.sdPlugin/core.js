@@ -117,7 +117,9 @@ class Bridge{
     const a=await this.focused();await this.checked(a,true);
     if(a.app!=='codex'||!this.config.controlVerified?.codex)throw new Error('Cycle controls not verified for this agent');
     if(this.picker)throw new Error('Close the native picker first');
-    const file=path.join(__dirname,'state','native-presets.json');let registry=P.readRegistry(file),record=registry.agents[token(a)];
+    const file=path.join(__dirname,'state','native-presets.json');
+    if(kind!=='permissions'&&this.config.modelDiscovery?.enabled)return new (require('./model-controls').ModelControls)(this).cycle(kind,a,file);
+    let registry=P.readRegistry(file),record=registry.agents[token(a)];
     if(!record&&this.config.cycles?.autoSetupNewSessions){await new (require('./setup-presets').Setup)(this).configure(a,this.config.cycles,file);registry=P.readRegistry(file);record=registry.agents[token(a)];}
     if(!record||record.signature!==P.signature(this.config.cycles))throw new Error('Native presets need setup in this session');
     const entries=record.entries.filter(e=>e.kind===kind);if(!entries.length)throw new Error('No cycle entries');P.validateOnDisk(entries);
