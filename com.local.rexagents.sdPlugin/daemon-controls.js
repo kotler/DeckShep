@@ -35,6 +35,7 @@ function footerId(view,cursorRow){
  return candidates[0].match[1].toLowerCase();
 }
 async function readFooter(bridge,agent){
+ if(bridge.backend==='herdr')return bridge.nativeChatId(agent);
  const args=['block','call','-s',agent.session,'-b',agent.block,'format',JSON.stringify({format:'vt',extra_cursor:true,max_bytes:960000})];
  const deadline=Date.now()+4000;
  for(let attempt=0;attempt<40;attempt++){
@@ -187,7 +188,7 @@ class DaemonControls{
    }
    confirmed??=await readPermissionSettings(rpc,id);
    if(!confirmed||!sameExceptEffort(current,confirmed,target))throw Error('Effort or preserved settings unconfirmed; check Codex');
-   this.b.lastEffort={session:agent.session,block:agent.block,pid:agent.pid,chatId:id,effort:target,at:Date.now()};
+   this.b.lastEffort={session:agent.session,block:agent.block,pid:agent.pid,...agent.terminalId?{terminalId:agent.terminalId}:{},chatId:id,effort:target,at:Date.now()};
    return{kind:'effort',label:target};
   }finally{rpc.close();}
  }
@@ -206,7 +207,7 @@ class DaemonControls{
    await rpc.request('thread/settings/update',{threadId:id,model:chosen.id});
    for(let i=0;i<10;i++){
     const confirmed=await loadedThread(rpc,id);
-    if(confirmed.model===chosen.id&&confirmed.effort===current.effort){this.b.lastModel={session:agent.session,block:agent.block,pid:agent.pid,model:chosen.id,at:Date.now()};return {kind:'model',label:chosen.label};}
+    if(confirmed.model===chosen.id&&confirmed.effort===current.effort){this.b.lastModel={session:agent.session,block:agent.block,pid:agent.pid,...agent.terminalId?{terminalId:agent.terminalId}:{},chatId:id,model:chosen.id,at:Date.now()};return {kind:'model',label:chosen.label};}
     await pause(100);
    }
    throw Error('Model change unconfirmed; check Codex');
@@ -235,7 +236,7 @@ class DaemonControls{
    }
    confirmed??=await readPermissionSettings(rpc,id);
    if(!confirmed||confirmed.reviewer!==target||!sameOtherSettings(current,confirmed))throw Error('Reviewer or permission boundaries unconfirmed; check Codex');
-   this.b.lastReviewer={session:agent.session,block:agent.block,pid:agent.pid,chatId:id,reviewer:target,at:Date.now()};
+   this.b.lastReviewer={session:agent.session,block:agent.block,pid:agent.pid,...agent.terminalId?{terminalId:agent.terminalId}:{},chatId:id,reviewer:target,at:Date.now()};
    return {kind:'permissions',label:target==='user'?'Ask me':'Approve for me'};
   }finally{rpc.close();}
  }

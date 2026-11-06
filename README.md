@@ -89,3 +89,7 @@ Automated suites exercise state/focus changes, request identity, input privacy, 
 No project license has been selected, and public release/branding remain decisions for the owner. See [third-party notices](THIRD-PARTY-NOTICES.md). No account, hosted status service or separate OpenAI API key is required by the plugin. Status comes from native Rex program-status records; metadata and controls use the supported Rex CLI and the existing local Codex daemon.
 
 References: [Rex CLI](https://www.superlogical.com/rex/docs/reference/cli), [program status](https://www.superlogical.com/rex/docs/build/program-status), [Stream Deck SDK](https://docs.elgato.com/streamdeck/sdk/).
+
+## Herdr development branch
+
+An opt-in Herdr backend is implemented on `codex/herdr-feature-parity`. It targets local Herdr TUI 0.9.5 / protocol 22. Protocol and fixture tests cover its guards; live validation is pending. Send, Steer, Queue and prompt staging remain unavailable because the public pane-read API does not provide an input cursor. See [Herdr setup and verification](docs/HERDR.md).

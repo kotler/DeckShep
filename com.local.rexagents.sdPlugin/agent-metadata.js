@@ -2,7 +2,7 @@
 const path=require('node:path');
 const {DaemonRpc,socketFor,readFooter,readPermissionSettings}=require('./daemon-controls');
 const {latestTurn,backgroundState}=require('./background-controls');
-const key=agent=>[agent.session,agent.block,agent.pid,agent.cwd].join('|');
+const key=agent=>[agent.session,agent.block,agent.pid,agent.cwd,agent.terminalId||'',agent.herdrChatId||''].join('|');
 const activityFields=['backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt'];
 function restore(agent,value){
  for(const [field,item]of Object.entries(value))if(!activityFields.includes(field)||value.activityStatusAt===agent.statusAt)agent[field]=item;
@@ -34,7 +34,7 @@ class AgentMetadata{
     if(['user','auto_review'].includes(settings.reviewer))reviewer=settings.reviewer;
    }}catch{}
    // Names and active-turn IDs are metadata; never retain previews or turn items.
-   return{chatId:id,chatName:typeof thread.name==='string'&&thread.name.trim()?thread.name.trim():'Untitled chat',project:this.b.config.projectAliases?.[thread.cwd]||path.basename(thread.cwd)||agent.project,model:typeof thread.model==='string'?thread.model:null,effort:typeof thread.reasoningEffort==='string'?thread.reasoningEffort:null,collaborationMode,reviewer,runId,...activity,metadataAt:started};
+   return{chatId:id,chatName:typeof thread.name==='string'&&thread.name.trim()?thread.name.trim():this.b.backend==='herdr'&&agent.chatName?agent.chatName:'Untitled chat',project:this.b.config.projectAliases?.[thread.cwd]||path.basename(thread.cwd)||agent.project,model:typeof thread.model==='string'?thread.model:null,effort:typeof thread.reasoningEffort==='string'?thread.reasoningEffort:null,collaborationMode,reviewer,runId,...activity,metadataAt:started};
   }finally{rpc.close();}
  }
  async refresh(agents,force=false){

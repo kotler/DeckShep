@@ -1,3 +1,10 @@
+# Herdr development build 1.2.0 — November 6, 2026
+
+- Opt-in local Herdr 0.9.5 / protocol 22 backend with explicit session selection and foreground/process/session guards.
+- Native Codex controls reuse the guarded daemon path; Herdr focus checks use its API without the clipboard.
+- Send, Steer, Queue and prompt staging stay unavailable until a trustworthy composer cursor is exposed.
+- 27 automated groups cover the Rex baseline and new Herdr transport, routing and controller-switch tests. Live Herdr and physical validation remain pending; see HERDR.md.
+
 # Local beta changes — November 5, 2026
 
 - Signal controls with thick inset color accents, full-color live agent keys and a white selection dot.

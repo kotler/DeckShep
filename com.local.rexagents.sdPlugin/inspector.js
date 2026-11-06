@@ -1,26 +1,32 @@
 'use strict';
 let socket,registration,actionContext,shared=null,lastStatus;
 const byId=id=>document.getElementById(id);
+const connectionFields=['backend','herdrSocketPath'];
 const booleans=['allowClipboardFocus','bringToFront','animationEnabled'],promptNames=['review','tests','continue'];
 for(const action of ['collapse','banknext','next','more','model','effort','plan','permissions','interrupt','stopTerminals','zoom','steer','queue','review','tests','continue','send','questionPrev','up','questionNext','answer','left','down','right','escape','approvalUp','approvalDown','approvalConfirm','approvalEscape','agent:0','agent:1','agent:2','agent:3','agent:4','none'])byId('action').add(new Option(({effort:'Effort (cycle supported levels)',permissions:'Reviewer (Ask me / Approve for me)',more:'Page selector',interrupt:'Interrupt',stopTerminals:'Stop background terminals',plan:'Plan / Default',banknext:'Agent bank',next:'Next agent',approvalConfirm:'Confirm shown approval choice'})[action]||action,action));
 function send(event,payload,context=registration){if(socket?.readyState===1)socket.send(JSON.stringify({event,context,payload,...event==='sendToPlugin'||event==='setSettings'?{action:'com.local.rexagents.key'}:{}}));}
 function query(){send('sendToPlugin',{kind:'status'},actionContext);}
 function fill(status){
  lastStatus=status;shared=status.preferences;
- byId('connection').textContent=status.offline?'Rex unavailable — open Rex and enable Remote Control':`${status.agents} agent${status.agents===1?'':'s'} · ${status.metadata}/${status.codex} Codex chats identified`;
+ const herdr=status.backend==='herdr';
+ byId('herdrConnection').hidden=!herdr;byId('herdrHelp').hidden=!herdr;byId('rexSetup').hidden=herdr;
+ for(const name of connectionFields){byId(name).disabled=status.setupBusy;if(document.activeElement!==byId(name))byId(name).value=shared[name]||'';}
+ byId('connection').textContent=status.offline?(herdr?'Herdr unavailable — choose its running session socket':'Rex unavailable — open Rex and enable Remote Control'):`${status.agents} agent${status.agents===1?'':'s'} · ${status.metadata}/${status.codex} Codex chats identified`;
  byId('selection').textContent=status.selectionNotice?'Rex focus changed. Select an agent on the deck.':status.selected?`Selected: ${status.selected.app} · ${status.selected.state}${status.selected.mode?' · '+status.selected.mode:''}`:'Select an agent on the deck to enable controls.';
  byId('message').textContent=status.message||'';
  for(const key of booleans){byId(key).disabled=status.setupBusy;if(document.activeElement!==byId(key))byId(key).checked=!!shared[key];}
  for(const name of promptNames){byId(name).disabled=status.setupBusy;if(document.activeElement!==byId(name))byId(name).value=shared.prompts[name];}
- byId('setup').disabled=status.offline||status.setupBusy||!shared.allowClipboardFocus||status.selected?.app!=='codex'||!['idle','done'].includes(status.selected?.state);
+ byId('allowClipboardFocus').disabled=herdr||status.setupBusy;
+ byId('bringToFront').disabled=herdr||status.setupBusy;
+ byId('setup').disabled=herdr||status.offline||status.setupBusy||!shared.allowClipboardFocus||status.selected?.app!=='codex'||!['idle','done'].includes(status.selected?.state);
 }
 function save(){
  if(!shared)return;
- const next={...shared,prompts:{...shared.prompts}};for(const key of booleans)next[key]=byId(key).checked;for(const name of promptNames)next.prompts[name]=byId(name).value;
+ const next={...shared,prompts:{...shared.prompts}};for(const key of connectionFields)next[key]=byId(key).value;for(const key of booleans)next[key]=byId(key).checked;for(const name of promptNames)next.prompts[name]=byId(name).value;
  try{shared=RexPreferences.normalize(next);send('setGlobalSettings',{version:1,preferences:shared});byId('message').textContent='Preferences saved';}
  catch(error){byId('message').textContent=error.message;}
 }
-for(const key of [...booleans,...promptNames])byId(key).addEventListener('change',save);
+for(const key of [...booleans,...promptNames,...connectionFields])byId(key).addEventListener('change',save);
 byId('refresh').addEventListener('click',query);
 byId('setup').addEventListener('click',()=>{byId('setup').disabled=true;send('sendToPlugin',{kind:'setupFooter'},actionContext);});
 byId('action').addEventListener('change',()=>send('setSettings',{action:byId('action').value},actionContext));

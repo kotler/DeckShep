@@ -12,17 +12,17 @@ function agentLines(agent,aliases={}){
  return[ellipsize(aliases[agent.block]||agent.chatName||(agent.app==='codex'?'Name unavailable':'Untitled agent'),120,26),ellipsize(agent.project||'Unknown folder',120,22),status];
 }
 function shortModel(model){return clean(model).replace(/^gpt[- ]?/i,'').replace(/[-_]+/g,' ').replace(/\b[a-z]/g,c=>c.toUpperCase());}
-function sameTarget(a,b){return a&&b&&a.session===b.session&&a.block===b.block&&a.pid===b.pid;}
+function sameTarget(a,b){return a&&b&&a.session===b.session&&a.block===b.block&&a.pid===b.pid&&(a.terminalId||null)===(b.terminalId||null);}
 function modeLines(bridge){
  const agent=bridge.agents?.find(a=>sameTarget(bridge.lastTarget,a));
  if(!agent)return['Mode'];
- if(sameTarget(bridge.lastModeRequest,agent)&&bridge.lastModeRequest.at>=(agent.metadataAt||0))return['Updating…'];
+ if(sameTarget(bridge.lastModeRequest,agent)&&(!bridge.lastModeRequest.chatId||bridge.lastModeRequest.chatId===agent.chatId)&&bridge.lastModeRequest.at>=(agent.metadataAt||0))return['Updating…'];
  return[({plan:'Plan',default:'Default'})[agent.collaborationMode]||'Mode'];
 }
 function modelLines(bridge){
  const target=bridge.lastTarget;if(!target)return['Model','Select agent'];
  const agent=bridge.agents?.find(a=>sameTarget(a,target));if(!agent)return['Model','Agent closed'];
- const verified=sameTarget(bridge.lastModel,target)&&bridge.lastModel.at>(agent.metadataAt||0)?bridge.lastModel.model:agent.model;
+ const verified=sameTarget(bridge.lastModel,target)&&(!bridge.lastModel.chatId||bridge.lastModel.chatId===agent.chatId)&&bridge.lastModel.at>(agent.metadataAt||0)?bridge.lastModel.model:agent.model;
  return['Model',ellipsize(verified?shortModel(verified):'Unknown',126,16)];
 }
 function effortLines(bridge){

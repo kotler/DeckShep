@@ -1,4 +1,8 @@
 {
+  "backend": "rex",
+  "herdr": {
+    "socketPath": ""
+  },
   "clientLabel": "",
   "statusMaxAgeMs": 86400000,
   "draftMaxAgeMs": 300000,

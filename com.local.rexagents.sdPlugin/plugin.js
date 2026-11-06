@@ -7,13 +7,16 @@ const {controlAccent}=require('./signal-visuals');
 const {CompletionDisplay}=require('./completion-display');
 const preferences=require('./preferences');
 const configPath=path.join(__dirname,'config.json');let diskConfig=JSON.parse(fs.readFileSync(configPath)),config=diskConfig;
-const bridge=new Bridge(config),metadata=new AgentMetadata(bridge);
+const backendKey=c=>(c.backend||'rex')+'|'+(c.backend==='herdr'?c.herdr?.socketPath||'':'');
+function makeBridge(c){const b=c.backend==='herdr'?new(require('./herdr-bridge').HerdrBridge)(c):new Bridge(c);b.backendKey=backendKey(c);return b;}
+let bridge=makeBridge(config),metadata=new AgentMetadata(bridge),actionBusy=false;
 const completion=new CompletionDisplay();
 let globalPreferences={},settingsError='',setupBusy=false,inspectorMessage='';
-function loadConfig(){try{diskConfig=JSON.parse(fs.readFileSync(configPath));settingsError='';}catch{settingsError='Settings file invalid; using the last valid defaults';}config=preferences.apply(diskConfig,globalPreferences);bridge.config=config;}
+function loadConfig(){try{diskConfig=JSON.parse(fs.readFileSync(configPath));settingsError='';}catch{settingsError='Settings file invalid; using the last valid defaults';}const next=preferences.apply(diskConfig,globalPreferences);if(backendKey(next)!==bridge.backendKey){if(actionBusy||setupBusy)return;bridge=makeBridge(next);metadata=new AgentMetadata(bridge);startupSelectionRead=false;bank=0;page=0;transitions.clear();contextState={stamp:null,armedAt:0};for(const k of keys.values()){k.notice=null;k.feedback=null;}}config=next;bridge.config=config;}
 const args=process.argv.slice(2),arg=k=>args[args.indexOf(k)+1],ws=new WebSocket('ws://127.0.0.1:'+arg('-port'));
 const keys=new Map(),transitions=new Map();let page=0,bank=0,busy=false,offline=true,queue=Promise.resolve(),metadataBusy=false,metadataAgain=false,startupSelectionRead=false,contextState={stamp:null,armedAt:0};
 const emit=(event,context,payload)=>{if(ws.readyState===1)ws.send(JSON.stringify({event,context,payload}));};
+const backendName=()=>config.backend==='herdr'?'Herdr':'Rex';
 const clean=s=>String(s||'').replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g,'').slice(0,15);
 function selected(){return bridge.agents?.find(a=>sameTarget(bridge.lastTarget,a));}
 function mapping(k){
@@ -22,28 +25,28 @@ function mapping(k){
  const {column:c,row:r}=k.coordinates;return r===0?'agent:'+c:C.layout(page,selected())[(r-1)*5+c];
 }
 function bankLines(){
- if(offline)return['Agents ▶','Rex offline'];
+ if(offline)return['Agents ▶',backendName()+' offline'];
  const visible=bridge.slots.slice(bank*5,bank*5+5).filter(s=>bridge.agents?.some(a=>a.session===s.session&&a.block===s.block)).length;
  const total=Math.max(1,Math.ceil(bridge.slots.length/5)),outside=Math.max(0,(bridge.agents?.length||0)-visible);
  return['Agents ▶',...(total>1?[`bank ${bank+1}/${total}`]:[]),...(outside?[`${outside} off-page`]:bridge.agents?.length?[]:['No agents'])];
 }
 function capture(k){
  const target=selected(),action=mapping(k),contextStamp=C.stamp(target,page);
- return{action,page,stamp:contextStamp,target:C.snapshot(action.startsWith('agent:')?k.target:target),armedAt:contextState.armedAt,verifyChat:C.needsChat(action,target)};
+ return{action,page,backendKey:bridge.backendKey,stamp:contextStamp,target:C.snapshot(action.startsWith('agent:')?k.target:target),armedAt:contextState.armedAt,verifyChat:C.needsChat(action,target)};
 }
 function render(){
  metadata.hydrate(bridge.agents||[]);const now=Date.now(),target=selected(),mode=C.modeOf(target),contextStamp=C.stamp(target,page);
  completion.update(bridge.agents||[],target,now);
  if(contextState.stamp!==contextStamp)contextState={stamp:contextStamp,armedAt:now+350};
  for(const[ctx,k]of keys){
-  const action=mapping(k);let icon=({effortIncrease:'blank',effortDecrease:'blank',plan:'blank',permissions:'reviewer',more:'more',questions:'more',prompts:'more',back:'previous',questionPrev:'previous',questionNext:'next',answer:'send',approvalUp:'up',approvalDown:'down',approvalConfirm:'permissions',approvalEscape:'escape',none:'blank',status:'blank'})[action]||action;
+  const action=mapping(k);let icon=({effortIncrease:'blank',effortDecrease:'blank',plan:'blank',permissions:'reviewer',more:'more',questions:'more',prompts:'more',back:'previous',questionPrev:'previous',questionNext:'next',answer:'send',approvalUp:'up',approvalDown:'down',approvalConfirm:'permissions',approvalEscape:'escape',none:'blank',inputInfo:'blank',status:'blank'})[action]||action;
   let lines=[],color='#233a50',p=0,badge='';
   if(action.startsWith('agent:')){
    const slot=bridge.slots[bank*5+Number(action.split(':')[1])],a=bridge.agents?.find(a=>a.block===slot?.block&&a.session===slot?.session);k.target=a;
    if(a){const shown=completion.agent(a),prior=transitions.get(a.block);if(!prior||prior.state!==shown.state||prior.pid!==a.pid||prior.statusAt!==a.statusAt)transitions.set(a.block,{state:shown.state,pid:a.pid,statusAt:a.statusAt,at:now});icon=a.app;lines=agentLines(shown,config.aliases);color=C.isBackground(shown)?'#126b78':config.palette[shown.state==='idle'?'ready':shown.state]||config.palette.unknown;p=pulse(C.isBackground(shown)?'idle':shown.state,now-transitions.get(a.block).at,config.animation);if(sameTarget(bridge.lastTarget,a))badge='selected';}
-   else{icon='empty';lines=offline?['Rex offline','UNKNOWN']:slot?['Closed']:['No agent'];color=offline?config.palette.error:config.palette.idle;}
+   else{icon='empty';lines=offline?[backendName()+' offline','UNKNOWN']:slot?['Closed']:['No agent'];color=offline?config.palette.error:config.palette.idle;}
   }else{
-   const gaps=bridge.slotGaps(),names={collapse:['Collapse',...(offline?['Rex offline']:gaps?[`${gaps} gap${gaps===1?'':'s'}`]:[])],banknext:bankLines(),next:['Next agent'],model:modelLines(bridge),effort:effortLines(bridge),effortIncrease:['Effort +'],effortDecrease:['Effort −'],permissions:reviewerLines(bridge),plan:modeLines(bridge),interrupt:['Interrupt',mode==='working'?'running':'not running'],stopTerminals:['Stop terminals',`${target?.backgroundIds?.length||0} running`],steer:['Steer','typed message'],queue:['Queue','typed message'],zoom:['Zoom'],up:['Up'],down:['Down'],left:['Left'],right:['Right'],questionPrev:['Shift+Tab','question'],questionNext:['Tab','question'],answer:['Confirm','Enter'],escape:['Esc','question'],approvalUp:['Up','approval'],approvalDown:['Down','approval'],approvalConfirm:['Confirm','shown choice'],approvalEscape:['Esc','approval'],review:['Review','draft'],tests:['Tests','draft'],continue:['Continue','draft'],send:bridge.draft?['Send',bridge.draft.action]:['Send','no draft'],more:[`Page ${page+1}/3`,['Home','Questions','Prompts'][page],page===0?({ready:'Ready',working:'Working',background:'Background',question:'Question',approval:'Approval',unknown:target?'Check Rex':'Select agent'})[mode]:'next page'],questions:['Questions'],prompts:['Prompts'],back:['Back','Questions'],none:[],status:target?['Check Rex',target.kind==='auth'?'Authentication':'']:[bridge.selectionNotice?'Reselect':'Select','agent']};
+   const gaps=bridge.slotGaps(),names={collapse:['Collapse',...(offline?[backendName()+' offline']:gaps?[`${gaps} gap${gaps===1?'':'s'}`]:[])],banknext:bankLines(),next:['Next agent'],model:modelLines(bridge),effort:effortLines(bridge),effortIncrease:['Effort +'],effortDecrease:['Effort −'],permissions:reviewerLines(bridge),plan:modeLines(bridge),interrupt:['Interrupt',mode==='working'?'running':'not running'],stopTerminals:['Stop terminals',`${target?.backgroundIds?.length||0} running`],steer:['Steer','typed message'],queue:['Queue','typed message'],zoom:['Zoom'],up:['Up'],down:['Down'],left:['Left'],right:['Right'],questionPrev:['Shift+Tab','question'],questionNext:['Tab','question'],answer:['Confirm','Enter'],escape:['Esc','question'],approvalUp:['Up','approval'],approvalDown:['Down','approval'],approvalConfirm:['Confirm','shown choice'],approvalEscape:['Esc','approval'],review:['Review','draft'],tests:['Tests','draft'],continue:['Continue','draft'],send:bridge.draft?['Send',bridge.draft.action]:['Send','no draft'],more:[`Page ${page+1}/3`,['Home','Questions','Prompts'][page],page===0?({ready:'Ready',working:'Working',background:'Background',question:'Question',approval:'Approval',unknown:target?'Check Rex':'Select agent'})[mode]:'next page'],questions:['Questions'],prompts:['Prompts'],back:['Back','Questions'],none:[],inputInfo:['Use Herdr','keyboard'],status:target?['Check '+backendName(),target.kind==='auth'?'Authentication':'']:[bridge.selectionNotice?'Reselect':'Select','agent']};
    lines=names[action]||[action.toUpperCase()];
    if((action==='collapse'&&(offline||!gaps))||(action==='interrupt'&&mode!=='working')||action==='none')color='#38414b';
    if(action==='stopTerminals'||action==='interrupt'&&mode==='working')color='#813c42';
@@ -92,9 +95,10 @@ async function perform(a,display){
  else await bridge.stage(a);
 }
 async function press(ctx,display){
- const k=keys.get(ctx);if(!k)return;display=display||k.presented||capture(k);const a=display.action;if(['none','status'].includes(a))return;
- try{
+ const k=keys.get(ctx);if(!k)return;display=display||k.presented||capture(k);const a=display.action;if(['none','status','inputInfo'].includes(a))return;
+ actionBusy=true;try{
   let result;
+  if(display.backendKey!==bridge.backendKey)throw Error('Controller changed; press again');
   if(display.setupBusy)throw Error('Setup finished; press again');
   if(C.needsContext(a)){
    if(display.page!==page||display.stamp!==C.stamp(selected(),page))throw Error('Controls changed; press again');
@@ -104,13 +108,14 @@ async function press(ctx,display){
   }else result=await perform(a,display);
   k.feedback=null;if(result)k.notice={until:Date.now()+2500,label:result.label,action:a,stamp:display.stamp};
  }catch(error){k.notice=null;k.feedback={until:Date.now()+10000,message:clean(error.message),action:a,stamp:display.stamp};inspectorMessage=String(error.message).replace(/[\x00-\x1f\x7f]/g,'').slice(0,160);render();emit('showAlert',ctx,{});}
+ finally{actionBusy=false;}
  await refresh(true);render();
 }
-async function initialize(){await refresh();if(!startupSelectionRead&&config.allowClipboardFocus){startupSelectionRead=true;try{await bridge.focused();}catch{}}render();}
+async function initialize(){await refresh();if(!startupSelectionRead&&(config.backend==='herdr'||config.allowClipboardFocus)){startupSelectionRead=true;try{await bridge.focused();}catch{}}render();}
 function inspectorStatus(context,message){
  if(message!==undefined)inspectorMessage=message;
  const a=selected(),agents=bridge.agents||[];
- emit('sendToPropertyInspector',context,{kind:'status',preferences:preferences.view(config),offline,agents:agents.length,codex:agents.filter(a=>a.app==='codex').length,metadata:agents.filter(a=>a.app==='codex'&&a.chatId).length,selected:a?{app:a.app,state:a.state,mode:a.collaborationMode||null}:null,selectionNotice:!!bridge.selectionNotice,setupBusy,message:inspectorMessage||settingsError});
+ emit('sendToPropertyInspector',context,{kind:'status',backend:config.backend||'rex',preferences:preferences.view(config),offline,agents:agents.length,codex:agents.filter(a=>a.app==='codex').length,metadata:agents.filter(a=>a.app==='codex'&&a.chatId).length,selected:a?{app:a.app,state:a.state,mode:a.collaborationMode||null}:null,selectionNotice:!!bridge.selectionNotice,setupBusy,message:inspectorMessage||settingsError});
 }
 async function inspectorRequest(e){
  if(!keys.has(e.context))return;
@@ -119,6 +124,7 @@ async function inspectorRequest(e){
  if(setupBusy){inspectorStatus(e.context,'Setup already running');return;}
  const a=selected();setupBusy=true;inspectorStatus(e.context,'Configuring the selected agent in Rex…');
  try{
+  if(config.backend==='herdr')throw Error('Enable the Herdr Codex integration for native chat IDs');
   if(!config.allowClipboardFocus)throw Error('Enable visible-pane checks first');
   if(a?.app!=='codex'||!['idle','done'].includes(a.state))throw Error('Select a ready Codex agent on the deck');
   const display={target:C.snapshot(a),verifyChat:false};
@@ -128,5 +134,5 @@ async function inspectorRequest(e){
  finally{setupBusy=false;inspectorStatus(e.context);}
 }
 ws.on('open',()=>{ws.send(JSON.stringify({event:arg('-registerEvent'),uuid:arg('-pluginUUID')}));ws.send(JSON.stringify({event:'getGlobalSettings',context:arg('-pluginUUID')}));queue=queue.then(initialize).catch(()=>{});});
-ws.on('message',raw=>{try{const e=JSON.parse(raw);if(e.event==='didReceiveGlobalSettings'){try{globalPreferences=preferences.normalize(e.payload?.settings?.preferences);loadConfig();if(!config.allowClipboardFocus){bridge.lastTarget=null;bridge.draft=null;bridge.picker=null;}else if(!startupSelectionRead)queue=queue.then(initialize).catch(()=>{});}catch{settingsError='Saved preferences invalid; keeping the last valid configuration';}render();}if(e.event==='sendToPlugin'){queue=queue.then(()=>inspectorRequest(e)).catch(()=>{});}if(e.event==='willAppear'){keys.set(e.context,{settings:e.payload.settings||{},coordinates:e.payload.coordinates});render();}if(e.event==='willDisappear')keys.delete(e.context);if(e.event==='didReceiveSettings'&&keys.has(e.context)){keys.get(e.context).settings=e.payload.settings||{};render();}if(e.event==='keyDown'){const shown=keys.get(e.context)?.presented,display=shown?{...shown,pressedAt:Date.now(),setupBusy}:undefined;queue=queue.then(()=>press(e.context,display)).catch(()=>{});}}catch{}});
+ws.on('message',raw=>{try{const e=JSON.parse(raw);if(e.event==='didReceiveGlobalSettings'){try{globalPreferences=preferences.normalize(e.payload?.settings?.preferences);loadConfig();if(config.backend!=='herdr'&&!config.allowClipboardFocus){bridge.lastTarget=null;bridge.draft=null;bridge.picker=null;}else if(!startupSelectionRead)queue=queue.then(initialize).catch(()=>{});}catch{settingsError='Saved preferences invalid; keeping the last valid configuration';}render();}if(e.event==='sendToPlugin'){queue=queue.then(()=>inspectorRequest(e)).catch(()=>{});}if(e.event==='willAppear'){keys.set(e.context,{settings:e.payload.settings||{},coordinates:e.payload.coordinates});render();}if(e.event==='willDisappear')keys.delete(e.context);if(e.event==='didReceiveSettings'&&keys.has(e.context)){keys.get(e.context).settings=e.payload.settings||{};render();}if(e.event==='keyDown'){const shown=keys.get(e.context)?.presented,display=shown?{...shown,pressedAt:Date.now(),setupBusy}:undefined;queue=queue.then(()=>press(e.context,display)).catch(()=>{});}}catch{}});
 ws.on('close',()=>process.exit(0));ws.on('error',()=>process.exit(1));setInterval(refresh,2000);setInterval(render,250);

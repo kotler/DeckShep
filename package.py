@@ -21,9 +21,10 @@ if __name__=='__main__':
                 data=archive.read(entry)
                 if str(Path.home()).encode() in data or str(ROOT).encode() in data:raise SystemExit('Local home/workspace path in installer: '+entry.filename)
     manifest=json.loads((plugin/'manifest.json').read_text())
-    files=[package,ROOT/'dist/Rex Agents.streamDeckProfile',ROOT/'README.md',ROOT/'docs/BETA-CHECKLIST.md',ROOT/'docs/COMPATIBILITY.md',ROOT/'docs/RELEASE-NOTES.md',ROOT/'THIRD-PARTY-NOTICES.md']
-    checksums=''.join(hashlib.sha256(file.read_bytes()).hexdigest()+'  '+file.name+'\n' for file in files)
+    files=[package,ROOT/'dist/Rex Agents.streamDeckProfile',ROOT/'README.md',ROOT/'docs/BETA-CHECKLIST.md',ROOT/'docs/COMPATIBILITY.md',ROOT/'docs/RELEASE-NOTES.md',ROOT/'docs/HERDR.md',ROOT/'THIRD-PARTY-NOTICES.md']
+    def archive_name(file):return file.name if file.parent==ROOT/'dist' else file.relative_to(ROOT).as_posix()
+    checksums=''.join(hashlib.sha256(file.read_bytes()).hexdigest()+'  '+archive_name(file)+'\n' for file in files)
     (ROOT/'dist/SHA256SUMS').write_text(checksums)
     with zipfile.ZipFile(ROOT/'dist/Agent Switchboard Local Beta.zip','w',zipfile.ZIP_DEFLATED) as archive:
-        for file in [*files,ROOT/'dist/SHA256SUMS']:archive.write(file,file.name)
+        for file in [*files,ROOT/'dist/SHA256SUMS']:archive.write(file,archive_name(file))
     print('Local beta built:',manifest['Version'],'— no files uploaded')
