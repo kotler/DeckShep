@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parent
 PLUGIN = 'com.local.rexagents.sdPlugin'
 INSTALLER = 'com.local.rexagents.streamDeckPlugin'
 PROFILE = 'Rex Agents.streamDeckProfile'
-DOCS = ('README.md', 'docs/INSTALL.md', 'docs/RELEASING.md',
+DOCS = ('README.md', 'docs/INSTALL.md', 'docs/RELEASING.md', 'docs/UNINSTALL.md',
         'docs/BETA-CHECKLIST.md', 'docs/COMPATIBILITY.md',
         'docs/RELEASE-NOTES.md', 'docs/HERDR.md', 'THIRD-PARTY-NOTICES.md')
 PAYLOAD = {INSTALLER, PROFILE, 'BUILD-INFO.json', *DOCS}

@@ -12,6 +12,7 @@ The bundle contains the plugin installer, the **Rex Agents** profile, setup guid
 
 - [Rex setup](docs/INSTALL.md#rex-setup)
 - [Herdr setup](docs/HERDR.md#setup)
+- [Uninstall and optional cleanup](docs/UNINSTALL.md)
 - [Compatibility](docs/COMPATIBILITY.md) · [Release notes](docs/RELEASE-NOTES.md) · [Validation record](docs/BETA-CHECKLIST.md)
 
 Independent installation on another Mac, Intel execution and signing/notarization remain unvalidated. This is a beta checkpoint, not a claim of complete Herdr parity.
@@ -76,7 +77,7 @@ npm ci --prefix com.local.rexagents.sdPlugin
 npm ci --prefix tools
 npm test --prefix com.local.rexagents.sdPlugin
 python3 -m unittest discover -s tests -v
-python3 package.py
+python3 package.py --tag v1.2.1-beta.2
 ```
 
 This builds a universal helper, validates and packs with the pinned official Elgato CLI, audits the actual archives and writes a versioned ZIP under `dist/`. It never uploads. See [source installation](docs/INSTALL.md#install-from-source) and [release procedure](docs/RELEASING.md).

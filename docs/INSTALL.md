@@ -1,5 +1,7 @@
 # Installation and upgrades
 
+For removal, see [Uninstalling Agent Switchboard](UNINSTALL.md), including downloaded/source installs, profile removal and optional native-setting cleanup.
+
 ## Before you start
 
 - A Mac running macOS 13 or later and a 15-key Stream Deck MK.2. Apple Silicon is tested; the helper includes an Intel slice, but Intel execution is not yet verified.
@@ -72,4 +74,4 @@ It backs up `ProfilesV3` and the previous plugin under `backups/TIMESTAMP/`, pre
 
 For a source-installer rollback, quit Stream Deck and restore `previous-plugin` from that backup to `~/Library/Application Support/com.elgato.StreamDeck/Plugins/com.local.rexagents.sdPlugin`. Restore the backed-up `ProfilesV3` only if you need to undo profile changes; first preserve any profiles edited since the backup. Reopen Stream Deck.
 
-A normal source build targets the current Mac architecture. `python3 package.py` builds both helper architectures and produces the downloadable bundle; see [releasing](RELEASING.md).
+A normal source build targets the current Mac architecture. `python3 package.py --tag v1.2.1-beta.2` builds both helper architectures and produces the downloadable bundle; see [releasing](RELEASING.md).

@@ -1,5 +1,7 @@
 # 1.2.1 beta checkpoint — November 6, 2026
 
+Beta 2 adds uninstall instructions to the README, install guide and downloadable bundle, covering the plugin, profile, manual fallback and optional native-setting cleanup. It contains the same plugin runtime as beta 1. Beta 1 remains an immutable checkpoint.
+
 - Merged experimental Herdr support into main alongside the validated Rex baseline.
 - Reorganized README and installation/upgrade guides; versioned bundles include source provenance, checksums and archive verification.
 - Explicit opt-in thread-ID title matching for daemon-backed Codex, without changing global settings or trusting hook session claims.

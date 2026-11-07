@@ -17,15 +17,15 @@ Release checkpoints are tagged on `main`. Herdr remains experimental; use a GitH
 3. Commit the final source and documentation. From that clean commit, run:
 
    ```sh
-   python3 package.py --tag v1.2.1-beta.1 --require-clean
-   python3 package.py --verify dist/agent-switchboard-1.2.1-beta.1-macos.zip
+   python3 package.py --tag v1.2.1-beta.2 --require-clean
+   python3 package.py --verify dist/agent-switchboard-1.2.1-beta.2-macos.zip
    ```
 
 The build compiles a universal helper, validates and packs with the pinned Elgato CLI, checks plugin/profile version agreement and safe default consent, and audits for local state and home/workspace paths. The ZIP contains installation/compatibility guides, notices, `BUILD-INFO.json` and `SHA256SUMS`. Its adjacent `.zip.sha256` covers the outer ZIP. Build information identifies the source commit; dirty builds are marked and cannot pass `--require-clean`.
 
 ## Tag and publish
 
-Create an annotated `v1.2.1-beta.1` tag at the exact packaged commit, push `main` and the tag, then create a GitHub prerelease for that tag. Attach the versioned macOS ZIP and its `.zip.sha256` file. Prefer one complete bundle so installers and documentation cannot be mixed across versions. GitHub's automatic source archives are for developers.
+Create an annotated `v1.2.1-beta.2` tag at the exact packaged commit, push `main` and the tag, then create a GitHub prerelease for that tag. Attach the versioned macOS ZIP and its `.zip.sha256` file. Prefer one complete bundle so installers and documentation cannot be mixed across versions. GitHub's automatic source archives are for developers.
 
 Include these limits in the release description:
 
