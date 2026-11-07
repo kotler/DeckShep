@@ -23,13 +23,32 @@ class Setup{
   await this.wait(a,s=>!/^\s*(New preset|Start preset from current settings|Presets)\s*$/m.test(s),'Settings dialog did not close');
   if(matches.length!==1)throw Error('Native model settings field unavailable');return matches[0][1];
  }
+ async currentStatusLine(a){
+  await this.menu(a);await this.key(a,'s');await this.wait(a,s=>s.includes('Start preset from current settings'),'Settings preset dialog missing');
+  await this.key(a,'down','down','down','enter');await this.wait(a,s=>/^\s*New preset\s*$/m.test(s),'New preset dialog missing');
+  const field=(await this.screen(a)).split(/^\s*New preset\s*$/m).at(-1);
+  const matches=[...field.matchAll(/^\s*› (\/statusline(?: [a-z0-9-]+)+)\s*$/gm)];
+  for(let i=0;i<4;i++){const s=await this.screen(a);if(!/^\s*(New preset|Start preset from current settings|Presets)\s*$/m.test(s))break;await this.key(a,'escape');}
+  if(matches.length!==1)throw Error('Native status-line settings unavailable');return matches[0][1];
+ }
+ async currentPermissions(a){
+  await this.menu(a);await this.key(a,'s');await this.wait(a,s=>s.includes('Start preset from current settings'),'Settings preset dialog missing');
+  await this.key(a,'down','enter');await this.wait(a,s=>/^\s*New preset\s*$/m.test(s),'New preset dialog missing');
+  const field=(await this.screen(a)).split(/^\s*New preset\s*$/m).at(-1);
+  const matches=[...field.matchAll(/^\s*› (\/permissions [^\r\n]+)\s*$/gm)];
+  for(let i=0;i<4;i++){const s=await this.screen(a);if(!/^\s*(New preset|Start preset from current settings|Presets)\s*$/m.test(s))break;await this.key(a,'escape');}
+  if(matches.length!==1)throw Error('Native permissions settings unavailable');return matches[0][1].trim();
+ }
  async store(a,slot,input,snapshot=false){
   await this.menu(a);
   // Start from a settings-generated single line, never from the user's composer draft.
   await this.key(a,'s');await this.wait(a,s=>s.includes('Start preset from current settings'),'Settings preset dialog missing');
   if(snapshot===true||snapshot==='permissions')await this.key(a,'down','enter');else await this.key(a,'enter');
   await this.wait(a,s=>/^\s*New preset\s*$/m.test(s),'New preset dialog missing');
-  if(!snapshot){await this.key(a,'ctrl+u');await this.b.checked(a,true);await this.b.run(['send','-s',a.session,'-b',a.block],'\x1b[200~'+input+'\x1b[201~');}
+  if(!snapshot){
+   await this.key(a,'end','ctrl+u');await this.b.checked(a,true);await this.b.run(['send','-s',a.session,'-b',a.block],'\x1b[200~'+input+'\x1b[201~');
+   await this.wait(a,s=>s.split(/^\s*New preset\s*$/m).at(-1).split('\n').some(line=>line.trim()==='› '+input),'Preset field did not match requested command');
+  }
   await this.key(a,'enter');await this.wait(a,s=>s.includes('Save preset to slot'),'Slot picker missing');
   const before=fs.statSync(P.codexFile()).mtimeMs;await this.key(a,slot);
   await this.wait(a,s=>s.includes('Replace preset '+slot+'?')||(!s.includes('Save preset to slot')&&!/^\s*New preset\s*$/m.test(s)),'Slot selection incomplete');

@@ -1,7 +1,21 @@
 {
+  "backend": "rex",
+  "herdr": {
+    "socketPath": "",
+    "titleIdentity": false
+  },
   "clientLabel": "",
   "statusMaxAgeMs": 86400000,
   "draftMaxAgeMs": 300000,
+  "daemonControls": {
+    "enabled": true,
+    "permissionsEnabled": true
+  },
+  "metadataRefreshMs": 4000,
+  "effortKeys": {
+    "increase": "shift+up",
+    "decrease": "shift+down"
+  },
   "aliases": {},
   "sendKeys": {
     "codex": "enter",
@@ -66,5 +80,8 @@
       "high",
       "xhigh"
     ]
+  },
+  "appearance": {
+    "style": "signal"
   }
 }

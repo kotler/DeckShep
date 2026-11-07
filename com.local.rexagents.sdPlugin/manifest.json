@@ -2,11 +2,11 @@
   "Name": "Rex Agents",
   "UUID": "com.local.rexagents",
   "Author": "Local integration",
-  "Version": "1.1.0.0",
-  "Description": "Local guarded Rex agent controls",
+  "Version": "1.2.1.0",
+  "Description": "Local guarded Rex and experimental Herdr agent controls",
   "Icon": "icon",
   "Category": "Rex Agents",
-  "CategoryIcon": "icon",
+  "CategoryIcon": "action-icon",
   "CodePath": "plugin.js",
   "SDKVersion": 2,
   "Nodejs": {
@@ -25,14 +25,14 @@
     {
       "Name": "Rex Agent Key",
       "UUID": "com.local.rexagents.key",
-      "Icon": "icon",
+      "Icon": "action-icon",
       "Controllers": [
         "Keypad"
       ],
       "PropertyInspectorPath": "inspector.html",
       "States": [
         {
-          "Image": "icon",
+          "Image": "loading",
           "TitleAlignment": "middle",
           "FontSize": 10,
           "ShowTitle": true
