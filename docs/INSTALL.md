@@ -23,15 +23,15 @@ The helper is ad-hoc signed and not notarized. Fresh installation from the downl
 
    Every entry should say OK. `BUILD-INFO.json` records the plugin version, source commit and whether the source tree was modified when packaged. The adjacent `.zip.sha256` release asset verifies the outer ZIP before extraction.
 3. Open `com.local.rexagents.streamDeckPlugin` and follow Stream Deck's installation prompt.
-4. For a **first install**, open `Rex Agents.streamDeckProfile`, import it and assign it to the MK.2. The profile name is shared by both controllers. For an **upgrade**, keep your existing profile and skip reimporting it.
-5. Select a Rex Agent Key in Stream Deck's editor. Choose and configure the controller below. Press a live agent key to select it.
+4. For a **first install**, import `Rex Agents.streamDeckProfile` and/or `Herdr Agents.streamDeckProfile` and assign them to the MK.2. For an **upgrade**, keep your existing Rex profile and import Herdr Agents once if it is missing.
+5. Select a Rex Agent Key in Stream Deck's editor. Select the desired profile in Stream Deck’s profile selector and configure it below. Press a live agent key to select it.
 
 The generic imported profile still needs independent-machine validation. If it is not offered for your MK.2, use the source installer below to generate a profile bound to your device. Do not delete your other profiles.
 
 ## Rex setup
 
 1. Enable **Remote Control** in Rex. Leave the existing agents running and ready.
-2. In a key's settings, keep **Controller → Rex** and explicitly enable **visible-pane checks**. This is required for shared control routing.
+2. Select **Rex Agents**. In a key’s settings, explicitly enable **visible-pane checks**. This is required for shared control routing.
 3. Press a live agent key. If chat metadata is unavailable, use **Set up selected Codex agent** in the settings while that agent is ready. Let it finish without typing or clicking in Rex. Setup uses native settings dialogs to save a session-ID/model footer, preserves unsent input and sends no user prompt.
 4. Verify the selected dot, chat label, model and effort before changing a setting. Start with a disposable chat when trying controls for the first time.
 
@@ -43,11 +43,11 @@ The Rex pane's reported directory must match the Codex chat directory. If using 
 
 Follow [Herdr → Setup](HERDR.md#setup). Choose the explicit local session socket, enable thread-ID title matching and run `/title thread-id` in each intended Codex pane with an empty composer. These settings are opt-in; missing or ambiguous identity disables native controls. Reapply the title and reselect after a new chat resets it.
 
-Herdr's Prompts page says **Use Herdr keyboard**. Send, Steer, Queue and prompt staging are unavailable. Switching controller clears selection and pending actions while keeping each backend's saved preferences.
+Herdr's Prompts page says **Use Herdr keyboard**. Send, Steer, Queue and prompt staging are unavailable. Switch profiles using Stream Deck’s profile selector. Each retains its own selection, bank and page during the plugin run; tracked Send drafts and picker confirmations are cleared. See [profiles](PROFILES.md).
 
 ## Claude and mixed-agent preview
 
-The 1.3.0 development branch adds optional Claude integration, with native controls disabled by default. See [Claude setup](CLAUDE.md) before enabling it. It requires a supported native Claude version and a separate local Node runtime for metadata hooks. The previously published 1.2.1 beta does not contain this preview.
+The 1.3.1 development branch adds optional Claude integration, with native controls disabled by default. See [Claude setup](CLAUDE.md) before enabling it. It requires a supported native Claude version and a separate local Node runtime for metadata hooks. The previously published 1.2.1 beta does not contain this preview.
 
 ## Upgrading and recovery
 
@@ -74,8 +74,8 @@ python3 install.py
 
 The installer requires an existing MK.2 profile to identify your device. If more than one MK.2 is found, its error lists the available IDs; rerun with `python3 install.py --device-uuid DEVICE_UUID`.
 
-It backs up `ProfilesV3` and the previous plugin under `backups/TIMESTAMP/`, preserves existing `config.json` customizations and adds a device-bound **Rex Agents** profile only when that profile UUID is absent. It does not replace your existing profile. Start Stream Deck and select Rex Agents, then complete backend setup above.
+It backs up `ProfilesV3` and the previous plugin under `backups/TIMESTAMP/`, preserves existing `config.json` customizations and adds device-bound **Rex Agents** and **Herdr Agents** profiles only when their respective UUIDs are absent. It does not replace existing profiles. Start Stream Deck, choose the desired profile and complete its setup above.
 
 For a source-installer rollback, quit Stream Deck and restore `previous-plugin` from that backup to `~/Library/Application Support/com.elgato.StreamDeck/Plugins/com.local.rexagents.sdPlugin`. Restore the backed-up `ProfilesV3` only if you need to undo profile changes; first preserve any profiles edited since the backup. Reopen Stream Deck.
 
-A normal source build targets the current Mac architecture. `python3 package.py --tag v1.3.0-beta.1` builds both helper architectures and produces the downloadable bundle; see [releasing](RELEASING.md).
+A normal source build targets the current Mac architecture. `python3 package.py --tag v1.3.1-beta.1` builds both helper architectures and produces the downloadable bundle; see [releasing](RELEASING.md).

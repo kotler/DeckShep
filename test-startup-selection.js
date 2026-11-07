@@ -6,11 +6,11 @@ function fixture(allowed=true,fail=false){
  let socket,reads=0;const timers=[];
  const agents=['a','b'].map((block,i)=>({session:'s',block,pid:42+i,app:'codex',state:'idle',project:'project',chatName:'Chat '+block}));
  class Socket extends EventEmitter{constructor(){super();this.readyState=1;}send(){}}
- class FixtureBridge{constructor(config){this.config=config;this.slots=agents.map(({session,block})=>({session,block}));}async discover(){this.agents=agents.map(a=>({...a}));return this.agents;}async focused(){reads++;if(fail)throw Error('Rex focus unavailable');this.lastTarget={session:'s',block:'b',pid:43};return this.agents[1];}slotGaps(){return 0;}}
+ class FixtureBridge{constructor(config){this.run=async()=>{throw Error('No terminal operations expected');};this.config=config;this.slots=agents.map(({session,block})=>({session,block}));}async discover(){this.agents=agents.map(a=>({...a}));return this.agents;}async focused(){reads++;if(fail)throw Error('Rex focus unavailable');this.lastTarget={session:'s',block:'b',pid:43};return this.agents[1];}slotGaps(){return 0;}}
  class BoundSocket extends Socket{constructor(){super();socket=this;}}
  const mockedFs={readFileSync:()=>JSON.stringify({...defaults,allowClipboardFocus:allowed})};
  const context={Buffer,process:{argv:['node','plugin','-port','0']},__dirname:directory,setInterval:(fn,ms)=>timers.push({fn,ms}),require:name=>name==='fs'?mockedFs:name==='ws'?BoundSocket:name==='./core'?{Bridge:FixtureBridge}:name==='./agent-metadata'?{AgentMetadata:class{hydrate(){}async refresh(a){return a;}}}:name.startsWith('./')?require(path.join(directory,name)):require(name)};
- vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(directory,'plugin.js'),'utf8')+'\nglobalThis.api={bridge,keys,render,refresh,ready:()=>queue};',context);
+ vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(directory,'plugin.js'),'utf8')+'\nglobalThis.api=getController("rex");',context);
  const api=context.api;for(let column=0;column<2;column++)api.keys.set(String(column),{settings:{},coordinates:{column,row:0}});
  const selected=column=>Buffer.from(api.keys.get(String(column)).lastImage.split(',')[1],'base64').toString().includes('id="selected-agent"');
  return{api,socket,timers,selected,reads:()=>reads};

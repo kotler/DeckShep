@@ -4,19 +4,19 @@ You can remove the deck controller while leaving Rex, Herdr, Codex and their exi
 
 ## Remove optional Claude hooks first
 
-If you installed the 1.3.0 Claude metadata integration, [remove its hooks and restore its status line](CLAUDE.md#remove-the-optional-integration-first) before removing the plugin files. This step is unnecessary for 1.2.1 or if you never applied Claude setup. Keep the setup record/backups until cleanup succeeds.
+If you applied the optional Claude metadata integration, [remove its hooks and restore its status line](CLAUDE.md#remove-the-optional-integration-first) before removing the plugin files. This step is unnecessary for 1.2.1 or if you never applied Claude setup. Keep the setup record/backups until cleanup succeeds.
 
 ## Remove the plugin and profile
 
-1. If you might reinstall, export your customized **Rex Agents** profile using Stream Deck's profile controls. Save a copy of the installed plugin's `config.json` and `state/` folder if you need custom aliases/prompts or the original Codex setup records. The plugin folder is:
+1. If you might reinstall, export your customized **Rex Agents** and **Herdr Agents** profiles using Stream Deck's profile controls. Save a copy of the installed plugin's `config.json` and `state/` folder if you need custom aliases/prompts or the original Codex setup records. The plugin folder is:
 
    ```text
    ~/Library/Application Support/com.elgato.StreamDeck/Plugins/com.local.rexagents.sdPlugin/
    ```
 
 2. In **Stream Deck → Preferences → Plugins**, find **Rex Agents**, right-click it and choose **Uninstall**, then confirm in Stream Deck. This removes Agent Switchboard for both Rex and Herdr. See [Elgato's uninstall guide](https://help.elgato.com/hc/en-us/articles/11434818801293-Elgato-Stream-Deck-How-to-Uninstall-Stream-Deck-Plugins).
-3. Switch to another deck profile. In Stream Deck's profile management, remove only the **Rex Agents** profile you imported/generated, after saving it if desired. If you copied Rex Agent Key actions into other profiles, remove those keys there too. Plugin removal and profile removal are separate steps; deleting a profile alone does not uninstall the plugin.
-4. Reopen Stream Deck if needed and confirm Rex Agents is absent from Plugins and its actions are no longer in your chosen profile. Leave terminal apps and agents running.
+3. Switch to another deck profile. In Stream Deck's profile management, remove the **Rex Agents** and/or **Herdr Agents** profiles you imported/generated, after saving it if desired. If you copied Rex Agent Key actions into other profiles, remove those keys there too. Plugin removal and profile removal are separate steps; deleting a profile alone does not uninstall the plugin.
+4. Reopen Stream Deck if needed and confirm Rex Agents is absent from Plugins and its actions are no longer in your chosen profiles. Leave terminal apps and agents running.
 
 ## Manual fallback for either installation method
 

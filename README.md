@@ -6,14 +6,15 @@ This beta targets **Codex CLI on a 15-key Stream Deck MK.2**. Rex is the default
 
 ## Claude and mixed-agent development preview
 
-Version 1.3.0 on `codex/claude-mixed-agent-support` adds experimental Claude Code support and mixed Claude/Codex banks. Claude controls are off by default and have automated coverage only; no live controls were tested or installed during implementation. See [Claude setup, capabilities and limits](docs/CLAUDE.md). The published 1.2.1 beta and its existing hardware results remain the release baseline.
+Version 1.3.1 on `codex/claude-mixed-agent-support` adds experimental Claude Code support and mixed Claude/Codex banks. Claude controls are off by default and have automated coverage only; no live Claude controls have been tested. See [Claude setup, capabilities and limits](docs/CLAUDE.md). The published 1.2.1 beta and its existing hardware results remain the release baseline.
 
 ## Get started
 
 Download the versioned macOS ZIP from [GitHub Releases](https://github.com/kotler/agent-switchboard/releases), extract it, and follow [Installation and upgrades](docs/INSTALL.md). Use the ZIP attached to the release, rather than GitHub's automatically generated source archive.
 
-The bundle contains the plugin installer, the **Rex Agents** profile, setup guides, build information and checksums. The existing profile name and `com.local.rexagents` identifier are retained so upgrades keep working with your keys.
+The bundle contains the plugin installer, the **Rex Agents** and **Herdr Agents** profiles, setup guides, build information and checksums. The existing Rex profile identity and `com.local.rexagents` identifier are retained so upgrades keep working with your keys.
 
+- [Switching profiles](docs/PROFILES.md)
 - [Rex setup](docs/INSTALL.md#rex-setup)
 - [Herdr setup](docs/HERDR.md#setup)
 - [Uninstall and optional cleanup](docs/UNINSTALL.md)
@@ -68,7 +69,7 @@ Agent keys use full status-color backgrounds, a Codex watermark and larger chat/
 
 ## Preferences
 
-Select any **Rex Agent Key** in Stream Deck's editor. Shared preferences include controller, Herdr socket/title matching, Rex visible-pane consent, bringing Rex forward, animation and prompt text. They apply to all keys. New installations keep clipboard checks and Herdr title matching off until explicitly enabled.
+Select any **Rex Agent Key** in Stream Deck's editor. Choose **Rex Agents** or **Herdr Agents** using Stream Deck’s profile selector. Each profile pins its controller and keeps its own connection, consent, selected agent, bank and page. Animation and prompt text are shared. See [profiles and migration](docs/PROFILES.md). New installations keep clipboard checks and Herdr title matching off until explicitly enabled.
 
 Advanced aliases, palette, bindings and model filters live in `config.json`. The source installer preserves existing disk customizations; shared UI preferences override their corresponding defaults. The settings panel accepts no sandbox or approval-policy fields. Unknown metadata or unsupported native versions disable the affected action.
 
@@ -81,7 +82,7 @@ npm ci --prefix com.local.rexagents.sdPlugin
 npm ci --prefix tools
 npm test --prefix com.local.rexagents.sdPlugin
 python3 -m unittest discover -s tests -v
-python3 package.py --tag v1.3.0-beta.1
+python3 package.py --tag v1.3.1-beta.1
 ```
 
 This builds a universal helper, validates and packs with the pinned official Elgato CLI, audits the actual archives and writes a versioned ZIP under `dist/`. It never uploads. See [source installation](docs/INSTALL.md#install-from-source) and [release procedure](docs/RELEASING.md).

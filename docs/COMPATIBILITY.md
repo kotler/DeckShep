@@ -11,7 +11,7 @@
 | Reviewer and mode metadata | Guarded settings reads/writes verified for daemon 0.166.0 / 0.167.0 | Unknown versions refused; persisted chat history may be required |
 | Codex Model | Metadata-only reads and model-only updates with explicit identity/effort checks | No blind fallbacks or empty settings updates |
 | Codex Effort | Current level is read from native metadata; effort-only updates cycle the model's supported levels | Changing effort needs a persisted chat for the full settings-preservation check |
-| Claude Code native 2.1.319 | 1.3.0 development preview: opt-in hooks/metadata and guarded Rex controls, Herdr waiting/Interrupt keys, mixed banks | Automated fixtures only; no live/physical validation; modes/background cleanup remain keyboard-only; other versions/wrappers disabled |
+| Claude Code native 2.1.319 | 1.3.1 development preview: opt-in hooks/metadata and guarded Rex controls, Herdr waiting/Interrupt keys, mixed banks | Automated fixtures only; no live/physical validation; modes/background cleanup remain keyboard-only; other versions/wrappers disabled |
 | Herdr TUI 0.9.5 / protocol 22 | Experimental 1.2.1 installed; physical core controls and native settings verified with opt-in thread-ID titles | Herdr overflow-bank/Collapse hardware and host-window presentation pending; composer submissions unavailable; local Mac only |
 | Other terminals / Windows | No adapter | Future work, no compatibility claim |
 

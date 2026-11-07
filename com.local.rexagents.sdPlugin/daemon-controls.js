@@ -71,7 +71,7 @@ class DaemonRpc{
   this.ws.on('error',()=>this.fail());this.ws.on('close',()=>this.fail());
  }
  fail(){for(const p of this.pending.values()){clearTimeout(p.timer);p.reject(Error('CLI daemon disconnected; verify any requested change'));}this.pending.clear();}
- async connect(){await this.opened;const initialized=await this.request('initialize',{clientInfo:{name:'agent_switchboard',title:'Agent Switchboard',version:'1.3.0'},capabilities:{experimentalApi:true}});this.serverVersion=/^[^\s/]+\/(\d+\.\d+\.\d+)(?:\s|$)/.exec(initialized?.userAgent||'')?.[1]||null;this.ws.send(JSON.stringify({method:'initialized',params:{}}));}
+ async connect(){await this.opened;const initialized=await this.request('initialize',{clientInfo:{name:'agent_switchboard',title:'Agent Switchboard',version:'1.3.1'},capabilities:{experimentalApi:true}});this.serverVersion=/^[^\s/]+\/(\d+\.\d+\.\d+)(?:\s|$)/.exec(initialized?.userAgent||'')?.[1]||null;this.ws.send(JSON.stringify({method:'initialized',params:{}}));}
  request(method,params){
   if(!['initialize','thread/loaded/list','thread/read','thread/turns/list','thread/resume','model/list','thread/settings/update','thread/backgroundTerminals/list','thread/backgroundTerminals/terminate'].includes(method))return Promise.reject(Error('Unsupported daemon method'));
   if(method.startsWith('thread/backgroundTerminals/')){

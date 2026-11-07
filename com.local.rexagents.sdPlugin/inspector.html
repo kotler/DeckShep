@@ -3,18 +3,18 @@
 <style>
 [hidden]{display:none!important}body{background:#262626;color:#eee;font:13px system-ui,sans-serif;margin:0;padding:14px}h2{font-size:14px;margin:18px 0 8px}h2:first-child{margin-top:0}p{line-height:1.5;margin:7px 0;color:#c4c7ce}label{display:block;margin:10px 0;line-height:1.5}input[type=checkbox]{vertical-align:middle;margin-right:7px}select,textarea,input[type=text],button{box-sizing:border-box;font:inherit;color:#eee;background:#373941;border:1px solid #626571;border-radius:5px;padding:7px}select,textarea,input[type=text]{width:100%}textarea{resize:vertical;min-height:68px}button{margin:5px 0}button:disabled{opacity:.45}details{margin-top:18px}summary{font-weight:600}#message{color:#f1d39a;min-height:20px}#connection{color:#eee}code{font-size:12px;overflow-wrap:anywhere}.note{font-size:12px;color:#b7bbc5}
 </style>
-<h2>Rex Agents</h2>
+<h2 id="profileName">Agent Switchboard</h2>
 <p id="connection" role="status" aria-live="polite">Connecting to plugin…</p>
 <p id="selection"></p>
 <p id="message" role="status" aria-live="polite"></p>
 <button id="refresh" type="button">Refresh status</button>
 <h2>Setup and preferences</h2>
-<label>Controller<select id="backend"><option value="rex">Rex</option><option value="herdr">Herdr (experimental)</option></select></label>
+<label>Controller for this profile<select id="backend" disabled><option value="rex">Rex</option><option value="herdr">Herdr (experimental)</option></select></label>
 <label id="herdrConnection">Herdr session socket<input id="herdrSocketPath" type="text" maxlength="1024" placeholder="~/.config/herdr/herdr.sock"></label>
 <div id="herdrHelp"><label><input id="herdrTitleIdentity" type="checkbox" disabled>Match Codex thread-ID titles (experimental)</label>
 <p class="note">In each Codex pane, run <code>/title thread-id</code> with an empty composer, then select that agent on the deck. Use only the thread-ID title item. Reapply after a new chat if the title resets. This matches the displayed ID to that pane's Codex daemon; ambiguous or missing IDs disable native controls.</p>
 <p class="note">Connect to local Herdr 0.9.5. Type messages in Herdr; draft submission needs cursor support. The plugin does not change your titles, global Codex settings or Herdr's saved session references.</p></div>
-<p class="note">Preferences apply to every Rex Agents key. Changes save automatically.</p>
+<p class="note">Switch between Rex Agents and Herdr Agents using Stream Deck’s profile selector. Connection and consent settings stay with this controller; animation and prompt text are shared. Changes save automatically.</p>
 <div id="rexSetup"><label><input id="allowClipboardFocus" type="checkbox" disabled>Enable visible-pane checks</label>
 <p class="note">Required for controls. Rex temporarily copies its pane ID; the helper restores your clipboard formats. Rex may show a copy notification. Background status checks do not use the clipboard.</p>
 <p class="note">Enable Remote Control in Rex first. Select a ready Codex agent on the deck, then configure its status line once.</p>

@@ -1,15 +1,15 @@
 # Herdr backend (experimental)
 
-The experimental backend supports agents running in **Herdr TUI 0.9.5, socket protocol 22**, initially on a local Mac. Experimental build 1.2.1 is installed locally, with Rex restored as the active controller after the physical checks. Rex remains the default backend in distributed settings.
+The experimental backend supports agents running in **Herdr TUI 0.9.5, socket protocol 22**, initially on a local Mac. The 1.2.1 baseline passed local physical Codex checks, with Rex restored afterward. Rex remains the default backend in distributed settings.
 
 The adapter uses Herdr's documented public socket API and the schema bundled with the installed CLI. It connects only to the session socket explicitly selected in preferences. It never starts, stops, upgrades or attaches to a server automatically.
 
-The 1.3.0 development preview also adds [Claude and mixed-agent routing](CLAUDE.md). Claude identity uses its own optional hook records; the Codex title-ID adapter is never used for Claude. Those paths have automated coverage only. The physical validation below remains specifically Codex coverage.
+The 1.3.1 development preview also adds [Claude and mixed-agent routing](CLAUDE.md). Claude identity uses its own optional hook records; the Codex title-ID adapter is never used for Claude. Those paths have automated coverage only. The physical validation below remains specifically Codex coverage.
 
 ## Setup
 
 1. Run a local Herdr session with Codex connected to its existing local daemon. Codex command-line configuration overrides can force embedded mode, which has no accessible daemon for these controls.
-2. In a Stream Deck key's settings, choose **Controller → Herdr (experimental)** and enter the session socket, for example `~/.config/herdr/sessions/NAME/herdr.sock`.
+2. Select **Herdr Agents** in Stream Deck’s profile selector. In a key’s settings, enter the session socket, for example `~/.config/herdr/sessions/NAME/herdr.sock`.
 3. Enable **Match Codex thread-ID titles (experimental)**. It is off by default.
 4. In each intended Codex pane, with an empty composer, run `/title thread-id`. Use this title item alone. Select the agent on the deck.
 
@@ -17,7 +17,7 @@ This native slash command changes the current chat's title display without persi
 
 The adapter does not use hook-reported session claims as authority for native controls. The upstream shared-daemon issue can leave those claims missing or misattributed. Title matching does not repair Herdr's own saved session references or restore behavior.
 
-Herdr focus checks use its API; they do not use the clipboard. Switching controllers clears selection and pending actions. Switch back to Rex in the same settings to use the existing Rex profile and its saved preferences.
+Herdr focus checks use its API; they do not use the clipboard. Switch back using Stream Deck’s **Rex Agents** profile. Navigation and connection settings are independent; switching clears tracked pending submissions. See [profile behavior](PROFILES.md).
 
 ## Controls
 

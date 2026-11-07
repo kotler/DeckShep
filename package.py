@@ -15,10 +15,11 @@ ROOT = Path(__file__).resolve().parent
 PLUGIN = 'com.local.rexagents.sdPlugin'
 INSTALLER = 'com.local.rexagents.streamDeckPlugin'
 PROFILE = 'Rex Agents.streamDeckProfile'
-DOCS = ('README.md', 'docs/INSTALL.md', 'docs/RELEASING.md', 'docs/UNINSTALL.md', 'docs/CLAUDE.md',
+PROFILES = (PROFILE, 'Herdr Agents.streamDeckProfile')
+DOCS = ('README.md', 'docs/INSTALL.md', 'docs/RELEASING.md', 'docs/UNINSTALL.md', 'docs/CLAUDE.md', 'docs/PROFILES.md',
         'docs/BETA-CHECKLIST.md', 'docs/COMPATIBILITY.md',
         'docs/RELEASE-NOTES.md', 'docs/HERDR.md', 'THIRD-PARTY-NOTICES.md')
-PAYLOAD = {INSTALLER, PROFILE, 'BUILD-INFO.json', *DOCS}
+PAYLOAD = {INSTALLER, *PROFILES, 'BUILD-INFO.json', *DOCS}
 
 
 def digest(data):
@@ -67,13 +68,16 @@ def audit_installer(data):
         return manifest
 
 
-def audit_profile(data, version):
-    from build import PROFILE as PROFILE_ID, PAGE
+def audit_profile(data, version, backend='rex'):
+    from build import PROFILE_IDS, PAGE_IDS, PROFILE_NAMES
+    PROFILE_ID=PROFILE_IDS[backend];PAGE=PAGE_IDS[backend]
     with zipfile.ZipFile(io.BytesIO(data)) as archive:
         audit_archive(archive)
         prefix = PROFILE_ID + '.sdProfile/'
         profile = json.loads(archive.read(prefix + 'manifest.json'))
         page = json.loads(archive.read(prefix + 'Profiles/' + PAGE + '/manifest.json'))
+        if profile['Name'] != PROFILE_NAMES[backend]:
+            raise ValueError('Profile name/backend mismatch')
         if profile['Device'] != {'Model': '20GBL9901', 'UUID': '@(0)[]'}:
             raise ValueError('Release profile must be an unbound MK.2 template')
         actions = page['Controllers'][0]['Actions']
@@ -82,7 +86,7 @@ def audit_profile(data, version):
         for action in actions.values():
             if (action['Plugin']['UUID'] != 'com.local.rexagents'
                     or action['Plugin']['Version'] != version
-                    or action['UUID'] != 'com.local.rexagents.key' or action['Settings']):
+                    or action['UUID'] != 'com.local.rexagents.key' or action['Settings'] != {'profileScope': backend}):
                 raise ValueError('Profile action/version/default settings mismatch')
 
 
@@ -103,7 +107,8 @@ def verify_bundle(path):
             if digest(archive.read(name)) != checksum:
                 raise ValueError('Checksum mismatch: ' + name)
         manifest = audit_installer(archive.read(INSTALLER))
-        audit_profile(archive.read(PROFILE), manifest['Version'])
+        for backend, name in zip(('rex', 'herdr'), PROFILES):
+            audit_profile(archive.read(name), manifest['Version'], backend)
         info = json.loads(archive.read('BUILD-INFO.json'))
         if (info['pluginVersion'] != manifest['Version']
                 or info['packageVersion'] + '.0' != manifest['Version']
@@ -142,11 +147,12 @@ def main():
     subprocess.run([str(cli), 'pack', str(plugin), '--output', str(out), '--force',
                     '--no-update-check', '--no-file-list'], check=True)
     manifest = audit_installer((out / INSTALLER).read_bytes())
-    audit_profile((out / PROFILE).read_bytes(), manifest['Version'])
+    for backend, name in zip(('rex', 'herdr'), PROFILES):
+        audit_profile((out / name).read_bytes(), manifest['Version'], backend)
     info = {'tag': tag, 'packageVersion': version, 'pluginVersion': manifest['Version'],
             'gitCommit': revision, 'workingTreeDirty': dirty, 'helperArchitectures': ['arm64', 'x86_64']}
     (out / 'BUILD-INFO.json').write_text(json.dumps(info, indent=2) + '\n')
-    files = {name: (out / name if name in (INSTALLER, PROFILE, 'BUILD-INFO.json') else ROOT / name)
+    files = {name: (out / name if name in (INSTALLER, *PROFILES, 'BUILD-INFO.json') else ROOT / name)
              for name in sorted(PAYLOAD)}
     checksums = ''.join(digest(file.read_bytes()) + '  ' + name + '\n' for name, file in files.items())
     (out / 'SHA256SUMS').write_text(checksums)

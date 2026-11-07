@@ -7,7 +7,7 @@ import json
 import shutil
 import subprocess
 import sys
-from build import profile
+from build import profile, PROFILE_IDS
 
 ROOT = Path(__file__).resolve().parent
 
@@ -73,11 +73,12 @@ def main():
     print('Backup:', backup, flush=True)
     shutil.copytree(src, dest, dirs_exist_ok=True)
     (dest / 'config.json').write_text(json.dumps(config, indent=2) + '\n')
-    generated = profile(ROOT / 'dist', device)
-    target = base / 'ProfilesV3' / generated.name
-    if not target.exists():
-        shutil.copytree(generated, target)
-    print('Installed. Start Stream Deck and select Rex Agents. Existing agents were not restarted.')
+    for backend in PROFILE_IDS:
+        generated = profile(ROOT / 'dist', device, backend)
+        target = base / 'ProfilesV3' / generated.name
+        if not target.exists():
+            shutil.copytree(generated, target)
+    print('Installed. Start Stream Deck and choose Rex Agents or Herdr Agents. Existing profiles were preserved; agents were not restarted.')
 
 
 if __name__ == '__main__':

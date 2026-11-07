@@ -6,18 +6,32 @@ const C=require('./context-controls');
 const {controlAccent}=require('./signal-visuals');
 const {CompletionDisplay}=require('./completion-display');
 const preferences=require('./preferences');
-const configPath=path.join(__dirname,'config.json');let diskConfig=JSON.parse(fs.readFileSync(configPath)),config=diskConfig;
-const backendKey=c=>(c.backend||'rex')+'|claude:'+String(c.claude?.enabled===true)+'|'+(c.backend==='herdr'?[c.herdr?.socketPath||'',c.herdr?.titleIdentity===true].join('|'):'');
-function makeBridge(c){const b=c.backend==='herdr'?new(require('./herdr-bridge').HerdrBridge)(c):new Bridge(c);b.backendKey=backendKey(c);return b;}
-let bridge=makeBridge(config),metadata=new AgentMetadata(bridge),actionBusy=false;
-const completion=new CompletionDisplay();
-let globalPreferences={},settingsError='',setupBusy=false,inspectorMessage='';
-function loadConfig(){try{diskConfig=JSON.parse(fs.readFileSync(configPath));settingsError='';}catch{settingsError='Settings file invalid; using the last valid defaults';}const next=preferences.apply(diskConfig,globalPreferences);if(backendKey(next)!==bridge.backendKey){if(actionBusy||setupBusy)return;bridge=makeBridge(next);metadata=new AgentMetadata(bridge);startupSelectionRead=false;bank=0;page=0;transitions.clear();contextState={stamp:null,armedAt:0};for(const k of keys.values()){k.notice=null;k.feedback=null;}}config=next;bridge.config=config;}
 const args=process.argv.slice(2),arg=k=>args[args.indexOf(k)+1],ws=new WebSocket('ws://127.0.0.1:'+arg('-port'));
-const keys=new Map(),transitions=new Map();let page=0,bank=0,busy=false,offline=true,queue=Promise.resolve(),metadataBusy=false,metadataAgain=false,startupSelectionRead=false,contextState={stamp:null,armedAt:0};
 const emit=(event,context,payload)=>{if(ws.readyState===1)ws.send(JSON.stringify({event,context,payload}));};
-const backendName=()=>config.backend==='herdr'?'Herdr':'Rex';
-const clean=s=>String(s||'').replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g,'').slice(0,15);
+let saved=preferences.store(),storeError='',loadedV2=false,queue=Promise.resolve(),sequence=0,appearanceSequence=0;
+const controllers=new Map(),owners=new Map();
+async function settled(){let pending;do{pending=queue;await pending;}while(pending!==queue);}
+function persist(){loadedV2=true;emit('setGlobalSettings',arg('-pluginUUID'),preferences.serialize(saved));}
+function getController(scope){if(!['rex','herdr'].includes(scope))throw Error('Unknown controller profile');if(!controllers.has(scope))controllers.set(scope,createController(scope));return controllers.get(scope);}
+function applyAllSettings(){for(const runtime of controllers.values())runtime.applySettings();}
+function createController(scope){
+ const configPath=path.join(__dirname,'config.json');let diskConfig=JSON.parse(fs.readFileSync(configPath)),config=preferences.profileConfig(diskConfig,saved,scope);
+ let activePress=null,visibility=0,actionBusy=false,settingsError='',setupBusy=false,inspectorMessage='';
+ const backendKey=c=>c.backend+'|claude:'+String(c.claude?.enabled===true)+'|'+(c.backend==='herdr'?[c.herdr?.socketPath||'',c.herdr?.titleIdentity===true].join('|'):'');
+ function assertVisible(){if(!activePress)return;const {ctx,display}=activePress,k=keys.get(ctx);if(!k||display.appearance!==k.appearance||display.visibility!==visibility)throw Error('Profile changed; no further input sent');}
+ function makeBridge(c){
+  const b=c.backend==='herdr'?new(require('./herdr-bridge').HerdrBridge)(c):new Bridge(c);b.backendKey=backendKey(c);b.generation=++sequence;
+  const focused=b.focused.bind(b);b.focused=async(...args)=>{assertVisible();const result=await focused(...args);assertVisible();return result;};
+  const run=b.run.bind(b);b.run=(args,...rest)=>{if(['send','send-key','focus','zoom','-C'].includes(args[0]))assertVisible();return run(args,...rest);};
+  if(c.backend==='herdr'){const connect=b.connect?.bind(b);if(connect)b.connect=async()=>{const rpc=await connect(),request=rpc.request.bind(rpc);rpc.request=(method,params)=>{if(['agent.focus','agent.send_keys','pane.zoom'].includes(method))assertVisible();return request(method,params);};return rpc;};}
+  return b;
+ }
+ let bridge=makeBridge(config),metadata=new AgentMetadata(bridge);
+ const completion=new CompletionDisplay(),keys=new Map(),transitions=new Map();
+ let page=0,bank=0,busy=false,offline=true,metadataBusy=false,metadataAgain=false,startupSelectionRead=false,contextState={stamp:null,armedAt:0};
+ function loadConfig(){try{diskConfig=JSON.parse(fs.readFileSync(configPath));settingsError='';}catch{settingsError='Settings file invalid; using the last valid defaults';}const next=preferences.profileConfig(diskConfig,saved,scope);if(backendKey(next)!==bridge.backendKey){if(actionBusy||setupBusy)return;bridge=makeBridge(next);metadata=new AgentMetadata(bridge);if(metadataBusy)metadataAgain=true;startupSelectionRead=false;bank=0;page=0;transitions.clear();contextState={stamp:null,armedAt:0};for(const k of keys.values()){k.notice=null;k.feedback=null;}}config=next;bridge.config=config;}
+ const backendName=()=>scope==='herdr'?'Herdr':'Rex';
+ const clean=s=>String(s||'').replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g,'').slice(0,15);
 function selected(){return bridge.agents?.find(a=>sameTarget(bridge.lastTarget,a));}
 function mapping(k){
  const override=k.settings.action;
@@ -32,7 +46,7 @@ function bankLines(){
 }
 function capture(k){
  const target=selected(),action=mapping(k),contextStamp=C.stamp(target,page);
- return{action,page,backendKey:bridge.backendKey,stamp:contextStamp,target:C.snapshot(action.startsWith('agent:')?k.target:target),armedAt:contextState.armedAt,verifyChat:C.needsChat(action,target)};
+ return{setupBusy,scope,appearance:k.appearance,visibility,generation:bridge.generation,action,page,backendKey:bridge.backendKey,stamp:contextStamp,target:C.snapshot(action.startsWith('agent:')?k.target:target),armedAt:contextState.armedAt,verifyChat:C.needsChat(action,target)};
 }
 function render(){
  metadata.hydrate(bridge.agents||[]);const now=Date.now(),target=selected(),mode=C.modeOf(target),contextStamp=C.stamp(target,page);
@@ -64,7 +78,7 @@ function render(){
 }
 async function refreshMetadata(force=false){
  if(metadataBusy){metadataAgain=metadataAgain||force;return;}metadataBusy=true;
- try{const agents=await metadata.refresh(bridge.agents||[],force);for(const agent of agents){if(agent.app!=='codex')continue;const live=bridge.agents?.find(a=>sameTarget(a,agent));if(live&&live.cwd===agent.cwd&&(config.backend!=='herdr'||live.chatId===agent.chatId&&live.nativeIdentity===agent.nativeIdentity)&&!(live.metadataAt>agent.metadataAt))for(const field of['chatId','chatName','project','model','effort','collaborationMode','reviewer','runId','backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt','metadataAt'])if(!(config.backend==='herdr'&&['runId','backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt'].includes(field))&&Object.hasOwn(agent,field)&&(!['backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt'].includes(field)||live.statusAt===agent.statusAt))live[field]=agent[field];}render();}
+ try{const source=bridge,reader=metadata,agents=await reader.refresh(source.agents||[],force);if(source!==bridge)return;for(const agent of agents){if(agent.app!=='codex')continue;const live=bridge.agents?.find(a=>sameTarget(a,agent));if(live&&live.cwd===agent.cwd&&(config.backend!=='herdr'||live.chatId===agent.chatId&&live.nativeIdentity===agent.nativeIdentity)&&!(live.metadataAt>agent.metadataAt))for(const field of['chatId','chatName','project','model','effort','collaborationMode','reviewer','runId','backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt','metadataAt'])if(!(config.backend==='herdr'&&['runId','backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt'].includes(field))&&Object.hasOwn(agent,field)&&(!['backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt'].includes(field)||live.statusAt===agent.statusAt))live[field]=agent[field];}render();}
  finally{metadataBusy=false;if(metadataAgain){metadataAgain=false;void refreshMetadata(true);}}
 }
 async function refresh(forceMetadata=false){
@@ -97,8 +111,9 @@ async function perform(a,display){
 }
 async function press(ctx,display){
  const k=keys.get(ctx);if(!k)return;display=display||k.presented||capture(k);const a=display.action;if(['none','status','inputInfo','claudeInfo','claudeModeInfo'].includes(a))return;
- actionBusy=true;try{
+ actionBusy=true;activePress={ctx,display};try{
   let result;
+  if(display.scope!==scope||display.appearance!==k.appearance||display.visibility!==visibility||display.generation!==bridge.generation)throw Error('Profile changed; press again');
   if(display.backendKey!==bridge.backendKey)throw Error('Controller changed; press again');
   if(display.setupBusy)throw Error('Setup finished; press again');
   if(C.needsContext(a)){
@@ -109,21 +124,22 @@ async function press(ctx,display){
   }else result=await perform(a,display);
   k.feedback=null;if(result)k.notice={until:Date.now()+2500,label:result.label,action:a,stamp:display.stamp};
  }catch(error){k.notice=null;k.feedback={until:Date.now()+10000,message:clean(error.message),action:a,stamp:display.stamp};inspectorMessage=String(error.message).replace(/[\x00-\x1f\x7f]/g,'').slice(0,160);render();emit('showAlert',ctx,{});}
- finally{actionBusy=false;}
+ finally{actionBusy=false;activePress=null;}
  await refresh(true);render();
 }
-async function initialize(){await refresh();if(!startupSelectionRead&&(config.backend==='herdr'||config.allowClipboardFocus)){startupSelectionRead=true;try{await bridge.focused();}catch{}}render();}
+async function initialize(){if(!keys.size)return;await refresh();if(!startupSelectionRead&&(config.backend==='herdr'||config.allowClipboardFocus)){startupSelectionRead=true;try{await bridge.focused();}catch{}}render();}
 function inspectorStatus(context,message){
  if(message!==undefined)inspectorMessage=message;
  const a=selected(),agents=bridge.agents||[];
- emit('sendToPropertyInspector',context,{kind:'status',backend:config.backend||'rex',preferences:preferences.view(config),offline,agents:agents.length,codex:agents.filter(a=>a.app==='codex').length,claude:agents.filter(a=>a.app==='claude-code').length,claudeIdentified:agents.filter(a=>a.app==='claude-code'&&a.nativeVerified).length,metadata:agents.filter(a=>a.app==='codex'&&a.chatId).length,selected:a?{app:a.app,state:a.state,mode:a.app==='claude-code'?null:a.collaborationMode||null,...a.app==='claude-code'?{identityMessage:a.claudeError||'',nativeVerified:a.nativeVerified===true}:{},...config.backend==='herdr'&&a.app!=='claude-code'?{identityMessage:a.nativeError||'',nativeVerified:a.nativeVerified===true}:{}}:null,selectionNotice:!!bridge.selectionNotice,setupBusy,message:inspectorMessage||settingsError});
+ emit('sendToPropertyInspector',context,{kind:'status',profileScope:scope,profileName:scope==='herdr'?'Herdr Agents':'Rex Agents',backend:config.backend||'rex',preferences:preferences.view(config),offline,agents:agents.length,codex:agents.filter(a=>a.app==='codex').length,claude:agents.filter(a=>a.app==='claude-code').length,claudeIdentified:agents.filter(a=>a.app==='claude-code'&&a.nativeVerified).length,metadata:agents.filter(a=>a.app==='codex'&&a.chatId).length,selected:a?{app:a.app,state:a.state,mode:a.app==='claude-code'?null:a.collaborationMode||null,...a.app==='claude-code'?{identityMessage:a.claudeError||'',nativeVerified:a.nativeVerified===true}:{},...config.backend==='herdr'&&a.app!=='claude-code'?{identityMessage:a.nativeError||'',nativeVerified:a.nativeVerified===true}:{}}:null,selectionNotice:!!bridge.selectionNotice,setupBusy,message:inspectorMessage||settingsError||storeError});
 }
 async function inspectorRequest(e){
  if(!keys.has(e.context))return;
+ if(e.payload?.kind==='preferences'){try{saved=preferences.update(saved,scope,e.payload.preferences);persist();applyAllSettings();inspectorStatus(e.context,'Preferences saved');}catch(error){inspectorStatus(e.context,error.message);}return;}
  if(e.payload?.kind==='status'){inspectorStatus(e.context);return;}
  if(e.payload?.kind!=='setupFooter')return;
  if(setupBusy){inspectorStatus(e.context,'Setup already running');return;}
- const a=selected();setupBusy=true;inspectorStatus(e.context,'Configuring the selected agent in Rex…');
+ const a=selected();setupBusy=true;activePress={ctx:e.context,display:capture(keys.get(e.context))};inspectorStatus(e.context,'Configuring the selected agent in Rex…');
  try{
   if(config.backend==='herdr')throw Error('Run /title thread-id in Codex and enable title matching in preferences');
   if(!config.allowClipboardFocus)throw Error('Enable visible-pane checks first');
@@ -132,8 +148,36 @@ async function inspectorRequest(e){
   await bridge.withContext(display,()=>require('./setup-daemon-controls').configure(bridge,a,__dirname));
   await refresh(true);inspectorStatus(e.context,'Status line configured; no prompt submitted');
  }catch(error){inspectorStatus(e.context,String(error.message).replace(/[\x00-\x1f\x7f]/g,'').slice(0,160));}
- finally{setupBusy=false;inspectorStatus(e.context);}
+ finally{setupBusy=false;activePress=null;inspectorStatus(e.context);}
 }
-ws.on('open',()=>{ws.send(JSON.stringify({event:arg('-registerEvent'),uuid:arg('-pluginUUID')}));ws.send(JSON.stringify({event:'getGlobalSettings',context:arg('-pluginUUID')}));queue=queue.then(initialize).catch(()=>{});});
-ws.on('message',raw=>{try{const e=JSON.parse(raw);if(e.event==='didReceiveGlobalSettings'){try{globalPreferences=preferences.normalize(e.payload?.settings?.preferences);loadConfig();if(config.backend!=='herdr'&&!config.allowClipboardFocus){bridge.lastTarget=null;bridge.draft=null;bridge.picker=null;}else if(!startupSelectionRead)queue=queue.then(initialize).catch(()=>{});}catch{settingsError='Saved preferences invalid; keeping the last valid configuration';}render();}if(e.event==='sendToPlugin'){queue=queue.then(()=>inspectorRequest(e)).catch(()=>{});}if(e.event==='willAppear'){keys.set(e.context,{settings:e.payload.settings||{},coordinates:e.payload.coordinates});render();}if(e.event==='willDisappear')keys.delete(e.context);if(e.event==='didReceiveSettings'&&keys.has(e.context)){keys.get(e.context).settings=e.payload.settings||{};render();}if(e.event==='keyDown'){const shown=keys.get(e.context)?.presented,display=shown?{...shown,pressedAt:Date.now(),setupBusy}:undefined;queue=queue.then(()=>press(e.context,display)).catch(()=>{});}}catch{}});
-ws.on('close',()=>process.exit(0));ws.on('error',()=>process.exit(1));setInterval(refresh,2000);setInterval(render,250);
+
+ function applySettings(){const hadConsent=config.allowClipboardFocus;loadConfig();if(scope==='rex'&&hadConsent&&!config.allowClipboardFocus){bridge.lastTarget=null;bridge.draft=null;bridge.picker=null;}else if(keys.size&&!startupSelectionRead&&(scope==='herdr'||config.allowClipboardFocus))queue=queue.then(initialize).catch(()=>{});render();}
+ function detach(context){keys.delete(context);if(!keys.size){visibility++;bridge.draft=null;bridge.picker=null;if(bridge.claude)bridge.claude.picker=null;completion.update(bridge.agents||[],null,Date.now());}}
+ function attach(context,payload){const first=!keys.size;if(first)visibility++;keys.set(context,{settings:payload.settings||{},coordinates:payload.coordinates,appearance:++appearanceSequence});render();if(first)queue=queue.then(initialize).catch(()=>{});}
+ return{get setupBusy(){return setupBusy;},get bridge(){return bridge;},get metadata(){return metadata;},keys,mapping,render,refresh,refreshMetadata,press,selected,inspectorRequest,initialize,applySettings,attach,detach,settled,ready:settled,getPage:()=>page,getBank:()=>bank,setBank:value=>bank=value};
+}
+ws.on('open',()=>{ws.send(JSON.stringify({event:arg('-registerEvent'),uuid:arg('-pluginUUID')}));ws.send(JSON.stringify({event:'getGlobalSettings',context:arg('-pluginUUID')}));for(const runtime of controllers.values())if(runtime.keys.size)queue=queue.then(runtime.initialize).catch(()=>{});});
+ws.on('message',raw=>{try{
+ const e=JSON.parse(raw);
+ if(e.event==='didReceiveGlobalSettings'){
+  try{const input=e.payload?.settings||{};if(input.version!==2&&loadedV2)return;const incoming=preferences.store(input);if(input.version===2&&incoming.revision<saved.revision)return;saved=incoming;storeError='';if(input.version===2)loadedV2=true;else persist();applyAllSettings();}catch{storeError='Saved profile preferences invalid; keeping the last valid settings';for(const runtime of controllers.values())runtime.render();}
+  return;
+ }
+ if(e.event==='willAppear'||e.event==='didReceiveSettings'){
+  if(e.event==='didReceiveSettings'&&!owners.has(e.context))return;
+  const scope=preferences.scopeOf(e.payload?.settings),prior=owners.get(e.context);
+  if(prior&&prior!==scope)getController(prior).detach(e.context);
+  if(!scope){owners.delete(e.context);emit('setImage',e.context,{image:'data:image/svg+xml;base64,'+Buffer.from(svg({icon:'blank',lines:['Profile','setup error'],color:'#893748'})).toString('base64'),target:0});emit('setTitle',e.context,{title:'',target:0});return;}
+  const runtime=getController(scope);owners.set(e.context,scope);
+  if(e.event==='didReceiveSettings'&&prior===scope){const k=runtime.keys.get(e.context);if(k)k.settings=e.payload.settings||{};runtime.render();}
+  else runtime.attach(e.context,e.payload);
+  return;
+ }
+ const scope=owners.get(e.context);if(!scope)return;const runtime=getController(scope);
+ if(e.event==='willDisappear'){runtime.detach(e.context);owners.delete(e.context);return;}
+ if(e.event==='sendToPlugin'){const appearance=runtime.keys.get(e.context)?.appearance;queue=queue.then(()=>owners.get(e.context)===scope&&runtime.keys.get(e.context)?.appearance===appearance?runtime.inspectorRequest(e):undefined).catch(()=>{});return;}
+ if(e.event==='keyDown'){const k=runtime.keys.get(e.context),shown=k?.presented,display=shown?{...shown,pressedAt:Date.now(),setupBusy:runtime.setupBusy}:undefined;queue=queue.then(()=>owners.get(e.context)===scope?runtime.press(e.context,display):undefined).catch(()=>{});}
+}catch{}});
+ws.on('close',()=>process.exit(0));ws.on('error',()=>process.exit(1));
+setInterval(()=>{for(const runtime of controllers.values())if(runtime.keys.size)void runtime.refresh();},2000);
+setInterval(()=>{for(const runtime of controllers.values())if(runtime.keys.size)runtime.render();},250);

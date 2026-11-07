@@ -1,3 +1,11 @@
+# 1.3.1 development preview — not released
+
+- Separate **Rex Agents** and **Herdr Agents** profiles with pinned controllers and independent selection, banks, pages, connections and opt-ins. Animation and prompt text remain shared.
+- Existing Rex profile/layout preserved; the source installer adds only missing profiles and backs up before changing installed files. Bundles include both importable profiles.
+- Migrates existing explicit consent, custom prompts and socket preferences. Profile changes discard tracked submissions and reject stale queued controls.
+- Installed locally after a full backup; all 64 pre-existing profile files remained byte-for-byte unchanged. Both profiles appear in Stream Deck Preferences; Rex Agents remains selected. Only Stream Deck was restarted.
+- 34 automated regression groups and eight distribution tests passed. No live Claude controls or physical keys were tested for this update. See [profiles](PROFILES.md).
+
 # 1.3.0 development preview — not released
 
 - Optional native Claude 2.1.319 metadata hooks/status-line bridge, disabled controls by default, with explicit preview/apply/remove setup.

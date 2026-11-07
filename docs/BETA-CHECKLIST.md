@@ -1,3 +1,12 @@
+# Separate-profile development preview
+
+- [x] Independent Rex/Herdr navigation, connections, consent and opt-ins; shared presentation preferences.
+- [x] Safe legacy-key routing, preference migration, stale/hidden press refusal and delayed-read isolation.
+- [x] Both profile archives audited; source installer fixture preserves customized Rex bytes and adds Herdr.
+- [x] Full suite: 34 JavaScript regression groups and eight Python distribution tests.
+- [x] Installed 1.3.1 locally; both profiles visible in Stream Deck Preferences, existing profile files unchanged, Rex selected afterward.
+- [ ] Physical profile switching with live native controls (not attempted in this implementation).
+
 # Beta verification
 
 ## Claude development preview

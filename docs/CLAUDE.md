@@ -1,6 +1,6 @@
 # Claude Code and mixed agent banks (development preview)
 
-Implemented on `codex/claude-mixed-agent-support`, version **1.3.0**. This preview has automated coverage but **no live Claude control or physical-key validation**. It has not replaced the installed 1.2.1 plugin. The earlier Rex/Codex and Herdr/Codex hardware results do not validate these new paths.
+Implemented on `codex/claude-mixed-agent-support`, version **1.3.1**. This preview has automated coverage but **no live Claude control or physical-key validation**. The earlier Rex/Codex and Herdr/Codex hardware results do not validate these new paths.
 
 Claude and Codex share discovery, stable slots, bank cycling, Next agent, Collapse, selection dots and project/status labels within the chosen controller. Selecting an agent changes the contextual controls for its provider. Each controller still connects to its own Rex or explicit Herdr session; this does not aggregate Rex and Herdr into one bank.
 
@@ -48,7 +48,7 @@ The default target is `~/.claude/settings.json`, honoring `CLAUDE_CONFIG_DIR`; u
 
 Claude normally notices settings-file edits through its watcher; check its read-only `/hooks` menu when validating setup. Identity needs a root SessionStart or UserPromptSubmit event, so an already-open idle chat can remain unverified until its next user-submitted message. The plugin never sends that message or restarts the chat automatically. Project or managed settings can disable/override these hooks; the integration does not bypass those settings.
 
-In Stream Deck's key settings, explicitly enable **Claude native controls after hook setup**. In Rex, visible-pane consent is still required. In Herdr, choose the intended local session socket; Claude identity does not require `/title thread-id`. Reselect the desired agent after changing opt-in or controller settings.
+Select the intended Rex Agents or Herdr Agents profile. In a key’s settings, explicitly enable **Claude native controls after hook setup**. In Rex, visible-pane consent is still required. In Herdr, choose the intended local session socket; Claude identity does not require `/title thread-id`. Reselect the desired agent after changing opt-in or controller settings.
 
 ## Metadata, identity and input guards
 
@@ -75,7 +75,7 @@ Removal deletes only exact owned hook commands. It restores the saved original s
 
 ## Automated coverage and remaining gates
 
-Five added regression groups cover metadata privacy and lifecycle ordering; PID/start/version/session isolation; subagent refusal; private records; setup/upgrade/removal and preservation; guarded picker/session-only apply; staged/edited/uncertain Send; Claude-specific Queue/Send-now; question/approval changes and checkbox toggles; mixed banks, Collapse and replacement processes; provider-specific artwork/captions and Codex-cache isolation; and scoped Herdr keys with no composer writes. The full suite has **33 groups**, plus seven distribution tests.
+Five added regression groups cover metadata privacy and lifecycle ordering; PID/start/version/session isolation; subagent refusal; private records; setup/upgrade/removal and preservation; guarded picker/session-only apply; staged/edited/uncertain Send; Claude-specific Queue/Send-now; question/approval changes and checkbox toggles; mixed banks, Collapse and replacement processes; provider-specific artwork/captions and Codex-cache isolation; and scoped Herdr keys with no composer writes. The full suite has **34 groups**, plus eight distribution tests, including separate-profile routing and preference migration.
 
 Before enabling by default or merging to a release: validate hook ancestry/file-watcher behavior with the native installer, status-line chaining and live renames, the exact native modal/composer layouts, default and customized keybindings, permission/checkbox prompts, session-only model/effort persistence, draft/queue semantics, focus changes, restart/reconnect and physical mixed-bank navigation. No live or physical Claude check has been claimed in this preview.
 

@@ -8,7 +8,7 @@ const {Bridge}=require('./com.local.rexagents.sdPlugin/core'),{AgentMetadata}=re
  class FixtureBridge extends Bridge{async discover(){this.agents=[{...baseline}];return this.agents;}}
  class FixtureMetadata extends AgentMetadata{async read(){return{chatName:'Known',project:'project',model:'gpt-6-luna',metadataAt:1000};}}
  const context={Buffer,process:{argv:['node','plugin','-port','0']},__dirname:directory,setInterval:()=>{},require:name=>name==='ws'?Socket:name==='./core'?{Bridge:FixtureBridge}:name==='./agent-metadata'?{AgentMetadata:FixtureMetadata}:name.startsWith('./')?require(path.join(directory,name)):require(name)};
- vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(directory,'plugin.js'),'utf8')+'\nglobalThis.api={bridge,metadata,keys,render,refresh,refreshMetadata};',context);
+ vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(directory,'plugin.js'),'utf8')+'\nglobalThis.api=getController("rex");',context);
  const api=context.api;api.bridge.slots=[{session:baseline.session,block:baseline.block}];api.keys.set('agent',{settings:{},coordinates:{column:0,row:0}});api.keys.set('reviewer',{settings:{},coordinates:{column:3,row:1}});
  await api.bridge.discover();await api.refreshMetadata(true);
  const displayed=()=>Buffer.from(api.keys.get('agent').lastImage.split(',')[1],'base64').toString();
