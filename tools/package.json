@@ -2,6 +2,7 @@
   "name": "agent-switchboard-build-tools",
   "private": true,
   "devDependencies": {
-    "@elgato/cli": "1.10.4"
+    "@elgato/cli": "1.10.4",
+    "prettier": "3.9.10"
   }
 }

@@ -1,7 +1,87 @@
 <!doctype html>
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <style>
-[hidden]{display:none!important}body{background:#262626;color:#eee;font:13px system-ui,sans-serif;margin:0;padding:14px}h2{font-size:14px;margin:18px 0 8px}h2:first-child{margin-top:0}p{line-height:1.5;margin:7px 0;color:#c4c7ce}label{display:block;margin:10px 0;line-height:1.5}input[type=checkbox]{vertical-align:middle;margin-right:7px}select,textarea,input[type=text],button{box-sizing:border-box;font:inherit;color:#eee;background:#373941;border:1px solid #626571;border-radius:5px;padding:7px}select,textarea,input[type=text]{width:100%}textarea{resize:vertical;min-height:68px}button{margin:5px 0}button:disabled{opacity:.45}details{margin-top:18px}summary{font-weight:600}#message{color:#f1d39a;min-height:20px}#connection{color:#eee}code{font-size:12px;overflow-wrap:anywhere}.note{font-size:12px;color:#b7bbc5}
+  [hidden] {
+    display: none !important;
+  }
+  body {
+    background: #262626;
+    color: #eee;
+    font:
+      13px system-ui,
+      sans-serif;
+    margin: 0;
+    padding: 14px;
+  }
+  h2 {
+    font-size: 14px;
+    margin: 18px 0 8px;
+  }
+  h2:first-child {
+    margin-top: 0;
+  }
+  p {
+    line-height: 1.5;
+    margin: 7px 0;
+    color: #c4c7ce;
+  }
+  label {
+    display: block;
+    margin: 10px 0;
+    line-height: 1.5;
+  }
+  input[type='checkbox'] {
+    vertical-align: middle;
+    margin-right: 7px;
+  }
+  select,
+  textarea,
+  input[type='text'],
+  button {
+    box-sizing: border-box;
+    font: inherit;
+    color: #eee;
+    background: #373941;
+    border: 1px solid #626571;
+    border-radius: 5px;
+    padding: 7px;
+  }
+  select,
+  textarea,
+  input[type='text'] {
+    width: 100%;
+  }
+  textarea {
+    resize: vertical;
+    min-height: 68px;
+  }
+  button {
+    margin: 5px 0;
+  }
+  button:disabled {
+    opacity: 0.45;
+  }
+  details {
+    margin-top: 18px;
+  }
+  summary {
+    font-weight: 600;
+  }
+  #message {
+    color: #f1d39a;
+    min-height: 20px;
+  }
+  #connection {
+    color: #eee;
+  }
+  code {
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+  .note {
+    font-size: 12px;
+    color: #b7bbc5;
+  }
 </style>
 <h2 id="profileName">Agent Switchboard</h2>
 <p id="connection" role="status" aria-live="polite">Connecting to plugin…</p>
@@ -9,34 +89,124 @@
 <p id="message" role="status" aria-live="polite"></p>
 <button id="refresh" type="button">Refresh status</button>
 <h2>Setup and preferences</h2>
-<label>Controller for this profile<select id="backend" disabled><option value="rex">Rex</option><option value="herdr">Herdr (experimental)</option></select></label>
-<label id="herdrConnection">Herdr session socket<input id="herdrSocketPath" type="text" maxlength="1024" placeholder="~/.config/herdr/herdr.sock"></label>
-<div id="herdrHelp"><label><input id="herdrTitleIdentity" type="checkbox" disabled>Match Codex thread-ID titles (experimental)</label>
-<p class="note">In each Codex pane, run <code>/title thread-id</code> with an empty composer, then select that agent on the deck. Use only the thread-ID title item. Reapply after a new chat if the title resets. This matches the displayed ID to that pane's Codex daemon; ambiguous or missing IDs disable native controls.</p>
-<p class="note">Connect to local Herdr 0.9.5. Type messages in Herdr; draft submission needs cursor support. The plugin does not change your titles, global Codex settings or Herdr's saved session references.</p></div>
-<p class="note">Switch between Rex Agents and Herdr Agents using Stream Deck’s profile selector. Connection and consent settings stay with this controller; animation and prompt text are shared. Changes save automatically.</p>
-<div id="rexSetup"><label><input id="allowClipboardFocus" type="checkbox" disabled>Enable visible-pane checks</label>
-<p class="note">Required for controls. Rex temporarily copies its pane ID; the helper restores your clipboard formats. Rex may show a copy notification. Background status checks do not use the clipboard.</p>
-<p class="note">Enable Remote Control in Rex first. Select a ready Codex agent on the deck, then configure its status line once.</p>
-<button id="setup" type="button" disabled>Set up selected Codex agent</button>
-<p class="note">Setup opens Codex settings dialogs and saves the session-ID footer. Your process and unsent input stay in place. Leave Rex alone until setup finishes.</p>
-<label><input id="bringToFront" type="checkbox" disabled>Bring Rex forward when selecting an agent</label>
+<label
+  >Controller for this profile<select id="backend" disabled>
+    <option value="rex">Rex</option>
+    <option value="herdr">Herdr (experimental)</option>
+  </select></label
+>
+<label id="herdrConnection"
+  >Herdr session socket<input
+    id="herdrSocketPath"
+    type="text"
+    maxlength="1024"
+    placeholder="~/.config/herdr/herdr.sock"
+/></label>
+<div id="herdrHelp">
+  <label
+    ><input id="herdrTitleIdentity" type="checkbox" disabled />Match Codex
+    thread-ID titles (experimental)</label
+  >
+  <p class="note">
+    In each Codex pane, run <code>/title thread-id</code> with an empty
+    composer, then select that agent on the deck. Use only the thread-ID title
+    item. Reapply after a new chat if the title resets. This matches the
+    displayed ID to that pane's Codex daemon; ambiguous or missing IDs disable
+    native controls.
+  </p>
+  <p class="note">
+    Connect to local Herdr 0.9.5. Type messages in Herdr; draft submission needs
+    cursor support. The plugin does not change your titles, global Codex
+    settings or Herdr's saved session references.
+  </p>
+</div>
+<p class="note">
+  Switch between Rex Agents and Herdr Agents using Stream Deck’s profile
+  selector. Connection and consent settings stay with this controller; animation
+  and prompt text are shared. Changes save automatically.
+</p>
+<div id="rexSetup">
+  <label
+    ><input id="allowClipboardFocus" type="checkbox" disabled />Enable
+    visible-pane checks</label
+  >
+  <p class="note">
+    Required for controls. Rex temporarily copies its pane ID; the helper
+    restores your clipboard formats. Rex may show a copy notification.
+    Background status checks do not use the clipboard.
+  </p>
+  <p class="note">
+    Enable Remote Control in Rex first. Select a ready Codex agent on the deck,
+    then configure its status line once.
+  </p>
+  <button id="setup" type="button" disabled>Set up selected Codex agent</button>
+  <p class="note">
+    Setup opens Codex settings dialogs and saves the session-ID footer. Your
+    process and unsent input stay in place. Leave Rex alone until setup
+    finishes.
+  </p>
+  <label
+    ><input id="bringToFront" type="checkbox" disabled />Bring Rex forward when
+    selecting an agent</label
+  >
 </div>
 <h2>Claude Code (experimental)</h2>
-<label><input id="claudeEnabled" type="checkbox" disabled>Enable Claude native controls after hook setup</label>
-<p class="note">Native Claude 2.1.319 only; live validation is pending. Install the optional metadata hooks with <code>configure-claude.js</code> as described in docs/CLAUDE.md. Existing hooks and status lines are preserved. Enabling this checkbox does not install hooks or change permissions. Model and Effort cycle settings for this session; Mode uses the Claude keyboard. Herdr submissions remain unavailable.</p>
-<label><input id="animationEnabled" type="checkbox" disabled>Animate working and waiting status</label>
-<details><summary>Prompt shortcuts</summary>
-<p>These append text in Rex. Send checks the same chat, input and turn before submitting. After editing or submitting manually, use the Rex keyboard.</p>
-<label>Review<textarea id="review" maxlength="4000" rows="3" disabled></textarea></label>
-<label>Tests<textarea id="tests" maxlength="4000" rows="3" disabled></textarea></label>
-<label>Continue<textarea id="continue" maxlength="4000" rows="3" disabled></textarea></label>
-<p class="note">Single-line prompts, up to 4000 characters. Saved when you leave the field.</p>
+<label
+  ><input id="claudeEnabled" type="checkbox" disabled />Enable Claude native
+  controls after hook setup</label
+>
+<p class="note">
+  Native Claude 2.1.319 only; live validation is pending. Install the optional
+  metadata hooks with <code>configure-claude.js</code> as described in
+  docs/CLAUDE.md. Existing hooks and status lines are preserved. Enabling this
+  checkbox does not install hooks or change permissions. Model and Effort cycle
+  settings for this session; Mode uses the Claude keyboard. Herdr submissions
+  remain unavailable.
+</p>
+<label
+  ><input id="animationEnabled" type="checkbox" disabled />Animate working and
+  waiting status</label
+>
+<details>
+  <summary>Prompt shortcuts</summary>
+  <p>
+    These append text in Rex. Send checks the same chat, input and turn before
+    submitting. After editing or submitting manually, use the Rex keyboard.
+  </p>
+  <label
+    >Review<textarea id="review" maxlength="4000" rows="3" disabled></textarea>
+  </label>
+  <label
+    >Tests<textarea id="tests" maxlength="4000" rows="3" disabled></textarea>
+  </label>
+  <label
+    >Continue<textarea
+      id="continue"
+      maxlength="4000"
+      rows="3"
+      disabled
+    ></textarea>
+  </label>
+  <p class="note">
+    Single-line prompts, up to 4000 characters. Saved when you leave the field.
+  </p>
 </details>
-<details><summary>This key’s action</summary>
-<p>The default follows the key’s position. Override only to customize your layout.</p>
-<label>Action<select id="action"><option value="">Position default</option></select></label>
+<details>
+  <summary>This key’s action</summary>
+  <p>
+    The default follows the key’s position. Override only to customize your
+    layout.
+  </p>
+  <label
+    >Action<select id="action">
+      <option value="">Position default</option>
+    </select></label
+  >
 </details>
-<p class="note">Home’s third row follows the selected agent. Page cycles Home → Questions → Prompts. Reviewer shows and switches between Ask me and Approve for me; request Confirm acts only on the native choice shown in Rex.</p>
+<p class="note">
+  Home’s third row follows the selected agent. Page cycles Home → Questions →
+  Prompts. Reviewer shows and switches between Ask me and Approve for me;
+  request Confirm acts only on the native choice shown in Rex.
+</p>
 <script src="preferences.js"></script>
 <script src="inspector.js"></script>

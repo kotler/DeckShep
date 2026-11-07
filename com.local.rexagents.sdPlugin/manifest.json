@@ -26,9 +26,7 @@
       "Name": "Rex Agent Key",
       "UUID": "com.local.rexagents.key",
       "Icon": "action-icon",
-      "Controllers": [
-        "Keypad"
-      ],
+      "Controllers": ["Keypad"],
       "PropertyInspectorPath": "inspector.html",
       "States": [
         {
