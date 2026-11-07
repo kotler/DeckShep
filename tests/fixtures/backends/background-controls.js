@@ -15,7 +15,7 @@ const {
   {
     agentLines,
   } = require('../../../com.local.rexagents.sdPlugin/agent-labels'),
-  { harness } = require('../../../test-plugin-harness');
+  { harness } = require('../../helpers/plugin-harness');
 const id = '01a1af76-6618-7492-9377-d709a7fe8594';
 function fixture() {
   let ids = ['p1', 'p2'],

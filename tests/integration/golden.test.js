@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { test } = require('node:test');
-const { harness } = require('../../test-plugin-harness');
+const { harness } = require('../helpers/plugin-harness');
 const C = require('../../com.local.rexagents.sdPlugin/context-controls');
 
 const goldenDirectory = path.join(__dirname, '../fixtures/golden');
