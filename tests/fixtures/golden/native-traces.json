@@ -1,0 +1,3371 @@
+{
+  "daemon-controls": {
+    "calls": [
+      {
+        "method": "thread/loaded/list",
+        "params": {
+          "limit": 100
+        }
+      },
+      {
+        "method": "thread/read",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "includeTurns": false
+        }
+      },
+      {
+        "method": "model/list",
+        "params": {
+          "limit": 100,
+          "includeHidden": false
+        }
+      },
+      {
+        "method": "thread/loaded/list",
+        "params": {
+          "limit": 100
+        }
+      },
+      {
+        "method": "thread/read",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "includeTurns": false
+        }
+      },
+      {
+        "method": "thread/settings/update",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "model": "second"
+        }
+      },
+      {
+        "method": "thread/loaded/list",
+        "params": {
+          "limit": 100
+        }
+      },
+      {
+        "method": "thread/read",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "includeTurns": false
+        }
+      }
+    ],
+    "outcome": "Second"
+  },
+  "daemon-effort": {
+    "calls": [
+      {
+        "method": "thread/loaded/list",
+        "params": {
+          "limit": 100
+        }
+      },
+      {
+        "method": "thread/read",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "includeTurns": false
+        }
+      },
+      {
+        "method": "thread/resume",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "excludeTurns": true
+        }
+      },
+      {
+        "method": "thread/loaded/list",
+        "params": {
+          "limit": 100
+        }
+      },
+      {
+        "method": "thread/read",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "includeTurns": false
+        }
+      },
+      {
+        "method": "model/list",
+        "params": {
+          "limit": 100,
+          "includeHidden": false
+        }
+      },
+      {
+        "method": "thread/loaded/list",
+        "params": {
+          "limit": 100
+        }
+      },
+      {
+        "method": "thread/read",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "includeTurns": false
+        }
+      },
+      {
+        "method": "thread/resume",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "excludeTurns": true
+        }
+      },
+      {
+        "method": "thread/loaded/list",
+        "params": {
+          "limit": 100
+        }
+      },
+      {
+        "method": "thread/read",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "includeTurns": false
+        }
+      },
+      {
+        "method": "thread/settings/update",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "effort": "xhigh"
+        }
+      }
+    ],
+    "outcome": "xhigh"
+  },
+  "daemon-permissions": {
+    "calls": [
+      {
+        "method": "thread/loaded/list",
+        "params": {
+          "limit": 100
+        }
+      },
+      {
+        "method": "thread/read",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "includeTurns": false
+        }
+      },
+      {
+        "method": "thread/resume",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "excludeTurns": true
+        }
+      },
+      {
+        "method": "thread/loaded/list",
+        "params": {
+          "limit": 100
+        }
+      },
+      {
+        "method": "thread/read",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "includeTurns": false
+        }
+      },
+      {
+        "method": "thread/loaded/list",
+        "params": {
+          "limit": 100
+        }
+      },
+      {
+        "method": "thread/read",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "includeTurns": false
+        }
+      },
+      {
+        "method": "thread/resume",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "excludeTurns": true
+        }
+      },
+      {
+        "method": "thread/loaded/list",
+        "params": {
+          "limit": 100
+        }
+      },
+      {
+        "method": "thread/read",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "includeTurns": false
+        }
+      },
+      {
+        "method": "thread/settings/update",
+        "params": {
+          "threadId": "01a1ae31-d050-7503-afec-fd2b40d2bc26",
+          "approvalsReviewer": "auto_review"
+        }
+      }
+    ],
+    "outcome": "Approve for me"
+  },
+  "background-controls": {
+    "calls": [
+      {
+        "method": "thread/read",
+        "params": {
+          "threadId": "01a1af76-6618-7492-9377-d709a7fe8594",
+          "includeTurns": false
+        }
+      },
+      {
+        "method": "thread/turns/list",
+        "params": {
+          "threadId": "01a1af76-6618-7492-9377-d709a7fe8594",
+          "limit": 1,
+          "sortDirection": "desc",
+          "itemsView": "notLoaded"
+        }
+      },
+      {
+        "method": "thread/backgroundTerminals/list",
+        "params": {
+          "threadId": "01a1af76-6618-7492-9377-d709a7fe8594",
+          "limit": 100
+        }
+      },
+      {
+        "method": "thread/read",
+        "params": {
+          "threadId": "01a1af76-6618-7492-9377-d709a7fe8594",
+          "includeTurns": false
+        }
+      },
+      {
+        "method": "thread/turns/list",
+        "params": {
+          "threadId": "01a1af76-6618-7492-9377-d709a7fe8594",
+          "limit": 1,
+          "sortDirection": "desc",
+          "itemsView": "notLoaded"
+        }
+      },
+      {
+        "method": "thread/backgroundTerminals/list",
+        "params": {
+          "threadId": "01a1af76-6618-7492-9377-d709a7fe8594",
+          "limit": 100
+        }
+      },
+      {
+        "method": "thread/backgroundTerminals/terminate",
+        "params": {
+          "threadId": "01a1af76-6618-7492-9377-d709a7fe8594",
+          "processId": "p1"
+        }
+      },
+      {
+        "method": "thread/read",
+        "params": {
+          "threadId": "01a1af76-6618-7492-9377-d709a7fe8594",
+          "includeTurns": false
+        }
+      },
+      {
+        "method": "thread/turns/list",
+        "params": {
+          "threadId": "01a1af76-6618-7492-9377-d709a7fe8594",
+          "limit": 1,
+          "sortDirection": "desc",
+          "itemsView": "notLoaded"
+        }
+      },
+      {
+        "method": "thread/backgroundTerminals/list",
+        "params": {
+          "threadId": "01a1af76-6618-7492-9377-d709a7fe8594",
+          "limit": 100
+        }
+      },
+      {
+        "method": "thread/backgroundTerminals/terminate",
+        "params": {
+          "threadId": "01a1af76-6618-7492-9377-d709a7fe8594",
+          "processId": "p2"
+        }
+      },
+      {
+        "method": "thread/backgroundTerminals/list",
+        "params": {
+          "threadId": "01a1af76-6618-7492-9377-d709a7fe8594",
+          "limit": 100
+        }
+      }
+    ],
+    "outcome": "Stopped"
+  },
+  "codex/steer": {
+    "calls": [
+      [
+        "send-key",
+        "-s",
+        "s",
+        "-b",
+        "b",
+        "enter"
+      ]
+    ],
+    "outcome": "Steer sent"
+  },
+  "codex/queue": {
+    "calls": [
+      [
+        "send-key",
+        "-s",
+        "s",
+        "-b",
+        "b",
+        "tab"
+      ]
+    ],
+    "outcome": "Message queued"
+  },
+  "codex/review/send": {
+    "calls": [
+      {
+        "args": [
+          "send",
+          "-s",
+          "s",
+          "-b",
+          "b"
+        ],
+        "text": "\u001b[200~Review the current changes for correctness, regressions, and missing validation. Report findings with file references before making changes.\u001b[201~"
+      },
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "enter"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/review/send": {
+    "calls": [
+      {
+        "args": [
+          "send",
+          "-s",
+          "s",
+          "-b",
+          "b"
+        ],
+        "input": "\u001b[200~Review the current changes for correctness, regressions, and missing validation. Report findings with file references before making changes.\u001b[201~"
+      },
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "enter"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "codex/tests/send": {
+    "calls": [
+      {
+        "args": [
+          "send",
+          "-s",
+          "s",
+          "-b",
+          "b"
+        ],
+        "text": "\u001b[200~Run the relevant tests for the current changes and report results and any failures.\u001b[201~"
+      },
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "enter"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/tests/send": {
+    "calls": [
+      {
+        "args": [
+          "send",
+          "-s",
+          "s",
+          "-b",
+          "b"
+        ],
+        "input": "\u001b[200~Run the relevant tests for the current changes and report results and any failures.\u001b[201~"
+      },
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "enter"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "codex/continue/send": {
+    "calls": [
+      {
+        "args": [
+          "send",
+          "-s",
+          "s",
+          "-b",
+          "b"
+        ],
+        "text": "\u001b[200~Continue the current agreed task from where you left off, respecting existing constraints.\u001b[201~"
+      },
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "enter"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/continue/send": {
+    "calls": [
+      {
+        "args": [
+          "send",
+          "-s",
+          "s",
+          "-b",
+          "b"
+        ],
+        "input": "\u001b[200~Continue the current agreed task from where you left off, respecting existing constraints.\u001b[201~"
+      },
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "enter"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "codex/question/up": {
+    "calls": [
+      [
+        "send-key",
+        "-s",
+        "s",
+        "-b",
+        "b",
+        "up"
+      ]
+    ],
+    "outcome": "ok"
+  },
+  "codex/question/down": {
+    "calls": [
+      [
+        "send-key",
+        "-s",
+        "s",
+        "-b",
+        "b",
+        "down"
+      ]
+    ],
+    "outcome": "ok"
+  },
+  "codex/question/left": {
+    "calls": [
+      [
+        "send-key",
+        "-s",
+        "s",
+        "-b",
+        "b",
+        "left"
+      ]
+    ],
+    "outcome": "ok"
+  },
+  "codex/question/right": {
+    "calls": [
+      [
+        "send-key",
+        "-s",
+        "s",
+        "-b",
+        "b",
+        "right"
+      ]
+    ],
+    "outcome": "ok"
+  },
+  "codex/question/tab": {
+    "calls": [
+      [
+        "send-key",
+        "-s",
+        "s",
+        "-b",
+        "b",
+        "tab"
+      ]
+    ],
+    "outcome": "ok"
+  },
+  "codex/question/shift+tab": {
+    "calls": [
+      [
+        "send-key",
+        "-s",
+        "s",
+        "-b",
+        "b",
+        "shift+tab"
+      ]
+    ],
+    "outcome": "ok"
+  },
+  "codex/question/enter": {
+    "calls": [
+      [
+        "send-key",
+        "-s",
+        "s",
+        "-b",
+        "b",
+        "enter"
+      ]
+    ],
+    "outcome": "ok"
+  },
+  "codex/question/escape": {
+    "calls": [
+      [
+        "send-key",
+        "-s",
+        "s",
+        "-b",
+        "b",
+        "escape"
+      ]
+    ],
+    "outcome": "ok"
+  },
+  "codex/permission/up": {
+    "calls": [
+      [
+        "send-key",
+        "-s",
+        "s",
+        "-b",
+        "b",
+        "up"
+      ]
+    ],
+    "outcome": "ok"
+  },
+  "codex/permission/down": {
+    "calls": [
+      [
+        "send-key",
+        "-s",
+        "s",
+        "-b",
+        "b",
+        "down"
+      ]
+    ],
+    "outcome": "ok"
+  },
+  "codex/permission/enter": {
+    "calls": [
+      [
+        "send-key",
+        "-s",
+        "s",
+        "-b",
+        "b",
+        "enter"
+      ]
+    ],
+    "outcome": "ok"
+  },
+  "codex/permission/escape": {
+    "calls": [
+      [
+        "send-key",
+        "-s",
+        "s",
+        "-b",
+        "b",
+        "escape"
+      ]
+    ],
+    "outcome": "ok"
+  },
+  "claude/question/up": {
+    "calls": [
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "up"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/question/down": {
+    "calls": [
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "down"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/question/left": {
+    "calls": [
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "left"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/question/right": {
+    "calls": [
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "right"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/question/tab": {
+    "calls": [
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "tab"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/question/shift+tab": {
+    "calls": [
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "shift+tab"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/question/enter": {
+    "calls": [
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "enter"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/question/escape": {
+    "calls": [
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "escape"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/permission/up": {
+    "calls": [
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "up"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/permission/down": {
+    "calls": [
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "down"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/permission/enter": {
+    "calls": [
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "enter"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/permission/escape": {
+    "calls": [
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "b",
+          "escape"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/rex/model": {
+    "calls": [
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "w1:p1",
+          "alt+p"
+        ]
+      },
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "w1:p1",
+          "down",
+          "down"
+        ]
+      },
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "w1:p1",
+          "s"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/rex/effort": {
+    "calls": [
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "w1:p1",
+          "alt+p"
+        ]
+      },
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "w1:p1",
+          "right"
+        ]
+      },
+      {
+        "args": [
+          "send-key",
+          "-s",
+          "s",
+          "-b",
+          "w1:p1",
+          "s"
+        ]
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/herdr/model": {
+    "calls": [
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "alt+p"
+          ]
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "down",
+            "down"
+          ]
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "s"
+          ]
+        }
+      }
+    ],
+    "outcome": "ok"
+  },
+  "claude/herdr/effort": {
+    "calls": [
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "alt+p"
+          ]
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "right"
+          ]
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "s"
+          ]
+        }
+      }
+    ],
+    "outcome": "ok"
+  },
+  "herdr/question/up": {
+    "calls": [
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "up"
+          ]
+        }
+      }
+    ],
+    "outcome": "ok"
+  },
+  "herdr/question/down": {
+    "calls": [
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "down"
+          ]
+        }
+      }
+    ],
+    "outcome": "ok"
+  },
+  "herdr/question/left": {
+    "calls": [
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "left"
+          ]
+        }
+      }
+    ],
+    "outcome": "ok"
+  },
+  "herdr/question/right": {
+    "calls": [
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "right"
+          ]
+        }
+      }
+    ],
+    "outcome": "ok"
+  },
+  "herdr/question/tab": {
+    "calls": [
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "tab"
+          ]
+        }
+      }
+    ],
+    "outcome": "ok"
+  },
+  "herdr/question/shift+tab": {
+    "calls": [
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "shift+tab"
+          ]
+        }
+      }
+    ],
+    "outcome": "ok"
+  },
+  "herdr/question/enter": {
+    "calls": [
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "enter"
+          ]
+        }
+      }
+    ],
+    "outcome": "ok"
+  },
+  "herdr/question/escape": {
+    "calls": [
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "esc"
+          ]
+        }
+      }
+    ],
+    "outcome": "ok"
+  },
+  "herdr/permission/up": {
+    "calls": [
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "ansi",
+          "strip_ansi": false
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "ansi",
+          "strip_ansi": false
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "up"
+          ]
+        }
+      }
+    ],
+    "outcome": "ok"
+  },
+  "herdr/permission/down": {
+    "calls": [
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "ansi",
+          "strip_ansi": false
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "ansi",
+          "strip_ansi": false
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "down"
+          ]
+        }
+      }
+    ],
+    "outcome": "ok"
+  },
+  "herdr/permission/enter": {
+    "calls": [
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "ansi",
+          "strip_ansi": false
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "ansi",
+          "strip_ansi": false
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "enter"
+          ]
+        }
+      }
+    ],
+    "outcome": "ok"
+  },
+  "herdr/permission/escape": {
+    "calls": [
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "ansi",
+          "strip_ansi": false
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "ansi",
+          "strip_ansi": false
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.read",
+        "params": {
+          "target": "w1:p1",
+          "source": "visible",
+          "format": "text",
+          "strip_ansi": true
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "esc"
+          ]
+        }
+      }
+    ],
+    "outcome": "ok"
+  },
+  "herdr/ready/plan": {
+    "calls": [
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.send_keys",
+        "params": {
+          "target": "w1:p1",
+          "keys": [
+            "shift+tab"
+          ]
+        }
+      }
+    ],
+    "outcome": "Toggle sent"
+  },
+  "herdr/ready/zoom": {
+    "calls": [
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p1"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p1"
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "pane.zoom",
+        "params": {
+          "pane_id": "w1:p1",
+          "mode": "toggle"
+        }
+      }
+    ],
+    "outcome": "ok"
+  },
+  "herdr/ready/focus": {
+    "calls": [
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p2"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p2"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p2"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p2"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p2"
+        }
+      },
+      {
+        "method": "agent.focus",
+        "params": {
+          "target": "w1:p2"
+        }
+      },
+      {
+        "method": "session.snapshot",
+        "params": {}
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p2"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p2"
+        }
+      },
+      {
+        "method": "pane.get",
+        "params": {
+          "pane_id": "w1:p2"
+        }
+      },
+      {
+        "method": "agent.get",
+        "params": {
+          "target": "w1:p2"
+        }
+      },
+      {
+        "method": "pane.process_info",
+        "params": {
+          "pane_id": "w1:p2"
+        }
+      }
+    ],
+    "outcome": "ok"
+  }
+}
