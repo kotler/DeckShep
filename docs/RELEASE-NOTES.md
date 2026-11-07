@@ -1,3 +1,8 @@
+# 1.3.3 artwork update — not released
+
+- Replaces the generic Claude spokes with a recognizable filled Claude starburst, centered at 104 × 104 pixels in the background of Claude agent keys at 28% white opacity. Chat/project/status text and the selection dot remain on top.
+- The provider artwork is shared by Rex and Herdr. Includes source attribution; native controls are unchanged.
+
 # 1.3.2 development fix — not released
 
 - Restores Rex discovery for existing Codex processes whose executable paths disappear from Rex metadata after a Homebrew upgrade. Resolves only the reported foreground PID using OS owner, start-time and executable checks, then rechecks the pane foreground; a process name alone is insufficient.

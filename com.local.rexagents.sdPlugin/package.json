@@ -1,6 +1,6 @@
 {
   "name": "agent-switchboard-streamdeck",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "private": true,
   "description": "Guarded local Stream Deck controls for terminal coding agents",
   "scripts": {

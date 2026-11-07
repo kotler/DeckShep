@@ -2,11 +2,12 @@
 const esc=s=>String(s||'').replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const codexIcon=require('node:fs').readFileSync(require('node:path').join(__dirname,'assets/codex-app.png')).toString('base64');
 const codexMark=require('node:fs').readFileSync(require('node:path').join(__dirname,'assets/codex-mark.png')).toString('base64');
+const claudeMark=require('node:fs').readFileSync(require('node:path').join(__dirname,'assets/claude-mark.svg'),'utf8').match(/<svg[^>]*>([\s\S]*?)<\/svg>/)[1];
 const paths={
  blank:'',
  codex:`<image x="12" y="0" width="80" height="80" xlink:href="data:image/png;base64,${codexIcon}"/>`,
  empty:'<rect x="22" y="15" width="60" height="50" rx="10" stroke-opacity=".45" stroke-dasharray="4 7"/>',
- 'claude-code':Array.from({length:12},(_,i)=>`<path d="M52 15v15" transform="rotate(${i*30} 52 40)"/>`).join(''),
+ 'claude-code':`<g transform="translate(27 15) scale(2.1)" fill="white" stroke="none">${claudeMark}</g>`,
  grok:'<circle cx="52" cy="40" r="25"/><path d="m27 65 50-50M42 44l22-8-8 22"/>',
  steer:'<path d="M25 65V42q0-22 22-22h33M64 7l16 13-16 13"/>',
  queue:'<path d="M23 15h48M23 30h40M23 45h25"/><circle cx="69" cy="53" r="17"/><path d="M69 43v11l8 5"/>',
@@ -22,7 +23,7 @@ const paths={
  tests:'<path d="M36 12h32M42 12v20L23 62q-3 6 6 6h46q9 0 6-6L62 32V12M34 48h36"/>',continue:'<path d="m36 14 42 26-42 26Z"/>',send:'<path d="m18 17 69 23-69 23 10-23Zm10 23h59"/>',
  up:'<path d="M52 68V13m-23 23 23-23 23 23"/>',down:'<path d="M52 12v55M29 44l23 23 23-23"/>',left:'<path d="M83 40H21m22-22L21 40l22 22"/>',right:'<path d="M21 40h62M61 18l22 22-22 22"/>',escape:'<path d="m30 18 44 44m0-44L30 62"/>',bankprev:'<path d="m50 17-23 23 23 23m28-46L55 40l23 23"/>',banknext:'<path d="m26 17 23 23-23 23m28-46 23 23-23 23"/>'};
 function svg({icon='more',lines=[],color='#24394b',pulse=0,badge='',agent=false,textOnly=false,accent,style='signal'}){
- if(style==='signal')return require('./signal-visuals').signalSvg({icon,lines,color,pulse,badge,agent,textOnly,accent,codexIcon,codexMark,legacyPaths:paths});
+ if(style==='signal')return require('./signal-visuals').signalSvg({icon,lines,color,pulse,badge,agent,textOnly,accent,codexIcon,codexMark,claudeMark,legacyPaths:paths});
  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144" height="144" viewBox="0 0 144 144"><rect x="2" y="2" width="140" height="140" rx="17" fill="${color}"/><rect x="2" y="2" width="140" height="140" rx="17" fill="white" opacity="${Math.max(0,Math.min(.22,pulse))}"/><rect x="3" y="3" width="138" height="138" rx="16" fill="none" stroke="#ffffff" stroke-opacity=".22" stroke-width="2"/><g transform="${agent?'translate(32 -1) scale(.78)':'translate(20 0)'}" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">${textOnly?'':paths[icon]??paths.more}</g>${lines.slice(0,3).map((s,i)=>`<text x="72" y="${textOnly?82:agent?[79,103,130][i]:94+i*19}" fill="white" text-anchor="middle" font-family="Arial" font-size="${textOnly?26:agent?[18,16,16][i]:i===0?17:15}" font-weight="${i===0||agent&&i===2?'bold':'normal'}">${esc(s).slice(0,140)}</text>`).join('')}${badge==='selected'?`<g id="selected-agent"><circle cx="123" cy="19" r="6" fill="white"/></g>`:badge?`<circle cx="125" cy="17" r="7" fill="#ffd66c"/>`:''}</svg>`;
 }
 function pulse(state,elapsed,config){if(!config?.enabled)return 0;if(state==='working')return .09+.09*Math.sin(elapsed*2*Math.PI/(config.workingPeriodMs||2200));if(state==='done'&&elapsed<(config.completePulseMs??15000))return .12+.1*Math.sin(elapsed*2*Math.PI/1500);if(state==='blocked')return .07+.07*Math.sin(elapsed*2*Math.PI/3000);return 0;}

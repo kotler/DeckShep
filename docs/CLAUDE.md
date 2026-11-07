@@ -1,6 +1,6 @@
 # Claude Code and mixed agent banks (development preview)
 
-Implemented on `codex/claude-mixed-agent-support`, version **1.3.2**. This preview has automated coverage but **no live Claude control or physical-key validation**. The earlier Rex/Codex and Herdr/Codex hardware results do not validate these new paths.
+Implemented on `codex/claude-mixed-agent-support`, version **1.3.3**. This preview has automated coverage but **no live Claude control or physical-key validation**. The earlier Rex/Codex and Herdr/Codex hardware results do not validate these new paths.
 
 Claude and Codex share discovery, stable slots, bank cycling, Next agent, Collapse, selection dots and project/status labels within the chosen controller. Selecting an agent changes the contextual controls for its provider. Each controller still connects to its own Rex or explicit Herdr session; this does not aggregate Rex and Herdr into one bank.
 
