@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const {
   Bridge,
@@ -6,7 +7,7 @@ const {
   state,
 } = require('../../com.local.rexagents.sdPlugin/core');
 const defaults = require('../../com.local.rexagents.sdPlugin/config.json');
-(async () => {
+test('core', async () => {
   const config = { ...defaults, allowClipboardFocus: true };
   const gated = new Bridge(defaults, async () => {
     throw Error('Must not call Rex');
@@ -151,4 +152,4 @@ const defaults = require('../../com.local.rexagents.sdPlugin/config.json');
   console.log(
     'PASS visible focus over stale server state, multiple sessions, focus changes, closed panes, clipboard failure, shell rejection, status ownership and draft guards',
   );
-})();
+});

@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { harness } = require('../helpers/plugin-harness');
 const prefs = (h, scope, preferences) => {
@@ -12,7 +13,7 @@ const prefs = (h, scope, preferences) => {
   );
   return h.api.settled();
 };
-(async () => {
+test('backend switch', async () => {
   const h = harness();
   h.api.keys.clear();
   await h.appear('rex');
@@ -151,7 +152,4 @@ const prefs = (h, scope, preferences) => {
   console.log(
     'PASS separate profile routing, independent selection/banks/pages, safe legacy Rex keys, draft invalidation, stale/context-reuse refusal, shared presentation, scoped connections, hidden queued controls and delayed metadata isolation',
   );
-})().catch((e) => {
-  console.error(e);
-  process.exitCode = 1;
 });

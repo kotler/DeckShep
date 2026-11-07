@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   fs = require('node:fs'),
   path = require('node:path'),
@@ -88,6 +89,7 @@ function fixture(allowed = true, fail = false) {
     fs.readFileSync(path.join(directory, 'plugin.js'), 'utf8') +
       '\nglobalThis.api=getController("rex");',
     context,
+    { filename: path.join(directory, 'plugin.js') },
   );
   const api = context.api;
   for (let column = 0; column < 2; column++)
@@ -101,7 +103,7 @@ function fixture(allowed = true, fail = false) {
       .includes('id="selected-agent"');
   return { api, socket, timers, selected, reads: () => reads };
 }
-(async () => {
+test('startup selection', async () => {
   const f = fixture();
   f.socket.emit('open');
   await f.api.ready();
@@ -133,7 +135,4 @@ function fixture(allowed = true, fail = false) {
   console.log(
     'PASS selected dot initializes from actual Rex selection before key presses, one startup read only, no recurring focus queries, existing opt-in respected and failed reads leave no false selection',
   );
-})().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
 });

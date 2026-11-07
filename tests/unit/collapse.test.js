@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { Bridge } = require('../../com.local.rexagents.sdPlugin/core');
 const slot = (block, session = 's') => ({ session, block });
@@ -8,7 +9,7 @@ const live = (block, session = 's') => ({
   pid: block.charCodeAt(0),
   state: 'idle',
 });
-(async () => {
+test('collapse', async () => {
   const bridge = new Bridge(
     {},
     async () => {
@@ -97,7 +98,4 @@ const live = (block, session = 's') => ({
   console.log(
     'PASS explicit collapse, fresh discovery, stable overflow order, draft/focus preservation, offline guard, empty/idempotent collapse and forward agent wraparound',
   );
-})().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
 });

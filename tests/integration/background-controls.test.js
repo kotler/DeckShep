@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { EventEmitter } = require('node:events');
 const {
@@ -90,7 +91,7 @@ function fixture() {
     tick: () => time++,
   };
 }
-(async () => {
+test('background controls', async () => {
   const f = fixture(),
     reader = f.reader();
   await reader.refresh([f.agent], true);
@@ -288,7 +289,4 @@ function fixture() {
   console.log(
     'PASS background-only readback and privacy, interrupted/active distinction, fresh chat/turn/process/list checks, scoped terminal termination, partial batch/new-run refusal, no uncertain retries, stale cache/button rejection and strict RPC payloads',
   );
-})().catch((e) => {
-  console.error(e);
-  process.exitCode = 1;
 });

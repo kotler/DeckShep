@@ -1,12 +1,15 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   fs = require('node:fs'),
   path = require('node:path'),
   vm = require('node:vm'),
   { EventEmitter } = require('node:events');
 const { Bridge } = require('../../com.local.rexagents.sdPlugin/core'),
-  { AgentMetadata } = require('../../com.local.rexagents.sdPlugin/agent-metadata');
-(async () => {
+  {
+    AgentMetadata,
+  } = require('../../com.local.rexagents.sdPlugin/agent-metadata');
+test('label refresh', async () => {
   const directory = path.join(__dirname, '../../com.local.rexagents.sdPlugin');
   const baseline = {
     session: 's',
@@ -61,6 +64,7 @@ const { Bridge } = require('../../com.local.rexagents.sdPlugin/core'),
     fs.readFileSync(path.join(directory, 'plugin.js'), 'utf8') +
       '\nglobalThis.api=getController("rex");',
     context,
+    { filename: path.join(directory, 'plugin.js') },
   );
   const api = context.api;
   api.bridge.slots = [{ session: baseline.session, block: baseline.block }];
@@ -131,7 +135,4 @@ const { Bridge } = require('../../com.local.rexagents.sdPlugin/core'),
   console.log(
     'PASS stable rendered names through fresh status records, delayed and failed reads, independent discovery, live rename updates, persistent selection through polls and process/folder cache isolation',
   );
-})().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
 });

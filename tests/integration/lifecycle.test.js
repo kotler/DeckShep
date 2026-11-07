@@ -1,8 +1,9 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { Bridge } = require('../../com.local.rexagents.sdPlugin/core'),
   { harness } = require('../helpers/plugin-harness');
-(async () => {
+test('lifecycle', async () => {
   const h = harness();
   await h.ready();
   const base = h.live[0];
@@ -126,7 +127,4 @@ const assert = require('node:assert/strict'),
   console.log(
     'PASS thirteen-agent banks, closure gaps, stale slot presses, Collapse/clamping, replacement identity, empty bank and partial-discovery preservation',
   );
-})().catch((e) => {
-  console.error(e);
-  process.exitCode = 1;
 });

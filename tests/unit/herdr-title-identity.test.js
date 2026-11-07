@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   {
     TitleIdentity,
@@ -62,7 +63,7 @@ function fixture() {
     run: () => resolver.resolve({ pid: 101, cwd: '/project' }, title),
   };
 }
-(async () => {
+test('herdr title identity', async () => {
   assert.equal(titlePrefix(title), id.slice(0, 29));
   assert.equal(titlePrefix(id), id);
   for (const value of [
@@ -149,7 +150,4 @@ function fixture() {
   console.log(
     'PASS explicit native UUID titles, complete unique loaded-ID matching, root/cwd/source checks, daemon generation, active-turn identity, malformed/paginated/ambiguous refusal and metadata-only reads',
   );
-})().catch((e) => {
-  console.error(e);
-  process.exitCode = 1;
 });

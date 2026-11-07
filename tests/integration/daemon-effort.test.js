@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const {
   DaemonControls,
@@ -7,7 +8,9 @@ const {
   permissionSnapshot,
   sameExceptEffort,
 } = require('../../com.local.rexagents.sdPlugin/daemon-controls');
-const { effortLines } = require('../../com.local.rexagents.sdPlugin/agent-labels');
+const {
+  effortLines,
+} = require('../../com.local.rexagents.sdPlugin/agent-labels');
 const id = '01a1ae31-d050-7503-afec-fd2b40d2bc26';
 function fixture() {
   let state = {
@@ -112,7 +115,7 @@ function fixture() {
     control: () => new DaemonControls(b, deps),
   };
 }
-(async () => {
+test('daemon effort', async () => {
   const f = fixture(),
     before = f.get(),
     draft = f.b.draft;
@@ -264,7 +267,4 @@ function fixture() {
   console.log(
     'PASS supported effort cycle/wrap, model catalog independence, verified captions/manual changes, chat/focus/process guards, effort-only payload, full boundary preservation and no uncertain retries',
   );
-})().catch((e) => {
-  console.error(e);
-  process.exitCode = 1;
 });

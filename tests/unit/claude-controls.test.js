@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   crypto = require('node:crypto');
 const { Bridge } = require('../../com.local.rexagents.sdPlugin/core'),
@@ -132,7 +133,7 @@ function fixture() {
   };
   return { b, controls, r, p, raw, state, calls, text, invoke };
 }
-(async () => {
+test('claude controls', async () => {
   const approvalPanel =
     '────────────────────────\n Bash command\n /usr/bin/printf TEST_ONLY\n Do you want to proceed?\n ❯ 1. Yes\n   2. No\n Esc to cancel · Tab to amend';
   const nativeChecks =
@@ -726,7 +727,4 @@ function fixture() {
   console.log(
     'PASS Claude native picker/effort navigation, explicit Confirm, no mode expansion, staged/edited/uncertain Send, provider-specific Queue/Send-now, guarded Interrupt, waiting-request/session changes, rebindings, opt-in and unsupported-version refusal',
   );
-})().catch((e) => {
-  console.error(e);
-  process.exitCode = 1;
 });

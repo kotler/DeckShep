@@ -1,7 +1,10 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { Bridge } = require('../../com.local.rexagents.sdPlugin/core'),
-  { composerSnapshot } = require('../../com.local.rexagents.sdPlugin/native-input');
+  {
+    composerSnapshot,
+  } = require('../../com.local.rexagents.sdPlugin/native-input');
 const defaults = require('../../com.local.rexagents.sdPlugin/config.json');
 function fixture() {
   const a = {
@@ -47,7 +50,7 @@ function fixture() {
     },
   };
 }
-(async () => {
+test('staged send', async () => {
   const id = '01a1ae31-d050-7503-afec-fd2b40d2bc26';
   const empty = composerSnapshot(
     '› Ghost suggestion\n\n  ' + id + ' · GPT-6-Luna',
@@ -139,7 +142,4 @@ function fixture() {
   console.log(
     'PASS staged Send checks content/chat/turn/cursor, manual submission and edits, two-read stability, final focus, no retries, unsupported agents and digest-only storage',
   );
-})().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
 });

@@ -1,7 +1,10 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { Bridge } = require('../../com.local.rexagents.sdPlugin/core'),
-  { composerSnapshot } = require('../../com.local.rexagents.sdPlugin/native-input'),
+  {
+    composerSnapshot,
+  } = require('../../com.local.rexagents.sdPlugin/native-input'),
   C = require('../../com.local.rexagents.sdPlugin/context-controls');
 const id = '01a1ae31-d050-7503-afec-fd2b40d2bc26';
 function fixture(state = 'working', kind) {
@@ -31,7 +34,7 @@ function fixture(state = 'working', kind) {
   b.draft = { unsent: true };
   return { b, agent, calls };
 }
-(async () => {
+test('running controls', async () => {
   const footer = '  ' + id + ' · GPT-6-Luna high',
     view = ['history', '› hello world', '', '' + footer].join('\n');
   const parsed = composerSnapshot(view, { row: 2, column: 14 }, id);
@@ -197,7 +200,4 @@ function fixture(state = 'working', kind) {
   console.log(
     'PASS native composer validation and message privacy, explicit running-only Enter/Tab, changed/empty/command input refusal, no replay or timeout retries, stable approval-view guards, request/target isolation and context cleanup',
   );
-})().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
 });

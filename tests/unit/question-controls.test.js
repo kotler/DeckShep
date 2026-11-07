@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { Bridge } = require('../../com.local.rexagents.sdPlugin/core');
 function fixture(first = {}, second = {}) {
@@ -26,7 +27,7 @@ function fixture(first = {}, second = {}) {
   bridge.picker = null;
   return { bridge, sent };
 }
-(async () => {
+test('question controls', async () => {
   for (const key of [
     'up',
     'down',
@@ -100,7 +101,4 @@ function fixture(first = {}, second = {}) {
   console.log(
     'PASS question-only native key routing, one key per press, draft preservation, approval/auth/composer refusal, changing state/focus/process guards and no repeated submission after a question completes',
   );
-})().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
 });

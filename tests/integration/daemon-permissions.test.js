@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
 const {
@@ -97,7 +98,7 @@ function fixture() {
     control: () => new DaemonControls(b, deps),
   };
 }
-(async () => {
+test('daemon permissions', async () => {
   const f = fixture(),
     before = permissionSnapshot(f.get(), false),
     draft = f.b.draft;
@@ -324,7 +325,4 @@ function fixture() {
   console.log(
     'PASS live reviewer toggles/manual changes, exact reviewer-only payloads, full boundary preservation, metadata-only subscriptions, empty-history/version/focus guards, no timeout retries, authoritative confirmation and snapshot cleanup',
   );
-})().catch((e) => {
-  console.error(e);
-  process.exitCode = 1;
 });

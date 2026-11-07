@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   crypto = require('node:crypto');
 const { Bridge } = require('../../com.local.rexagents.sdPlugin/core'),
@@ -255,7 +256,7 @@ function fixture(backend = 'rex') {
   };
   return { b, controls, state, record, process, calls, invoke, text };
 }
-(async () => {
+test('claude cycle', async () => {
   for (const backend of ['rex', 'herdr']) {
     const f = fixture(backend);
     f.state.input = 'unchanged draft';
@@ -384,7 +385,4 @@ function fixture(backend = 'rex') {
   console.log(
     'PASS one-press Claude model/effort cycles in Rex and Herdr, supported effort preservation/wrap, unchanged drafts, session-only keys, modal/credit/uncertain-write refusal, scoped Herdr keys and native focus/scroll guards',
   );
-})().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
 });

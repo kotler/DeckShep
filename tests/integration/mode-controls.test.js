@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { harness } = require('../helpers/plugin-harness');
 const {
@@ -7,7 +8,7 @@ const {
 const {
   AgentMetadata,
 } = require('../../com.local.rexagents.sdPlugin/agent-metadata');
-(async () => {
+test('mode controls', async () => {
   const h = harness();
   h.change('a', {
     collaborationMode: 'default',
@@ -161,7 +162,4 @@ const {
   console.log(
     'PASS brain Effort icon and ready-state Zoom, text-only mode key, verified Plan/Default display, native toggle once, manual changes, agent isolation, unavailable metadata and settings privacy',
   );
-})().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
 });

@@ -1,9 +1,10 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   P = require('../../com.local.rexagents.sdPlugin/preferences'),
   defaults = require('../../com.local.rexagents.sdPlugin/config.json'),
   { harness } = require('../helpers/plugin-harness');
-(async () => {
+test('preferences', async () => {
   const before = JSON.stringify(defaults),
     config = P.apply(defaults, {
       allowClipboardFocus: false,
@@ -129,7 +130,4 @@ const assert = require('node:assert/strict'),
   console.log(
     'PASS shared preferences, prompt validation, no policy fields, explicit clipboard opt-in, diagnostics without focus queries, setup consent and config preservation',
   );
-})().catch((e) => {
-  console.error(e);
-  process.exitCode = 1;
 });

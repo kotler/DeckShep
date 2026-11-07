@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { HerdrBridge } = require('../../com.local.rexagents.sdPlugin/herdr-bridge'),
   D = require('../../com.local.rexagents.sdPlugin/daemon-controls'),
@@ -178,7 +179,7 @@ function fixture() {
       ),
   };
 }
-(async () => {
+test('herdr bridge', async () => {
   const f = fixture(),
     agents = await f.b.discover();
   assert.deepEqual(
@@ -509,7 +510,4 @@ function fixture() {
   console.log(
     'PASS Herdr topology/order, process ownership and foreground identity, terminal/server replacement guards, native session binding, focus/Zoom, native approval/question keys, changed-view/scroll guards, Plan and disabled unverified composer actions',
   );
-})().catch((e) => {
-  console.error(e);
-  process.exitCode = 1;
 });

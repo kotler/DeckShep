@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { HerdrBridge } = require('../../com.local.rexagents.sdPlugin/herdr-bridge'),
   {
@@ -6,7 +7,7 @@ const assert = require('node:assert/strict'),
   } = require('../../com.local.rexagents.sdPlugin/claude-controls'),
   C = require('../../com.local.rexagents.sdPlugin/context-controls'),
   defaults = require('../../com.local.rexagents.sdPlugin/config.json');
-(async () => {
+test('claude herdr', async () => {
   const id = '01a1ae31-d050-7503-afec-fd2b40d2bc26',
     now = Date.now(),
     calls = [],
@@ -361,7 +362,4 @@ const assert = require('node:assert/strict'),
   console.log(
     'PASS Herdr mixed-provider discovery, independent Claude identity, scoped waiting/Interrupt keys, changed-request/scroll refusal, read-only Zoom without opt-in and no composer/model submissions',
   );
-})().catch((e) => {
-  console.error(e);
-  process.exitCode = 1;
 });

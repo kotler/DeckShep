@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const {
   AgentMetadata,
@@ -71,7 +72,7 @@ function fixture() {
     closed: () => closed,
   };
 }
-(async () => {
+test('agent metadata', async () => {
   const f = fixture();
   await f.reader.refresh([f.agent]);
   const lines = agentLines(f.agent);
@@ -198,7 +199,4 @@ function fixture() {
   console.log(
     'PASS chat/project/status labels, Unicode ellipsis, aliases, last-verified models, metadata-only busy-agent reads, identity guards, cache freshness and no preview retention',
   );
-})().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
 });

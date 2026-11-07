@@ -1,7 +1,8 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { harness } = require('../helpers/plugin-harness');
-(async () => {
+test('completion display', async () => {
   const h = harness();
   await h.ready();
   assert(h.image(0, 2).includes('>No agent<'));
@@ -81,7 +82,4 @@ const assert = require('node:assert/strict'),
   console.log(
     'PASS empty slot labels, selected completion dwell, deselection, fresh completions, process replacement and native state isolation',
   );
-})().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
 });

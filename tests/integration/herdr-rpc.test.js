@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   net = require('node:net'),
   fs = require('node:fs'),
@@ -8,7 +9,7 @@ const {
   HerdrRpc,
   endpoint,
 } = require('../../com.local.rexagents.sdPlugin/herdr-rpc');
-(async () => {
+test('herdr rpc', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'switchboard-herdr-rpc-'));
   fs.chmodSync(dir, 0o700);
   const file = path.join(dir, 'session.sock'),
@@ -144,7 +145,4 @@ const {
   console.log(
     'PASS Herdr secure explicit endpoint, protocol handshake, fragmented Unicode JSON, strict request scope, no composer submissions, disconnect/timeout handling and no mutation retries',
   );
-})().catch((e) => {
-  console.error(e);
-  process.exitCode = 1;
 });

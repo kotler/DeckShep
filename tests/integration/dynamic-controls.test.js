@@ -1,7 +1,8 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { harness } = require('../helpers/plugin-harness');
-(async () => {
+test('dynamic controls', async () => {
   const h = harness();
   await h.ready();
   assert.equal(h.action(1, 4), 'more');
@@ -239,7 +240,4 @@ const assert = require('node:assert/strict'),
   console.log(
     'PASS dynamic ready/running/question/approval rows, fixed Stop/page positions, contextual Steer/Queue, stale press/request rejection, focus binding, transition delay, page cycling, removed previous buttons and stable selection/bank/collapse behavior',
   );
-})().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
 });

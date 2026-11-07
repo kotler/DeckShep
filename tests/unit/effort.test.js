@@ -1,8 +1,9 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { Bridge } = require('../../com.local.rexagents.sdPlugin/core');
 const defaults = require('../../com.local.rexagents.sdPlugin/config.json');
-(async () => {
+test('effort', async () => {
   const calls = [],
     a = {
       session: 's',
@@ -61,7 +62,4 @@ const defaults = require('../../com.local.rexagents.sdPlugin/config.json');
   console.log(
     'PASS native effort directions, no preset/catalog/submit, draft preservation and routing/refusal guards',
   );
-})().catch((e) => {
-  console.error(e);
-  process.exitCode = 1;
 });

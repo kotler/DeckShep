@@ -1,10 +1,11 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   fs = require('node:fs'),
   os = require('node:os'),
   path = require('node:path');
 const S = require('../../com.local.rexagents.sdPlugin/claude-state');
-(async () => {
+test('claude state', async () => {
   const own = await S.processInfo(process.pid);
   assert.equal(own.pid, process.pid);
   assert(own.startedAt);
@@ -481,7 +482,4 @@ const S = require('../../com.local.rexagents.sdPlugin/claude-state');
   console.log(
     'PASS Claude metadata privacy, root/subagent isolation, lifecycle/request epochs, version/cwd/PID-reuse guards, exact tool completion, private atomic records and no authority from status-line callbacks',
   );
-})().catch((e) => {
-  console.error(e);
-  process.exitCode = 1;
 });

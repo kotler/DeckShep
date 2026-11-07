@@ -1,8 +1,9 @@
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { Bridge } = require('../../com.local.rexagents.sdPlugin/core');
 const { svg, pulse } = require('../../com.local.rexagents.sdPlugin/visuals');
 const c = require('../../com.local.rexagents.sdPlugin/config.json');
-(async () => {
+test('controls', async () => {
   const a = {
     session: 's',
     block: 'b',
@@ -50,4 +51,4 @@ const c = require('../../com.local.rexagents.sdPlugin/config.json');
   console.log(
     'PASS model staging, picker navigation, session-only effort apply, unverified-agent guard, expiry, animation and SVG escaping',
   );
-})();
+});

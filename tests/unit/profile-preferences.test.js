@@ -1,71 +1,74 @@
-'use strict';
-const assert = require('node:assert/strict'),
-  P = require('../../com.local.rexagents.sdPlugin/preferences'),
-  defaults = require('../../com.local.rexagents.sdPlugin/config.json');
-const legacy = {
-  version: 1,
-  preferences: {
-    backend: 'herdr',
-    herdrSocketPath: '/tmp/chosen.sock',
-    herdrTitleIdentity: true,
-    allowClipboardFocus: true,
-    bringToFront: false,
-    claudeEnabled: true,
-    animationEnabled: false,
-    prompts: { review: 'Existing custom prompt' },
-  },
-};
-let store = P.store(legacy);
-assert.equal(P.profileConfig(defaults, store, 'rex').backend, 'rex');
-assert.equal(P.profileConfig(defaults, store, 'herdr').backend, 'herdr');
-assert.equal(store.profiles.herdr.herdrSocketPath, '/tmp/chosen.sock');
-assert.equal(store.profiles.rex.allowClipboardFocus, true);
-assert.equal(store.shared.prompts.review, 'Existing custom prompt');
-const before = JSON.stringify(store);
-const changed = P.update(store, 'herdr', {
-  herdrSocketPath: '/tmp/second.sock',
-  claudeEnabled: false,
+const { test } = require('node:test');
+test('profile preferences', () => {
+  'use strict';
+  const assert = require('node:assert/strict'),
+    P = require('../../com.local.rexagents.sdPlugin/preferences'),
+    defaults = require('../../com.local.rexagents.sdPlugin/config.json');
+  const legacy = {
+    version: 1,
+    preferences: {
+      backend: 'herdr',
+      herdrSocketPath: '/tmp/chosen.sock',
+      herdrTitleIdentity: true,
+      allowClipboardFocus: true,
+      bringToFront: false,
+      claudeEnabled: true,
+      animationEnabled: false,
+      prompts: { review: 'Existing custom prompt' },
+    },
+  };
+  let store = P.store(legacy);
+  assert.equal(P.profileConfig(defaults, store, 'rex').backend, 'rex');
+  assert.equal(P.profileConfig(defaults, store, 'herdr').backend, 'herdr');
+  assert.equal(store.profiles.herdr.herdrSocketPath, '/tmp/chosen.sock');
+  assert.equal(store.profiles.rex.allowClipboardFocus, true);
+  assert.equal(store.shared.prompts.review, 'Existing custom prompt');
+  const before = JSON.stringify(store);
+  const changed = P.update(store, 'herdr', {
+    herdrSocketPath: '/tmp/second.sock',
+    claudeEnabled: false,
+  });
+  assert.equal(JSON.stringify(store), before);
+  assert.equal(changed.profiles.rex.claudeEnabled, true);
+  assert.equal(changed.profiles.herdr.claudeEnabled, false);
+  assert.equal(changed.profiles.rex.allowClipboardFocus, true);
+  store = P.update(changed, 'rex', { prompts: { tests: 'New test prompt' } });
+  assert.equal(store.shared.prompts.review, 'Existing custom prompt');
+  assert.equal(store.shared.prompts.tests, 'New test prompt');
+  assert.deepEqual(P.store(P.serialize(store)), store);
+  assert.equal(
+    P.serialize(store).preferences.backend,
+    'rex',
+    'rollback clients retain a usable Rex preference projection',
+  );
+  for (const [scope, input] of [
+    ['rex', { backend: 'herdr' }],
+    ['rex', { herdrSocketPath: '/tmp/wrong' }],
+    ['herdr', { allowClipboardFocus: true }],
+    ['herdr', { sandboxPolicy: {} }],
+  ])
+    assert.throws(() => P.update(store, scope, input));
+  for (const value of [
+    { version: 99 },
+    {
+      version: 2,
+      revision: 0,
+      shared: {},
+      profiles: { herdr: { approvalPolicy: 'never' } },
+    },
+    { version: 2, revision: -1, profiles: {} },
+    { version: 2, revision: 0, profiles: { other: {} } },
+  ])
+    assert.throws(() => P.store(value));
+  assert.equal(P.scopeOf({}), 'rex');
+  assert.equal(P.scopeOf({ profileScope: 'herdr' }), 'herdr');
+  assert.equal(P.scopeOf({ profileScope: 'unknown' }), null);
+  const fresh = P.profileConfig(defaults, P.store(), 'herdr');
+  assert.equal(fresh.allowClipboardFocus, false);
+  assert.equal(fresh.herdr.titleIdentity, false);
+  assert.equal(fresh.claude.enabled, false);
+  assert.equal(defaults.backend, 'rex');
+  console.log(
+    'PASS migration of explicit consent/custom prompts/socket settings, pinned profile backends, independent opt-ins, patch merging, schema/version refusal, rollback projection and safe fresh defaults',
+  );
 });
-assert.equal(JSON.stringify(store), before);
-assert.equal(changed.profiles.rex.claudeEnabled, true);
-assert.equal(changed.profiles.herdr.claudeEnabled, false);
-assert.equal(changed.profiles.rex.allowClipboardFocus, true);
-store = P.update(changed, 'rex', { prompts: { tests: 'New test prompt' } });
-assert.equal(store.shared.prompts.review, 'Existing custom prompt');
-assert.equal(store.shared.prompts.tests, 'New test prompt');
-assert.deepEqual(P.store(P.serialize(store)), store);
-assert.equal(
-  P.serialize(store).preferences.backend,
-  'rex',
-  'rollback clients retain a usable Rex preference projection',
-);
-for (const [scope, input] of [
-  ['rex', { backend: 'herdr' }],
-  ['rex', { herdrSocketPath: '/tmp/wrong' }],
-  ['herdr', { allowClipboardFocus: true }],
-  ['herdr', { sandboxPolicy: {} }],
-])
-  assert.throws(() => P.update(store, scope, input));
-for (const value of [
-  { version: 99 },
-  {
-    version: 2,
-    revision: 0,
-    shared: {},
-    profiles: { herdr: { approvalPolicy: 'never' } },
-  },
-  { version: 2, revision: -1, profiles: {} },
-  { version: 2, revision: 0, profiles: { other: {} } },
-])
-  assert.throws(() => P.store(value));
-assert.equal(P.scopeOf({}), 'rex');
-assert.equal(P.scopeOf({ profileScope: 'herdr' }), 'herdr');
-assert.equal(P.scopeOf({ profileScope: 'unknown' }), null);
-const fresh = P.profileConfig(defaults, P.store(), 'herdr');
-assert.equal(fresh.allowClipboardFocus, false);
-assert.equal(fresh.herdr.titleIdentity, false);
-assert.equal(fresh.claude.enabled, false);
-assert.equal(defaults.backend, 'rex');
-console.log(
-  'PASS migration of explicit consent/custom prompts/socket settings, pinned profile backends, independent opt-ins, patch merging, schema/version refusal, rollback projection and safe fresh defaults',
-);

@@ -160,6 +160,7 @@ function harness() {
     fs.readFileSync(path.join(directory, 'plugin.js'), 'utf8') +
       '\nglobalThis.api=getController("rex");globalThis.controllers=controllers;globalThis.profileController=getController;',
     context,
+    { filename: path.join(directory, 'plugin.js') },
   );
   const api = context.api;
   for (let row = 0; row < 3; row++)

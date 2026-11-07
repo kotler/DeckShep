@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { Bridge, identify } = require('../../com.local.rexagents.sdPlugin/core'),
   {
@@ -7,7 +8,7 @@ const assert = require('node:assert/strict'),
     sameForeground,
   } = require('../../com.local.rexagents.sdPlugin/rex-process'),
   defaults = require('../../com.local.rexagents.sdPlugin/config.json');
-(async () => {
+test('rex process', async () => {
   const pid = 42,
     file = '/opt/homebrew/Caskroom/codex/0.166.0.upgrading/bin/codex',
     state = `${process.getuid()} Wed Nov  4 11:22:33 2026 codex\n`;
@@ -100,7 +101,4 @@ const assert = require('node:assert/strict'),
   console.log(
     'PASS missing Rex executable resolution, exact foreground and OS owner/start/executable checks, replaced-process refusal, no name-only authority and unchanged ordinary discovery',
   );
-})().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
 });

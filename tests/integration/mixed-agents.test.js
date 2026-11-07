@@ -1,7 +1,10 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { Bridge, identify } = require('../../com.local.rexagents.sdPlugin/core'),
-  { AgentMetadata } = require('../../com.local.rexagents.sdPlugin/agent-metadata'),
+  {
+    AgentMetadata,
+  } = require('../../com.local.rexagents.sdPlugin/agent-metadata'),
   {
     modelLines,
     sameTarget,
@@ -10,7 +13,7 @@ const assert = require('node:assert/strict'),
   { svg } = require('../../com.local.rexagents.sdPlugin/visuals'),
   defaults = require('../../com.local.rexagents.sdPlugin/config.json'),
   C = require('../../com.local.rexagents.sdPlugin/context-controls');
-(async () => {
+test('mixed agents', async () => {
   const entries = Array.from({ length: 7 }, (_, i) => ({
     session: 's',
     window: 'w' + i,
@@ -241,7 +244,4 @@ const assert = require('node:assert/strict'),
   console.log(
     'PASS mixed Claude/Codex discovery, cross-provider next/wrap, stable overflow/hole Collapse, process replacement, provider-specific captions/artwork, native metadata isolation and stale cross-provider press refusal',
   );
-})().catch((e) => {
-  console.error(e);
-  process.exitCode = 1;
 });

@@ -1,7 +1,8 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { Bridge } = require('../../com.local.rexagents.sdPlugin/core');
-(async () => {
+test('focus', async () => {
   const calls = [];
   let fail = false;
   const run = async (args) => {
@@ -34,4 +35,4 @@ const { Bridge } = require('../../com.local.rexagents.sdPlugin/core');
   console.log(
     'PASS exact selection before activation, repeat activation, opt-out, and no activation after failed selection',
   );
-})();
+});

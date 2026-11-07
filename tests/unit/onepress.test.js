@@ -1,9 +1,10 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const P = require('../../com.local.rexagents.sdPlugin/presets');
 const { Bridge, token } = require('../../com.local.rexagents.sdPlugin/core');
 const defaults = require('../../com.local.rexagents.sdPlugin/config.json');
-(async () => {
+test('onepress', async () => {
   const config = {
       ...defaults,
       modelDiscovery: { enabled: false },
@@ -83,4 +84,4 @@ const defaults = require('../../com.local.rexagents.sdPlugin/config.json');
   } finally {
     Object.assign(P, old);
   }
-})();
+});

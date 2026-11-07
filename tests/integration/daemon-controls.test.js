@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
 const {
@@ -76,7 +77,7 @@ function fixture() {
     control: () => new DaemonControls(b, deps),
   };
 }
-(async () => {
+test('daemon controls', async () => {
   const listing =
     'COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME\ncodex 42 user 9u unix 0xaaa 0t0 ->0xbbb\ncodex 50 user 8u unix 0xbbb 0t0 /private/tmp/daemon/socket\n';
   assert.deepEqual(socketFromListing(listing, 42), {
@@ -332,7 +333,4 @@ function fixture() {
   console.log(
     'PASS daemon socket routing, footer identity, catalog/effort compatibility, manual synchronization, focus/chat/process changes, busy/offline guards, model-only writes, no timeout retries and RPC dispatch',
   );
-})().catch((e) => {
-  console.error(e);
-  process.exitCode = 1;
 });

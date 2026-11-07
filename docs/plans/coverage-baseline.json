@@ -1,0 +1,41 @@
+{
+  "phase": 1,
+  "pluginVersion": "1.3.4",
+  "runtime": "Node 26.13.0",
+  "coverageTool": "c8 12.0.0",
+  "include": [
+    "com.local.rexagents.sdPlugin/*.js"
+  ],
+  "total": {
+    "lines": {
+      "total": 8271,
+      "covered": 7243,
+      "skipped": 0,
+      "pct": 87.57
+    },
+    "statements": {
+      "total": 8271,
+      "covered": 7243,
+      "skipped": 0,
+      "pct": 87.57
+    },
+    "functions": {
+      "total": 327,
+      "covered": 286,
+      "skipped": 0,
+      "pct": 87.46
+    },
+    "branches": {
+      "total": 3269,
+      "covered": 2783,
+      "skipped": 0,
+      "pct": 85.13
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": "Unknown"
+    }
+  }
+}

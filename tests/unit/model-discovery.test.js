@@ -1,4 +1,5 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const P = require('../../com.local.rexagents.sdPlugin/presets');
 const {
@@ -7,7 +8,7 @@ const {
   next,
   ModelControls,
 } = require('../../com.local.rexagents.sdPlugin/model-controls');
-(async () => {
+test('model discovery', async () => {
   const raw = {
     models: [
       {
@@ -118,7 +119,4 @@ const {
   console.log(
     'PASS discovered/hidden catalogs, native snapshots, manual model synchronization, supported effort cycling, scratch ownership and process guards',
   );
-})().catch((e) => {
-  console.error(e);
-  process.exitCode = 1;
 });

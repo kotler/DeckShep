@@ -1,7 +1,8 @@
 'use strict';
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { Setup } = require('../../com.local.rexagents.sdPlugin/setup-presets');
-(async () => {
+test('preset setup', async () => {
   const calls = [];
   const b = {
     method: async () => ({ rows: 2 }),
@@ -38,4 +39,4 @@ const { Setup } = require('../../com.local.rexagents.sdPlugin/setup-presets');
   console.log(
     'PASS viewport-only dialog checks, truncated data rejection, and malformed preset-field refusal before saving',
   );
-})();
+});
