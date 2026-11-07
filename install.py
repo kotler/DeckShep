@@ -65,7 +65,8 @@ def main():
     defaults = json.loads((src / 'config.json').read_text())
     old = json.loads((dest / 'config.json').read_text()) if (dest / 'config.json').exists() else {}
     config = merged_config(defaults, old)
-    backup = ROOT / 'backups' / datetime.datetime.now().strftime('%Y%m%d-%H%M%S-%f')
+    backup = (Path.home() / 'Library/Application Support/AgentSwitchboard/backups'
+              / datetime.datetime.now().strftime('%Y%m%d-%H%M%S-%f'))
     shutil.copytree(base / 'ProfilesV3', backup / 'ProfilesV3')
     if dest.exists():
         shutil.copytree(dest, backup / 'previous-plugin')

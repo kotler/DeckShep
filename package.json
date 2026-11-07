@@ -7,7 +7,7 @@
     "tools"
   ],
   "engines": {
-    "node": ">=22.13.0"
+    "node": "^22.13.0 || >=24.0.0"
   },
   "scripts": {
     "test": "node --test",
@@ -19,6 +19,6 @@
     "format:check": "node tools/node_modules/prettier/bin/prettier.cjs --check \"**/*.{js,cjs,mjs,ts,html,json,yml,yaml}\"",
     "build": "python3 build.py",
     "clean": "node scripts/clean.mjs",
-    "knip": "node tools/node_modules/knip/bin/knip.js"
+    "knip": "node tools/node_modules/knip/bin/knip.js --include files,dependencies,unlisted,binaries --no-config-hints"
   }
 }

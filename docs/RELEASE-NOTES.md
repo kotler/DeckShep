@@ -7,7 +7,7 @@
 - Permission waiting status is CHOICE. Physical approval responsiveness remains a beta gate; Herdr's server-side request polling adds latency.
 - Claude's native checkbox layout exposes Toggle and keeps Review → Submit on Home, including the recognized review screen that Herdr reports as done. Stale Review presses cannot submit answers. The native API flow passed; physical validation remains in progress.
 - Resolves the OS executable image for bare-name Claude launches such as Herdr, with owner/start-time checks, without trusting argv0 as a path.
-- Physical validation is in progress. See [the exact Claude test record](CLAUDE.md#local-physical-validation-in-progress--november-7-2026). Automated coverage has 36 groups plus eight distribution tests.
+- Physical validation is in progress. See [the exact Claude test record](validation/2026-11-07-claude.md). Automated coverage has 36 groups plus eight distribution tests.
 
 # 1.3.3 artwork update — not released
 

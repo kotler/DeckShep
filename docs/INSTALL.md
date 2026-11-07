@@ -62,7 +62,7 @@ If a key warns or asks for reselection, reselect the intended agent and inspect 
 Use this route for local development or a device-bound profile. It requires Python 3, Node 20+ and Xcode Command Line Tools, in addition to the prerequisites above. From the repository root:
 
 ```sh
-npm ci --prefix com.local.rexagents.sdPlugin
+npm ci
 python3 build.py
 ```
 
@@ -74,7 +74,7 @@ python3 install.py
 
 The installer requires an existing MK.2 profile to identify your device. If more than one MK.2 is found, its error lists the available IDs; rerun with `python3 install.py --device-uuid DEVICE_UUID`.
 
-It backs up `ProfilesV3` and the previous plugin under `backups/TIMESTAMP/`, preserves existing `config.json` customizations and adds device-bound **Rex Agents** and **Herdr Agents** profiles only when their respective UUIDs are absent. It does not replace existing profiles. Start Stream Deck, choose the desired profile and complete its setup above.
+It backs up `ProfilesV3` and the previous plugin under `~/Library/Application Support/AgentSwitchboard/backups/TIMESTAMP/`, preserves existing `config.json` customizations and adds device-bound **Rex Agents** and **Herdr Agents** profiles only when their respective UUIDs are absent. It does not replace existing profiles. Start Stream Deck, choose the desired profile and complete its setup above.
 
 For a source-installer rollback, quit Stream Deck and restore `previous-plugin` from that backup to `~/Library/Application Support/com.elgato.StreamDeck/Plugins/com.local.rexagents.sdPlugin`. Restore the backed-up `ProfilesV3` only if you need to undo profile changes; first preserve any profiles edited since the backup. Reopen Stream Deck.
 

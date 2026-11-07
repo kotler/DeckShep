@@ -10,10 +10,10 @@ The 1.3.4 Claude preview is not ready for release: its live/physical validation 
 2. Install the pinned dependencies and run checks:
 
    ```sh
-   npm ci --prefix com.local.rexagents.sdPlugin
-   npm ci --prefix tools
-   npm test --prefix com.local.rexagents.sdPlugin
-   python3 -m unittest discover -s tests -v
+   npm ci
+   npm run lint
+   npm test
+   npm run test:coverage
    ```
 
 3. Commit the final source and documentation. From that clean commit, run:

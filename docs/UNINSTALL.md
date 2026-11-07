@@ -45,4 +45,4 @@ Do not delete `~/.codex`, chats, transcripts, authentication, hooks or the exist
 
 ## Optional development-file cleanup
 
-The source installer keeps private backups under the checkout's `backups/` directory. Build products are under `dist/`, and dependency folders are under the plugin's and tools' `node_modules/` directories. These are not removed by Stream Deck. Keep backups until you no longer need rollback or original setup records; move unwanted files to Trash when ready. Remove the checkout itself only after no active work needs that folder. None of this is required to disable the controller.
+The source installer keeps private backups under `~/Library/Application Support/AgentSwitchboard/backups/`. Older checkouts may also have a `backups/` directory. Build products are under `dist/`, and dependency folders are under the plugin's and tools' `node_modules/` directories. These are not removed by Stream Deck. Keep backups until you no longer need rollback or original setup records; move unwanted files to Trash when ready. Remove the checkout itself only after no active work needs that folder. None of this is required to disable the controller.

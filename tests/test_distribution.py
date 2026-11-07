@@ -114,7 +114,9 @@ class DistributionTests(unittest.TestCase):
             config = json.loads((dest / 'config.json').read_text())
             self.assertTrue(config['allowClipboardFocus'])
             self.assertEqual(config['prompts'], {'review': 'custom', 'tests': 'test'})
-            self.assertEqual(len(list((task / 'backups').iterdir())), 1)
+            backup_root = home / 'Library/Application Support/AgentSwitchboard/backups'
+            self.assertEqual(len(list(backup_root.iterdir())), 1)
+            self.assertFalse((task / 'backups').exists())
 
     def test_bundle_rejects_missing_files_and_modified_checksums(self):
         with tempfile.TemporaryDirectory() as temporary:

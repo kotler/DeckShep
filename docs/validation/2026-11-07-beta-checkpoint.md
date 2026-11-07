@@ -1,0 +1,106 @@
+> Historical record moved from BETA-CHECKLIST.md on 2026-11-07.
+> Dates and authorizations below describe prior work; they do not authorize new live tests.
+
+# Claude direct-cycle validation in progress — November 7, 2026
+
+Checkpoint requested after the native multi-select API pass. The current build is installed; no release is being declared. Scratch sessions remain running with no pending test prompt, and visible composer text was preserved. Resume with the physical multi-select check rather than repeating the passed approval checks.
+
+- [x] Native 2.1.319 executable identity, including bare-name Herdr launches, and private root metadata setup.
+- [x] Native API model/effort cycles in Rex and Herdr, upper-bound wrap, session-only settings and preserved selection. Existing original agents remain running; their settings were restored.
+- [x] Rex physical Home Effort and Model cycles; redraw-safe dot retention retested after correction.
+- [x] Global Claude settings outside hooks/statusLine remain byte-equivalent as JSON to the pre-setup backup.
+- [x] Herdr physical Home Effort and Model cycles retained the dot and Home page; single-choice Down/Confirm accepted Blue.
+- [x] First waiting-key physical retest felt faster but retained arrow lag. Revised Herdr arrows use one complete final focus/process/request/body check, parallel stable viewport pairs and no post-arrow queue wait; Confirm retains its stricter checks. Late terminal replacement, scroll, view, focus and request changes send no key in regression checks.
+- [x] Second physical terminal-latency retest: Down → Up → Down kept up well and finished with Blue selected.
+- [x] Physical Confirm after the revised arrow path accepted Blue and restored the ready controls.
+- [x] Native API print-only denial through three guarded arrows and verified No; empty-composer ready recovery without rewriting lifecycle metadata.
+- [x] Physical No confirmation closed the print-only prompt and restored Model/Effort controls with CHOICE installed.
+- [x] Physical Allow once ran the print-only command, returned the exact success response and restored Model/Effort; global/project settings fingerprints were unchanged.
+- [x] Physical Esc closed the print-only prompt, restored Model/Effort and left all checked global/project permission settings unchanged.
+- [x] Native API multi-select: Red/Blue Toggle, Review, explicit Submit, exact reply and ready recovery. Native-done review handling and stale Review-to-Submit rejection have regression coverage.
+- [ ] Physical multi-select Toggle/Review/Submit; Claude running controls and Zoom in both hosts; Rex question/approval and submission controls; approval latency sign-off.
+- [ ] Clean final package and physical-test cleanup/restoration.
+
+# Missing Rex executable-path fix
+
+- [x] Read-only live discovery finds both original Codex processes and both Claude processes, without input or agent restarts.
+- [x] Exact foreground/PID, OS owner, start time and executable-path guards; absent or changed evidence refuses discovery.
+- Full current suite: 35 JavaScript regression groups and eight distribution tests. Physical native controls remain untested for this update.
+
+# Separate-profile development preview
+
+- [x] Independent Rex/Herdr navigation, connections, consent and opt-ins; shared presentation preferences.
+- [x] Safe legacy-key routing, preference migration, stale/hidden press refusal and delayed-read isolation.
+- [x] Both profile archives audited; source installer fixture preserves customized Rex bytes and adds Herdr.
+- [x] Full suite: 34 JavaScript regression groups and eight Python distribution tests.
+- [x] Installed 1.3.1 locally; both profiles visible in Stream Deck Preferences, existing profile files unchanged, Rex selected afterward.
+- [ ] Physical profile switching with live native controls (not attempted in this implementation).
+
+# Beta verification
+
+## Claude development preview
+
+- [x] Five new automated groups cover metadata/setup/privacy, guarded Claude controls, mixed-provider banks and Herdr isolation (33 total).
+- [ ] Apply optional hooks and validate native ancestry/status-line chaining without losing user customizations.
+- [ ] Validate actual picker/composer layouts, session-only persistence, renamed/new chats, questions/checkboxes/approvals, Interrupt, Queue and Send-now.
+- [ ] Validate physical Claude/Codex selection, overflow banks, gaps, Collapse and stale-focus behavior.
+- [ ] Validate uninstall/removal with actual Claude settings and Stream Deck preferences.
+
+No live Claude control or physical test was performed during this implementation. Existing hardware checks below apply to the prior Codex paths. See [CLAUDE.md](../CLAUDE.md).
+
+## Completed locally
+
+- Release packaging adds seven Python regression tests for archive privacy, safe defaults, version/profile consistency, checksum tampering, installer process preflight, preference preservation and device selection. The versioned bundle passes official Elgato validation and independent archive verification.
+
+- Experimental 1.2.1 was installed and its Herdr physical core controls passed with two disposable read-only agents; settings and the normal Rex deck were restored, and original agents were not restarted. See [HERDR.md](../HERDR.md) for exact coverage and remaining gates.
+- The validated Rex baseline has 24 automated test groups. The Herdr backend adds four groups (28 total); live Herdr validation is tracked separately in HERDR.md.
+- Settings panel connected in the installed Stream Deck editor; both Codex chats identified, existing opt-in preserved, prompt fields populated. Preferences were inspected without changing their values.
+- Automated routing, stale state/request, process/focus replacement and malformed metadata tests.
+- Staged Send checks edited/cleared/manually submitted drafts, cursor/chat/turn changes, read failures and uncertain writes; no retry after an uncertain submission.
+- Shared-preference validation rejects policy/sandbox fields; diagnostics never read clipboard focus; setup requires explicit visible-pane consent.
+- Thirteen-agent fixture across three banks, closed holes, stale presses, manual Collapse, bank clamping, replacement processes, all-closed agents and partial discovery.
+- Native daemon model/reviewer checks performed in earlier work preserved permission boundaries and unsent drafts. Existing agent processes were not restarted.
+- Single Effort control reads the native value, advances through the selected model's supported levels and wraps. Physical cycle/wrap passed after the animation fix; the native settings snapshot matched the original Default/High configuration afterward. Original agent processes remained running.
+- Reproduced an effort-button failure during the native Max/Ultra status-line animation. Footer reads now wait for a stable verified viewport for up to four seconds, with no mutation retries. A full live guarded cycle passed through Low, Medium, High, Xhigh, Max, Ultra and back to Low. Mode and permission boundaries were preserved. Error text now outlasts the brief hardware warning overlay.
+- The actual updated installer was extracted into an independent temporary directory. Bundled JavaScript modules and watermark assets loaded without checkout dependencies; fresh clipboard-focus consent stayed off and all then-current beta archive checksums matched.
+- New input-digest reader checked read-only against running Codex agents. No prompt was submitted, no input text retained or logged.
+- Signal artwork installed and inspected in the Stream Deck editor. Owner confirmed the final labels, brain icon, inset bands and agent watermark are readable from the normal seat.
+- Official Elgato validation and local packaging are part of the build. The artifact audit rejects development state, backups, logs and local home/workspace paths.
+
+## Owner hardware checks
+
+Use normal work or a deliberately disposable test agent. Test prompts and approval decisions require explicit authorization; the current scratch agents are authorized for these checks.
+
+- [x] Owner confirmed the final labels, brain icon, inset color bands and agent watermark are readable from the normal viewing angle.
+- [x] Physical Interrupt stopped a scratch turn; native daemon confirmed interrupted. Background sleep remained running until separately stopped.
+- [x] Physical Interrupt and Stop terminals keys verified on the scratch chat. Interrupt produced an interrupted native turn and the deck changed to BACKGROUND; Stop terminals removed the background process. Agent PIDs remained unchanged.
+- [x] Physical Steer delivered the staged message during the active scratch turn and produced STEER RECEIVED. Physical Queue displayed Queued follow-up inputs, then produced QUEUE RECEIVED after CURRENT TASK COMPLETE. Test commands were cleared and both scratch agents returned to Ready.
+- [x] Physical Zoom expanded the selected agent from an actual split-pane layout; a second press restored the split. The temporary passive pane was closed afterward.
+- [x] Physical question controls selected Blue and Large in one two-question request. Down/Up, Confirm, Page, Left/Right, and saved-answer navigation verified on Home and Questions.
+- [x] Physical approval Up/Down and Confirm denied a print-only command; physical approval Esc canceled a second print-only request. Both ran in a temporary on-request approval-test agent, which was closed afterward. Original agent settings were preserved.
+- [x] Physical Confirm allowed a print-only command once. Native confirmation said "this time," the expected marker was printed, persistent approval-rule file hashes were unchanged, and original chat settings were preserved.
+- [ ] Persistent approval-rule creation remains untested.
+- [x] Physical Effort key completed High → Xhigh → Max → Ultra → Low → Medium → High without a warning. Native daemon confirmed High, Default, and the full original settings snapshot afterward.
+- [x] Physical Default key switched into Plan and native settings confirmed the mode. Default/High was restored and verified after testing.
+- [x] Physical Send refused a staged draft after a manual edit; the native latest-turn stamp was unchanged. Restaging the original harmless prompt and pressing Send once produced SEND_GUARD_TEST_OK in one completed turn and cleared the composer. Full original chat settings matched afterward; the original Review shortcut was restored.
+- [x] With the first agent selected on the deck, switched Rex to the second tab manually and physically pressed Model. The deck warned, cleared its selected dot and requested reselection. Metadata-only before/after snapshots confirmed neither original agent's model or effort changed; the first agent's full settings snapshot was preserved.
+- [x] Physical Next agent moved Test E to the off-page Test F and displayed bank 2 with its selected dot. Owner confirmed forward wraparound and bank cycling. Physical Collapse removed a closed middle slot; editor confirmed the relative order of the two original agents, Test D, Test E and Test F was preserved in one bank. Automated coverage also verifies selected-bank wraparound.
+- [x] Temporary validation agents were closed only after identity and idle-state checks. Temporary labels and Review shortcut were restored; the two original processes remained running with the original settings.
+- [x] Diagnosed Test F's Unknown captions as different Rex/Codex launch directories. Relaunching only the disposable test agent with matching directories made the normal metadata reader report Workspace, gpt-6.1-sol and High. No directory guard was bypassed.
+
+## Independent beta checks
+
+- [ ] Install from the package on a Mac without this development checkout.
+- [ ] Complete Remote Control consent, visible-pane opt-in and selected-agent footer setup without assistance.
+- [x] Animation preference persisted across a real Stream Deck restart and local plugin update, then was restored to its original enabled value. Shared prompt preferences also survived the subsequent updates.
+- [ ] Validate the helper on Intel hardware before advertising Intel support.
+- [x] Isolated Unix-socket integration checks refused unavailable/disconnected daemons and unsupported versions without settings writes or retries. Actual Stream Deck restart/local upgrades preserved preferences and left the original agent PIDs unchanged.
+- [ ] Exercise Rex quit/reopen in a disposable environment; current testing must preserve the running original agents.
+
+## Owner release decisions
+
+- Choose the project license and public name.
+- Resolve redistribution of OpenAI artwork or replace it for a public package.
+- Decide whether slot order should persist across plugin restarts.
+- Choose public distribution/signing/notarization and maintenance commitments.
+- Further Superlogical outreach and any change to public repository visibility need owner direction. A tagged GitHub beta checkpoint in the existing repository is authorized; this does not resolve licensing or artwork redistribution. The earlier Discord reply and beta-mac introduction were also authorized and posted.

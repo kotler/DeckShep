@@ -18,7 +18,9 @@ PROFILE = 'Rex Agents.streamDeckProfile'
 PROFILES = (PROFILE, 'Herdr Agents.streamDeckProfile')
 DOCS = ('README.md', 'docs/INSTALL.md', 'docs/RELEASING.md', 'docs/UNINSTALL.md', 'docs/CLAUDE.md', 'docs/PROFILES.md',
         'docs/BETA-CHECKLIST.md', 'docs/COMPATIBILITY.md',
-        'docs/RELEASE-NOTES.md', 'docs/HERDR.md', 'THIRD-PARTY-NOTICES.md')
+        'docs/RELEASE-NOTES.md', 'docs/HERDR.md', 'THIRD-PARTY-NOTICES.md',
+        'docs/validation/2026-11-07-beta-checkpoint.md',
+        'docs/validation/2026-11-06-herdr.md', 'docs/validation/2026-11-07-claude.md')
 PAYLOAD = {INSTALLER, *PROFILES, 'BUILD-INFO.json', *DOCS}
 
 

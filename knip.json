@@ -1,11 +1,21 @@
 {
   "workspaces": {
     ".": {
-      "entry": ["tests/**/*.test.js", "scripts/*.mjs", "eslint.config.mjs"],
-      "project": ["tests/**/*.js", "scripts/*.mjs", "eslint.config.mjs"]
+      "entry": [
+        "tests/**/*.test.js",
+        "scripts/*.mjs",
+        "eslint.config.mjs",
+        "tests/fixtures/backends/*.js"
+      ],
+      "project": ["tests/**/*.js", "scripts/*.mjs"]
     },
     "com.local.rexagents.sdPlugin": {
-      "entry": ["plugin.js", "inspector.js", "claude-hook.js", "configure-claude.js"],
+      "entry": [
+        "plugin.js",
+        "inspector.js",
+        "claude-hook.js",
+        "configure-claude.js"
+      ],
       "project": ["*.js"]
     },
     "tools": {
@@ -13,5 +23,12 @@
       "project": []
     }
   },
-  "ignoreDependencies": ["@elgato/cli", "@eslint/js", "c8", "eslint", "globals", "knip", "prettier"]
+  "ignoreDependencies": [
+    "@elgato/cli",
+    "@eslint/js",
+    "c8",
+    "eslint",
+    "globals",
+    "prettier"
+  ]
 }

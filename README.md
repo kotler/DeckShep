@@ -75,17 +75,23 @@ Advanced aliases, palette, bindings and model filters live in `config.json`. The
 
 ## Build from source
 
-Requires macOS, Node 20+, Python 3 and Xcode Command Line Tools. Stream Deck supplies the installed plugin's Node runtime.
+Requires macOS, Node 22.13+ (see `.nvmrc`), Python 3 and Xcode Command Line Tools. Stream Deck supplies the installed plugin's Node runtime.
 
 ```sh
-npm ci --prefix com.local.rexagents.sdPlugin
-npm ci --prefix tools
-npm test --prefix com.local.rexagents.sdPlugin
-python3 -m unittest discover -s tests -v
+npm ci
+npm run lint
+npm test
+npm run test:coverage
 python3 package.py --tag v1.3.4-beta.1
 ```
 
 This builds a universal helper, validates and packs with the pinned official Elgato CLI, audits the actual archives and writes a versioned ZIP under `dist/`. It never uploads. See [source installation](docs/INSTALL.md#install-from-source) and [release procedure](docs/RELEASING.md).
+
+Developer safety rules are in `AGENTS.md` in the source checkout. `npm run build`
+creates a portable local build without installing it. `npm run clean` removes only
+`dist/` and `coverage/`; it preserves private backups. Installer recovery copies
+now live under `~/Library/Application Support/AgentSwitchboard/backups/`; older
+checkout-local backups remain yours to retain or remove.
 
 ## Project status and attribution
 
