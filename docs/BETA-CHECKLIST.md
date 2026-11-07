@@ -2,6 +2,7 @@
 
 ## Completed locally
 
+- Experimental 1.2.1 was installed and its Herdr physical core controls passed with two disposable read-only agents; settings and the normal Rex deck were restored, and original agents were not restarted. See HERDR.md for exact coverage and remaining gates.
 - The validated Rex baseline has 24 automated test groups. This Herdr development branch adds four groups (28 total); live Herdr validation is tracked separately in HERDR.md.
 - Settings panel connected in the installed Stream Deck editor; both Codex chats identified, existing opt-in preserved, prompt fields populated. Preferences were inspected without changing their values.
 - Automated routing, stale state/request, process/focus replacement and malformed metadata tests.

@@ -3,7 +3,7 @@
 - Explicit opt-in thread-ID title matching for daemon-backed Codex, without changing global settings or trusting hook session claims.
 - Requires complete unique loaded-ID matching, matching folder, interactive root-thread identity, stable pane/foreground and daemon generation.
 - Missing or changed titles clear selection and refuse stale presses, including after restoring the same title. Native turn identities and metadata caches follow the binding generation.
-- Live API tests passed for Model, Effort, Reviewer, Plan/Default, restoration, title loss/rebinding, new-chat isolation, a multiple-choice answer, one-time print-only approval, Interrupt and background-terminal Stop in two disposable agents. Physical validation remains outstanding.
+- Live API tests passed for Model, Effort, Reviewer, Plan/Default, restoration, title loss/rebinding, new-chat isolation, a multiple-choice answer, one-time print-only approval, Interrupt and background-terminal Stop in two disposable agents. The installed physical core controls subsequently passed; see HERDR.md for exact coverage and remaining gates.
 - 28 automated groups cover the Rex baseline and the new title resolver and guards. Send, Steer, Queue and prompt staging remain unavailable in Herdr.
 
 # Herdr development build 1.2.0 — November 6, 2026

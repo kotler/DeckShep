@@ -1,6 +1,6 @@
 # Herdr backend (experimental)
 
-This branch adds support for agents running in **Herdr TUI 0.9.5, socket protocol 22**, initially on a local Mac. Rex remains the default backend. The installed Rex beta is separate from this development branch.
+This branch adds support for agents running in **Herdr TUI 0.9.5, socket protocol 22**, initially on a local Mac. Experimental build 1.2.1 is installed locally, with Rex restored as the active controller after the physical checks. Rex remains the default backend in distributed settings.
 
 The adapter uses Herdr's documented public socket API and the schema bundled with the installed CLI. It connects only to the session socket explicitly selected in preferences. It never starts, stops, upgrades or attaches to a server automatically.
 
@@ -50,18 +50,20 @@ Live API checks on November 6, 2026 used a separate named headless session, leav
 - [x] Missing native identity refused a settings operation before any write.
 - [x] After stopping the owned test session, offline discovery was refused without discarding known slots.
 - [x] Test session stopped; original Rex agent PIDs remained running. Global Codex configuration and hooks matched their original SHA-256 hashes.
-- [ ] Physical keys, bank captions and outer-terminal presentation.
+- [x] Installed physical core controls: selection, model/effort/mode/reviewer, questions, approvals, Interrupt/Stop, Zoom and page cycling.
+- [ ] Physical overflow-bank/closed-slot Collapse checks specifically in Herdr, and visible outer-terminal presentation.
 - [x] Opt-in title-bound Model, Effort and Reviewer changes, with restoration and full settings comparisons. Plan/Default round-trip restored the original settings hash; Plan uses its own native effort preset.
 - [x] Native Interrupt confirmed the active turn was interrupted; scoped Stop terminated its remaining background sleep.
 - [x] A native multiple-choice answer and one-time print-only approval passed with title matching.
-- [ ] Broader approval choices, including Deny and Esc, in Herdr.
-- [ ] Actual reconnect, multiple attached clients and installed controller switching.
+- [x] Physical Deny, Esc and one-time Allow in Herdr; no persistent approval rule was saved.
+- [x] Installed Rex → Herdr → Rex controller switching with the original agents and daemon retaining their PIDs and start times.
+- [ ] Herdr server reconnect and multiple attached clients.
 
 ### Hook identity limitation
 
 The installed Codex 0.166.0 warning explains that command-line configuration overrides (`-c`, `--enable`, `--disable`, `--search`) require embedded mode. The isolated agents started with `-c` supplied official Herdr chat references after a harmless first turn, but had no accessible shared daemon. A fresh agent started without these overrides did connect to the existing daemon, but Herdr did not report its native chat reference, including after a completed turn. An explicit remote-daemon connection also lacked the reference. No user agent or existing daemon was restarted to change this behavior.
 
-Native controls require both independently verified pieces. The adapter refuses to guess a chat from its title, footer text, directory or the daemon's loaded-chat list. Build 1.2.1 adds the opt-in title-ID adapter described above; the earlier hook-only path is no longer used for native control identity. The source branch and package remain experimental; the installed validated Rex plugin has not been replaced.
+Native controls require both independently verified pieces. The adapter refuses to guess a chat from its title, footer text, directory or the daemon's loaded-chat list. Build 1.2.1 adds the opt-in title-ID adapter described above; the earlier hook-only path is no longer used for native control identity. The source branch and package remain experimental; build 1.2.1 was subsequently installed and physically checked as recorded below.
 
 ### Chat-ID investigation — November 6, 2026
 
@@ -104,4 +106,21 @@ Live checks used two disposable, read-only agents in the same project on the exi
 - A native multiple-choice question accepted Blue through the adapter. A one-time approval executed only its intended print command and retained the full settings snapshot.
 - A native new chat changed the ID without restarting the TUI. Reapplying the title established a new binding; the old chat's captured action was refused and the second agent stayed unchanged.
 
-Automated resolver tests cover complete pagination, collisions across pages, missing/duplicate/malformed IDs, wrong folders, subagents, unsupported versions and socket replacement. Adapter tests cover title/process changes during verification, changed active turns and rebindings. Physical Stream Deck validation remains outstanding; this build has not replaced the installed Rex beta.
+Automated resolver tests cover complete pagination, collisions across pages, missing/duplicate/malformed IDs, wrong folders, subagents, unsupported versions and socket replacement. Adapter tests cover title/process changes during verification, changed active turns and rebindings. The installed physical core controls passed the checks below; the remaining Herdr validation gates are listed above.
+
+## Installed physical validation — November 6, 2026
+
+Build 1.2.1 replaced the installed 1.1.0 plugin after backing up the previous plugin and profiles. Only Stream Deck was quit for the upgrade; the existing agent processes and shared daemon were left running. An explicit separate Herdr session held two disposable read-only Codex agents with native thread-ID titles.
+
+The owner pressed the physical keys, and the results were checked through native settings, waiting UI, turn metadata and pane layout:
+
+- Agent selection and Next-agent forward/wrap routing selected the intended chats and displayed their separate model/effort values.
+- Effort changed High → Xhigh, and Model changed Sol → Astra while preserving Xhigh and all unrelated settings.
+- Plan selected its native Medium preset; returning to Default restored Astra/Xhigh and the complete pre-toggle settings snapshot.
+- Reviewer completed Ask me → Approve for me → Ask me with the complete original settings restored.
+- The dynamic question row selected and confirmed Blue. The approval row navigated to No, confirmed denial, canceled a separate prompt with Esc and allowed a separate print-only command once. Deny stopped the native turn without executing its command; one-time Allow saved no persistent rule.
+- Interrupt stopped the exact active test turn. The remaining sleep appeared as Background and was removed separately by Stop terminals. An earlier unpressed sleep simply finished while the owner was away; it was not counted as an Interrupt pass.
+- Zoom expanded the intended pane and restored the exact split layout. This was verified through the layout API, not a claim about an attached terminal window's visible presentation.
+- Page cycled Home → Questions → Prompts → Home, including the Use Herdr keyboard notice.
+
+Both test agents' complete settings were restored before removal, and no test terminals remained. The disposable agents, blank pane and named Herdr session were removed. The deck returned to Rex/Home with its original two agents; the temporary socket and title-matching opt-in were cleared. Original agent and daemon PIDs/start times were unchanged, and global Codex configuration and hooks matched their original hashes. The experimental 1.2.1 plugin remains installed.
