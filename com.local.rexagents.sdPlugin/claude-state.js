@@ -66,16 +66,17 @@ function reduce(previous,data,p,now=Date.now(),id=()=>crypto.randomUUID(),status
 }
 function markInvalid(p,dir){const file=path.join(dir,String(p.pid)+'.invalid'),tmp=file+'.'+crypto.randomUUID();fs.writeFileSync(tmp,crypto.randomUUID(),{mode:0o600,flag:'wx'});fs.renameSync(tmp,file);}
 async function invalidate({dir=directory(),inspect=processInfo,parent=process.ppid}={}){const p=await ancestor(parent,inspect);privateDirectory(dir,true);markInvalid(p,dir);}
-async function record(data,{dir=directory(),inspect=processInfo,parent=process.ppid,now=Date.now(),statusline=false}={}){
+async function record(data,{dir=directory(),inspect=processInfo,parent=process.ppid,now=Date.now(),statusline=false,lockTimeoutMs=1000}={}){
  const p=await ancestor(parent,inspect);privateDirectory(dir,true);
  const lock=path.join(dir,String(p.pid)+'.lock'),invalid=path.join(dir,String(p.pid)+'.invalid');let fd,initialInvalid=null;try{initialInvalid=fs.readFileSync(invalid,'utf8');}catch(error){if(error.code!=='ENOENT')throw error;}
- try{fd=fs.openSync(lock,'wx',0o600);}catch(error){if(error.code!=='EEXIST')throw error;if(!statusline)markInvalid(p,dir);return null;} // A lost lifecycle report revokes authority; metadata refreshes never repair it.
+ const deadline=Date.now()+lockTimeoutMs;for(;;){try{fd=fs.openSync(lock,'wx',0o600);break;}catch(error){if(error.code!=='EEXIST')throw error;if(statusline||Date.now()>=deadline){if(!statusline)markInvalid(p,dir);return null;}await new Promise(resolve=>setTimeout(resolve,15));}} // Serialize lifecycle hooks; metadata refreshes can skip contention.
  try{let prior;try{prior=readRecord(p.pid,dir,{allowInvalid:true});}catch(error){if(error.code!=='ENOENT')throw error;}
+  if(statusline&&prior&&data&&!data.agent_id&&!data.agent&&session(data.session_id)&&prior.sessionId!==data.session_id){markInvalid(p,dir);return null;}
   const next=reduce(prior,data,p,now,undefined,statusline);if(!next)return null;next.configDirectory=path.resolve(process.env.CLAUDE_CONFIG_DIR||path.join(require('node:os').homedir(),'.claude'));
   const current=await inspect(p.pid);if(current.startedAt!==p.startedAt||current.version!==p.version)throw Error('Claude process replaced');
   const file=path.join(dir,String(p.pid)+'.json'),tmp=file+'.'+crypto.randomUUID()+'.tmp';
   try{fs.writeFileSync(tmp,JSON.stringify(next)+'\n',{mode:0o600,flag:'wx'});fs.renameSync(tmp,file);}finally{try{fs.unlinkSync(tmp);}catch{}}
-  if(!statusline&&initialInvalid!==null){try{if(fs.readFileSync(invalid,'utf8')===initialInvalid)fs.unlinkSync(invalid);}catch(error){if(error.code!=='ENOENT')throw error;}}
+  if(!statusline&&['SessionStart','UserPromptSubmit','SessionEnd'].includes(data.hook_event_name)&&initialInvalid!==null){try{if(fs.readFileSync(invalid,'utf8')===initialInvalid)fs.unlinkSync(invalid);}catch(error){if(error.code!=='ENOENT')throw error;}}
   return next;
  }finally{fs.closeSync(fd);fs.unlinkSync(lock);}
 }

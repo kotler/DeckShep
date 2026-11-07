@@ -46,9 +46,10 @@ class ClaudeControls{
   const key=actor(a),previous=this.bindings.get(key);
   try{
    const p=await this.inspect(a.pid),r=S.validate(await this.read(a.pid),a,p,this.now());
+   const metadataFresh=Number.isFinite(r.metadataAt)&&r.metadataAt>0&&r.metadataAt<=this.now()+1000&&this.now()-r.metadataAt<15000;if(!metadataFresh){a.claudeControlsEnabled=false;a.claudeError='Wait for fresh Claude status line';}
    const defaultBindings=await this.bindingsDefault(r.configDirectory);if(!defaultBindings){a.claudeControlsEnabled=false;a.claudeError='Claude default keybindings required';}
-   const base=[p.startedAt,r.sessionId,r.generation,defaultBindings].join('|');let binding=previous;if(!binding||binding.base!==base){binding={base,id:'claude:'+ ++this.sequence+':'+hash(base)};this.bindings.set(key,binding);}
-   Object.assign(a,{nativeVerified:true,nativeIdentity:binding.id,chatId:r.sessionId,claudeTurnId:r.turnId,runId:r.state==='working'?r.turnId:null,chatName:r.title||'Claude '+r.sessionId.slice(0,8),permissionMode:r.permissionMode||null,vimMode:r.vimMode||null,metadataAt:r.metadataAt||0,model:this.now()-(r.metadataAt||0)<15000?r.model:null,modelName:this.now()-(r.metadataAt||0)<15000?r.modelName:null,effort:this.now()-(r.metadataAt||0)<15000?r.effort:null,state:r.state,kind:r.kind||null,claudeRequestId:r.requestId||null,statusAt:[r.generation,r.turnId,r.state,r.requestId||''].join(':')});
+   const base=[p.startedAt,r.sessionId,r.generation,defaultBindings,metadataFresh].join('|');let binding=previous;if(!binding||binding.base!==base){binding={base,id:'claude:'+ ++this.sequence+':'+hash(base)};this.bindings.set(key,binding);}
+   Object.assign(a,{nativeVerified:true,nativeIdentity:binding.id,chatId:r.sessionId,claudeTurnId:r.turnId,runId:r.state==='working'?r.turnId:null,chatName:r.title||'Claude '+r.sessionId.slice(0,8),permissionMode:r.permissionMode||null,vimMode:r.vimMode||null,metadataAt:r.metadataAt||0,model:metadataFresh?r.model:null,modelName:metadataFresh?r.modelName:null,effort:metadataFresh?r.effort:null,state:r.state,kind:r.kind||null,claudeRequestId:r.requestId||null,statusAt:[r.generation,r.turnId,r.state,r.requestId||''].join(':')});
    // Conflicting native working/idle state cannot grant the opposite controls.
    if(agent.state==='working'&&r.state!=='working'&&r.state!=='blocked'){a.state='unknown';a.runId=null;}
    // Native terminal idle overrides a stale working hook after an interrupt.
