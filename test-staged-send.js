@@ -21,7 +21,7 @@ function fixture(){
  const focus=fixture();await focus.b.stage('review');let checked=0;focus.b.checked=async()=>{if(++checked===3)throw Error('Focus changed');return focus.a;};await assert.rejects(()=>focus.b.send());assert(!focus.calls.some(c=>c.args[0]==='send-key'));
  const failedRead=fixture();await failedRead.b.stage('review');failedRead.b.readStagedComposer=async()=>{throw Error('Offline');};await assert.rejects(()=>failedRead.b.send());assert.equal(failedRead.b.draft,null);
  const timeout=fixture();await timeout.b.stage('review');timeout.b.run=async args=>{timeout.calls.push({args});throw Error('timeout');};await assert.rejects(()=>timeout.b.send());await assert.rejects(()=>timeout.b.send());assert.equal(timeout.calls.filter(c=>c.args[0]==='send-key').length,1);
- const wrong=fixture();wrong.a.app='claude-code';await assert.rejects(()=>wrong.b.stage('review'),/Codex only/);assert.equal(wrong.calls.length,0);
+ const wrong=fixture();wrong.a.app='claude-code';await assert.rejects(()=>wrong.b.stage('review'),/Reselect Claude agent/);assert.equal(wrong.calls.length,0);
  const preflight=fixture();preflight.b.readStagedComposer=async()=>{throw Error('Unknown composer');};await assert.rejects(()=>preflight.b.stage('review'));assert.equal(preflight.calls.length,0);
  const pasteTimeout=fixture();pasteTimeout.b.run=async args=>{pasteTimeout.calls.push({args});throw Error('timeout');};await assert.rejects(()=>pasteTimeout.b.stage('review'));assert.equal(pasteTimeout.b.draft,null);assert.equal(pasteTimeout.calls.length,1);
  console.log('PASS staged Send checks content/chat/turn/cursor, manual submission and edits, two-read stability, final focus, no retries, unsupported agents and digest-only storage');

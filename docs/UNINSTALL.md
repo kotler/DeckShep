@@ -2,6 +2,10 @@
 
 You can remove the deck controller while leaving Rex, Herdr, Codex and their existing agents/daemon running. These steps describe removal; they do not stop agents, delete chats or change sandbox/approval policy.
 
+## Remove optional Claude hooks first
+
+If you installed the 1.3.0 Claude metadata integration, [remove its hooks and restore its status line](CLAUDE.md#remove-the-optional-integration-first) before removing the plugin files. This step is unnecessary for 1.2.1 or if you never applied Claude setup. Keep the setup record/backups until cleanup succeeds.
+
 ## Remove the plugin and profile
 
 1. If you might reinstall, export your customized **Rex Agents** profile using Stream Deck's profile controls. Save a copy of the installed plugin's `config.json` and `state/` folder if you need custom aliases/prompts or the original Codex setup records. The plugin folder is:

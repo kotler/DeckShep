@@ -1,10 +1,10 @@
 {
   "name": "agent-switchboard-streamdeck",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "private": true,
   "description": "Guarded local Stream Deck controls for terminal coding agents",
   "scripts": {
-    "test": "node ../test.js && node ../test-controls.js && node ../test-focus.js && node ../test-onepress.js && node ../test-preset-setup.js && node ../test-model-discovery.js && node ../test-effort.js && node ../test-daemon-controls.js && node ../test-daemon-effort.js && node ../test-daemon-permissions.js && node ../test-agent-metadata.js && node ../test-collapse.js && node ../test-label-refresh.js && node ../test-question-controls.js && node ../test-startup-selection.js && node ../test-dynamic-controls.js && node ../test-running-controls.js && node ../test-completion-display.js && node ../test-mode-controls.js && node ../test-staged-send.js && node ../test-preferences.js && node ../test-lifecycle.js && node ../test-inspector.js && node ../test-background-controls.js && node ../test-herdr-bridge.js && node ../test-herdr-title-identity.js && node ../test-herdr-rpc.js && node ../test-backend-switch.js"
+    "test": "node ../test.js && node ../test-controls.js && node ../test-focus.js && node ../test-onepress.js && node ../test-preset-setup.js && node ../test-model-discovery.js && node ../test-effort.js && node ../test-daemon-controls.js && node ../test-daemon-effort.js && node ../test-daemon-permissions.js && node ../test-agent-metadata.js && node ../test-collapse.js && node ../test-label-refresh.js && node ../test-question-controls.js && node ../test-startup-selection.js && node ../test-dynamic-controls.js && node ../test-running-controls.js && node ../test-completion-display.js && node ../test-mode-controls.js && node ../test-staged-send.js && node ../test-preferences.js && node ../test-lifecycle.js && node ../test-inspector.js && node ../test-background-controls.js && node ../test-herdr-bridge.js && node ../test-herdr-title-identity.js && node ../test-herdr-rpc.js && node ../test-backend-switch.js && node ../test-claude-state.js && node ../test-claude-setup.js && node ../test-claude-controls.js && node ../test-mixed-agents.js && node ../test-claude-herdr.js"
   },
   "dependencies": {
     "@iarna/toml": "2.2.5",

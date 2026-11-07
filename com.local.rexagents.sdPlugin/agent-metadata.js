@@ -2,7 +2,7 @@
 const path=require('node:path');
 const {DaemonRpc,socketFor,readFooter,readPermissionSettings}=require('./daemon-controls');
 const {latestTurn,backgroundState}=require('./background-controls');
-const key=agent=>[agent.session,agent.block,agent.pid,agent.cwd,agent.terminalId||'',agent.herdrChatId||'',agent.nativeIdentity||''].join('|');
+const key=agent=>[agent.session,agent.block,agent.app,agent.pid,agent.cwd,agent.terminalId||'',agent.herdrChatId||'',agent.nativeIdentity||''].join('|');
 const activityFields=['backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt'];
 function restore(agent,value){
  const native=agent.backend==='herdr',authoritative=[...activityFields,'runId'];

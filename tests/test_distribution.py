@@ -40,7 +40,7 @@ class DistributionTests(unittest.TestCase):
                  prefix + 'node_modules/ws/package.json': '{}',
                  prefix + 'node_modules/@iarna/toml/package.json': '{}'}
         self.assertEqual(package.audit_installer(zipped(files))['Version'], '1.2.1.0')
-        for replacement in ({'allowClipboardFocus': True}, {'backend': 'herdr'},
+        for replacement in ({'allowClipboardFocus': True}, {'backend': 'herdr'}, {'claude': {'enabled': True}},
                             {'herdr': {'socketPath': '/tmp/private.sock', 'titleIdentity': True}}):
             config = {'backend': 'rex', 'allowClipboardFocus': False,
                       'herdr': {'socketPath': '', 'titleIdentity': False}, **replacement}

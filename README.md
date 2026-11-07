@@ -4,6 +4,10 @@
 
 This beta targets **Codex CLI on a 15-key Stream Deck MK.2**. Rex is the default controller; Herdr is experimental and requires explicit setup. Your agents and their existing daemon stay running.
 
+## Claude and mixed-agent development preview
+
+Version 1.3.0 on `codex/claude-mixed-agent-support` adds experimental Claude Code support and mixed Claude/Codex banks. Claude controls are off by default and have automated coverage only; no live controls were tested or installed during implementation. See [Claude setup, capabilities and limits](docs/CLAUDE.md). The published 1.2.1 beta and its existing hardware results remain the release baseline.
+
 ## Get started
 
 Download the versioned macOS ZIP from [GitHub Releases](https://github.com/kotler/agent-switchboard/releases), extract it, and follow [Installation and upgrades](docs/INSTALL.md). Use the ZIP attached to the release, rather than GitHub's automatically generated source archive.
@@ -77,14 +81,14 @@ npm ci --prefix com.local.rexagents.sdPlugin
 npm ci --prefix tools
 npm test --prefix com.local.rexagents.sdPlugin
 python3 -m unittest discover -s tests -v
-python3 package.py --tag v1.2.1-beta.2
+python3 package.py --tag v1.3.0-beta.1
 ```
 
 This builds a universal helper, validates and packs with the pinned official Elgato CLI, audits the actual archives and writes a versioned ZIP under `dist/`. It never uploads. See [source installation](docs/INSTALL.md#install-from-source) and [release procedure](docs/RELEASING.md).
 
 ## Project status and attribution
 
-No account, hosted status service or separate OpenAI API key is required by this plugin. It uses the existing local terminal APIs and Codex daemon. Authenticated Claude controls, other terminals, Windows and alternative deck layouts are outside this beta's supported scope.
+No account, hosted status service or separate OpenAI API key is required by this plugin. It uses the existing local terminal APIs and Codex daemon. Claude controls are an opt-in development preview pending live validation; other terminals, Windows and alternative deck layouts remain outside the supported beta scope.
 
 No project license has been chosen. OpenAI artwork is retained for local/private beta use; redistribution must be resolved before a public release. See [third-party notices](THIRD-PARTY-NOTICES.md). This project is independent of OpenAI, Elgato, Rex and Herdr.
 

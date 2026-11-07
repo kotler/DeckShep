@@ -22,7 +22,7 @@ function identify(p){
   const f=p.foreground;if(!f||f.user_id!==process.getuid())return null;
   const n=path.basename(f.path||'');const s=f.script||'';
   if(n==='codex')return {app:'codex',pid:f.pid,name:f.name,cwd:f.cwd};
-  if(n==='claude'||(/^claude(?:-|$)/.test(f.name)&&/\/claude\/versions\//.test(f.path||'')))return {app:'claude-code',pid:f.pid,name:f.name,cwd:f.cwd};
+  if(n==='claude'||(/\/claude\/versions\/\d+\.\d+\.\d+$/.test(f.path||'')&&(/^claude(?:-|$)/.test(f.name)||f.name===n)))return {app:'claude-code',pid:f.pid,name:f.name,cwd:f.cwd};
   if(['node','bun'].includes(n)&&/\/(?:@anthropic-ai\/claude-code\/cli\.js|@openai\/codex\/bin\/codex\.js)$/.test(s))return {app:s.includes('anthropic')?'claude-code':'codex',pid:f.pid,name:f.name,cwd:f.cwd};
   return null; // Never infer input safety from an ancestor or a status record.
 }
@@ -35,14 +35,14 @@ function state(records,agent,now=Date.now(),maxAge=86400000){
 const focusError=message=>Object.assign(Error(message),{code:'SELECTION_CHANGED'});
 const token=t=>[t.session,t.block,t.app,t.pid,t.name].join('|');
 class Bridge{
-  constructor(config,run=cli,activate=activateRex,readVisible=visiblePane){this.config=config;this.run=run;this.activate=activate;this.readVisible=readVisible;this.slots=[];this.draft=null;}
+  constructor(config,run=cli,activate=activateRex,readVisible=visiblePane){this.config=config;this.run=run;this.activate=activate;this.readVisible=readVisible;this.slots=[];this.draft=null;this.claude=new(require('./claude-controls').ClaudeControls)(this);}
   async client(){
     const {clients=[]}=await this.run(['client','ls','--json']);
     const apps=clients.filter(c=>c.info?.kind==='app'&&c.info?.platform==='macos'&&c.info?.name==='Rex Beta'&&c.connection_state==='connected'&&(!this.config.clientLabel||c.info.label===this.config.clientLabel));
     if(apps.length!==1)throw new Error('Rex app ambiguous or offline');return apps[0];
   }
   method(t,m){return this.run(['block','call','-s',t.session,'-b',t.block,m]);}
-  async agent(t){const p=await this.method(t,'process');if(!p||!Object.hasOwn(p,'foreground'))throw Error('Incomplete terminal process metadata');const a=identify(p);if(!a)return null;let status={state:'unknown'};try{status=state((await this.method(t,'program_status')).records||[],a,Date.now(),this.config.statusMaxAgeMs);}catch{}return {...t,...a,...status,project:path.basename(a.cwd||'')||a.app};}
+  async agent(t){const p=await this.method(t,'process');if(!p||!Object.hasOwn(p,'foreground'))throw Error('Incomplete terminal process metadata');const a=identify(p);if(!a)return null;let status={state:'unknown'};try{status=state((await this.method(t,'program_status')).records||[],a,Date.now(),this.config.statusMaxAgeMs);}catch{}const agent={...t,...a,...status,project:path.basename(a.cwd||'')||a.app};return a.app==='claude-code'?this.claude.enrich(agent):agent;}
   async discover(){
     const client=await this.client(),listing=await this.run(['ls','--json']);const agents=[];
     if(!Array.isArray(listing?.sessions))throw Error('Incomplete Rex session list');
@@ -56,7 +56,7 @@ class Bridge{
     }}}}
     // Keep slot identities stable, including closed-agent holes until restart.
     for(const a of agents)if(!this.slots.some(s=>s.block===a.block&&s.session===a.session))this.slots.push({session:a.session,block:a.block});
-    this.agents=agents;this.lastClient=client;return agents;
+    this.agents=agents;this.lastClient=client;this.claude.prune(agents);if(this.lastTarget?.app==='claude-code'&&!agents.some(a=>require('./agent-labels').sameTarget(a,this.lastTarget))){this.lastTarget=null;this.draft=null;this.picker=null;this.selectionNotice=true;}return agents;
   }
   slotGaps(){return this.slots.filter(s=>!this.agents?.some(a=>a.session===s.session&&a.block===s.block)).length;}
   async collapse(){
@@ -83,10 +83,11 @@ class Bridge{
       require('./context-controls').assertContext(this.actionContext,a);
       if(this.actionContext.verifyChat){
         if(!this.actionContext.target.chatId)throw Error('Chat metadata loading; try again');
-        if(await require('./daemon-controls').readFooter(this,a)!==this.actionContext.target.chatId)throw Error('Selected chat changed');
+        if(a.app==='claude-code')this.claude.assert(this.actionContext.target,a);
+        else if(await require('./daemon-controls').readFooter(this,a)!==this.actionContext.target.chatId)throw Error('Selected chat changed');
       }
     }
-    this.lastTarget={session:a.session,block:a.block,pid:a.pid};return a;
+    this.lastTarget={session:a.session,block:a.block,pid:a.pid,app:a.app,name:a.name,...a.app==='claude-code'?{app:a.app,name:a.name,chatId:a.chatId,nativeIdentity:a.nativeIdentity}: {}};return a;
   }
   async withContext(context,action){
     if(this.actionContext)throw Error('Another action is in progress');this.actionContext=context;
@@ -96,15 +97,15 @@ class Bridge{
   }
   async checked(t,ready=false){const a=await this.focused();if(token(a)!==token(t))throw focusError('Focus or process changed');if(ready&&!['idle','done','error'].includes(a.state))throw new Error('Agent not ready for a prompt');return a;}
   async focus(t){
-    const c=await this.client();const a=await this.agent(t);if(!a)throw new Error('Agent closed');if(t.pid!==undefined&&t.pid!==a.pid)throw Error('Agent process changed');
+    const c=await this.client();const a=await this.agent(t);if(!a)throw new Error('Agent closed');if(t.pid!==undefined&&(t.pid!==a.pid||t.app&&t.app!==a.app||t.name&&t.name!==a.name))throw Error('Agent process changed');
     await this.run(['-C',c.client_id,'do','session.select',`session_id=${t.session}`,`window_id=${t.window}`]);
     await this.run(['focus','-s',t.session,t.block]);this.draft=null;this.picker=null;this.selectionNotice=false;
-    this.lastTarget={session:a.session,block:a.block,pid:a.pid};
+    this.lastTarget={session:a.session,block:a.block,pid:a.pid,app:a.app,name:a.name,...a.app==='claude-code'?{app:a.app,name:a.name,chatId:a.chatId,nativeIdentity:a.nativeIdentity}: {}};
     if(this.config.bringToFront!==false)await this.activate();
   }
   async navigate(delta){await this.discover();const a=await this.focused();const i=this.agents.findIndex(x=>token(x)===token(a));if(i<0||!this.agents.length)throw new Error('No agents');await this.focus(this.agents[(i+delta+this.agents.length)%this.agents.length]);}
   async stage(action){
-    const a=await this.focused();await this.checked(a,true);
+    const a=await this.focused();if(a.app==='claude-code')return this.claude.stage(action);await this.checked(a,true);
     if(this.picker)throw new Error('Close the model picker first');
     if(this.draft)throw new Error('Draft already staged; review or cancel first');
     const text=action==='model'?'/model':action==='effort'?(a.app==='codex'?'/model':'/effort'):this.config.prompts[action];if(typeof text!=='string'||!text||/[\x00-\x1f\x7f]/.test(text)||text.length>4000)throw new Error('Invalid single-line prompt');
@@ -131,6 +132,7 @@ class Bridge{
     this.draft={target:a,at:Date.now(),action,...snapshot?{snapshot}:{}};return a;
   }
   async send(){
+    if(this.draft?.target.app==='claude-code')return this.claude.send();
     if(this.picker)return this.applyPicker();
     const d=this.draft;if(!d||Date.now()-d.at>this.config.draftMaxAgeMs){this.draft=null;throw new Error('No recent staged draft');}
     await this.checked(d.target,true);
@@ -169,6 +171,7 @@ class Bridge{
   async cycleControl(kind){
     if(!['model','effort','permissions'].includes(kind))throw new Error('Unsupported cycle');
     const a=await this.focused();
+    if(a.app==='claude-code'){if(kind==='permissions')throw Error('Use Claude keyboard for permission modes');return this.claude.openPicker();}
     if(a.app!=='codex'||!this.config.controlVerified?.codex)throw new Error('Cycle controls not verified for this agent');
     if(this.picker)throw new Error('Close the native picker first');
     if(kind==='effort'){if(!this.config.daemonControls?.enabled)throw Error('Effort daemon unavailable');return new (require('./daemon-controls').DaemonControls)(this).cycleEffort(a);}
@@ -209,13 +212,13 @@ class Bridge{
     this.picker=null;await this.pickerKey(p,'s'); // Native session-only apply, never permission approval.
   }
   async cancelPicker(){const p=await this.pickerTarget();await this.pickerKey(p,'escape');if(p.target.app==='codex'&&p.phase==='effort')p.phase='model';else this.picker=null;}
-  async interrupt(){const a=await this.focused();if(a.state!=='working')throw new Error('Interrupt only while working');if(a.app==='codex')await (this.verifyRunning?this.verifyRunning(a):new(require('./background-controls').BackgroundControls)(this).running(a));const current=await this.checked(a);if(current.state!=='working')throw Error('Run ended; no interrupt sent');this.draft=null;await this.run(['send-key','-s',a.session,'-b',a.block,'escape']);}
+  async interrupt(){const a=await this.focused();if(a.app==='claude-code')return this.claude.interrupt();if(a.state!=='working')throw new Error('Interrupt only while working');if(a.app==='codex')await (this.verifyRunning?this.verifyRunning(a):new(require('./background-controls').BackgroundControls)(this).running(a));const current=await this.checked(a);if(current.state!=='working')throw Error('Run ended; no interrupt sent');this.draft=null;await this.run(['send-key','-s',a.session,'-b',a.block,'escape']);}
   async stopTerminals(){const a=await this.focused(),target=this.actionContext?.target;if(!target||!require('./context-controls').isBackground(target))throw Error('Select the background-terminal control');await this.checked(a);return new(require('./background-controls').BackgroundControls)(this).stop(target);}
   async menu(key){if(!['up','down','left','right','escape'].includes(key))throw new Error('Unsupported menu key');const a=await this.focused();if(a.state!=='blocked')throw new Error('No native waiting menu');await this.checked(a);this.draft=null;await this.run(['send-key','-s',a.session,'-b',a.block,key]);}
   async questionKey(key){
-    if(!['up','down','left','right','escape','tab','shift+tab','enter'].includes(key))throw Error('Unsupported question key');
+    if(!['up','down','left','right','escape','tab','shift+tab','enter','space'].includes(key))throw Error('Unsupported question key');
     const waiting=a=>a.app==='codex'&&this.config.controlVerified?.codex&&a.state==='blocked'&&a.kind==='question';
-    const agent=await this.focused();if(!waiting(agent))throw Error('No native question waiting');
+    const agent=await this.focused();if(agent.app==='claude-code')return this.claude.waiting(key,'question');if(key==='space')throw Error('Space is a Claude multi-select control');if(!waiting(agent))throw Error('No native question waiting');
     const current=await this.checked(agent);if(!waiting(current))throw Error('Question changed; no input sent');
     // Only explicit user presses reach a native question. Never a composer or approval.
     await this.run(['send-key','-s',current.session,'-b',current.block,key]);
@@ -223,7 +226,7 @@ class Bridge{
   async approvalKey(key){
     if(!['up','down','enter','escape'].includes(key))throw Error('Unsupported approval key');
     const waiting=a=>a.app==='codex'&&this.config.controlVerified?.codex&&a.state==='blocked'&&a.kind==='permission';
-    const agent=await this.focused();if(!waiting(agent))throw Error('No native approval waiting');
+    const agent=await this.focused();if(agent.app==='claude-code')return this.claude.waiting(key,'permission');if(!waiting(agent))throw Error('No native approval waiting');
     const read=this.readRequest||require('./native-input').requestSnapshot;
     const before=await read(this,agent),current=await this.checked(agent);
     if(!waiting(current)||agent.statusAt!==current.statusAt||!agent.statusAt)throw Error('Approval request changed');
@@ -233,7 +236,7 @@ class Bridge{
   async submitRunning(kind){
     if(!['steer','queue'].includes(kind))throw Error('Unsupported running action');
     const running=a=>a.app==='codex'&&this.config.controlVerified?.codex&&a.state==='working';
-    const agent=await this.focused();if(!running(agent))throw Error('Agent is not running');
+    const agent=await this.focused();if(agent.app==='claude-code')return this.claude.running(kind);if(!running(agent))throw Error('Agent is not running');
     const read=this.readComposer||require('./native-input').readComposer,before=await read(this,agent),current=await this.checked(agent);
     if(!running(current))throw Error('Run ended; no input sent');
     const after=await read(this,current);

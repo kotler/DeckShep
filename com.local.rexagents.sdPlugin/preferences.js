@@ -1,6 +1,6 @@
 (function(root){
  'use strict';
- const bools=['allowClipboardFocus','bringToFront','animationEnabled','herdrTitleIdentity'],prompts=['review','tests','continue'];
+ const bools=['allowClipboardFocus','bringToFront','animationEnabled','herdrTitleIdentity','claudeEnabled'],prompts=['review','tests','continue'];
  function normalize(input){
   if(input===undefined||input===null)return{};
   if(typeof input!=='object'||Array.isArray(input))throw Error('Invalid preferences');
@@ -16,7 +16,7 @@
   }
   return out;
  }
- function apply(base,input){const p=normalize(input),result={...base,animation:{...base.animation},herdr:{...base.herdr},prompts:{...base.prompts}};for(const key of bools)if(Object.hasOwn(p,key)){if(key==='animationEnabled')result.animation.enabled=p[key];else if(key==='herdrTitleIdentity')result.herdr.titleIdentity=p[key];else result[key]=p[key];}if(p.backend)result.backend=p.backend;if(Object.hasOwn(p,'herdrSocketPath'))result.herdr.socketPath=p.herdrSocketPath;Object.assign(result.prompts,p.prompts||{});return result;}
- function view(config){return{backend:config.backend||'rex',herdrSocketPath:config.herdr?.socketPath||'',herdrTitleIdentity:config.herdr?.titleIdentity===true,allowClipboardFocus:config.allowClipboardFocus===true,bringToFront:config.bringToFront!==false,animationEnabled:config.animation?.enabled!==false,prompts:Object.fromEntries(prompts.map(name=>[name,config.prompts?.[name]||'']))};}
+ function apply(base,input){const p=normalize(input),result={...base,animation:{...base.animation},herdr:{...base.herdr},claude:{...base.claude},prompts:{...base.prompts}};for(const key of bools)if(Object.hasOwn(p,key)){if(key==='animationEnabled')result.animation.enabled=p[key];else if(key==='claudeEnabled')result.claude.enabled=p[key];else if(key==='herdrTitleIdentity')result.herdr.titleIdentity=p[key];else result[key]=p[key];}if(p.backend)result.backend=p.backend;if(Object.hasOwn(p,'herdrSocketPath'))result.herdr.socketPath=p.herdrSocketPath;Object.assign(result.prompts,p.prompts||{});return result;}
+ function view(config){return{claudeEnabled:config.claude?.enabled===true,backend:config.backend||'rex',herdrSocketPath:config.herdr?.socketPath||'',herdrTitleIdentity:config.herdr?.titleIdentity===true,allowClipboardFocus:config.allowClipboardFocus===true,bringToFront:config.bringToFront!==false,animationEnabled:config.animation?.enabled!==false,prompts:Object.fromEntries(prompts.map(name=>[name,config.prompts?.[name]||'']))};}
  const api={normalize,apply,view};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.RexPreferences=api;
 })(typeof globalThis==='object'?globalThis:this);

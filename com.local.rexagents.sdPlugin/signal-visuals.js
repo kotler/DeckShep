@@ -16,9 +16,10 @@ function signalSvg({icon,lines,color,pulse,badge,agent,textOnly,accent='#389ed7'
  const empty=agent&&icon==='empty',fill=agent&&!empty?color:'#252a39';
  const bottom=agent&&!empty?blend(color,'#151923',.35):fill;
  const tinted=!agent&&['#d19c30','#d34263'].includes(accent),top=tinted?blend(fill,accent,.25):fill;
- const watermark=agent&&icon==='codex'?`<image id="agent-watermark" x="-18" y="-18" width="180" height="180" opacity=".26" xlink:href="data:image/png;base64,${codexMark}"/>`:'';
+ const claudeMark='<g id="claude-watermark" transform="translate(-18 -18) scale(1.73)" fill="none" stroke="white" stroke-width="5" opacity=".23">'+(legacyPaths['claude-code']||'')+'</g>';
+ const watermark=agent&&icon==='claude-code'?claudeMark:agent&&icon==='codex'?`<image id="agent-watermark" x="-18" y="-18" width="180" height="180" opacity=".26" xlink:href="data:image/png;base64,${codexMark}"/>`:'';
  const visible=lines.slice(0,3),scale=visible.length===3?1.4:1.7;
- const glyph=icon==='codex'?'':glyphs[icon]?`<g transform="translate(14 10) scale(${scale})" fill="none" stroke="${blend(accent,'#ffffff',.32)}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${glyphs[icon]}</g>`:icon==='blank'||empty?'':`<g transform="translate(12 0) scale(.65)" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">${legacyPaths[icon]||''}</g>`;
+ const glyph=agent&&['codex','claude-code'].includes(icon)?'':glyphs[icon]?`<g transform="translate(14 10) scale(${scale})" fill="none" stroke="${blend(accent,'#ffffff',.32)}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${glyphs[icon]}</g>`:icon==='blank'||empty?'':`<g transform="translate(12 0) scale(.65)" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">${legacyPaths[icon]||''}</g>`;
  const centered=textOnly||empty,ys=agent&&!empty?[48,86,124]:textOnly||empty?[84]:visible.length===3?[69,92,114]:visible.length===2?[84,111]:[100];
  const text=visible.map((s,i)=>{
   const size=textOnly?28:empty?24:agent?(i===0?26:22):(i===0?24:22);

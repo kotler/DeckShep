@@ -1,7 +1,7 @@
 <!doctype html>
 <meta charset="utf-8">
 <style>
-body{background:#262626;color:#eee;font:13px system-ui,sans-serif;margin:0;padding:14px}h2{font-size:14px;margin:18px 0 8px}h2:first-child{margin-top:0}p{line-height:1.5;margin:7px 0;color:#c4c7ce}label{display:block;margin:10px 0;line-height:1.5}input[type=checkbox]{vertical-align:middle;margin-right:7px}select,textarea,input[type=text],button{box-sizing:border-box;font:inherit;color:#eee;background:#373941;border:1px solid #626571;border-radius:5px;padding:7px}select,textarea,input[type=text]{width:100%}textarea{resize:vertical;min-height:68px}button{margin:5px 0}button:disabled{opacity:.45}details{margin-top:18px}summary{font-weight:600}#message{color:#f1d39a;min-height:20px}#connection{color:#eee}code{font-size:12px;overflow-wrap:anywhere}.note{font-size:12px;color:#b7bbc5}
+[hidden]{display:none!important}body{background:#262626;color:#eee;font:13px system-ui,sans-serif;margin:0;padding:14px}h2{font-size:14px;margin:18px 0 8px}h2:first-child{margin-top:0}p{line-height:1.5;margin:7px 0;color:#c4c7ce}label{display:block;margin:10px 0;line-height:1.5}input[type=checkbox]{vertical-align:middle;margin-right:7px}select,textarea,input[type=text],button{box-sizing:border-box;font:inherit;color:#eee;background:#373941;border:1px solid #626571;border-radius:5px;padding:7px}select,textarea,input[type=text]{width:100%}textarea{resize:vertical;min-height:68px}button{margin:5px 0}button:disabled{opacity:.45}details{margin-top:18px}summary{font-weight:600}#message{color:#f1d39a;min-height:20px}#connection{color:#eee}code{font-size:12px;overflow-wrap:anywhere}.note{font-size:12px;color:#b7bbc5}
 </style>
 <h2>Rex Agents</h2>
 <p id="connection" role="status" aria-live="polite">Connecting to plugin…</p>
@@ -22,6 +22,9 @@ body{background:#262626;color:#eee;font:13px system-ui,sans-serif;margin:0;paddi
 <p class="note">Setup opens Codex settings dialogs and saves the session-ID footer. Your process and unsent input stay in place. Leave Rex alone until setup finishes.</p>
 <label><input id="bringToFront" type="checkbox" disabled>Bring Rex forward when selecting an agent</label>
 </div>
+<h2>Claude Code (experimental)</h2>
+<label><input id="claudeEnabled" type="checkbox" disabled>Enable Claude native controls after hook setup</label>
+<p class="note">Native Claude 2.1.319 only; live validation is pending. Install the optional metadata hooks with <code>configure-claude.js</code> as described in docs/CLAUDE.md. Existing hooks and status lines are preserved. Enabling this checkbox does not install hooks or change permissions. Claude Model/Effort open its native picker; Mode is read-only. Herdr submissions remain unavailable.</p>
 <label><input id="animationEnabled" type="checkbox" disabled>Animate working and waiting status</label>
 <details><summary>Prompt shortcuts</summary>
 <p>These append text in Rex. Send checks the same chat, input and turn before submitting. After editing or submitting manually, use the Rex keyboard.</p>

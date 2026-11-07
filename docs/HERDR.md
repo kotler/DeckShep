@@ -4,6 +4,8 @@ The experimental backend supports agents running in **Herdr TUI 0.9.5, socket pr
 
 The adapter uses Herdr's documented public socket API and the schema bundled with the installed CLI. It connects only to the session socket explicitly selected in preferences. It never starts, stops, upgrades or attaches to a server automatically.
 
+The 1.3.0 development preview also adds [Claude and mixed-agent routing](CLAUDE.md). Claude identity uses its own optional hook records; the Codex title-ID adapter is never used for Claude. Those paths have automated coverage only. The physical validation below remains specifically Codex coverage.
+
 ## Setup
 
 1. Run a local Herdr session with Codex connected to its existing local daemon. Codex command-line configuration overrides can force embedded mode, which has no accessible daemon for these controls.

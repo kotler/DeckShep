@@ -1,3 +1,11 @@
+# 1.3.0 development preview — not released
+
+- Optional native Claude 2.1.319 metadata hooks/status-line bridge, disabled controls by default, with explicit preview/apply/remove setup.
+- Mixed Claude/Codex slots, cycling, Collapse, provider artwork, labels and metadata isolation.
+- Guarded Rex picker/session-only apply, waiting/checkbox keys, Interrupt, staged Send and provider-specific Queue/Send-now; scoped Herdr waiting/Interrupt keys.
+- Claude permission modes remain keyboard-only, and Herdr composer/model actions remain unavailable.
+- 33 automated regression groups and seven distribution tests; no live Claude control or physical validation. No installed-plugin or live-agent changes. See [Claude preview](CLAUDE.md).
+
 # 1.2.1 beta checkpoint — November 6, 2026
 
 Beta 2 adds uninstall instructions to the README, install guide and downloadable bundle, covering the plugin, profile, manual fallback and optional native-setting cleanup. It contains the same plugin runtime as beta 1. Beta 1 remains an immutable checkpoint.

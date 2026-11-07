@@ -21,7 +21,7 @@ function validate(method,p){
   if(keys!=='format,source,strip_ansi,target'||!paneId(p.target)||!['visible','detection'].includes(p.source)||!['text','ansi'].includes(p.format)||p.strip_ansi!==(p.format==='text'))throw Error('Only complete Herdr viewport reads are allowed');return;
  }
  if(method==='agent.send_keys'){
-  if(keys!=='keys,target'||!paneId(p.target)||!Array.isArray(p.keys)||p.keys.length!==1||!['up','down','left','right','esc','enter','tab','shift+tab'].includes(p.keys[0]))throw Error('Only one guarded native key is allowed');return;
+  if(keys!=='keys,target'||!paneId(p.target)||!Array.isArray(p.keys)||p.keys.length!==1||!['up','down','left','right','esc','enter','tab','shift+tab','space'].includes(p.keys[0]))throw Error('Only one guarded native key is allowed');return;
  }
  if(method==='pane.zoom'){if(keys!=='mode,pane_id'||!paneId(p.pane_id)||p.mode!=='toggle')throw Error('Only explicit pane zoom is allowed');return;}
  if(keys!=='pane_id'||!paneId(p.pane_id))throw Error('Explicit Herdr pane required');

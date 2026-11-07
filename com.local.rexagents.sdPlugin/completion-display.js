@@ -3,7 +3,7 @@ const {sameTarget}=require('./agent-labels');
 // Acknowledge a result locally. Native agent state and execution policy are untouched.
 class CompletionDisplay{
  constructor(dwellMs=2000){this.dwellMs=dwellMs;this.entries=new Map();}
- key(agent){return JSON.stringify([agent.session,agent.block,agent.pid]);}
+ key(agent){return JSON.stringify([agent.session,agent.block,agent.app,agent.pid,agent.nativeIdentity||null]);}
  update(agents,selected,now){
   const live=new Set();
   for(const agent of agents){

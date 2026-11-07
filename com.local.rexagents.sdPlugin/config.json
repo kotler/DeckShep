@@ -83,5 +83,8 @@
   },
   "appearance": {
     "style": "signal"
+  },
+  "claude": {
+    "enabled": false
   }
 }

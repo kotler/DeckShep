@@ -1,5 +1,15 @@
 # Beta verification
 
+## Claude development preview
+
+- [x] Five new automated groups cover metadata/setup/privacy, guarded Claude controls, mixed-provider banks and Herdr isolation (33 total).
+- [ ] Apply optional hooks and validate native ancestry/status-line chaining without losing user customizations.
+- [ ] Validate actual picker/composer layouts, session-only persistence, renamed/new chats, questions/checkboxes/approvals, Interrupt, Queue and Send-now.
+- [ ] Validate physical Claude/Codex selection, overflow banks, gaps, Collapse and stale-focus behavior.
+- [ ] Validate uninstall/removal with actual Claude settings and Stream Deck preferences.
+
+No live Claude control or physical test was performed during this implementation. Existing hardware checks below apply to the prior Codex paths. See [CLAUDE.md](CLAUDE.md).
+
 ## Completed locally
 
 - Release packaging adds seven Python regression tests for archive privacy, safe defaults, version/profile consistency, checksum tampering, installer process preflight, preference preservation and device selection. The versioned bundle passes official Elgato validation and independent archive verification.

@@ -15,7 +15,7 @@ function foreground(info,processInfo){
  if(processInfo?.pane_id!==info.pane_id||!Array.isArray(processInfo.foreground_processes))throw Error('Herdr foreground metadata incomplete');
  const candidates=processInfo.foreground_processes.filter(p=>{
   const name=path.basename(p.name||'');
-  return info.agent==='codex'?name==='codex':info.agent==='claude'?name==='claude'||/^claude-/.test(name):name===info.agent;
+  return info.agent==='codex'?name==='codex':info.agent==='claude'?name==='claude'||/^claude-/.test(name)||/^\d+\.\d+\.\d+$/.test(name):name===info.agent;
  });
  if(candidates.length>1)throw Error('Herdr foreground process is ambiguous');if(!candidates.length)return null;const p=candidates[0];
  if(!Number.isSafeInteger(p.pid)||p.pid<=0||typeof p.name!=='string')throw Error('Herdr process identity unavailable');
@@ -69,7 +69,7 @@ class HerdrBridge extends Bridge{
    if(status?.backgroundOnly&&Array.isArray(status.backgroundIds)&&status.backgroundIds.length&&status.backgroundTurnId){a.state='working';a.backgroundOnly=true;a.backgroundIds=[...status.backgroundIds];a.backgroundTurnId=status.backgroundTurnId;a.activityStatusAt=a.statusAt;}
   }
   if(a.nativeVerified&&a.state==='blocked'&&a.atBottom)a.statusAt+=':'+waitingDigest(await this.readView(rpc,a,'text'));
-  return a;
+  return a.app==='claude-code'?this.claude.enrich(a):a;
  }
  async agent(t){return this.use(async rpc=>{if(t.session&&t.session!==rpc.endpoint.scope)throw changed();const a=await this.readAgent(rpc,t.block);if(t.terminalId&&a?.terminalId!==t.terminalId)throw changed();return a;});}
  async discover(){
@@ -83,17 +83,17 @@ class HerdrBridge extends Bridge{
    if(s.agents.some(a=>!seen.has(a.pane_id))||new Set(s.agents.map(a=>a.pane_id)).size!==s.agents.length)throw Error('Herdr agent list incomplete');return ordered;
   });
   for(const a of agents)if(!this.slots.some(s=>s.session===a.session&&s.block===a.block))this.slots.push({session:a.session,block:a.block});
-  this.agents=agents;const liveBindings=new Set(agents.map(a=>C.actor(a)+'|'+a.cwd));for(const key of this.titleBindings.keys())if(!liveBindings.has(key))this.titleBindings.delete(key);
+  this.agents=agents;this.claude.prune(agents);const liveBindings=new Set(agents.map(a=>C.actor(a)+'|'+a.cwd));for(const key of this.titleBindings.keys())if(!liveBindings.has(key))this.titleBindings.delete(key);
   if(this.lastTarget&&!agents.some(a=>C.actor(a)===C.actor(this.lastTarget)&&(!this.lastTarget.chatId||a.chatId===this.lastTarget.chatId&&a.nativeIdentity===this.lastTarget.nativeIdentity))){this.lastTarget=null;this.selectionNotice=true;this.draft=null;this.picker=null;}
   return agents;
  }
  async focused(){return this.use(async rpc=>{const s=await this.snapshot(rpc);if(!paneId(s.focused_pane_id))throw changed();const a=await this.readAgent(rpc,s.focused_pane_id);if(!a||!isFocused(s,a))throw changed();
-  if(this.actionContext){if(this.actionContext.action!=='zoom')this.assertBinding(this.actionContext.target,a);if(a.state==='blocked'&&!a.atBottom&&this.actionContext.action!=='zoom')throw Error('Scroll the Herdr pane to bottom');C.assertContext(this.actionContext,a);if(this.actionContext.verifyChat&&(!a.herdrChatId||a.herdrChatId!==this.actionContext.target.chatId))throw Error('Selected chat changed');}
+  if(this.actionContext){if(this.actionContext.action!=='zoom')this.assertBinding(this.actionContext.target,a);if(a.state==='blocked'&&!a.atBottom&&this.actionContext.action!=='zoom')throw Error('Scroll the Herdr pane to bottom');C.assertContext(this.actionContext,a);if(this.actionContext.verifyChat&&(!(a.app==='claude-code'?a.chatId:a.herdrChatId)||(a.app==='claude-code'?a.chatId:a.herdrChatId)!==this.actionContext.target.chatId))throw Error('Selected chat changed');}
   this.lastTarget=target(a);this.lastChecked=a;return a;
  });}
- async checked(t,ready=false){const a=await this.focused();if(C.actor(a)!==C.actor(t))throw changed();if(t.chatId)this.assertBinding(t,a);if(ready&&!['idle','done','error'].includes(a.state))throw Error('Agent not ready');return a;}
+ async checked(t,ready=false,verifyNative=true){const a=await this.focused();if(C.actor(a)!==C.actor(t))throw changed();if(t.chatId&&verifyNative)this.assertBinding(t,a);if(ready&&!['idle','done','error'].includes(a.state))throw Error('Agent not ready');return a;}
  async focus(t){return this.use(async rpc=>{if(t.session!==rpc.endpoint.scope)throw changed();const a=await this.readAgent(rpc,t.block);if(!a||C.actor(a)!==C.actor(t))throw changed();await rpc.request('agent.focus',{target:a.block});const s=await this.snapshot(rpc);if(s.focused_pane_id!==a.block)throw Error('Herdr focus unconfirmed');const confirmed=await this.readAgent(rpc,a.block);if(C.actor(a)!==C.actor(confirmed)||!isFocused(s,confirmed))throw changed();this.lastTarget=target(confirmed);this.lastChecked=confirmed;this.draft=null;this.picker=null;this.selectionNotice=false;});}
- assertBinding(expected,a){if(!a?.nativeVerified||!a.chatId||!a.nativeIdentity)throw Error(a?.nativeError||'Native chat identity unavailable');if(!expected?.chatId||expected.chatId!==a.chatId||expected.nativeIdentity!==a.nativeIdentity)throw changed();if(expected.runId&&expected.runId!==a.runId)throw Error('Agent started a new turn');}
+ assertBinding(expected,a){if(a?.app==='claude-code')return this.claude.assert(expected,a);if(!a?.nativeVerified||!a.chatId||!a.nativeIdentity)throw Error(a?.nativeError||'Native chat identity unavailable');if(!expected?.chatId||expected.chatId!==a.chatId||expected.nativeIdentity!==a.nativeIdentity)throw changed();if(expected.runId&&expected.runId!==a.runId)throw Error('Agent started a new turn');}
  async nativeChatId(t){const a=await this.agent(t);if(!a||C.actor(a)!==C.actor(t))throw changed();this.assertBinding(t,a);return a.chatId;}
  async readView(rpc,a,format='ansi'){
   const result=await rpc.request('agent.read',{target:a.block,source:'visible',format,strip_ansi:format==='text'}),r=result?.read;
@@ -103,14 +103,14 @@ class HerdrBridge extends Bridge{
  async translate(args){
   if(args[0]!=='send-key'||args.length!==6||args[1]!=='-s'||args[3]!=='-b')throw Error('Herdr does not expose a verified composer cursor; use its keyboard');
   const key=args[5]==='escape'?'esc':args[5],expected=this.actionContext?.target||this.lastChecked;
-  return this.use(async rpc=>{if(!expected||args[2]!==rpc.endpoint.scope||args[4]!==expected.block)throw changed();const s=await this.snapshot(rpc);if(s.focused_pane_id!==expected.block)throw changed();const a=await this.readAgent(rpc,expected.block);if(!a||C.actor(a)!==C.actor(expected)||!isFocused(s,a))throw changed();if(!a.nativeVerified)throw Error('Codex state unavailable');if(!a.atBottom)throw Error('Scroll the Herdr pane to bottom');this.assertBinding(expected,a);if(this.actionContext)C.assertContext(this.actionContext,a);
-   const allowed=a.state==='blocked'?(a.kind==='permission'?['up','down','enter','esc']:a.kind==='question'?['up','down','left','right','enter','esc','tab','shift+tab']:[]):a.state==='working'?['esc']:['idle','done','error'].includes(a.state)?['shift+tab']:[];
+  return this.use(async rpc=>{if(!expected||args[2]!==rpc.endpoint.scope||args[4]!==expected.block)throw changed();const s=await this.snapshot(rpc);if(s.focused_pane_id!==expected.block)throw changed();const a=await this.readAgent(rpc,expected.block);if(!a||C.actor(a)!==C.actor(expected)||!isFocused(s,a))throw changed();if(!a.nativeVerified)throw Error('Native agent state unavailable');if(!a.atBottom)throw Error('Scroll the Herdr pane to bottom');this.assertBinding(expected,a);if(this.actionContext)C.assertContext(this.actionContext,a);else if(a.app==='claude-code')C.assertContext({target:expected,action:'nativeKey'},a);
+   const allowed=a.state==='blocked'?(a.kind==='permission'?['up','down','enter','esc']:a.kind==='question'?['up','down','left','right','enter','esc','tab','shift+tab',...a.app==='claude-code'&&a.claudeMultiSelect?['space']:[]]:[]):a.state==='working'?['esc']:['idle','done','error'].includes(a.state)?['shift+tab']:[];
    if(!allowed.includes(key))throw Error('Native control does not match the Herdr agent state');
    await rpc.request('agent.send_keys',{target:a.block,keys:[key]});
   });
  }
- async zoom(){const a=await this.focused();await this.checked(a);return this.use(async rpc=>{const current=await this.readAgent(rpc,a.block),s=await this.snapshot(rpc);if(!current||C.actor(current)!==C.actor(a)||!isFocused(s,current))throw changed();const r=await rpc.request('pane.zoom',{pane_id:a.block,mode:'toggle'});if(r?.type!=='pane_zoom'||r.zoom?.pane_id!==a.block)throw Error('Herdr zoom unconfirmed');});}
- async cycleControl(kind){if(!this.config.daemonControls?.enabled||kind==='permissions'&&!this.config.daemonControls.permissionsEnabled)throw Error('Herdr requires native daemon controls');return super.cycleControl(kind);}
+ async zoom(){const a=await this.focused();await this.checked(a,false,false);return this.use(async rpc=>{const current=await this.readAgent(rpc,a.block),s=await this.snapshot(rpc);if(!current||C.actor(current)!==C.actor(a)||!isFocused(s,current))throw changed();const r=await rpc.request('pane.zoom',{pane_id:a.block,mode:'toggle'});if(r?.type!=='pane_zoom'||r.zoom?.pane_id!==a.block)throw Error('Herdr zoom unconfirmed');});}
+ async cycleControl(kind){if((await this.focused()).app==='claude-code')throw Error('Use the Herdr keyboard for Claude model and effort');if(!this.config.daemonControls?.enabled||kind==='permissions'&&!this.config.daemonControls.permissionsEnabled)throw Error('Herdr requires native daemon controls');return super.cycleControl(kind);}
  async stage(){throw Error('Use the Herdr keyboard; verified draft cursor unavailable');}
  async send(){throw Error('Use the Herdr keyboard; verified draft cursor unavailable');}
  async submitRunning(){throw Error('Herdr Steer/Queue need a verified composer cursor');}

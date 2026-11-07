@@ -2,7 +2,7 @@
 let socket,registration,actionContext,shared=null,lastStatus;
 const byId=id=>document.getElementById(id);
 const connectionFields=['backend','herdrSocketPath'];
-const booleans=['allowClipboardFocus','bringToFront','animationEnabled','herdrTitleIdentity'],promptNames=['review','tests','continue'];
+const booleans=['allowClipboardFocus','bringToFront','animationEnabled','herdrTitleIdentity','claudeEnabled'],promptNames=['review','tests','continue'];
 for(const action of ['collapse','banknext','next','more','model','effort','plan','permissions','interrupt','stopTerminals','zoom','steer','queue','review','tests','continue','send','questionPrev','up','questionNext','answer','left','down','right','escape','approvalUp','approvalDown','approvalConfirm','approvalEscape','agent:0','agent:1','agent:2','agent:3','agent:4','none'])byId('action').add(new Option(({effort:'Effort (cycle supported levels)',permissions:'Reviewer (Ask me / Approve for me)',more:'Page selector',interrupt:'Interrupt',stopTerminals:'Stop background terminals',plan:'Plan / Default',banknext:'Agent bank',next:'Next agent',approvalConfirm:'Confirm shown approval choice'})[action]||action,action));
 function send(event,payload,context=registration){if(socket?.readyState===1)socket.send(JSON.stringify({event,context,payload,...event==='sendToPlugin'||event==='setSettings'?{action:'com.local.rexagents.key'}:{}}));}
 function query(){send('sendToPlugin',{kind:'status'},actionContext);}
@@ -11,7 +11,7 @@ function fill(status){
  const herdr=status.backend==='herdr';
  byId('herdrConnection').hidden=!herdr;byId('herdrHelp').hidden=!herdr;byId('rexSetup').hidden=herdr;
  for(const name of connectionFields){byId(name).disabled=status.setupBusy;if(document.activeElement!==byId(name))byId(name).value=shared[name]||'';}
- byId('connection').textContent=status.offline?(herdr?'Herdr unavailable — choose its running session socket':'Rex unavailable — open Rex and enable Remote Control'):`${status.agents} agent${status.agents===1?'':'s'} · ${status.metadata}/${status.codex} Codex chats identified`;
+ byId('connection').textContent=status.offline?(herdr?'Herdr unavailable — choose its running session socket':'Rex unavailable — open Rex and enable Remote Control'):`${status.agents} agent${status.agents===1?'':'s'} · ${status.metadata}/${status.codex} Codex${status.claude?' · '+status.claudeIdentified+'/'+status.claude+' Claude':''} chats identified`;
  byId('selection').textContent=status.selectionNotice?'Selection changed. Select an agent on the deck.':status.selected?`Selected: ${status.selected.app} · ${status.selected.state}${status.selected.mode?' · '+status.selected.mode:''}`:'Select an agent on the deck to enable controls.';
  byId('message').textContent=status.message||status.selected?.identityMessage||'';
  for(const key of booleans){byId(key).disabled=status.setupBusy;if(document.activeElement!==byId(key))byId(key).checked=!!shared[key];}

@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parent
 PLUGIN = 'com.local.rexagents.sdPlugin'
 INSTALLER = 'com.local.rexagents.streamDeckPlugin'
 PROFILE = 'Rex Agents.streamDeckProfile'
-DOCS = ('README.md', 'docs/INSTALL.md', 'docs/RELEASING.md', 'docs/UNINSTALL.md',
+DOCS = ('README.md', 'docs/INSTALL.md', 'docs/RELEASING.md', 'docs/UNINSTALL.md', 'docs/CLAUDE.md',
         'docs/BETA-CHECKLIST.md', 'docs/COMPATIBILITY.md',
         'docs/RELEASE-NOTES.md', 'docs/HERDR.md', 'THIRD-PARTY-NOTICES.md')
 PAYLOAD = {INSTALLER, PROFILE, 'BUILD-INFO.json', *DOCS}
@@ -58,7 +58,8 @@ def audit_installer(data):
         if (config.get('backend') != 'rex' or config.get('allowClipboardFocus') is not False
                 or config.get('herdr') != {'socketPath': '', 'titleIdentity': False}
                 or config.get('clientLabel') or config.get('aliases')
-                or config.get('focusRoutingVerified')):
+                or config.get('focusRoutingVerified')
+                or config.get('claude', {}).get('enabled', False) is not False):
             raise ValueError('Package must use fresh Rex defaults with consent and title matching off')
         for required in ('bin/visible-pane', 'node_modules/ws/package.json',
                          'node_modules/@iarna/toml/package.json'):
