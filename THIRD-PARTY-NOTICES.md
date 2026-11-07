@@ -1,6 +1,6 @@
 # Third-party notices
 
-This local beta has no selected project license and is not a public release.
+This beta has no selected project license. A private repository checkpoint does not establish public redistribution rights.
 
 - **Lucide 0.468.0:** control glyphs and the generated plugin/action artwork use Lucide. The unmodified source SVGs and ISC/Feather MIT notices are in `com.local.rexagents.sdPlugin/assets/lucide/`. Source: https://lucide.dev/ and https://unpkg.com/lucide-static@0.468.0/.
 - **Codex app icon:** `assets/codex-app.png` is a resized copy of the user’s installed OpenAI app icon, retained for local display; `assets/codex-mark.png` is its monochrome watermark derivative. Both remain OpenAI artwork. Redistribution has not been established; resolve this before public release. No OpenAI or Elgato endorsement is implied.

@@ -2,8 +2,10 @@
 
 ## Completed locally
 
+- Release packaging adds seven Python regression tests for archive privacy, safe defaults, version/profile consistency, checksum tampering, installer process preflight, preference preservation and device selection. The versioned bundle passes official Elgato validation and independent archive verification.
+
 - Experimental 1.2.1 was installed and its Herdr physical core controls passed with two disposable read-only agents; settings and the normal Rex deck were restored, and original agents were not restarted. See HERDR.md for exact coverage and remaining gates.
-- The validated Rex baseline has 24 automated test groups. This Herdr development branch adds four groups (28 total); live Herdr validation is tracked separately in HERDR.md.
+- The validated Rex baseline has 24 automated test groups. The Herdr backend adds four groups (28 total); live Herdr validation is tracked separately in HERDR.md.
 - Settings panel connected in the installed Stream Deck editor; both Codex chats identified, existing opt-in preserved, prompt fields populated. Preferences were inspected without changing their values.
 - Automated routing, stale state/request, process/focus replacement and malformed metadata tests.
 - Staged Send checks edited/cleared/manually submitted drafts, cursor/chat/turn changes, read failures and uncertain writes; no retry after an uncertain submission.
@@ -12,7 +14,7 @@
 - Native daemon model/reviewer checks performed in earlier work preserved permission boundaries and unsent drafts. Existing agent processes were not restarted.
 - Single Effort control reads the native value, advances through the selected model's supported levels and wraps. Physical cycle/wrap passed after the animation fix; the native settings snapshot matched the original Default/High configuration afterward. Original agent processes remained running.
 - Reproduced an effort-button failure during the native Max/Ultra status-line animation. Footer reads now wait for a stable verified viewport for up to four seconds, with no mutation retries. A full live guarded cycle passed through Low, Medium, High, Xhigh, Max, Ultra and back to Low. Mode and permission boundaries were preserved. Error text now outlasts the brief hardware warning overlay.
-- The actual updated installer was extracted into an independent temporary directory. Bundled JavaScript modules and watermark assets loaded without checkout dependencies; fresh clipboard-focus consent stayed off and all seven beta archive checksums matched.
+- The actual updated installer was extracted into an independent temporary directory. Bundled JavaScript modules and watermark assets loaded without checkout dependencies; fresh clipboard-focus consent stayed off and all then-current beta archive checksums matched.
 - New input-digest reader checked read-only against running Codex agents. No prompt was submitted, no input text retained or logged.
 - Signal artwork installed and inspected in the Stream Deck editor. Owner confirmed the final labels, brain icon, inset bands and agent watermark are readable from the normal seat.
 - Official Elgato validation and local packaging are part of the build. The artifact audit rejects development state, backups, logs and local home/workspace paths.
@@ -53,4 +55,4 @@ Use normal work or a deliberately disposable test agent. Test prompts and approv
 - Resolve redistribution of OpenAI artwork or replace it for a public package.
 - Decide whether slot order should persist across plugin restarts.
 - Choose public distribution/signing/notarization and maintenance commitments.
-- Approve any further Superlogical outreach, public repository or release. The user-authorized Discord feature-request reply and beta-mac project introduction have been posted; no public repository or release has been published.
+- Further Superlogical outreach and any change to public repository visibility need owner direction. A tagged GitHub beta checkpoint in the existing repository is authorized; this does not resolve licensing or artwork redistribution. The earlier Discord reply and beta-mac introduction were also authorized and posted.

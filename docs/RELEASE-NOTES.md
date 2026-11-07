@@ -1,9 +1,12 @@
-# Herdr development build 1.2.1 — November 6, 2026
+# 1.2.1 beta checkpoint — November 6, 2026
 
+- Merged experimental Herdr support into main alongside the validated Rex baseline.
+- Reorganized README and installation/upgrade guides; versioned bundles include source provenance, checksums and archive verification.
 - Explicit opt-in thread-ID title matching for daemon-backed Codex, without changing global settings or trusting hook session claims.
 - Requires complete unique loaded-ID matching, matching folder, interactive root-thread identity, stable pane/foreground and daemon generation.
 - Missing or changed titles clear selection and refuse stale presses, including after restoring the same title. Native turn identities and metadata caches follow the binding generation.
 - Live API tests passed for Model, Effort, Reviewer, Plan/Default, restoration, title loss/rebinding, new-chat isolation, a multiple-choice answer, one-time print-only approval, Interrupt and background-terminal Stop in two disposable agents. The installed physical core controls subsequently passed; see HERDR.md for exact coverage and remaining gates.
+- Seven distribution regression tests cover archive/default integrity, checksums and installer preflight/upgrade behavior.
 - 28 automated groups cover the Rex baseline and the new title resolver and guards. Send, Steer, Queue and prompt staging remain unavailable in Herdr.
 
 # Herdr development build 1.2.0 — November 6, 2026
@@ -31,7 +34,7 @@
 - Incomplete Rex discovery cannot compact away known agent slots.
 - Clean universal-helper build, official Elgato validation/packaging and private-state/path audit.
 
-This is a local development beta. Complete hardware workflows, independent installation, Intel execution, public licensing and redistribution decisions remain outstanding. Nothing is uploaded by the build.
+This remains a beta. Core Rex and Herdr hardware workflows passed locally; independent installation, Intel execution, public licensing and artwork redistribution remain outstanding. Nothing is uploaded by the build.
 
 - Interrupt and background terminal cleanup are separate. Verified background-only activity gets a BACKGROUND label and a scoped Stop terminals key. Stale chat/turn/terminal sets are refused; uncertain stop writes are not retried.
 

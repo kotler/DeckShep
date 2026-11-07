@@ -1,6 +1,6 @@
 # Herdr backend (experimental)
 
-This branch adds support for agents running in **Herdr TUI 0.9.5, socket protocol 22**, initially on a local Mac. Experimental build 1.2.1 is installed locally, with Rex restored as the active controller after the physical checks. Rex remains the default backend in distributed settings.
+The experimental backend supports agents running in **Herdr TUI 0.9.5, socket protocol 22**, initially on a local Mac. Experimental build 1.2.1 is installed locally, with Rex restored as the active controller after the physical checks. Rex remains the default backend in distributed settings.
 
 The adapter uses Herdr's documented public socket API and the schema bundled with the installed CLI. It connects only to the session socket explicitly selected in preferences. It never starts, stops, upgrades or attaches to a server automatically.
 
@@ -19,7 +19,7 @@ Herdr focus checks use its API; they do not use the clipboard. Switching control
 
 ## Controls
 
-| Control | Implementation on this branch |
+| Control | Implementation |
 | --- | --- |
 | Agent row, bank, Next agent, Collapse | Herdr topology and foreground identity; stable slot behavior shared with Rex |
 | Zoom | Explicit pane target through Herdr |
@@ -33,7 +33,7 @@ Herdr focus checks use its API; they do not use the clipboard. Switching control
 
 Codex gets native controls only with a verified, opted-in title binding. Other foreground agents whose executable matches Herdr's detected agent kind can appear for status, focus and Zoom; their native settings and input controls are not verified.
 
-The public pane-read result supplies text and revision but no composer cursor. This branch therefore cannot safely tell typed input from ghost suggestions or prove the editing position. It does not substitute a text-only guess for the Rex draft checks. On Herdr, the Prompts page displays **Use Herdr keyboard**, and the running row omits Steer and Queue.
+The public pane-read result supplies text and revision but no composer cursor. The adapter therefore cannot safely tell typed input from ghost suggestions or prove the editing position. It does not substitute a text-only guess for the Rex draft checks. On Herdr, the Prompts page displays **Use Herdr keyboard**, and the running row omits Steer and Queue.
 
 Backend focus is the session API's focused pane, not proof of which of several attached terminal clients is in front. Multiple-client behavior requires live validation. The adapter does not bring an outer terminal app to the foreground.
 
@@ -63,7 +63,7 @@ Live API checks on November 6, 2026 used a separate named headless session, leav
 
 The installed Codex 0.166.0 warning explains that command-line configuration overrides (`-c`, `--enable`, `--disable`, `--search`) require embedded mode. The isolated agents started with `-c` supplied official Herdr chat references after a harmless first turn, but had no accessible shared daemon. A fresh agent started without these overrides did connect to the existing daemon, but Herdr did not report its native chat reference, including after a completed turn. An explicit remote-daemon connection also lacked the reference. No user agent or existing daemon was restarted to change this behavior.
 
-Native controls require both independently verified pieces. The adapter refuses to guess a chat from its title, footer text, directory or the daemon's loaded-chat list. Build 1.2.1 adds the opt-in title-ID adapter described above; the earlier hook-only path is no longer used for native control identity. The source branch and package remain experimental; build 1.2.1 was subsequently installed and physically checked as recorded below.
+Native controls require both independently verified pieces. The adapter refuses to guess a chat from its title, footer text, directory or the daemon's loaded-chat list. Build 1.2.1 adds the opt-in title-ID adapter described above; the earlier hook-only path is no longer used for native control identity. The backend remains experimental; build 1.2.1 was subsequently installed and physically checked as recorded below.
 
 ### Chat-ID investigation — November 6, 2026
 
