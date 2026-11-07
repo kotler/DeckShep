@@ -8,7 +8,7 @@ function ellipsize(text,width=126,fontSize=18){
  let result='',used=0;for(const glyph of glyphs){const size=measure(glyph);if(used+size+fontSize>width)break;result+=glyph;used+=size;}return result+'…';
 }
 function agentLines(agent,aliases={}){
- const status=require('./context-controls').isBackground(agent)?'BACKGROUND':({idle:'READY',done:'COMPLETE',working:'WORKING',blocked:agent.kind==='permission'?'APPROVAL':'WAIT INPUT',error:'ERROR',unknown:'UNKNOWN'})[agent.state]||'UNKNOWN';
+ const status=require('./context-controls').isBackground(agent)?'BACKGROUND':({idle:'READY',done:'COMPLETE',working:'WORKING',blocked:agent.kind==='permission'?'CHOICE':'WAIT INPUT',error:'ERROR',unknown:'UNKNOWN'})[agent.state]||'UNKNOWN';
  return[ellipsize(aliases[agent.block]||agent.chatName||(agent.app==='codex'?'Name unavailable':'Untitled agent'),120,26),ellipsize(agent.project||'Unknown folder',120,22),status];
 }
 function shortModel(model){return clean(model).replace(/^gpt[- ]?/i,'').replace(/[-_]+/g,' ').replace(/\b[a-z]/g,c=>c.toUpperCase());}
@@ -23,8 +23,8 @@ function modeLines(bridge){
 function modelLines(bridge){
  const target=bridge.lastTarget;if(!target)return['Model','Select agent'];
  const agent=bridge.agents?.find(a=>sameTarget(a,target));if(!agent)return['Model','Agent closed'];
- const verified=sameTarget(bridge.lastModel,target)&&(!bridge.lastModel.chatId||bridge.lastModel.chatId===agent.chatId)&&bridge.lastModel.at>(agent.metadataAt||0)?bridge.lastModel.model:agent.model;
- return['Model',ellipsize(verified?(agent.app==='claude-code'?(agent.modelName||verified.replace(/^claude-/,'')):shortModel(verified)):'Unknown',126,16)];
+ const recent=sameTarget(bridge.lastModel,target)&&(!bridge.lastModel.chatId||bridge.lastModel.chatId===agent.chatId)&&bridge.lastModel.at>(agent.metadataAt||0)?bridge.lastModel:null,verified=recent?recent.model:agent.model;
+ return['Model',ellipsize(verified?(agent.app==='claude-code'?(recent?.modelName||(agent.model===verified?agent.modelName:null)||verified.replace(/^claude-/,'')):shortModel(verified)):'Unknown',126,16)];
 }
 function effortLines(bridge){
  const agent=bridge.agents?.find(a=>sameTarget(bridge.lastTarget,a));

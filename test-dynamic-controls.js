@@ -29,5 +29,16 @@ const assert=require('node:assert/strict'),{harness}=require('./test-plugin-harn
  h.api.bridge.verifyRunning=async()=>{throw Error('Read unavailable');};await h.press(2,4);assert(h.image(2,4).includes('Unavailable'));h.tick(4000);h.api.render();assert(h.image(2,4).includes('Unavailable'),'error text outlasts the brief hardware warning');h.api.bridge.verifyRunning=async()=>({});
  const target=h.live[0];h.setLive([target,...Array.from({length:5},(_,i)=>({...target,block:'extra'+i,pid:60+i}))]);await h.api.refresh();await h.press(1,1);assert.equal(h.api.getBank(),1);await h.press(1,1);assert.equal(h.api.getBank(),0);
  h.api.bridge.slots.splice(1,0,{session:'s',block:'closed'});await h.press(1,0);assert(!h.api.bridge.slots.some(s=>s.block==='closed'));
+ // Claude arrows send no post-key scan. The next action must still see a
+ // changed native request and reject a confirmation captured before it.
+ const q=harness();await q.ready();q.change('a',{app:'claude-code',name:'claude',nativeVerified:true,nativeIdentity:'root',claudeControlsEnabled:true,state:'blocked',kind:'question',statusAt:'question-one'});await q.api.refresh();await q.press(0,0);q.tick();
+ let paneReads=0,scans=0;const discover=q.api.bridge.discover.bind(q.api.bridge);q.api.bridge.discover=async()=>{scans++;return discover();};
+ q.api.bridge.agent=async t=>{paneReads++;assert.equal(t.block,'a');return{...q.live[0]};};q.api.bridge.questionKey=async()=>q.change('a',{statusAt:'question-two'});
+ const oldAnswer=q.api.keys.get('2,2').presented;await q.press(2,1);assert.equal(paneReads,0);assert.equal(scans,0);assert.equal(q.live[0].statusAt,'question-two');
+ let confirms=0;q.api.bridge.questionKey=async()=>{confirms++;};q.tick();await q.press(2,2,oldAnswer);assert.equal(confirms,0,'queued confirmation from the old request remains invalid');
+ assert.equal(paneReads,1,'Confirm still refreshes the acted-on pane after a refused or completed action');
+ const m=harness();await m.ready();m.change('a',{app:'claude-code',name:'claude',nativeVerified:true,nativeIdentity:'multi-root',claudeControlsEnabled:true,state:'blocked',kind:'question',statusAt:'checkbox-list',claudeMultiSelect:true,claudeCheckboxList:true});await m.api.refresh();await m.press(0,0);m.tick();const nativeKeys=[];
+ m.api.bridge.agent=async()=>({...m.live[0]});m.api.bridge.questionKey=async key=>{nativeKeys.push(key);if(key==='tab')m.change('a',{claudeMultiSelect:false,claudeCheckboxList:false,claudeQuestionReview:true,statusAt:'review-answers'});};
+ assert(m.image(2,2).includes('>Review<'));await m.press(2,4);assert.equal(nativeKeys.at(-1),'space');const reviewPress=m.api.keys.get('2,2').presented;await m.press(2,2);assert.equal(nativeKeys.at(-1),'tab');assert.equal(m.api.getPage(),0);assert(m.image(2,2).includes('>Submit<'));m.tick();const nkeys=nativeKeys.length;await m.press(2,2,reviewPress);assert.equal(nativeKeys.length,nkeys,'an old Review press must not become Submit');await m.press(2,2);assert.equal(nativeKeys.at(-1),'enter');
  console.log('PASS dynamic ready/running/question/approval rows, fixed Stop/page positions, contextual Steer/Queue, stale press/request rejection, focus binding, transition delay, page cycling, removed previous buttons and stable selection/bank/collapse behavior');
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -1,3 +1,14 @@
+# 1.3.4 Claude validation preview — not released
+
+- Claude Model and Effort cycle directly from Home in Rex and Herdr, with session-only application and verified readback. Native defaults, permissions and drafts are preserved; unexpected consent or credit prompts require the keyboard.
+- Corrects real Claude NBSP and named-composer layouts, paused-modal heartbeat handling and same-root selection retention. Reduces repeated waiting-key focus checks while retaining exact selection-change refusal.
+- Herdr arrows now validate once immediately before input against the exact root/request/prompt body, read stable viewport pairs in parallel, and release the next queued key without a post-arrow scan. Confirm keeps its full preflight and exact selection guard. Bash approval snapshots include the complete styled panel, excluding unrelated chat animations; native padding, line endings and choice-dependent hints are handled without input retries.
+- Exact tool IDs survive ID-less permission callbacks only for the same hashed tool input. Missing completion hooks can recover only from native idle/done, a newer fresh heartbeat and a verified empty composer; private lifecycle authority is never rewritten.
+- Permission waiting status is CHOICE. Physical approval responsiveness remains a beta gate; Herdr's server-side request polling adds latency.
+- Claude's native checkbox layout exposes Toggle and keeps Review → Submit on Home, including the recognized review screen that Herdr reports as done. Stale Review presses cannot submit answers. The native API flow passed; physical validation remains in progress.
+- Resolves the OS executable image for bare-name Claude launches such as Herdr, with owner/start-time checks, without trusting argv0 as a path.
+- Physical validation is in progress. See [the exact Claude test record](CLAUDE.md#local-physical-validation-in-progress--november-7-2026). Automated coverage has 36 groups plus eight distribution tests.
+
 # 1.3.3 artwork update — not released
 
 - Replaces the generic Claude spokes with a recognizable filled Claude starburst, centered at 104 × 104 pixels in the background of Claude agent keys at 28% white opacity. Chat/project/status text and the selection dot remain on top.

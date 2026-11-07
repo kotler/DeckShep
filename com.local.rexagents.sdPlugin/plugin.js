@@ -60,7 +60,7 @@ function render(){
    if(a){const shown=completion.agent(a),prior=transitions.get(a.block);if(!prior||prior.state!==shown.state||prior.pid!==a.pid||prior.statusAt!==a.statusAt)transitions.set(a.block,{state:shown.state,pid:a.pid,statusAt:a.statusAt,at:now});icon=a.app;lines=agentLines(shown,config.aliases);color=C.isBackground(shown)?'#126b78':config.palette[shown.state==='idle'?'ready':shown.state]||config.palette.unknown;p=pulse(C.isBackground(shown)?'idle':shown.state,now-transitions.get(a.block).at,config.animation);if(sameTarget(bridge.lastTarget,a))badge='selected';}
    else{icon='empty';lines=offline?[backendName()+' offline','UNKNOWN']:slot?['Closed']:['No agent'];color=offline?config.palette.error:config.palette.idle;}
   }else{
-   const gaps=bridge.slotGaps(),names={collapse:['Collapse',...(offline?[backendName()+' offline']:gaps?[`${gaps} gap${gaps===1?'':'s'}`]:[])],banknext:bankLines(),next:['Next agent'],model:modelLines(bridge),effort:effortLines(bridge),effortIncrease:['Effort +'],effortDecrease:['Effort −'],permissions:reviewerLines(bridge),plan:modeLines(bridge),interrupt:['Interrupt',mode==='working'?'running':'not running'],stopTerminals:['Stop terminals',`${target?.backgroundIds?.length||0} running`],steer:['Steer','typed message'],queue:['Queue','typed message'],zoom:['Zoom'],up:['Up'],down:['Down'],left:['Left'],right:['Right'],questionPrev:['Shift+Tab','question'],questionNext:['Tab','question'],answer:target?.claudePicker?['Apply','this session']:['Confirm','Enter'],escape:['Esc','question'],approvalUp:['Up','approval'],approvalDown:['Down','approval'],approvalConfirm:['Confirm','shown choice'],approvalEscape:['Esc','approval'],review:['Review','draft'],tests:['Tests','draft'],continue:['Continue','draft'],send:bridge.draft?['Send',bridge.draft.action]:['Send','no draft'],more:[`Page ${page+1}/3`,['Home','Questions','Prompts'][page],page===0?({ready:'Ready',working:'Working',background:'Background',question:'Question',approval:'Approval',unknown:target?'Check '+backendName():'Select agent'})[mode]:'next page'],questions:['Questions'],prompts:['Prompts'],back:['Back','Questions'],none:[],claudeToggle:['Toggle','Space'],claudeInfo:['Claude Code',config.claude?.enabled?'Experimental':'Set up hooks'],claudeModeInfo:modeLines(bridge),inputInfo:['Use Herdr','keyboard'],status:target?['Check '+backendName(),target.app==='claude-code'?(target.claudeError||(!target.claudeControlsEnabled?'Enable Claude':'')):target.kind==='auth'?'Authentication':'']:[bridge.selectionNotice?'Reselect':'Select','agent']};
+   const gaps=bridge.slotGaps(),names={collapse:['Collapse',...(offline?[backendName()+' offline']:gaps?[`${gaps} gap${gaps===1?'':'s'}`]:[])],banknext:bankLines(),next:['Next agent'],model:modelLines(bridge),effort:effortLines(bridge),effortIncrease:['Effort +'],effortDecrease:['Effort −'],permissions:reviewerLines(bridge),plan:modeLines(bridge),interrupt:['Interrupt',mode==='working'?'running':'not running'],stopTerminals:['Stop terminals',`${target?.backgroundIds?.length||0} running`],steer:['Steer','typed message'],queue:['Queue','typed message'],zoom:['Zoom'],up:['Up'],down:['Down'],left:['Left'],right:['Right'],questionPrev:['Shift+Tab','question'],questionNext:['Tab','question'],answer:target?.claudePicker?['Apply','this session']:target?.claudeCheckboxList?['Review','answers']:target?.claudeQuestionReview?['Submit','answers']:['Confirm','Enter'],escape:['Esc','question'],approvalUp:['Up','choice'],approvalDown:['Down','choice'],approvalConfirm:['Confirm','shown choice'],approvalEscape:['Esc','choice'],review:['Review','draft'],tests:['Tests','draft'],continue:['Continue','draft'],send:bridge.draft?['Send',bridge.draft.action]:['Send','no draft'],more:[`Page ${page+1}/3`,['Home','Questions','Prompts'][page],page===0?({ready:'Ready',working:'Working',background:'Background',question:'Question',approval:'Choice',unknown:target?'Check '+backendName():'Select agent'})[mode]:'next page'],questions:['Questions'],prompts:['Prompts'],back:['Back','Questions'],none:[],claudeToggle:['Toggle','Space'],claudeInfo:['Claude Code',config.claude?.enabled?'Experimental':'Set up hooks'],claudeModeInfo:modeLines(bridge),inputInfo:['Use Herdr','keyboard'],status:target?['Check '+backendName(),target.app==='claude-code'?(target.claudeError||(!target.claudeControlsEnabled?'Enable Claude':'')):target.kind==='auth'?'Authentication':'']:[bridge.selectionNotice?'Reselect':'Select','agent']};
    lines=names[action]||[action.toUpperCase()];
    if((action==='collapse'&&(offline||!gaps))||(action==='interrupt'&&mode!=='working')||action==='none')color='#38414b';
    if(action==='stopTerminals'||action==='interrupt'&&mode==='working')color='#813c42';
@@ -82,7 +82,7 @@ async function refreshMetadata(force=false){
  finally{metadataBusy=false;if(metadataAgain){metadataAgain=false;void refreshMetadata(true);}}
 }
 async function refresh(forceMetadata=false){
- if(busy)return;busy=true;
+ if(busy||actionBusy)return;busy=true;
  try{loadConfig();await bridge.discover();offline=false;void refreshMetadata(forceMetadata);}
  catch{offline=true;bridge.agents=[];bridge.draft=null;bridge.picker=null;}
  finally{busy=false;render();}
@@ -106,12 +106,12 @@ async function perform(a,display){
  else if(a==='claudeToggle')await bridge.questionKey('space');
  else if(a==='send')await bridge.send();
  else if(a.startsWith('approval'))await bridge.approvalKey(({approvalUp:'up',approvalDown:'down',approvalConfirm:'enter',approvalEscape:'escape'})[a]);
- else if(['up','down','left','right','escape','questionPrev','questionNext','answer'].includes(a))await bridge.questionKey(({questionPrev:'shift+tab',questionNext:'tab',answer:'enter'})[a]||a);
+ else if(['up','down','left','right','escape','questionPrev','questionNext','answer'].includes(a))await bridge.questionKey(({questionPrev:'shift+tab',questionNext:'tab',answer:display.target?.claudeCheckboxList?'tab':'enter'})[a]||a);
  else await bridge.stage(a);
 }
 async function press(ctx,display){
  const k=keys.get(ctx);if(!k)return;display=display||k.presented||capture(k);const a=display.action;if(['none','status','inputInfo','claudeInfo','claudeModeInfo'].includes(a))return;
- actionBusy=true;activePress={ctx,display};try{
+ let completed=false;actionBusy=true;activePress={ctx,display};try{
   let result;
   if(display.scope!==scope||display.appearance!==k.appearance||display.visibility!==visibility||display.generation!==bridge.generation)throw Error('Profile changed; press again');
   if(display.backendKey!==bridge.backendKey)throw Error('Controller changed; press again');
@@ -122,10 +122,23 @@ async function press(ctx,display){
    if(!display.target)throw Error('Select an agent first');
    result=await bridge.withContext(display,()=>perform(a,display));
   }else result=await perform(a,display);
-  k.feedback=null;if(result)k.notice={until:Date.now()+2500,label:result.label,action:a,stamp:display.stamp};
+  completed=true;k.feedback=null;if(result)k.notice={until:Date.now()+2500,label:result.label,action:a,stamp:display.stamp};
  }catch(error){k.notice=null;k.feedback={until:Date.now()+10000,message:clean(error.message),action:a,stamp:display.stamp};inspectorMessage=String(error.message).replace(/[\x00-\x1f\x7f]/g,'').slice(0,160);render();emit('showAlert',ctx,{});}
  finally{actionBusy=false;activePress=null;}
- await refresh(true);render();
+ // Up/Down changes only the terminal highlight. The next key still runs its
+ // full preflight against the current native dialog; no post-key pane scan
+ // should hold that next key in the queue. Pickers can change their body too.
+ if(completed&&display.target?.app==='claude-code'&&!display.target.claudePicker&&['up','down','approvalUp','approvalDown'].includes(a)){render();return;}
+ // Other waiting actions must not wait for unrelated agents' discovery.
+ // Refresh the acted-on Claude pane before releasing the next queued press;
+ // its normal preflight still reads the actual current dialog again.
+ const waitingAction=['up','down','left','right','escape','questionPrev','questionNext','answer','claudeToggle','approvalUp','approvalDown','approvalConfirm','approvalEscape'].includes(a);
+ if(waitingAction&&display.target?.app==='claude-code'){
+  const source=bridge;
+  try{const live=await source.agent(display.target);if(source===bridge){const index=source.agents.findIndex(item=>sameTarget(item,display.target));if(index>=0){if(live&&sameTarget(live,display.target))source.agents[index]=live;else source.agents.splice(index,1);}}}catch{void refresh();}
+  render();
+ }else await refresh(true);
+ render();
 }
 async function initialize(){if(!keys.size)return;await refresh();if(!startupSelectionRead&&(config.backend==='herdr'||config.allowClipboardFocus)){startupSelectionRead=true;try{await bridge.focused();}catch{}}render();}
 function inspectorStatus(context,message){

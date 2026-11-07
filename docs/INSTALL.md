@@ -47,7 +47,7 @@ Herdr's Prompts page says **Use Herdr keyboard**. Send, Steer, Queue and prompt 
 
 ## Claude and mixed-agent preview
 
-The 1.3.3 development branch adds optional Claude integration, with native controls disabled by default. See [Claude setup](CLAUDE.md) before enabling it. It requires a supported native Claude version and a separate local Node runtime for metadata hooks. The previously published 1.2.1 beta does not contain this preview.
+The 1.3.4 development branch adds optional Claude integration, with native controls disabled by default. See [Claude setup](CLAUDE.md) before enabling it. It requires a supported native Claude version and a separate local Node runtime for metadata hooks. The previously published 1.2.1 beta does not contain this preview.
 
 ## Upgrading and recovery
 
@@ -78,4 +78,4 @@ It backs up `ProfilesV3` and the previous plugin under `backups/TIMESTAMP/`, pre
 
 For a source-installer rollback, quit Stream Deck and restore `previous-plugin` from that backup to `~/Library/Application Support/com.elgato.StreamDeck/Plugins/com.local.rexagents.sdPlugin`. Restore the backed-up `ProfilesV3` only if you need to undo profile changes; first preserve any profiles edited since the backup. Reopen Stream Deck.
 
-A normal source build targets the current Mac architecture. `python3 package.py --tag v1.3.3-beta.1` builds both helper architectures and produces the downloadable bundle; see [releasing](RELEASING.md).
+A normal source build targets the current Mac architecture. `python3 package.py --tag v1.3.4-beta.1` builds both helper architectures and produces the downloadable bundle; see [releasing](RELEASING.md).

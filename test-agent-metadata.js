@@ -29,7 +29,7 @@ function fixture(){
  const authoritative=fixture();authoritative.agent.backend='herdr';authoritative.agent.herdrChatId=id;authoritative.agent.nativeIdentity='daemon-1';authoritative.agent.nativeVerified=true;authoritative.agent.runId='current-run';authoritative.bridge.backend='herdr';await authoritative.reader.refresh([authoritative.agent]);authoritative.agent.runId='new-run';authoritative.reader.hydrate([authoritative.agent]);assert.equal(authoritative.agent.runId,'new-run','cached metadata must not replace fresh Herdr native activity');const generation={...authoritative.agent,nativeIdentity:'daemon-2',chatName:'Fresh',model:null};authoritative.reader.hydrate([generation]);assert.equal(generation.model,null,'a replacement daemon cannot inherit stale metadata');
  const alias=fixture();alias.bridge.config.projectAliases={[alias.agent.cwd]:'Product'};await alias.reader.refresh([alias.agent]);assert.equal(alias.agent.project,'Product');
  await alias.reader.refresh([]);assert.equal(alias.reader.cache.size,0);
- assert.deepEqual(agentLines({...f.agent,chatName:'Short',state:'blocked',kind:'permission'},{b:'My chat'}),['My chat','my-project','APPROVAL']);
+ assert.deepEqual(agentLines({...f.agent,chatName:'Short',state:'blocked',kind:'permission'},{b:'My chat'}),['My chat','my-project','CHOICE']);
  assert.equal(ellipsize('Hello'),'Hello');assert(ellipsize('A very long conversation title').endsWith('…'));
  const family='👨‍👩‍👧‍👦';assert.equal(ellipsize(family.repeat(10),55,18),family.repeat(2)+'…');
  assert.equal(ellipsize('Hello\n\u202etitle'),'Hellotitle');

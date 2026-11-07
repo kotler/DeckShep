@@ -96,12 +96,14 @@ class Bridge{
     }
     this.lastTarget={session:a.session,block:a.block,pid:a.pid,app:a.app,name:a.name,...a.app==='claude-code'?{app:a.app,name:a.name,chatId:a.chatId,nativeIdentity:a.nativeIdentity}: {}};return a;
   }
+  async contextPreflight(){return this.focused();}
   async withContext(context,action){
     if(this.actionContext)throw Error('Another action is in progress');this.actionContext=context;
-    try{await this.focused();return await action();}
+    try{this.actionPreflight=await this.contextPreflight(context);return await action();}
     catch(error){if(error.code==='SELECTION_CHANGED'){this.lastTarget=null;this.draft=null;this.picker=null;this.selectionNotice=true;}throw error;}
-    finally{this.actionContext=null;}
+    finally{this.actionContext=null;this.actionPreflight=null;}
   }
+  async providerAgent(){if(this.actionPreflight?.app==='claude-code'){const agent=this.actionPreflight;this.actionPreflight=null;return agent;}return this.focused();}
   async checked(t,ready=false){const a=await this.focused();if(token(a)!==token(t))throw focusError('Focus or process changed');if(ready&&!['idle','done','error'].includes(a.state))throw new Error('Agent not ready for a prompt');return a;}
   async focus(t){
     const c=await this.client();const a=await this.agent(t);if(!a)throw new Error('Agent closed');if(t.pid!==undefined&&(t.pid!==a.pid||t.app&&t.app!==a.app||t.name&&t.name!==a.name))throw Error('Agent process changed');
@@ -177,8 +179,8 @@ class Bridge{
   }
   async cycleControl(kind){
     if(!['model','effort','permissions'].includes(kind))throw new Error('Unsupported cycle');
-    const a=await this.focused();
-    if(a.app==='claude-code'){if(kind==='permissions')throw Error('Use Claude keyboard for permission modes');return this.claude.openPicker();}
+    const a=await this.providerAgent();
+    if(a.app==='claude-code'){if(kind==='permissions')throw Error('Use Claude keyboard for permission modes');return this.claude.cycle(kind,a);}
     if(a.app!=='codex'||!this.config.controlVerified?.codex)throw new Error('Cycle controls not verified for this agent');
     if(this.picker)throw new Error('Close the native picker first');
     if(kind==='effort'){if(!this.config.daemonControls?.enabled)throw Error('Effort daemon unavailable');return new (require('./daemon-controls').DaemonControls)(this).cycleEffort(a);}
@@ -225,7 +227,7 @@ class Bridge{
   async questionKey(key){
     if(!['up','down','left','right','escape','tab','shift+tab','enter','space'].includes(key))throw Error('Unsupported question key');
     const waiting=a=>a.app==='codex'&&this.config.controlVerified?.codex&&a.state==='blocked'&&a.kind==='question';
-    const agent=await this.focused();if(agent.app==='claude-code')return this.claude.waiting(key,'question');if(key==='space')throw Error('Space is a Claude multi-select control');if(!waiting(agent))throw Error('No native question waiting');
+    const agent=await this.providerAgent();if(agent.app==='claude-code')return this.claude.waiting(key,'question',agent);if(key==='space')throw Error('Space is a Claude multi-select control');if(!waiting(agent))throw Error('No native question waiting');
     const current=await this.checked(agent);if(!waiting(current))throw Error('Question changed; no input sent');
     // Only explicit user presses reach a native question. Never a composer or approval.
     await this.run(['send-key','-s',current.session,'-b',current.block,key]);
@@ -233,7 +235,7 @@ class Bridge{
   async approvalKey(key){
     if(!['up','down','enter','escape'].includes(key))throw Error('Unsupported approval key');
     const waiting=a=>a.app==='codex'&&this.config.controlVerified?.codex&&a.state==='blocked'&&a.kind==='permission';
-    const agent=await this.focused();if(agent.app==='claude-code')return this.claude.waiting(key,'permission');if(!waiting(agent))throw Error('No native approval waiting');
+    const agent=await this.providerAgent();if(agent.app==='claude-code')return this.claude.waiting(key,'permission',agent);if(!waiting(agent))throw Error('No native approval waiting');
     const read=this.readRequest||require('./native-input').requestSnapshot;
     const before=await read(this,agent),current=await this.checked(agent);
     if(!waiting(current)||agent.statusAt!==current.statusAt||!agent.statusAt)throw Error('Approval request changed');

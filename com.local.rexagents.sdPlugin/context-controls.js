@@ -10,12 +10,13 @@ function modeOf(agent){
  return'unknown';
 }
 const actor=a=>a&&[a.session,a.block,a.app,a.pid,a.name,a.terminalId||''].join('|');
-function stamp(agent,page=0){return JSON.stringify([actor(agent),modeOf(agent),agent?.state==='blocked'?agent.statusAt:null,agent?.chatId||null,agent?.runId||null,agent?.nativeIdentity||null,page,...isBackground(agent)?[agent.backgroundTurnId,agent.backgroundIds]:[]]);}
-function snapshot(agent){if(!agent)return null;return Object.fromEntries(['session','window','block','terminalId','backend','composerSupported','pid','name','app','cwd','state','kind','statusAt','chatId','nativeVerified','nativeIdentity','runId','backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt','claudeControlsEnabled','claudeTurnId','claudeRequestId','claudePicker','claudeMultiSelect','permissionMode','vimMode','atBottom'].filter(k=>agent[k]!==undefined).map(k=>[k,Array.isArray(agent[k])?[...agent[k]]:agent[k]]));}
+function stamp(agent,page=0){return JSON.stringify([actor(agent),modeOf(agent),agent?.state==='blocked'?agent.statusAt:null,agent?.chatId||null,agent?.runId||null,agent?.nativeIdentity||null,agent?.claudeUiEpoch||0,page,...isBackground(agent)?[agent.backgroundTurnId,agent.backgroundIds]:[]]);}
+function snapshot(agent){if(!agent)return null;return Object.fromEntries(['session','window','block','terminalId','backend','composerSupported','pid','name','app','cwd','state','kind','statusAt','chatId','nativeVerified','nativeIdentity','runId','backgroundOnly','backgroundIds','backgroundTurnId','activityStatusAt','claudeControlsEnabled','claudeUiEpoch','claudeTurnId','claudeRequestId','claudePicker','claudeMultiSelect','claudeCheckboxList','claudeQuestionReview','permissionMode','vimMode','atBottom'].filter(k=>agent[k]!==undefined).map(k=>[k,Array.isArray(agent[k])?[...agent[k]]:agent[k]]));}
 function assertContext(context,current){
  const target=context?.target;
  if(!target||actor(target)!==actor(current)){const error=Error('Reselect agent on deck');error.code='SELECTION_CHANGED';throw error;}
- if(context.action!=='zoom'&&target.app==='claude-code'&&(!current.nativeVerified||!current.claudeControlsEnabled||target.chatId!==current.chatId||target.nativeIdentity!==current.nativeIdentity||target.runId&&target.runId!==current.runId)){const error=Error('Claude session changed; reselect');error.code='SELECTION_CHANGED';throw error;}
+ if(context.action!=='zoom'&&target.app==='claude-code'&&(!current.nativeVerified||target.chatId!==current.chatId||target.nativeIdentity!==current.nativeIdentity||target.runId&&target.runId!==current.runId)){const error=Error('Claude session changed; reselect');error.code='SELECTION_CHANGED';throw error;}
+ if(context.action!=='zoom'&&target.app==='claude-code'&&(!current.claudeControlsEnabled||target.claudeUiEpoch!==current.claudeUiEpoch))throw Error('Claude controls updating; press again');
  // Fresh Rex records do not contain daemon metadata. Background actions separately
  // revalidate the ended turn and the complete terminal-ID set before any mutation.
  const background=isBackground(target)&&current.state==='working'&&target.statusAt===current.statusAt;

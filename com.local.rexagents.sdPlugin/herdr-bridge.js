@@ -40,8 +40,9 @@ class HerdrBridge extends Bridge{
  async readAgent(rpc,pane,initial){
   const info=validateInfo(initial||(await rpc.request('agent.get',{target:pane}))?.agent);
   if(info.pane_id!==pane)throw changed();if(info.agent==null)return null;
-  const processInfo=(await rpc.request('pane.process_info',{pane_id:pane}))?.process_info,p=foreground(info,processInfo);if(!p||!await this.owner(p.pid))return null;
-  const paneInfo=(await rpc.request('pane.get',{pane_id:pane}))?.pane;
+  const [processResponse,paneResponse]=await Promise.all([rpc.request('pane.process_info',{pane_id:pane}),rpc.request('pane.get',{pane_id:pane})]);
+  const p=foreground(info,processResponse?.process_info);if(!p||!await this.owner(p.pid))return null;
+  const paneInfo=paneResponse?.pane;
   if(paneInfo?.pane_id!==pane||paneInfo.terminal_id!==info.terminal_id||paneInfo.tab_id!==info.tab_id||paneInfo.workspace_id!==info.workspace_id)throw changed();
   const a={backend:'herdr',session:rpc.endpoint.scope,window:info.tab_id,block:pane,terminalId:info.terminal_id,workspaceId:info.workspace_id,...p,app:info.agent==='claude'?'claude-code':info.agent,state:info.agent_status,statusAt:String(info.state_change_seq??0)+':'+info.revision,project:path.basename(p.cwd),chatName:(this.config.herdr?.titleIdentity?info.name:info.title||info.terminal_title_stripped||info.name)||'Untitled agent',composerSupported:false,serverFocused:info.focused===true&&paneInfo.focused===true,atBottom:paneInfo.scroll?.offset_from_bottom===0};
   if(a.app==='codex'){
@@ -92,6 +93,16 @@ class HerdrBridge extends Bridge{
   this.lastTarget=target(a);this.lastChecked=a;return a;
  });}
  async checked(t,ready=false,verifyNative=true){const a=await this.focused();if(C.actor(a)!==C.actor(t))throw changed();if(t.chatId&&verifyNative)this.assertBinding(t,a);if(ready&&!['idle','done','error'].includes(a.state))throw Error('Agent not ready');return a;}
+ navigationContext(a,key){return a?.app==='claude-code'&&!a.claudePicker&&a.state==='blocked'&&this.actionContext?.target&&C.actor(this.actionContext.target)===C.actor(a)&&({up:'up',down:'down',approvalUp:'up',approvalDown:'down'})[this.actionContext.action]===key;}
+ async contextPreflight(context){
+  const a=this.agents?.find(item=>C.actor(item)===C.actor(context.target));
+  // Arrow navigation performs its complete fresh validation immediately before
+  // sending. It does not need a second full discovery/enrichment beforehand.
+  if(a?.app==='claude-code'&&!a.claudePicker&&a.state==='blocked'&&['up','down','approvalUp','approvalDown'].includes(context.action)){
+   C.assertContext(context,a);this.assertBinding(context.target,a);return a;
+  }
+  return super.contextPreflight(context);
+ }
  async focus(t){return this.use(async rpc=>{if(t.session!==rpc.endpoint.scope)throw changed();const a=await this.readAgent(rpc,t.block);if(!a||C.actor(a)!==C.actor(t))throw changed();await rpc.request('agent.focus',{target:a.block});const s=await this.snapshot(rpc);if(s.focused_pane_id!==a.block)throw Error('Herdr focus unconfirmed');const confirmed=await this.readAgent(rpc,a.block);if(C.actor(a)!==C.actor(confirmed)||!isFocused(s,confirmed))throw changed();this.lastTarget=target(confirmed);this.lastChecked=confirmed;this.draft=null;this.picker=null;this.selectionNotice=false;});}
  assertBinding(expected,a){if(a?.app==='claude-code')return this.claude.assert(expected,a);if(!a?.nativeVerified||!a.chatId||!a.nativeIdentity)throw Error(a?.nativeError||'Native chat identity unavailable');if(!expected?.chatId||expected.chatId!==a.chatId||expected.nativeIdentity!==a.nativeIdentity)throw changed();if(expected.runId&&expected.runId!==a.runId)throw Error('Agent started a new turn');}
  async nativeChatId(t){const a=await this.agent(t);if(!a||C.actor(a)!==C.actor(t))throw changed();this.assertBinding(t,a);return a.chatId;}
@@ -100,17 +111,46 @@ class HerdrBridge extends Bridge{
   if(result?.type!=='pane_read'||r?.pane_id!==a.block||r.workspace_id!==a.workspaceId||r.tab_id!==a.window||r.source!=='visible'||r.format!==format||r.truncated!==false||typeof r.text!=='string'||!r.text||Buffer.byteLength(r.text)>960000)throw Error('Herdr viewport incomplete');return r.text;
  }
  async requestHash(t){return this.use(async rpc=>{const a=await this.readAgent(rpc,t.block);if(!a||C.actor(a)!==C.actor(t)||!a.atBottom||a.state!=='blocked'||!a.nativeVerified)throw Error('Native waiting UI unavailable');return crypto.createHash('sha256').update(await this.readView(rpc,a)).digest('hex');});}
+ async sendClaudeWaitingKey(a,key,kind){
+  if(a.app!=='claude-code'||!a.nativeVerified||!a.claudeControlsEnabled||!a.atBottom||!['question','permission'].includes(kind))throw Error('Claude waiting context unavailable');
+  const picker=a.claudePicker===true,allowed=kind==='permission'?['up','down','enter','escape']:['up','down','left','right','enter','escape','tab','shift+tab',...(a.claudeMultiSelect?['space']:[]),...(picker?['s']:[])];
+  if(!allowed.includes(key))throw Error('Unsupported Claude waiting key');
+  return this.use(async rpc=>{
+   if(rpc.endpoint.scope!==a.session)throw changed();
+   const [got,processes,paned,process,record]=await Promise.all([rpc.request('agent.get',{target:a.block}),rpc.request('pane.process_info',{pane_id:a.block}),rpc.request('pane.get',{pane_id:a.block}),this.claude.inspect(a.pid),this.claude.read(a.pid)]);
+   const info=validateInfo(got?.agent),pane=paned?.pane,p=foreground(info,processes?.process_info);
+   if(info.agent!=='claude'||info.pane_id!==a.block||info.terminal_id!==a.terminalId||info.workspace_id!==a.workspaceId||info.tab_id!==a.window||!info.focused||pane?.pane_id!==a.block||pane.terminal_id!==a.terminalId||pane.tab_id!==a.window||pane.workspace_id!==a.workspaceId||!pane.focused||!p||p.pid!==a.pid||p.name!==a.name||p.cwd!==a.cwd)throw changed();
+   if(pane.scroll?.offset_from_bottom!==0)throw Error('Scroll the Herdr pane to bottom');
+   const S=require('./claude-state'),r=S.validate(record,a,process,this.claude.now()),binding=this.claude.bindings.get(C.actor(a)),defaults=await this.claude.bindingsDefault(r.configDirectory),root=[process.startedAt,r.sessionId,r.generation,defaults].join('|');
+   if(!defaults||!binding||binding.root!==root||binding.id!==a.nativeIdentity||(binding.uiEpoch||0)!==(a.claudeUiEpoch||0)||r.sessionId!==a.chatId||r.turnId!==a.claudeTurnId)throw changed();
+   if(picker){if(this.claude.picker?.actor!==C.actor(a)||this.claude.picker.identity!==a.nativeIdentity)throw changed();}
+   else if(r.state!=='blocked'||r.kind!==kind||r.requestId!==a.claudeRequestId||this.claude.now()-r.updatedAt>=300000)throw Error('Claude waiting request changed');
+   const view=await this.claude.view(a,rpc),d=require('./claude-controls').dialog(view.text,picker?'picker':kind),navigation=this.navigationContext(a,key);
+   // Selection can move between arrow presses; the prompt body, exact private
+   // request and root must remain identical. Confirm keeps its exact-view guard.
+   if(navigation){if(['idle','done'].includes(info.agent_status)&&!d.review||a.statusAt!==[r.generation,r.turnId,r.state,r.requestId||''].join(':')+':'+d.semantic)throw Error('Claude waiting request changed');}
+   else if(view.hash!==a.claudeViewHash)throw Error('Claude waiting view changed');
+   if(key==='space'&&!d.multiSelect)throw Error('Claude waiting view changed');
+   const focus=await this.snapshot(rpc);if(focus.focused_pane_id!==a.block||focus.focused_tab_id!==a.window||focus.focused_workspace_id!==a.workspaceId)throw changed();
+   const latest=S.validate(await this.claude.read(a.pid),a,process,this.claude.now());
+   if(['sessionId','generation','turnId','state','kind','requestId','toolId'].some(field=>latest[field]!==r[field]))throw Error('Claude waiting request changed');
+   await rpc.request('agent.send_keys',{target:a.block,keys:[key==='escape'?'esc':key]});
+  });
+ }
  async translate(args){
-  if(args[0]!=='send-key'||args.length!==6||args[1]!=='-s'||args[3]!=='-b')throw Error('Herdr does not expose a verified composer cursor; use its keyboard');
-  const key=args[5]==='escape'?'esc':args[5],expected=this.actionContext?.target||this.lastChecked;
+  if(args[0]!=='send-key'||(args.length<6||args.length>9)||args[1]!=='-s'||args[3]!=='-b')throw Error('Herdr does not expose a verified composer cursor; use its keyboard');
+  const keys=args.slice(5).map(key=>key==='escape'?'esc':key),key=keys[0],expected=this.actionContext?.target||this.lastChecked;
   return this.use(async rpc=>{if(!expected||args[2]!==rpc.endpoint.scope||args[4]!==expected.block)throw changed();const s=await this.snapshot(rpc);if(s.focused_pane_id!==expected.block)throw changed();const a=await this.readAgent(rpc,expected.block);if(!a||C.actor(a)!==C.actor(expected)||!isFocused(s,a))throw changed();if(!a.nativeVerified)throw Error('Native agent state unavailable');if(!a.atBottom)throw Error('Scroll the Herdr pane to bottom');this.assertBinding(expected,a);if(this.actionContext)C.assertContext(this.actionContext,a);else if(a.app==='claude-code')C.assertContext({target:expected,action:'nativeKey'},a);
    const allowed=a.state==='blocked'?(a.kind==='permission'?['up','down','enter','esc']:a.kind==='question'?['up','down','left','right','enter','esc','tab','shift+tab',...a.app==='claude-code'&&a.claudeMultiSelect?['space']:[]]:[]):a.state==='working'?['esc']:['idle','done','error'].includes(a.state)?['shift+tab']:[];
-   if(!allowed.includes(key))throw Error('Native control does not match the Herdr agent state');
-   await rpc.request('agent.send_keys',{target:a.block,keys:[key]});
+   const configuration=keys.every(key=>this.claude.configurationKeyAllowed(a,key));
+   if(keys.length>1&&(!configuration||keys.some(key=>key!==keys[0])||!['up','down','left','right'].includes(key)))throw Error('Arrow batches require an owned Claude configuration picker');
+   if(!allowed.includes(key)&&!configuration)throw Error('Native control does not match the Herdr agent state');
+   if(configuration){if(this.claude.picker.pending){const view=await this.claude.view(a);if(require('./claude-cycle').configurationView(view)!==this.claude.picker.composerHash)throw Error('Claude composer changed');}else if(a.claudeViewHash!==this.claude.picker.expectedViewHash)throw Error('Claude picker changed');}
+   await rpc.request('agent.send_keys',{target:a.block,keys});
   });
  }
  async zoom(){const a=await this.focused();await this.checked(a,false,false);return this.use(async rpc=>{const current=await this.readAgent(rpc,a.block),s=await this.snapshot(rpc);if(!current||C.actor(current)!==C.actor(a)||!isFocused(s,current))throw changed();const r=await rpc.request('pane.zoom',{pane_id:a.block,mode:'toggle'});if(r?.type!=='pane_zoom'||r.zoom?.pane_id!==a.block)throw Error('Herdr zoom unconfirmed');});}
- async cycleControl(kind){if((await this.focused()).app==='claude-code')throw Error('Use the Herdr keyboard for Claude model and effort');if(!this.config.daemonControls?.enabled||kind==='permissions'&&!this.config.daemonControls.permissionsEnabled)throw Error('Herdr requires native daemon controls');return super.cycleControl(kind);}
+ async cycleControl(kind){const a=await this.providerAgent();if(a.app==='claude-code')return this.claude.cycle(kind,a);if(!this.config.daemonControls?.enabled||kind==='permissions'&&!this.config.daemonControls.permissionsEnabled)throw Error('Herdr requires native daemon controls');return super.cycleControl(kind);}
  async stage(){throw Error('Use the Herdr keyboard; verified draft cursor unavailable');}
  async send(){throw Error('Use the Herdr keyboard; verified draft cursor unavailable');}
  async submitRunning(){throw Error('Herdr Steer/Queue need a verified composer cursor');}

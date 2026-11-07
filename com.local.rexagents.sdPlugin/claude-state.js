@@ -7,15 +7,26 @@ const text=(s,max=200)=>typeof s==='string'&&s.length>0&&s.length<=max&&!/[\x00-
 const session=s=>text(s,128)&&/^[a-zA-Z0-9_-]+$/.test(s);
 const modes=new Set(['default','acceptEdits','plan','bypassPermissions','auto','dontAsk']);
 function nativeVersion(file){const resolved=fs.realpathSync(file);return /\/claude\/versions\/(\d+\.\d+\.\d+)$/.exec(resolved)?.[1]||null;}
-function processInfo(pid){return new Promise((resolve,reject)=>{
- if(!Number.isSafeInteger(pid)||pid<=0){reject(Error('Claude process unavailable'));return;}
- execFile('/bin/ps',['-p',String(pid),'-o','uid=,ppid=,lstart=,comm='],{timeout:1500,maxBuffer:4096,env:{...process.env,LC_ALL:'C'}},(error,out)=>{
-  const m=/^\s*(\d+)\s+(\d+)\s+([A-Z][a-z]{2}\s+[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+\d{4})\s+(.+?)\s*$/.exec(out||'');
-  if(error||!m||Number(m[1])!==process.getuid()){reject(Error('Claude process owner unavailable'));return;}
-  let version;try{version=nativeVersion(m[4]);}catch{}
-  resolve({pid,ppid:Number(m[2]),startedAt:m[3].replace(/\s+/g,' '),executable:m[4],version:version||null});
- });
-});}
+const processRead=(file,args)=>new Promise((resolve,reject)=>execFile(file,args,{timeout:1800,maxBuffer:32768,env:{...process.env,LC_ALL:'C'}},(error,out)=>error?reject(error):resolve(out)));
+function parseProcess(out,pid){
+ const m=/^\s*(\d+)\s+(\d+)\s+([A-Z][a-z]{2}\s+[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+\d{4})\s+(.+?)\s*$/.exec(out||'');
+ if(!m||Number(m[1])!==process.getuid())throw Error('Claude process owner unavailable');
+ return{pid,ppid:Number(m[2]),startedAt:m[3].replace(/\s+/g,' '),executable:m[4],version:null};
+}
+async function processInfo(pid,execute=processRead){
+ if(!Number.isSafeInteger(pid)||pid<=0)throw Error('Claude process unavailable');
+ const args=['-p',String(pid),'-o','uid=,ppid=,lstart=,comm='],before=await execute('/bin/ps',args),p=parseProcess(before,pid),name=path.basename(p.executable);
+ if(/^claude(?:-|$)/.test(name)||/^\d+\.\d+\.\d+$/.test(name)){
+  // comm/argv0 can be a bare name (Herdr) or an alias. Verify the kernel's
+  // executable image rather than interpreting either as an executable path.
+  const rows=(await execute('/usr/sbin/lsof',['-n','-a','-p',String(pid),'-d','txt','-Ffn'])).trim().split('\n');
+  if(rows[0]!=='p'+pid||rows[1]!=='ftxt'||!rows[2]?.startsWith('n')||!path.isAbsolute(rows[2].slice(1)))throw Error('Claude executable unavailable');
+  const after=parseProcess(await execute('/bin/ps',args),pid);
+  if(p.ppid!==after.ppid||p.startedAt!==after.startedAt||p.executable!==after.executable)throw Error('Claude process replaced');
+  p.executable=rows[2].slice(1);try{p.version=nativeVersion(p.executable);}catch{}
+ }
+ return p;
+}
 async function ancestor(start=process.ppid,inspect=processInfo){let pid=start;for(let i=0;i<12&&pid>1;i++){const p=await inspect(pid);if(p.version)return p;pid=p.ppid;}throw Error('No native Claude ancestor');}
 function defaultBindings(dir){if(!text(dir,4096)||!path.isAbsolute(dir))return false;try{fs.lstatSync(path.join(dir,'keybindings.json'));return false;}catch(error){return error.code==='ENOENT';}}
 function privateDirectory(dir,create=false){if(create)fs.mkdirSync(dir,{recursive:true,mode:0o700});const s=fs.lstatSync(dir);if(!s.isDirectory()||s.isSymbolicLink()||s.uid!==process.getuid()||(s.mode&0o077))throw Error('Unsafe Claude metadata directory');}
@@ -46,17 +57,22 @@ function reduce(previous,data,p,now=Date.now(),id=()=>crypto.randomUUID(),status
  if(event==='UserPromptSubmit'){r.turnId=id();r.promptId=null;r.state='working';r.ended=false;}
  if(event==='SessionEnd'){r.state='unknown';r.ended=true;}
  if(event==='Stop'){r.state='done';}
+ if(['SessionStart','SessionEnd','UserPromptSubmit','Stop'].includes(event)){r.pendingToolDigest=null;r.pendingToolId=null;}
  if(event==='PermissionRequest'||event==='PreToolUse'&&data.tool_name==='AskUserQuestion'){
-  r.state='blocked';r.kind=event==='PermissionRequest'?'permission':'question';r.requestId=hash([data.tool_name,data.tool_use_id||null,data.tool_input]);r.toolId=text(data.tool_use_id,128)?data.tool_use_id:null;
+  const digest=hash([data.tool_name,data.tool_input]),toolId=text(data.tool_use_id,128)?data.tool_use_id:r.pendingToolDigest===digest?r.pendingToolId:null;
+  r.pendingToolDigest=digest;r.pendingToolId=toolId||null;
+  r.state='blocked';r.kind=data.tool_name==='AskUserQuestion'?'question':'permission';r.requestId=hash([digest,toolId||null]);r.toolId=toolId||null;
  }else if(event==='Notification'){
   if(data.notification_type!=='permission_prompt')return null;
   if(r.state==='blocked')return null; // Do not replace the stronger exact tool request.
   r.state='blocked';r.kind='permission';r.requestId=hash([event,data.message,now]);r.toolId=null;
  }else if(['PostToolUse','PostToolUseFailure'].includes(event)){
   if(r.state==='blocked'&&(!r.toolId||r.toolId!==data.tool_use_id))return null;
+  if(r.pendingToolId===data.tool_use_id){r.pendingToolDigest=null;r.pendingToolId=null;}
   r.state='working';
  }else if(event==='PreToolUse'){
   if(r.state==='blocked')return null;
+  r.pendingToolDigest=hash([data.tool_name,data.tool_input]);r.pendingToolId=text(data.tool_use_id,128)?data.tool_use_id:null;
   r.state='working';
  }
  if(r.state!=='blocked'){r.kind=null;r.requestId=null;r.toolId=null;}

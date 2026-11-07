@@ -1,3 +1,23 @@
+# Claude direct-cycle validation in progress — November 7, 2026
+
+Checkpoint requested after the native multi-select API pass. The current build is installed; no release is being declared. Scratch sessions remain running with no pending test prompt, and visible composer text was preserved. Resume with the physical multi-select check rather than repeating the passed approval checks.
+
+- [x] Native 2.1.319 executable identity, including bare-name Herdr launches, and private root metadata setup.
+- [x] Native API model/effort cycles in Rex and Herdr, upper-bound wrap, session-only settings and preserved selection. Existing original agents remain running; their settings were restored.
+- [x] Rex physical Home Effort and Model cycles; redraw-safe dot retention retested after correction.
+- [x] Global Claude settings outside hooks/statusLine remain byte-equivalent as JSON to the pre-setup backup.
+- [x] Herdr physical Home Effort and Model cycles retained the dot and Home page; single-choice Down/Confirm accepted Blue.
+- [x] First waiting-key physical retest felt faster but retained arrow lag. Revised Herdr arrows use one complete final focus/process/request/body check, parallel stable viewport pairs and no post-arrow queue wait; Confirm retains its stricter checks. Late terminal replacement, scroll, view, focus and request changes send no key in regression checks.
+- [x] Second physical terminal-latency retest: Down → Up → Down kept up well and finished with Blue selected.
+- [x] Physical Confirm after the revised arrow path accepted Blue and restored the ready controls.
+- [x] Native API print-only denial through three guarded arrows and verified No; empty-composer ready recovery without rewriting lifecycle metadata.
+- [x] Physical No confirmation closed the print-only prompt and restored Model/Effort controls with CHOICE installed.
+- [x] Physical Allow once ran the print-only command, returned the exact success response and restored Model/Effort; global/project settings fingerprints were unchanged.
+- [x] Physical Esc closed the print-only prompt, restored Model/Effort and left all checked global/project permission settings unchanged.
+- [x] Native API multi-select: Red/Blue Toggle, Review, explicit Submit, exact reply and ready recovery. Native-done review handling and stale Review-to-Submit rejection have regression coverage.
+- [ ] Physical multi-select Toggle/Review/Submit; Claude running controls and Zoom in both hosts; Rex question/approval and submission controls; approval latency sign-off.
+- [ ] Clean final package and physical-test cleanup/restoration.
+
 # Missing Rex executable-path fix
 
 - [x] Read-only live discovery finds both original Codex processes and both Claude processes, without input or agent restarts.
