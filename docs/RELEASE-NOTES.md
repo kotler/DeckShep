@@ -1,3 +1,10 @@
+# 1.3.2 development fix — not released
+
+- Restores Rex discovery for existing Codex processes whose executable paths disappear from Rex metadata after a Homebrew upgrade. Resolves only the reported foreground PID using OS owner, start-time and executable checks, then rechecks the pane foreground; a process name alone is insufficient.
+- Read-only live discovery finds the two original Codex processes alongside both Claude processes. Agents remain running; no native controls are exercised.
+- Installed locally and verified in Stream Deck: two Codex keys followed by two Claude keys; only Stream Deck restarted.
+- Adds missing-path, owner/start/PID replacement and shell-refusal regression coverage (35 JavaScript groups; eight distribution tests).
+
 # 1.3.1 development preview — not released
 
 - Separate **Rex Agents** and **Herdr Agents** profiles with pinned controllers and independent selection, banks, pages, connections and opt-ins. Animation and prompt text remain shared.

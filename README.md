@@ -6,7 +6,7 @@ This beta targets **Codex CLI on a 15-key Stream Deck MK.2**. Rex is the default
 
 ## Claude and mixed-agent development preview
 
-Version 1.3.1 on `codex/claude-mixed-agent-support` adds experimental Claude Code support and mixed Claude/Codex banks. Claude controls are off by default and have automated coverage only; no live Claude controls have been tested. See [Claude setup, capabilities and limits](docs/CLAUDE.md). The published 1.2.1 beta and its existing hardware results remain the release baseline.
+Version 1.3.2 on `codex/claude-mixed-agent-support` adds experimental Claude Code support and mixed Claude/Codex banks. Claude controls are off by default and have automated coverage only; no live Claude controls have been tested. See [Claude setup, capabilities and limits](docs/CLAUDE.md). The published 1.2.1 beta and its existing hardware results remain the release baseline.
 
 ## Get started
 
@@ -82,7 +82,7 @@ npm ci --prefix com.local.rexagents.sdPlugin
 npm ci --prefix tools
 npm test --prefix com.local.rexagents.sdPlugin
 python3 -m unittest discover -s tests -v
-python3 package.py --tag v1.3.1-beta.1
+python3 package.py --tag v1.3.2-beta.1
 ```
 
 This builds a universal helper, validates and packs with the pinned official Elgato CLI, audits the actual archives and writes a versioned ZIP under `dist/`. It never uploads. See [source installation](docs/INSTALL.md#install-from-source) and [release procedure](docs/RELEASING.md).

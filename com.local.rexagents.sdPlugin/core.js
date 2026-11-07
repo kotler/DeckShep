@@ -42,7 +42,14 @@ class Bridge{
     if(apps.length!==1)throw new Error('Rex app ambiguous or offline');return apps[0];
   }
   method(t,m){return this.run(['block','call','-s',t.session,'-b',t.block,m]);}
-  async agent(t){const p=await this.method(t,'process');if(!p||!Object.hasOwn(p,'foreground'))throw Error('Incomplete terminal process metadata');const a=identify(p);if(!a)return null;let status={state:'unknown'};try{status=state((await this.method(t,'program_status')).records||[],a,Date.now(),this.config.statusMaxAgeMs);}catch{}const agent={...t,...a,...status,project:path.basename(a.cwd||'')||a.app};return a.app==='claude-code'?this.claude.enrich(agent):agent;}
+  async agent(t){let p=await this.method(t,'process');if(!p||!Object.hasOwn(p,'foreground'))throw Error('Incomplete terminal process metadata');
+    const processIdentity=require('./rex-process');
+    if(processIdentity.candidate(p.foreground)){
+      const before=p.foreground;let file;try{file=await (this.resolveExecutable||processIdentity.executable)(before.pid);}catch{return null;}
+      const current=await this.method(t,'process');if(!processIdentity.sameForeground(before,current?.foreground))return null;
+      p={...current,foreground:{...current.foreground,path:file}};
+    }
+    const a=identify(p);if(!a)return null;let status={state:'unknown'};try{status=state((await this.method(t,'program_status')).records||[],a,Date.now(),this.config.statusMaxAgeMs);}catch{}const agent={...t,...a,...status,project:path.basename(a.cwd||'')||a.app};return a.app==='claude-code'?this.claude.enrich(agent):agent;}
   async discover(){
     const client=await this.client(),listing=await this.run(['ls','--json']);const agents=[];
     if(!Array.isArray(listing?.sessions))throw Error('Incomplete Rex session list');

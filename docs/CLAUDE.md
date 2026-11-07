@@ -1,6 +1,6 @@
 # Claude Code and mixed agent banks (development preview)
 
-Implemented on `codex/claude-mixed-agent-support`, version **1.3.1**. This preview has automated coverage but **no live Claude control or physical-key validation**. The earlier Rex/Codex and Herdr/Codex hardware results do not validate these new paths.
+Implemented on `codex/claude-mixed-agent-support`, version **1.3.2**. This preview has automated coverage but **no live Claude control or physical-key validation**. The earlier Rex/Codex and Herdr/Codex hardware results do not validate these new paths.
 
 Claude and Codex share discovery, stable slots, bank cycling, Next agent, Collapse, selection dots and project/status labels within the chosen controller. Selecting an agent changes the contextual controls for its provider. Each controller still connects to its own Rex or explicit Herdr session; this does not aggregate Rex and Herdr into one bank.
 
@@ -75,7 +75,7 @@ Removal deletes only exact owned hook commands. It restores the saved original s
 
 ## Automated coverage and remaining gates
 
-Five added regression groups cover metadata privacy and lifecycle ordering; PID/start/version/session isolation; subagent refusal; private records; setup/upgrade/removal and preservation; guarded picker/session-only apply; staged/edited/uncertain Send; Claude-specific Queue/Send-now; question/approval changes and checkbox toggles; mixed banks, Collapse and replacement processes; provider-specific artwork/captions and Codex-cache isolation; and scoped Herdr keys with no composer writes. The full suite has **34 groups**, plus eight distribution tests, including separate-profile routing and preference migration.
+Five added regression groups cover metadata privacy and lifecycle ordering; PID/start/version/session isolation; subagent refusal; private records; setup/upgrade/removal and preservation; guarded picker/session-only apply; staged/edited/uncertain Send; Claude-specific Queue/Send-now; question/approval changes and checkbox toggles; mixed banks, Collapse and replacement processes; provider-specific artwork/captions and Codex-cache isolation; and scoped Herdr keys with no composer writes. The full suite has **35 groups**, plus eight distribution tests, including separate-profile routing and preference migration.
 
 Before enabling by default or merging to a release: validate hook ancestry/file-watcher behavior with the native installer, status-line chaining and live renames, the exact native modal/composer layouts, default and customized keybindings, permission/checkbox prompts, session-only model/effort persistence, draft/queue semantics, focus changes, restart/reconnect and physical mixed-bank navigation. No live or physical Claude check has been claimed in this preview.
 

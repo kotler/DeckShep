@@ -1,3 +1,9 @@
+# Missing Rex executable-path fix
+
+- [x] Read-only live discovery finds both original Codex processes and both Claude processes, without input or agent restarts.
+- [x] Exact foreground/PID, OS owner, start time and executable-path guards; absent or changed evidence refuses discovery.
+- Full current suite: 35 JavaScript regression groups and eight distribution tests. Physical native controls remain untested for this update.
+
 # Separate-profile development preview
 
 - [x] Independent Rex/Herdr navigation, connections, consent and opt-ins; shared presentation preferences.
