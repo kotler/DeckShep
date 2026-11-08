@@ -33,6 +33,7 @@ test(
       '// host entry covered by fake-host test',
     );
     fs.writeFileSync(path.join(source, 'bin/visible-pane'), 'fixture helper');
+    fs.writeFileSync(path.join(source, 'bin/herdr-app-peer'), 'fixture helper');
     await bundle(
       path.resolve('src/plugin/configure-entry.ts'),
       path.join(source, 'configure-claude.js'),

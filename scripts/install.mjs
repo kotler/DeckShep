@@ -110,6 +110,7 @@ export function installLocal({
   for (const name of [
     'manifest.json',
     'bin/visible-pane',
+    'bin/herdr-app-peer',
     'bin/plugin.js',
     'claude-hook.js',
     'configure-claude.js',

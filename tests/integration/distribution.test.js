@@ -56,6 +56,7 @@ async function installerFiles(t) {
       'TRADEMARKS.md': Buffer.from('Fixture trademarks'),
       'THIRD-PARTY-NOTICES.md': Buffer.from('Fixture dependencies'),
       'bin/visible-pane': Buffer.from('fixture'),
+      'bin/herdr-app-peer': Buffer.from('fixture'),
       'bin/plugin.js': Buffer.from('fixture'),
       'bin/doctor.js': Buffer.from('fixture'),
       'claude-hook.js': Buffer.from('fixture'),
@@ -224,6 +225,7 @@ test('upgrade in temporary HOME adds Herdr and bundled entries without changing 
   for (const name of [
     'manifest.json',
     'bin/visible-pane',
+    'bin/herdr-app-peer',
     'bin/plugin.js',
     'claude-hook.js',
     'configure-claude.js',

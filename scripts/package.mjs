@@ -66,11 +66,12 @@ if (option('--verify')) {
     '--no-file-list',
   ]);
   for (const architecture of ['arm64', 'x86_64'])
-    run('lipo', [
-      path.join(plugin, 'bin/visible-pane'),
-      '-verify_arch',
-      architecture,
-    ]);
+    for (const helper of ['visible-pane', 'herdr-app-peer'])
+      run('lipo', [
+        path.join(plugin, 'bin', helper),
+        '-verify_arch',
+        architecture,
+      ]);
   const out = path.join(root, 'dist'),
     info = {
       ...policy,

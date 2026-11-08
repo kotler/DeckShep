@@ -44,6 +44,7 @@ export const DOCS = [
   'docs/COMPATIBILITY.md',
   'docs/RELEASE-NOTES.md',
   'docs/HERDR.md',
+  'docs/HERDR-APP.md',
   'THIRD-PARTY-NOTICES.md',
   'docs/validation/2026-11-07-beta-checkpoint.md',
   'docs/validation/2026-11-06-herdr.md',
@@ -70,6 +71,8 @@ const fixtureMarkers = [
   'closed-slot',
   'overflow-banks',
   'claude-mixed',
+  'herdr-app-panes',
+  'virtual-app-peer-',
 ];
 export function assertProductionBundle(bytes) {
   // Generic state names (question/approval/offline) and backend ID herdr-tui
@@ -155,6 +158,7 @@ export function auditInstaller(data) {
     'TRADEMARKS.md',
     'THIRD-PARTY-NOTICES.md',
     'bin/visible-pane',
+    'bin/herdr-app-peer',
     'bin/plugin.js',
     'claude-hook.js',
     'configure-claude.js',

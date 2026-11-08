@@ -85,34 +85,44 @@ export async function build({ universal = false } = {}) {
     const architectures = universal
       ? ['arm64', 'x86_64']
       : [os.arch() === 'arm64' ? 'arm64' : 'x86_64'];
-    for (const architecture of architectures)
-      run('swiftc', [
-        '-O',
-        '-target',
-        architecture + '-apple-macosx13.0',
-        '-module-cache-path',
-        path.join(out, 'swift-cache'),
-        path.join(root, 'native/visible-pane.swift'),
-        '-o',
-        path.join(temporary, architecture),
-      ]);
-    const helper = path.join(destination, 'bin/visible-pane');
-    if (universal)
-      run('lipo', [
-        '-create',
-        ...architectures.map((a) => path.join(temporary, a)),
-        '-output',
+    for (const [name, sources, flags] of [
+      ['visible-pane', ['visible-pane.swift'], []],
+      [
+        'herdr-app-peer',
+        ['herdr-app-peer.swift', 'herdr-app-peer-main.swift'],
+        ['-lbsm'],
+      ],
+    ]) {
+      for (const architecture of architectures)
+        run('swiftc', [
+          '-O',
+          '-target',
+          architecture + '-apple-macosx13.0',
+          '-module-cache-path',
+          path.join(out, 'swift-cache'),
+          ...sources.map((source) => path.join(root, 'native', source)),
+          ...flags,
+          '-o',
+          path.join(temporary, architecture),
+        ]);
+      const helper = path.join(destination, 'bin', name);
+      if (universal)
+        run('lipo', [
+          '-create',
+          ...architectures.map((a) => path.join(temporary, a)),
+          '-output',
+          helper,
+        ]);
+      else fs.copyFileSync(path.join(temporary, architectures[0]), helper);
+      const identity = process.env.ASW_SIGN_IDENTITY || '-';
+      run('codesign', [
+        '--force',
+        '--sign',
+        identity,
+        ...(identity === '-' ? [] : ['--options', 'runtime', '--timestamp']),
         helper,
       ]);
-    else fs.copyFileSync(path.join(temporary, architectures[0]), helper);
-    const identity = process.env.ASW_SIGN_IDENTITY || '-';
-    run('codesign', [
-      '--force',
-      '--sign',
-      identity,
-      ...(identity === '-' ? [] : ['--options', 'runtime', '--timestamp']),
-      helper,
-    ]);
+    }
   } finally {
     fs.rmSync(temporary, { recursive: true, force: true });
   }
