@@ -23,6 +23,11 @@ UUID5 key IDs and default consent remain unchanged.
   watch/link/restart command. Python build/install/package/tests are replaced by
   Node, retaining the external-backup recovery installer and all eight original
   distribution groups plus ZIP64/CRC/source-symlink cases.
+- Legacy upgrade follow-up: the beta ZIP includes a one-time backup/native-install/
+  restore helper. It preserves custom config, private Claude setup/state records
+  and exact existing profile bytes, keeps the new runtime and newly added
+  profiles, checks backup integrity/destination, previews by default and captures
+  a second recovery backup before applying. Tests use temporary installations.
 - Phase 7: macOS CI, full-tree and omit-dev high-severity audits, version sync,
   coverage ratchets, weekly updates, Conventional Commits, ADRs, security model,
   changelog and draft-only release workflow. The SDK's old transitive Zod copy is
@@ -30,7 +35,10 @@ UUID5 key IDs and default consent remain unchanged.
 - Phase 8: bundled SDK fake host, all 15 coordinates, inspector settings, stale
   presses/disappearance/disconnect, bundled golden runner, opt-in private live
   harness with PID ancestry and settings fingerprints, shape-only host capture
-  tool and nine-press manual checklist.
+  tool and nine-press manual checklist. Authorized disposable Herdr calibration
+  now covers both providers, native questions/one-time print-only approvals,
+  Codex Effort restoration and Interrupt, and closed-slot Collapse. See the
+  [native record](../validation/2026-11-07-refactor-live.md).
 - Phase 9: source-pinned App/core spike, strict fixture-version/read-only skeleton,
   disabled experimental flag, hidden preview profile, v3 migration/round-trip/v2
   rollback, and generated compatibility matrix. Reused preview contexts explicitly
@@ -39,7 +47,10 @@ UUID5 key IDs and default consent remain unchanged.
 ## Verification
 
 - Clean locked `npm ci` completed.
-- Node 22.23.4: 112 tests, 110 passed, two opt-in live tests skipped; no failures.
+- Node 22.23.4: 118 tests, 116 passed, two opt-in live tests skipped; no failures.
+- Authorized Herdr native run: both main and Claude subtest passed, no skips or
+  failures; original settings/auth/Keychain fingerprints unchanged and disposable
+  processes exited. Haiku 5.5 used the included account allowance.
 - Four unchanged golden suites pass against the bundled controller. Golden JSON
   is byte-identical to the Phase 0 checkpoint (`496fb05`).
 - Coverage: 93.86% lines/statements, 85.53% branches, 87.97% functions; recorded in
@@ -61,25 +72,27 @@ UUID5 key IDs and default consent remain unchanged.
 
 These are deliberately not claimed as completed definitions of done:
 
-1. Native Stream Deck installer preservation of customized plugin-folder config
-   and Claude records. The tested Node stopped-app recovery installer remains
-   available; it preserves existing profile bytes, config and records with an
-   external backup. Fresh installs use one plugin file.
+1. Independent native-installer walkthrough. The owner selected the supported
+   one-time external backup/migration path instead of relying on native installer
+   preservation of customized plugin-folder state. Its Node helper and bundled
+   dependencies are implemented and fixture-tested; the installed application
+   was not upgraded during this work. Fresh installs still use one plugin file.
 2. Independent fresh-account five-action setup, physical USB/LCD/profile checks,
    Intel helper execution and Developer ID/notarization when secrets are supplied.
-3. Authorized native Herdr calibration for successful Interrupt, Effort restore,
-   question/print-only approval and Collapse drivers. Current live harness covers
-   isolated startup, selection/Next/wrap/Zoom and stale-focus refusal; these tests
-   were not run here. Rex additionally needs an isolated GUI ownership proof before
-   native control scenarios. No existing agents may be adopted.
+3. Native Rex controls require a separately authorized disposable GUI instance
+   and ownership proof. Herdr calibration uses its own socket, foreground Codex
+   server and temporary Claude hooks; it does not establish real Rex GUI or
+   physical Stream Deck compatibility.
 4. One real shape-only Stream Deck recording, remote CI execution/required branch
    protection and a remote draft-release dry run. The tooling is present; none was
    activated against the developer's running installation or remote repository.
 5. Owner decisions about license/artwork, naming, merge timing and notarization.
 
 `AGENTS.md` requires `ASW_LIVE=1` and current explicit authorization for native
-runs. Pending authorization is not permission; advanced native behavior is not
-guessed from fixture success.
+runs. The owner authorized new disposable Herdr/provider calibration and
+signed-in CLI accounts with isolated state. This does not authorize existing agents, an ordinary
+Rex GUI launch, or changes to the installed plugin. Advanced native behavior is
+not guessed from fixture success.
 
 ## Isolation incident
 

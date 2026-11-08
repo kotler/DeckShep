@@ -16,6 +16,10 @@ preview artifacts use `-beta.N` release tags.
 ### Added
 
 - Disabled Herdr App fixture foundation, v3 reservation/rollback and source ADR.
+- One-time backup/native-install migration for legacy customizations and Claude
+  records, included in the beta ZIP.
+- Disposable signed-in Herdr calibration for both providers, native settings
+  restoration, questions, one-time approvals, Interrupt and Collapse.
 
 ### Compatibility
 

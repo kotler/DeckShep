@@ -71,7 +71,7 @@ Agent keys use full status-color backgrounds, a Codex watermark and larger chat/
 
 Select any **Rex Agent Key** in Stream Deck's editor. Choose **Rex Agents** or **Herdr Agents** using Stream Deck’s profile selector. Each profile pins its controller and keeps its own connection, consent, selected agent, bank and page. Animation and prompt text are shared. See [profiles and migration](docs/PROFILES.md). New installations keep clipboard checks and Herdr title matching off until explicitly enabled.
 
-Advanced aliases, palette, bindings and model filters live in `config.json`. The source installer preserves existing disk customizations; shared UI preferences override their corresponding defaults. The settings panel accepts no sandbox or approval-policy fields. Unknown metadata or unsupported native versions disable the affected action.
+Advanced aliases, palette, bindings and model filters live in `config.json`. Legacy upgrades use the ZIP’s one-time backup/migration helper to preserve disk customizations; shared UI preferences override their corresponding defaults. The settings panel accepts no sandbox or approval-policy fields. Unknown metadata or unsupported native versions disable the affected action.
 
 ## Build from source
 
