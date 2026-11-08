@@ -28,6 +28,7 @@ jobs:
       - run: npm run version:check && npm run compatibility:check
       - run: npm run test:coverage && npm run test:bundled
       - run: npm audit --omit=dev --audit-level=high
+      - run: npm audit --audit-level=high
       - name: Prepare optional Developer ID
         env:
           CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE_P12 }}

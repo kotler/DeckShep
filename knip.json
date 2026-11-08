@@ -14,7 +14,8 @@
         ".dependency-cruiser.cjs",
         "src/agents/claude/hook.ts",
         "src/plugin/private-logger.ts",
-        "tests/integration/host/dependencies.ts"
+        "tests/integration/host/dependencies.ts",
+        "src/plugin/host-socket.mts"
       ],
       "project": [
         "src/**/*.{ts,mts}",

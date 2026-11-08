@@ -11,5 +11,10 @@
     "src/plugin/**"
   ],
   "reporter": ["text", "json-summary", "lcov"],
-  "reports-dir": "coverage"
+  "reports-dir": "coverage",
+  "check-coverage": true,
+  "lines": 93.86,
+  "statements": 93.86,
+  "functions": 87.97,
+  "branches": 85.53
 }

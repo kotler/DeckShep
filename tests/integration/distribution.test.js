@@ -324,3 +324,13 @@ test('streaming ZIP64 entry sizes are bounded and verified before decompression'
   truncated.writeUInt16LE(8, central + header.length + 2);
   assert.throws(() => Z.unzip(truncated), /Truncated/);
 });
+test('release payload source files cannot follow a symbolic link into private data', async (t) => {
+  const [Z] = await api(),
+    directory = temporary(t),
+    source = path.join(directory, 'source.md'),
+    link = path.join(directory, 'README.md');
+  fs.writeFileSync(source, 'fixture');
+  fs.symlinkSync(source, link);
+  assert.equal(Z.readRegular(source).toString(), 'fixture');
+  assert.throws(() => Z.readRegular(link), /Unsafe release source/);
+});

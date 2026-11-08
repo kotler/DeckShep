@@ -17,6 +17,15 @@ export const PROFILES = [
   'Herdr Agents.streamDeckProfile',
 ];
 export const DOCS = [
+  'CHANGELOG.md',
+  'SECURITY.md',
+  'docs/validation/MANUAL-SMOKE.md',
+  'docs/adr/0001-terminal-backend-agent-provider-split.md',
+  'docs/adr/0002-guard-pipeline-and-single-deliver.md',
+  'docs/adr/0003-capability-gated-controls.md',
+  'docs/adr/0004-herdr-app-backend.md',
+  'docs/adr/0005-official-sdk-and-bundles.md',
+  'docs/adr/0006-external-boundary-validation.md',
   'README.md',
   'docs/INSTALL.md',
   'docs/RELEASING.md',

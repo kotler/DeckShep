@@ -23,3 +23,17 @@ SDK, Zod and TOML are build dependencies compiled into self-contained entries.
 There are zero install-time runtime packages and no shipped node_modules. SDK
 adoption replaces hand-written ws host I/O; Zod is justified by untrusted native
 frames; TOML is retained to preserve native Codex configuration semantics.
+
+The SDK's older `@elgato/utils` range originally resolved Zod 3.25.76, which
+contains vulnerable v4-mini code (GHSA-mrhx-c7xc-m3w5). A scoped npm override pins
+that transitive copy to patched Zod 4.6.7; the SDK still imports the compatible
+v4-mini entry. CI audits the full dependency tree at high severity as well as
+omit-dev, because build dependencies can enter a bundle. The fake host and
+bundled upgrade tests verify compatibility after this override.
+
+SDK 2 exposes no public disconnect callback. A build-scoped WebSocket lifecycle
+adapter observes only the SDK host connection's close/error, invalidates all
+visible keys and exits with the baseline status. It does not implement protocol
+frames. This preserves late-delivery refusal when the host disconnects; the
+fake-host test closes the connection and verifies clean process exit. Codex
+daemon sockets are unaffected by this substitution.

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { build, root, run } from './build.mjs';
-import { zip } from './archive.mjs';
+import { zip, tree, readRegular } from './archive.mjs';
 import {
   PAYLOAD,
   PROFILES,
@@ -39,6 +39,7 @@ if (option('--verify')) {
   const plugin = args.includes('--skip-build')
     ? path.join(root, 'dist/com.local.rexagents.sdPlugin')
     : await build({ universal: true });
+  tree(plugin);
   run(process.execPath, [
     'scripts/tool.mjs',
     '@elgato/cli',
@@ -57,12 +58,12 @@ if (option('--verify')) {
     '--no-update-check',
     '--no-file-list',
   ]);
-  run('lipo', [
-    '-verify_arch',
-    'arm64',
-    'x86_64',
-    path.join(plugin, 'bin/visible-pane'),
-  ]);
+  for (const architecture of ['arm64', 'x86_64'])
+    run('lipo', [
+      path.join(plugin, 'bin/visible-pane'),
+      '-verify_arch',
+      architecture,
+    ]);
   const out = path.join(root, 'dist'),
     info = {
       tag,
@@ -81,7 +82,7 @@ if (option('--verify')) {
       .sort()
       .map((name) => [
         name,
-        fs.readFileSync(
+        readRegular(
           path.join(
             [INSTALLER, ...PROFILES, 'BUILD-INFO.json'].includes(name)
               ? out

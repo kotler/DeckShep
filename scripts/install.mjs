@@ -122,7 +122,7 @@ export function installLocal({
   fs.cpSync(profiles, path.join(backup, 'ProfilesV3'), { recursive: true });
   if (fs.existsSync(dest))
     fs.cpSync(dest, path.join(backup, 'previous-plugin'), { recursive: true });
-  console.log('Backup created before installation');
+  console.log('Backup: ~/' + path.relative(home, backup));
   fs.cpSync(source, dest, { recursive: true });
   fs.writeFileSync(
     path.join(dest, 'config.json'),

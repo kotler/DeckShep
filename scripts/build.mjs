@@ -24,6 +24,10 @@ export async function build({ universal = false } = {}) {
   const out = path.join(root, 'dist'),
     source = path.join(root, pluginName),
     destination = path.join(out, pluginName);
+  if (fs.existsSync(out) && fs.lstatSync(out).isSymbolicLink())
+    throw Error('Unsafe output directory');
+  if (fs.lstatSync(source).isSymbolicLink())
+    throw Error('Unsafe plugin source directory');
   fs.mkdirSync(out, { recursive: true });
   fs.rmSync(destination, { recursive: true, force: true });
   fs.mkdirSync(path.join(destination, 'bin'), { recursive: true });

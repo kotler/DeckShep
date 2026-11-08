@@ -168,6 +168,12 @@ export function unzip(data) {
   if (cursor !== directoryEnd) throw Error('Invalid ZIP directory size');
   return files;
 }
+export function readRegular(file) {
+  const stat = fs.lstatSync(file);
+  if (!stat.isFile() || stat.isSymbolicLink())
+    throw Error('Unsafe release source file');
+  return fs.readFileSync(file);
+}
 export function tree(directory, prefix = '') {
   const files = new Map();
   for (const entry of fs.readdirSync(directory)) {
@@ -178,7 +184,7 @@ export function tree(directory, prefix = '') {
       throw Error('Unsafe build file');
     if (stat.isDirectory())
       for (const [key, data] of tree(file, name + '/')) files.set(key, data);
-    else files.set(name, fs.readFileSync(file));
+    else files.set(name, readRegular(file));
   }
   return files;
 }
