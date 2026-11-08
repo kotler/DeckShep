@@ -233,6 +233,17 @@ peer-bound build/instance identity and App compatibility check. Do not invent
 an App hello or treat the current plist as a running-process handshake.
 Unknown build provenance means no mutating verification-record match.
 
+Phase 2b now implements that boundary for **request-only App focus**, without
+inventing an App handshake: a descriptor-inheriting macOS helper reads the
+socket's kernel audit token, PID version/start/executable and dynamically
+validated code CDHash. The verifier hashes the peer executable and plist,
+checks safe file identities/ownership, exact bundle/build records and repeat
+peer/file observations. It never launches the App or accepts the current plist
+alone as proof. [Fixture validation](../validation/2026-11-08-herdr-app-focus-requests.md)
+covers the unwired sender/probe; production records and capabilities remain
+empty, and the helper is not distributed. This establishes no App/core binding,
+OS foreground identity, native focus completion or live isolation evidence.
+
 ## Isolation recipe derived from source; not executed
 
 Source supports separate App and core namespaces. `HERDR_APP_HOME` alone does
@@ -310,7 +321,7 @@ consents, preferences, golden JSON or release evidence is justified here.
 | Transport shapes       | Documented above; synthetic read-only fixtures can be authored after owner review                               |
 | Isolation              | Separate namespaces and a candidate owned-process launch derived from source; native calibration still required |
 | Original verified focus/Zoom | Still blocked on fresh independent binding/read-back; plain focus-only scope approved separately |
-| Milestone 1 requests | Read-only selection feedback fixtures implemented; guarded sender and peer-bound exact App build identity pending |
+| Milestone 1 requests | Selection feedback, guarded sender and peer/build verification implemented in fixtures; controller/consent/helper distribution and native App calibration pending |
 | Milestone 2            | Deferred and disabled; chat binding, passive native-view checks and delayed-write semantics unresolved  |
 | Composer               | No verified cursor/edit-mode snapshot; staged Send/Steer/Queue stay unavailable                                 |
 

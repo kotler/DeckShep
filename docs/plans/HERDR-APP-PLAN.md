@@ -17,6 +17,11 @@ has been enabled.
 Phase 2a now adds an unwired App selection model and `status`/`ls` feedback
 reader, without fabricated process/provider identity or a focus mutation path.
 See [selection validation](../validation/2026-11-08-herdr-app-selection.md).
+Phase 2b adds an unwired guarded focus-request sender and App peer/build
+verification, tested only with synthetic bundles/records/private sockets and
+a native fixture inspecting itself. The production request record list is
+empty and the peer helper is not packaged. See
+[focus-request validation](../validation/2026-11-08-herdr-app-focus-requests.md).
 The exact running core build remains unestablished; the App does not bundle
 core. The ordinary control socket does not expose the full focus/Zoom
 read-back required by the original verified Milestone 1. `terminal.peek` opens an overlay, so it
@@ -213,9 +218,26 @@ Checkpoint 2a is complete for the read-only selection model/feedback reader
 only. It uses a 1,000 ms total monotonic read budget, rejects overlapping reads,
 and refuses changed/ambiguous topology, unsupported views and endpoint epochs.
 It returns App-model provenance and `verifiedFocus:false`, never a delivery
-permit or provider identity. It remains unwired. A plain focus sender, request
-consent, guarded controller integration and peer-bound exact App build
-verification remain to implement and calibrate before production promotion.
+permit or provider identity. It remains unwired.
+
+Checkpoint 2b implements a separate `AppFocusAuthority` and
+`GuardedAppFocusSender.deliver({kind:'requestFocus'}, permit)`, with a private
+write edge accepting only a captured `pane.focus` request. The authority checks
+explicit request consent, arming/expiry, profile/page/context/target visibility
+and endpoint/record generations; attempts and final write leases are single-use.
+The sender refreshes command shape and status/list/status, then validates the
+connected peer/build before writing and after the reply. Success reports only
+“requested”; post-dispatch failures are uncertain, without retry or compensation.
+
+The macOS peer helper obtains the connected descriptor's audit token, validates
+owner/PID version/start/executable and dynamic code signature, and supplies its
+CDHash. The verifier compares exact executable/plist SHA-256 and bundle metadata
+against a request-only record, rejects links/unsafe ownership or permissions,
+and checks files/peer stability again. It never runs the selected App binary.
+`APP_FOCUS_RECORDS` remains empty, the helper is not packaged and the sender is
+not wired into production. Native App calibration, approved build records,
+helper distribution, persisted request consent and guarded controller integration
+remain before promotion. None is implied by fixture results.
 
 1. Discover local App panes from `ls`; show App-reported provider/status with
    clear provenance. Capture the selected App's endpoint epoch and

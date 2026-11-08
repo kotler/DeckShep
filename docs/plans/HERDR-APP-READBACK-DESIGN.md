@@ -24,6 +24,11 @@ Those make a mod relevant to Zoom, but do not establish its feasibility as a
 trusted read-back bridge.
 [Mod API][guide], [snapshot implementation][mods], [private views][mirror]
 
+The subsequent [focus-request checkpoint](../validation/2026-11-08-herdr-app-focus-requests.md)
+implements socket-bound App peer/build checks without a mod. Its production
+records remain empty. It does not supply the connected core ID, native window
+binding or fresh observation barrier missing below; the mod stays on hold.
+
 The remaining limits are material:
 
 - A mod is trusted executable code with broader platform access. “Read-only”

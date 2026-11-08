@@ -145,6 +145,18 @@ The unwired `AppSelectionReader` brackets `ls` with `status` reads and returns
 App-model selection only (`verifiedFocus:false`), with a 1,000 ms total budget.
 Its pane references contain no fabricated PID/chat/core identity and grant no
 delivery authority. Keep selection feedback distinct from native focus proof.
+The unwired `GuardedAppFocusSender` now accepts only `requestFocus` and a
+separate single-use `AppFocusPermit`. It requires an explicit App home, exact
+request-build record, socket-bound peer proof, fresh local topology and explicit
+request consent in its supplied current state. It never grants verified focus
+or provider input authority. `APP_FOCUS_RECORDS` stays empty; no production
+controller or preferences setting enables this sender. Preserve the read-only
+transport's mutation refusals and all existing verified-control guards.
+The new native peer probe inspects only inherited descriptor 3, using the macOS
+audit token, PID version/start identity and dynamically validated signing CDHash.
+It launches/connects to nothing and sends no socket bytes. Its source is fixture
+tested but is not packaged yet. Contract tests may compile/sign a temporary
+fixture that inspects only itself; this grants no live App/core authorization.
 With the experimental flag on, v3 has an independent App home/core socket,
 read-back consent, input consent and Claude-control opt-in. Migration grants
 none of these App consents, and rollback drops only the App profile. The App
