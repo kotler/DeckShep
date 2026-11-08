@@ -2,12 +2,8 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { harness } = require('../helpers/plugin-harness');
-const {
-  reviewerLines,
-} = require('../../src/domain/labels');
-const {
-  AgentMetadata,
-} = require('../../src/agents/codex/metadata');
+const { reviewerLines } = require('../../src/domain/labels');
+const { AgentMetadata } = require('../../src/agents/codex/metadata');
 test('mode controls', async () => {
   // Explicit consent for this synthetic native-control scenario.
   const h = harness({ fixtureConsent: true });

@@ -2,12 +2,8 @@
 const assert = require('node:assert/strict'),
   crypto = require('node:crypto');
 const { Bridge } = require('../../../src/app/session'),
-  {
-    HerdrBridge,
-  } = require('../../../src/app/herdr-session'),
-  {
-    ClaudeControls,
-  } = require('../../../src/agents/claude/controls'),
+  { HerdrBridge } = require('../../../src/app/herdr-session'),
+  { ClaudeControls } = require('../../../src/agents/claude/controls'),
   P = require('../../../src/agents/claude/cycle'),
   C = require('../../../src/guards/context'),
   { validate } = require('../../../src/terminals/herdr-tui/rpc'),

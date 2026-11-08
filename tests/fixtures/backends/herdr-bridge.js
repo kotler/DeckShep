@@ -1,8 +1,6 @@
 'use strict';
 const assert = require('node:assert/strict'),
-  {
-    HerdrBridge,
-  } = require('../../../src/app/herdr-session'),
+  { HerdrBridge } = require('../../../src/app/herdr-session'),
   D = require('../../../src/agents/codex/daemon'),
   C = require('../../../src/guards/context');
 const defaults = require('../../../com.local.rexagents.sdPlugin/config.json'),

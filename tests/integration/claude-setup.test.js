@@ -1,5 +1,11 @@
 const { test } = require('node:test');
-function execFileSync(file,args,options){return require('node:child_process').execFileSync(file,['--require',require.resolve('tsx/cjs'),...args],options);}
+function execFileSync(file, args, options) {
+  return require('node:child_process').execFileSync(
+    file,
+    ['--require', require.resolve('tsx/cjs'), ...args],
+    options,
+  );
+}
 test('claude setup', () => {
   'use strict';
   const assert = require('node:assert/strict'),
@@ -80,10 +86,7 @@ test('claude setup', () => {
     fs.writeFileSync(path.join(d, 'claude-hook.js'), '');
     const file = path.join(d, 'settings.json');
     fs.writeFileSync(file, before, { mode: 0o600 });
-    const script = path.join(
-      __dirname,
-      '../../src/agents/claude/configure.ts',
-    );
+    const script = path.join(__dirname, '../../src/agents/claude/configure.ts');
     const args = [
       script,
       '--plugin-dir',

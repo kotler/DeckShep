@@ -1,170 +1,206 @@
-type AgentSnapshot = import("../domain/types").AgentSnapshot;
-type Config = import("../domain/types").Config;
-type PressContext = import("../domain/types").PressContext;
-'use strict';
-const { pluginDirectory } = require("../platform/paths.ts");
-const fs = require('node:fs'), path = require('node:path');
+type AgentSnapshot = import('../domain/types').AgentSnapshot;
+type Config = import('../domain/types').Config;
+type PressContext = import('../domain/types').PressContext;
+('use strict');
+const { pluginDirectory } = require('../platform/paths.ts');
+const fs = require('node:fs'),
+  path = require('node:path');
 const icons: {
-    steer: string;
-    queue: string;
-    reviewer: string;
-    permissions: string;
-    model: string;
-    effort: string;
-    collapse: string;
-    next: string;
-    previous: string;
-    interrupt: string;
-    stopTerminals: string;
-    zoom: string;
-    more: string;
-    review: string;
-    tests: string;
-    continue: string;
-    send: string;
-    up: string;
-    down: string;
-    left: string;
-    right: string;
-    escape: string;
-    bankprev: string;
-    banknext: string;
+  steer: string;
+  queue: string;
+  reviewer: string;
+  permissions: string;
+  model: string;
+  effort: string;
+  collapse: string;
+  next: string;
+  previous: string;
+  interrupt: string;
+  stopTerminals: string;
+  zoom: string;
+  more: string;
+  review: string;
+  tests: string;
+  continue: string;
+  send: string;
+  up: string;
+  down: string;
+  left: string;
+  right: string;
+  escape: string;
+  bankprev: string;
+  banknext: string;
 } = {
-    steer: 'corner-up-right',
-    queue: 'list-plus',
-    reviewer: 'user-cog',
-    permissions: 'corner-down-left',
-    model: 'cpu',
-    effort: 'brain',
-    collapse: 'fold-horizontal',
-    next: 'arrow-right',
-    previous: 'arrow-left',
-    interrupt: 'square',
-    stopTerminals: 'square',
-    zoom: 'maximize',
-    more: 'ellipsis',
-    review: 'scan-search',
-    tests: 'check-check',
-    continue: 'play',
-    send: 'send',
-    up: 'arrow-up',
-    down: 'arrow-down',
-    left: 'arrow-left',
-    right: 'arrow-right',
-    escape: 'undo-2',
-    bankprev: 'chevrons-left',
-    banknext: 'panels-top-left',
+  steer: 'corner-up-right',
+  queue: 'list-plus',
+  reviewer: 'user-cog',
+  permissions: 'corner-down-left',
+  model: 'cpu',
+  effort: 'brain',
+  collapse: 'fold-horizontal',
+  next: 'arrow-right',
+  previous: 'arrow-left',
+  interrupt: 'square',
+  stopTerminals: 'square',
+  zoom: 'maximize',
+  more: 'ellipsis',
+  review: 'scan-search',
+  tests: 'check-check',
+  continue: 'play',
+  send: 'send',
+  up: 'arrow-up',
+  down: 'arrow-down',
+  left: 'arrow-left',
+  right: 'arrow-right',
+  escape: 'undo-2',
+  bankprev: 'chevrons-left',
+  banknext: 'panels-top-left',
 };
 const glyphs: {
-    [k: string]: string;
-} = Object.fromEntries(Object.entries(icons).map(([name, file]: [
-    string,
-    string
-]) => [
+  [k: string]: string;
+} = Object.fromEntries(
+  Object.entries(icons).map(([name, file]: [string, string]) => [
     name,
-    ((fs
-        .readFileSync(path.join(pluginDirectory, 'assets', 'lucide', file + '.svg'), 'utf8')
-        .match(/<svg[^>]*>([\s\S]*?)<\/svg>/)) as RegExpMatchArray)[1],
-]));
-const esc: (s: any) => string = (s: any) => String(s ?? '')
+    (
+      fs
+        .readFileSync(
+          path.join(pluginDirectory, 'assets', 'lucide', file + '.svg'),
+          'utf8',
+        )
+        .match(/<svg[^>]*>([\s\S]*?)<\/svg>/) as RegExpMatchArray
+    )[1],
+  ]),
+);
+const esc: (s: any) => string = (s: any) =>
+  String(s ?? '')
     .replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g, '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 function blend(color: any, other: any, t: any) {
-    const rgb: (c: any) => number[] = (c: any) => /^#[a-f0-9]{6}$/i.test(c)
-        ? [1, 3, 5].map((i: number) => parseInt(c.slice(i, i + 2), 16))
-        : [37, 42, 57];
-    return ('#' +
-        rgb(color)
-            .map((v: number, i: number) => Math.round(v * (1 - t) + rgb(other)[i] * t)
-            .toString(16)
-            .padStart(2, '0'))
-            .join(''));
+  const rgb: (c: any) => number[] = (c: any) =>
+    /^#[a-f0-9]{6}$/i.test(c)
+      ? [1, 3, 5].map((i: number) => parseInt(c.slice(i, i + 2), 16))
+      : [37, 42, 57];
+  return (
+    '#' +
+    rgb(color)
+      .map((v: number, i: number) =>
+        Math.round(v * (1 - t) + rgb(other)[i] * t)
+          .toString(16)
+          .padStart(2, '0'),
+      )
+      .join('')
+  );
 }
 function controlAccent(action: string, color: any) {
-    if (color === '#38414b' || action === 'none')
-        return '#485066';
-    if (color === '#893748')
-        return '#d34263';
-    if (color === '#2b654c')
-        return '#28ad82';
-    if (['interrupt', 'stopTerminals'].includes(action))
-        return '#d34263';
-    if (action.startsWith('approval') ||
-        [
-            'up',
-            'down',
-            'left',
-            'right',
-            'questionPrev',
-            'questionNext',
-            'answer',
-            'escape',
-        ].includes(action))
-        return '#d19c30';
-    if (['model', 'effort', 'effortIncrease', 'effortDecrease', 'plan'].includes(action))
-        return '#b16bf2';
-    return '#389ed7';
+  if (color === '#38414b' || action === 'none') return '#485066';
+  if (color === '#893748') return '#d34263';
+  if (color === '#2b654c') return '#28ad82';
+  if (['interrupt', 'stopTerminals'].includes(action)) return '#d34263';
+  if (
+    action.startsWith('approval') ||
+    [
+      'up',
+      'down',
+      'left',
+      'right',
+      'questionPrev',
+      'questionNext',
+      'answer',
+      'escape',
+    ].includes(action)
+  )
+    return '#d19c30';
+  if (
+    ['model', 'effort', 'effortIncrease', 'effortDecrease', 'plan'].includes(
+      action,
+    )
+  )
+    return '#b16bf2';
+  return '#389ed7';
 }
-function signalSvg({ icon, lines, color, pulse, badge, agent, textOnly, accent = '#389ed7', codexIcon, codexMark, claudeMark, legacyPaths, }: Record<string, any>) {
-    const empty: any = agent && icon === 'empty', fill: any = agent && !empty ? color : '#252a39';
-    const bottom: any = agent && !empty ? blend(color, '#151923', 0.35) : fill;
-    const tinted: boolean = !agent && ['#d19c30', '#d34263'].includes(accent), top: any = tinted ? blend(fill, accent, 0.25) : fill;
-    const claudeBackground: string = `<g id="claude-watermark" transform="translate(20 20) scale(4.333333)" fill="white" opacity=".28">${claudeMark}</g>`;
-    const watermark: string = agent && icon === 'claude-code'
-        ? claudeBackground
-        : agent && icon === 'codex'
-            ? `<image id="agent-watermark" x="-18" y="-18" width="180" height="180" opacity=".26" xlink:href="data:image/png;base64,${codexMark}"/>`
-            : '';
-    const visible: any = lines.slice(0, 3), scale: 1.4 | 1.7 = visible.length === 3 ? 1.4 : 1.7;
-    const glyph: string = agent && ['codex', 'claude-code'].includes(icon)
-        ? ''
-        : glyphs[icon]
-            ? `<g transform="translate(14 10) scale(${scale})" fill="none" stroke="${blend(accent, '#ffffff', 0.32)}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${glyphs[icon]}</g>`
-            : icon === 'blank' || empty
-                ? ''
-                : `<g transform="translate(12 0) scale(.65)" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">${legacyPaths[icon] || ''}</g>`;
-    const centered: any = textOnly || empty, ys: number[] = agent && !empty
+function signalSvg({
+  icon,
+  lines,
+  color,
+  pulse,
+  badge,
+  agent,
+  textOnly,
+  accent = '#389ed7',
+  codexIcon,
+  codexMark,
+  claudeMark,
+  legacyPaths,
+}: Record<string, any>) {
+  const empty: any = agent && icon === 'empty',
+    fill: any = agent && !empty ? color : '#252a39';
+  const bottom: any = agent && !empty ? blend(color, '#151923', 0.35) : fill;
+  const tinted: boolean = !agent && ['#d19c30', '#d34263'].includes(accent),
+    top: any = tinted ? blend(fill, accent, 0.25) : fill;
+  const claudeBackground: string = `<g id="claude-watermark" transform="translate(20 20) scale(4.333333)" fill="white" opacity=".28">${claudeMark}</g>`;
+  const watermark: string =
+    agent && icon === 'claude-code'
+      ? claudeBackground
+      : agent && icon === 'codex'
+        ? `<image id="agent-watermark" x="-18" y="-18" width="180" height="180" opacity=".26" xlink:href="data:image/png;base64,${codexMark}"/>`
+        : '';
+  const visible: any = lines.slice(0, 3),
+    scale: 1.4 | 1.7 = visible.length === 3 ? 1.4 : 1.7;
+  const glyph: string =
+    agent && ['codex', 'claude-code'].includes(icon)
+      ? ''
+      : glyphs[icon]
+        ? `<g transform="translate(14 10) scale(${scale})" fill="none" stroke="${blend(accent, '#ffffff', 0.32)}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${glyphs[icon]}</g>`
+        : icon === 'blank' || empty
+          ? ''
+          : `<g transform="translate(12 0) scale(.65)" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">${legacyPaths[icon] || ''}</g>`;
+  const centered: any = textOnly || empty,
+    ys: number[] =
+      agent && !empty
         ? [48, 86, 124]
         : textOnly || empty
-            ? [84]
-            : visible.length === 3
-                ? [69, 92, 114]
-                : visible.length === 2
-                    ? [84, 111]
-                    : [100];
-    const text: any = visible
-        .map((s: any, i: any) => {
-        const size: 28 | 24 | 26 | 22 = textOnly
-            ? 28
-            : empty
-                ? 24
-                : agent
-                    ? i === 0
-                        ? 26
-                        : 22
-                    : i === 0
-                        ? 24
-                        : 22;
-        const width: number = String(s)
-            .split('')
-            .reduce((n: number, c: string) => n +
+          ? [84]
+          : visible.length === 3
+            ? [69, 92, 114]
+            : visible.length === 2
+              ? [84, 111]
+              : [100];
+  const text: any = visible
+    .map((s: any, i: any) => {
+      const size: 28 | 24 | 26 | 22 = textOnly
+        ? 28
+        : empty
+          ? 24
+          : agent
+            ? i === 0
+              ? 26
+              : 22
+            : i === 0
+              ? 24
+              : 22;
+      const width: number = String(s)
+        .split('')
+        .reduce(
+          (n: number, c: string) =>
+            n +
             size *
-                (/[ilI.,'!:;| ]/.test(c)
-                    ? 0.28
-                    : /[MW@#%]/.test(c)
-                        ? 0.9
-                        : /[A-Z]/.test(c)
-                            ? 0.66
-                            : 0.54), 0);
-        const fit: "" | " textLength=\"120\" lengthAdjust=\"spacingAndGlyphs\"" = width > 120
-            ? ' textLength="120" lengthAdjust="spacingAndGlyphs"'
-            : '';
-        return `<text x="${centered ? 72 : 12}" y="${ys[i]}" fill="${empty ? '#a7aec0' : '#f9fbff'}" text-anchor="${centered ? 'middle' : 'start'}" font-family="Arial" font-size="${size}" font-weight="${i === 0 || (agent && i === 2) ? 'bold' : 'normal'}"${fit}>${esc(s).slice(0, 140)}</text>`;
+              (/[ilI.,'!:;| ]/.test(c)
+                ? 0.28
+                : /[MW@#%]/.test(c)
+                  ? 0.9
+                  : /[A-Z]/.test(c)
+                    ? 0.66
+                    : 0.54),
+          0,
+        );
+      const fit: '' | ' textLength="120" lengthAdjust="spacingAndGlyphs"' =
+        width > 120 ? ' textLength="120" lengthAdjust="spacingAndGlyphs"' : '';
+      return `<text x="${centered ? 72 : 12}" y="${ys[i]}" fill="${empty ? '#a7aec0' : '#f9fbff'}" text-anchor="${centered ? 'middle' : 'start'}" font-family="Arial" font-size="${size}" font-weight="${i === 0 || (agent && i === 2) ? 'bold' : 'normal'}"${fit}>${esc(s).slice(0, 140)}</text>`;
     })
-        .join('');
-    return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144" height="144" viewBox="0 0 144 144"><defs><linearGradient id="surface" x2="1" y2="1"><stop stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient><clipPath id="key"><rect x="2" y="2" width="140" height="140" rx="14"/></clipPath></defs><g clip-path="url(#key)"><rect x="2" y="2" width="140" height="140" fill="url(#surface)"/>${agent && !empty ? `<rect x="2" y="2" width="140" height="140" fill="white" opacity="${Math.max(0, Math.min(0.22, pulse))}"/>` : ''}${watermark}${!textOnly && !empty ? glyph : ''}${!agent ? `<rect id="control-rail" x="14" y="120" width="116" height="12" rx="6" fill="${accent}"/>` : ''}</g>${text}${badge === 'selected' ? '<g id="selected-agent"><circle cx="123" cy="19" r="6" fill="white"/></g>' : ''}</svg>`;
+    .join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144" height="144" viewBox="0 0 144 144"><defs><linearGradient id="surface" x2="1" y2="1"><stop stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient><clipPath id="key"><rect x="2" y="2" width="140" height="140" rx="14"/></clipPath></defs><g clip-path="url(#key)"><rect x="2" y="2" width="140" height="140" fill="url(#surface)"/>${agent && !empty ? `<rect x="2" y="2" width="140" height="140" fill="white" opacity="${Math.max(0, Math.min(0.22, pulse))}"/>` : ''}${watermark}${!textOnly && !empty ? glyph : ''}${!agent ? `<rect id="control-rail" x="14" y="120" width="116" height="12" rx="6" fill="${accent}"/>` : ''}</g>${text}${badge === 'selected' ? '<g id="selected-agent"><circle cx="123" cy="19" r="6" fill="white"/></g>' : ''}</svg>`;
 }
 module.exports = { signalSvg, controlAccent };
 

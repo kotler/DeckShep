@@ -5,9 +5,7 @@ const assert = require('node:assert/strict'),
   path = require('node:path'),
   { EventEmitter } = require('node:events');
 const { Bridge } = require('../../src/app/session'),
-  {
-    AgentMetadata,
-  } = require('../../src/agents/codex/metadata');
+  { AgentMetadata } = require('../../src/agents/codex/metadata');
 test('label refresh', async () => {
   const directory = path.join(__dirname, '../../com.local.rexagents.sdPlugin');
   const baseline = {
@@ -43,8 +41,13 @@ test('label refresh', async () => {
     }
   }
   const { createApplication } = require('../../src/app/controller');
-  const app = createApplication({socket:new Socket(),setInterval:()=>{},backendFactory:config=>new FixtureBridge(config),metadataFactory:bridge=>new FixtureMetadata(bridge)});
-  const context = {api:app.getController('rex')};
+  const app = createApplication({
+    socket: new Socket(),
+    setInterval: () => {},
+    backendFactory: (config) => new FixtureBridge(config),
+    metadataFactory: (bridge) => new FixtureMetadata(bridge),
+  });
+  const context = { api: app.getController('rex') };
   const api = context.api;
   api.bridge.slots = [{ session: baseline.session, block: baseline.block }];
   api.keys.set('agent', { settings: {}, coordinates: { column: 0, row: 0 } });

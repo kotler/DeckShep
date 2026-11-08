@@ -2,9 +2,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { HerdrBridge } = require('../../src/app/herdr-session'),
-  {
-    ClaudeControls,
-  } = require('../../src/agents/claude/controls'),
+  { ClaudeControls } = require('../../src/agents/claude/controls'),
   C = require('../../src/guards/context'),
   defaults = require('../../com.local.rexagents.sdPlugin/config.json');
 test('claude herdr', async () => {

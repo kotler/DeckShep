@@ -7,9 +7,7 @@ const {
   permissionSnapshot,
   sameExceptEffort,
 } = require('../../../src/agents/codex/daemon');
-const {
-  effortLines,
-} = require('../../../src/domain/labels');
+const { effortLines } = require('../../../src/domain/labels');
 const id = '01a1ae31-d050-7503-afec-fd2b40d2bc26';
 function fixture() {
   let state = {

@@ -31,10 +31,7 @@
       "project": []
     }
   },
-  "ignore": [
-    "src/terminals/herdr-app/**",
-    "src/terminals/contract/fixture.ts"
-  ],
+  "ignore": ["src/terminals/herdr-app/**", "src/terminals/contract/fixture.ts"],
   "ignoreDependencies": [
     "@elgato/cli",
     "@eslint/js",

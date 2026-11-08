@@ -6,9 +6,7 @@ const {
   BackgroundControls,
   terminalIds,
 } = require('../../src/agents/codex/background');
-const {
-    AgentMetadata,
-  } = require('../../src/agents/codex/metadata'),
+const { AgentMetadata } = require('../../src/agents/codex/metadata'),
   { DaemonRpc } = require('../../src/agents/codex/daemon'),
   C = require('../../src/guards/context'),
   { agentLines } = require('../../src/domain/labels'),

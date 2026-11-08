@@ -6,16 +6,35 @@ const globals = require('globals');
 const tseslint = require('typescript-eslint');
 
 export default [
-  { ignores: ['**/node_modules/**', 'dist/**', 'backups/**', 'coverage/**', 'vendor/**', 'com.local.rexagents.sdPlugin/bin/**', 'com.local.rexagents.sdPlugin/*js'] },
+  {
+    ignores: [
+      '**/node_modules/**',
+      'dist/**',
+      'backups/**',
+      'coverage/**',
+      'vendor/**',
+      'com.local.rexagents.sdPlugin/bin/**',
+      'com.local.rexagents.sdPlugin/*js',
+    ],
+  },
   js.configs.recommended,
   {
     files: ['src/**/*.ts', 'src/**/*.mts'],
-    languageOptions: { parser: tseslint.parser, parserOptions: { project: './tsconfig.json' }, globals: { ...globals.node, ...globals.browser } },
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: { project: './tsconfig.json' },
+      globals: { ...globals.node, ...globals.browser },
+    },
     plugins: { '@typescript-eslint': tseslint.plugin },
     rules: {
-      'no-undef': 'off', 'no-redeclare': 'off', 'no-unused-vars': 'off', 'no-control-regex': 'off',
-      'no-empty': ['error', { allowEmptyCatch: true }], 'no-useless-escape': 'off',
-      'no-useless-assignment': 'off', 'preserve-caught-error': 'off',
+      'no-undef': 'off',
+      'no-redeclare': 'off',
+      'no-unused-vars': 'off',
+      'no-control-regex': 'off',
+      'no-empty': ['error', { allowEmptyCatch: true }],
+      'no-useless-escape': 'off',
+      'no-useless-assignment': 'off',
+      'preserve-caught-error': 'off',
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/switch-exhaustiveness-check': 'error',
       // Legacy family types are explicit during migration; boundary schemas and

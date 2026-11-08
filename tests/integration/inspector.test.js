@@ -10,8 +10,23 @@ test('inspector', () => {
   const nodes = new Map(),
     frames = [];
   let receive;
-  const socket = { onopen() {}, onmessage(raw) { receive(JSON.parse(raw.data)); } };
-  const client = { message: { subscribe(callback) { receive = callback; } }, send(event, payload) { frames.push({ event, payload, context: 'runtime-action-context' }); return Promise.resolve(); } };
+  const socket = {
+    onopen() {},
+    onmessage(raw) {
+      receive(JSON.parse(raw.data));
+    },
+  };
+  const client = {
+    message: {
+      subscribe(callback) {
+        receive = callback;
+      },
+    },
+    send(event, payload) {
+      frames.push({ event, payload, context: 'runtime-action-context' });
+      return Promise.resolve();
+    },
+  };
   function node(id) {
     if (!nodes.has(id))
       nodes.set(id, {
@@ -45,15 +60,18 @@ test('inspector', () => {
   };
   vm.createContext(context);
   vm.runInContext(
-    require('typescript').transpileModule(fs.readFileSync(
-      path.join(__dirname, '../../src/inspector/index.ts'), 'utf8'
-    ).replace(/export \{\};?/, ''), { compilerOptions: { target: 9, module: 0 } }).outputText,
+    require('typescript').transpileModule(
+      fs
+        .readFileSync(
+          path.join(__dirname, '../../src/inspector/index.ts'),
+          'utf8',
+        )
+        .replace(/export \{\};?/, ''),
+      { compilerOptions: { target: 9, module: 0 } },
+    ).outputText,
     context,
     {
-      filename: path.join(
-        __dirname,
-        '../../src/inspector/index.ts',
-      ),
+      filename: path.join(__dirname, '../../src/inspector/index.ts'),
     },
   );
   context.window.connectElgatoStreamDeckSocket(

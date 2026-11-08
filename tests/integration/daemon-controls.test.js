@@ -11,9 +11,7 @@ const {
   availableModels,
   nextModel,
 } = require('../../src/agents/codex/daemon');
-const {
-  statusLineWithId,
-} = require('../../src/agents/codex/setup-daemon');
+const { statusLineWithId } = require('../../src/agents/codex/setup-daemon');
 const id = '01a1ae31-d050-7503-afec-fd2b40d2bc26',
   other = '01a1ae31-f4ee-7212-b16a-f3b61ddf3688';
 const models = [

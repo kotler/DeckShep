@@ -1,9 +1,7 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const {
-  AgentMetadata,
-} = require('../../src/agents/codex/metadata');
+const { AgentMetadata } = require('../../src/agents/codex/metadata');
 const {
   agentLines,
   modelLines,

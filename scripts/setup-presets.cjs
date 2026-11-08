@@ -1,7 +1,8 @@
 const { Bridge } = require('../src/app/session');
-const {pluginDirectory}=require('../src/platform/paths.ts');
-const path=require('node:path'),fs=require('node:fs');
-const {Setup}=require('../src/agents/codex/setup-presets');
+const { pluginDirectory } = require('../src/platform/paths.ts');
+const path = require('node:path'),
+  fs = require('node:fs');
+const { Setup } = require('../src/agents/codex/setup-presets');
 {
   (async () => {
     const dir = process.argv[2] || pluginDirectory,
@@ -28,4 +29,3 @@ const {Setup}=require('../src/agents/codex/setup-presets');
     process.exitCode = 1;
   });
 }
-

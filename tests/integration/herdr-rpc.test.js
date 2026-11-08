@@ -5,10 +5,7 @@ const assert = require('node:assert/strict'),
   fs = require('node:fs'),
   os = require('node:os'),
   path = require('node:path');
-const {
-  HerdrRpc,
-  endpoint,
-} = require('../../src/terminals/herdr-tui/rpc');
+const { HerdrRpc, endpoint } = require('../../src/terminals/herdr-tui/rpc');
 test('herdr rpc', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'switchboard-herdr-rpc-'));
   fs.chmodSync(dir, 0o700);
@@ -148,11 +145,30 @@ test('herdr rpc', async () => {
 });
 test('Herdr socket connect cannot bypass a late delivery preflight', async () => {
   const { EventEmitter } = require('node:events');
-  let writes = 0, latest;
-  const rpc = new HerdrRpc('/fixture.sock', { endpoint: () => ({ file: '/fixture.sock', identity: 'fixture' }), connect: () => {
-    latest = new EventEmitter(); latest.write = () => { writes++; }; latest.destroy = () => {}; return latest;
-  } });
-  rpc.endpoint = { file: '/fixture.sock', identity: 'fixture' }; rpc.verified = true;
-  const pending = rpc.request('agent.send_keys', { target: 'w1:p1', keys: ['up'] }, () => { throw Error('Profile changed'); });
-  latest.emit('connect'); await assert.rejects(pending, /Profile changed/); assert.equal(writes, 0); assert.equal(rpc.pending.size, 0);
+  let writes = 0,
+    latest;
+  const rpc = new HerdrRpc('/fixture.sock', {
+    endpoint: () => ({ file: '/fixture.sock', identity: 'fixture' }),
+    connect: () => {
+      latest = new EventEmitter();
+      latest.write = () => {
+        writes++;
+      };
+      latest.destroy = () => {};
+      return latest;
+    },
+  });
+  rpc.endpoint = { file: '/fixture.sock', identity: 'fixture' };
+  rpc.verified = true;
+  const pending = rpc.request(
+    'agent.send_keys',
+    { target: 'w1:p1', keys: ['up'] },
+    () => {
+      throw Error('Profile changed');
+    },
+  );
+  latest.emit('connect');
+  await assert.rejects(pending, /Profile changed/);
+  assert.equal(writes, 0);
+  assert.equal(rpc.pending.size, 0);
 });

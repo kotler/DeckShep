@@ -2,13 +2,8 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { Bridge, identify } = require('../../src/app/session'),
-  {
-    AgentMetadata,
-  } = require('../../src/agents/codex/metadata'),
-  {
-    modelLines,
-    sameTarget,
-  } = require('../../src/domain/labels'),
+  { AgentMetadata } = require('../../src/agents/codex/metadata'),
+  { modelLines, sameTarget } = require('../../src/domain/labels'),
   { harness } = require('../helpers/plugin-harness'),
   { svg } = require('../../src/render/visuals'),
   defaults = require('../../com.local.rexagents.sdPlugin/config.json'),

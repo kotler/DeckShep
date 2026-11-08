@@ -154,9 +154,7 @@ function fixture() {
       identity: {
         resolve: async (a, title) => {
           const prefix =
-            require('../../src/agents/codex/title-identity').titlePrefix(
-              title,
-            );
+            require('../../src/agents/codex/title-identity').titlePrefix(title);
           const full = prefix.length === 36 ? prefix : id;
           if (state.identityError) throw Error(state.identityError);
           return {

@@ -27,7 +27,9 @@ function fixture(allowed = true, fail = false) {
     send() {}
   }
   class FixtureBridge {
-    attachDelivery(kernel) { this.delivery = kernel; }
+    attachDelivery(kernel) {
+      this.delivery = kernel;
+    }
     constructor(config) {
       this.run = async () => {
         throw Error('No terminal operations expected');
@@ -60,8 +62,19 @@ function fixture(allowed = true, fail = false) {
       JSON.stringify({ ...defaults, allowClipboardFocus: allowed }),
   };
   const { createApplication } = require('../../src/app/controller');
-  const app = createApplication({socket:new BoundSocket(),fs:mockedFs,setInterval:(fn,ms)=>timers.push({fn,ms}),backendFactory:config=>new FixtureBridge(config),metadataFactory:()=>({hydrate(){},async refresh(agents){return agents;}})});
-  const context = {api:app.getController('rex')};
+  const app = createApplication({
+    socket: new BoundSocket(),
+    fs: mockedFs,
+    setInterval: (fn, ms) => timers.push({ fn, ms }),
+    backendFactory: (config) => new FixtureBridge(config),
+    metadataFactory: () => ({
+      hydrate() {},
+      async refresh(agents) {
+        return agents;
+      },
+    }),
+  });
+  const context = { api: app.getController('rex') };
   const api = context.api;
   for (let column = 0; column < 2; column++)
     api.keys.set(String(column), {

@@ -5,16 +5,10 @@ const {
   BackgroundControls,
   terminalIds,
 } = require('../../../src/agents/codex/background');
-const {
-    AgentMetadata,
-  } = require('../../../src/agents/codex/metadata'),
-  {
-    DaemonRpc,
-  } = require('../../../src/agents/codex/daemon'),
+const { AgentMetadata } = require('../../../src/agents/codex/metadata'),
+  { DaemonRpc } = require('../../../src/agents/codex/daemon'),
   C = require('../../../src/guards/context'),
-  {
-    agentLines,
-  } = require('../../../src/domain/labels'),
+  { agentLines } = require('../../../src/domain/labels'),
   { harness } = require('../../helpers/plugin-harness');
 const id = '01a1af76-6618-7492-9377-d709a7fe8594';
 function fixture() {

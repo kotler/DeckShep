@@ -128,15 +128,36 @@ function harness(dependencies = {}) {
       return clock;
     }
   }
-  const { createApplication } = require(process.env.ASW_CONTROLLER_BUNDLE || '../../src/app/controller');
+  const { createApplication } = require(
+    process.env.ASW_CONTROLLER_BUNDLE || '../../src/app/controller',
+  );
   const app = createApplication({
-    fs: dependencies.fixtureConsent ? { readFileSync: file => JSON.stringify({ ...JSON.parse(fs.readFileSync(file, 'utf8')), allowClipboardFocus: true }) } : fs,
-    socket: new Socket(), clock: () => clock, setInterval: () => {},
-    backendFactory: config => new FixtureBridge(config),
-    metadataFactory: () => ({hydrate(){},async refresh(agents){return agents;}}),
+    fs: dependencies.fixtureConsent
+      ? {
+          readFileSync: (file) =>
+            JSON.stringify({
+              ...JSON.parse(fs.readFileSync(file, 'utf8')),
+              allowClipboardFocus: true,
+            }),
+        }
+      : fs,
+    socket: new Socket(),
+    clock: () => clock,
+    setInterval: () => {},
+    backendFactory: (config) => new FixtureBridge(config),
+    metadataFactory: () => ({
+      hydrate() {},
+      async refresh(agents) {
+        return agents;
+      },
+    }),
     ...dependencies,
   });
-  const context = {api:app.getController('rex'),controllers:app.controllers,profileController:app.getController};
+  const context = {
+    api: app.getController('rex'),
+    controllers: app.controllers,
+    profileController: app.getController,
+  };
   const api = context.api;
   for (let row = 0; row < 3; row++)
     for (let column = 0; column < 5; column++)
