@@ -17,3 +17,11 @@ Select Herdr and enter your intended local session socket in a key’s settings.
 Copied scoped keys retain their controller binding. Newly dragged or legacy unmarked keys default to Rex. Use the supplied profiles to keep controller bindings consistent. Copies of the same backend profile share that backend’s controller state; this release does not provide separate state per device or multiple simultaneous Herdr sessions.
 
 See [uninstall instructions](UNINSTALL.md) to remove either profile or the shared plugin. Claude and mixed-agent controls remain a development preview with automated coverage only; separate profiles do not establish native-control compatibility.
+
+## Herdr App preview
+
+The explicitly enabled experimental build can add the already-reserved **Herdr App**
+profile. Default builds still contain only Rex/Herdr. Its home and plain-focus-request
+consent are independent; no migration grants consent. App-reported panes and deck
+selection are separate from provider/chat identity. Production request records
+are empty, so its controls stay inactive. See [App setup](HERDR-APP.md).

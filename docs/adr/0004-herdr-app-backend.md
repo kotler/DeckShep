@@ -15,6 +15,13 @@ preview remains inactive and default builds retain v2. See the current
 [implementation checkpoint](../plans/HERDR-APP-PLAN.md); no native capability
 claim supersedes the limits recorded here and in ADR 0007.
 
+Phase 2c packages the descriptor-only peer helper and routes the experimental
+App profile through a dedicated request-only controller and separate consent.
+Production request records/capabilities remain empty, so its keys stay inactive.
+App model panes never enter provider-bound agent records. See the
+[current setup guide](../HERDR-APP.md) and
+[fixture/controller validation](../validation/2026-11-08-herdr-app-controller.md).
+
 Sources inspected on 2026-11-07:
 
 - [herdr-app 7fe7ac3](https://github.com/herdrdev/herdr-app/tree/7fe7ac34fef8a3ee76cb5d2f17bc8d6331e50bd8), Cargo version 0.1.13.

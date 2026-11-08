@@ -14,14 +14,20 @@ gates, and independent App preferences/routing. See the
 [preferences validation](../validation/2026-11-08-herdr-app-preferences.md).
 They are not wired into production. No native run or production capability
 has been enabled.
-Phase 2a now adds an unwired App selection model and `status`/`ls` feedback
+Phase 2a added an App selection model and `status`/`ls` feedback
 reader, without fabricated process/provider identity or a focus mutation path.
 See [selection validation](../validation/2026-11-08-herdr-app-selection.md).
-Phase 2b adds an unwired guarded focus-request sender and App peer/build
+Phase 2b added a guarded focus-request sender and App peer/build
 verification, tested only with synthetic bundles/records/private sockets and
 a native fixture inspecting itself. The production request record list is
-empty and the peer helper is not packaged. See
+empty. See
 [focus-request validation](../validation/2026-11-08-herdr-app-focus-requests.md).
+Phase 2c now packages the helper and composes the sender through a dedicated
+experimental App controller, with separate default-off request consent and
+App-only setup/doctor reporting. See
+[controller validation](../validation/2026-11-08-herdr-app-controller.md).
+Production records/capabilities remain empty, live groups disabled, and default
+builds still use v2 with the existing Rex/Herdr profiles.
 The exact running core build remains unestablished; the App does not bundle
 core. The ordinary control socket does not expose the full focus/Zoom
 read-back required by the original verified Milestone 1. `terminal.peek` opens an overlay, so it
@@ -218,7 +224,7 @@ Checkpoint 2a is complete for the read-only selection model/feedback reader
 only. It uses a 1,000 ms total monotonic read budget, rejects overlapping reads,
 and refuses changed/ambiguous topology, unsupported views and endpoint epochs.
 It returns App-model provenance and `verifiedFocus:false`, never a delivery
-permit or provider identity. It remains unwired.
+permit or provider identity. It composes only with the request-only path below.
 
 Checkpoint 2b implements a separate `AppFocusAuthority` and
 `GuardedAppFocusSender.deliver({kind:'requestFocus'}, permit)`, with a private
@@ -234,10 +240,19 @@ owner/PID version/start/executable and dynamic code signature, and supplies its
 CDHash. The verifier compares exact executable/plist SHA-256 and bundle metadata
 against a request-only record, rejects links/unsafe ownership or permissions,
 and checks files/peer stability again. It never runs the selected App binary.
-`APP_FOCUS_RECORDS` remains empty, the helper is not packaged and the sender is
-not wired into production. Native App calibration, approved build records,
-helper distribution, persisted request consent and guarded controller integration
-remain before promotion. None is implied by fixture results.
+`APP_FOCUS_RECORDS` remains empty. Checkpoint 2c packages `bin/herdr-app-peer`
+and adds the dedicated App controller, persisted `herdrAppFocusRequestEnabled`
+consent, setup/doctor UI and virtual-deck cases. Selecting/Next uses a separate
+App target model and request permit; banks/Collapse are local, unsupported input
+overrides stay inactive, and request feedback never claims verified focus.
+Revocation invalidates a pending request immediately rather than waiting behind
+it in the event queue. The fixed helper path cannot come from preferences.
+
+Older v3 stores and v1/v2 migrations gain no request consent. Default builds
+retain v2 and two profiles. No approved production record means no sender
+creation/discovery/request, even if the experimental profile, home and all
+consents are set. Native App calibration, exact approved records and the later
+product/release gates remain before promotion; fixtures do not satisfy them.
 
 1. Discover local App panes from `ls`; show App-reported provider/status with
    clear provenance. Capture the selected App's endpoint epoch and

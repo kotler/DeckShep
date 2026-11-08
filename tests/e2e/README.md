@@ -17,7 +17,7 @@ Use `node scripts/tool.mjs @playwright/test uninstall` to remove Playwright's
 cached browsers. `npx playwright uninstall` also works from the tools workspace.
 
 The page exposes `window.deck.ready`, `press(row,col)`, `down/up`,
-`setScenario(name | object)`, `advance(ms)`, `switchProfile('rex' | 'herdr')`,
+`setScenario(name | object)`, `advance(ms)`, `switchProfile('rex' | 'herdr' | 'herdr-app')`,
 `setKeySettings(row,col,settings)`, `setPreferences(patch)`, `keys()`, `trace()`
 and `reset()`. Preferences have the real profile restrictions; they affect only
 the disposable fixture. The trace includes guarded synthetic native inputs,
@@ -32,6 +32,15 @@ A disappeared key is unregistered, dimmed and disabled in the page; a synthetic
 press on its former context is ignored with no input. No production error is
 invented for that event. Context changes can replace a brief refusal image with
 the new layout; the original short refusal remains in the trace.
+
+`herdr-app-panes` uses App pane records without synthetic provider PIDs/chat
+identity. Its request backend exists only in the substituted fixture bundle;
+no native helper/Swift build is needed. Set an absolute synthetic App home and
+`herdrAppFocusRequestEnabled` explicitly to exercise requests. Selection and Next
+trace only `['pane.focus', pane]`, return requested/not verified, and never change
+the model selection merely because a request was acknowledged. App banks and
+Collapse are local. The pause API also covers request-consent revocation and
+profile changes before the final fixture write. Production records remain empty.
 
 ## Baseline review
 

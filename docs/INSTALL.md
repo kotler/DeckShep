@@ -72,3 +72,9 @@ The panel's checklist reports the current backend and selected agent. The safe
 CLI report is `node <installed-plugin>/bin/doctor.js` (or add `--json`). It contains
 no prompts, settings contents or home paths. It does not grant consent or change
 agent settings. [Uninstall](UNINSTALL.md) explains integration removal.
+
+The experimental [Herdr App preview](HERDR-APP.md) has its own home selection,
+default-off plain-focus-request consent and App-only checklist. Use
+`node <installed-plugin>/bin/doctor.js --herdr-app --json` for passive reporting
+without Rex/TUI discovery or an App connection. Production App build records
+remain empty, so consent cannot activate its controls in this checkpoint.

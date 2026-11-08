@@ -7,6 +7,8 @@ status line when still owned. Private Claude lifecycle records are removed after
 **Undo last change** is available unless those files changed afterward.
 
 Then remove DeckShep from Stream Deck and delete its profiles if wanted.
+The App peer helper is inside DeckShep's plugin folder and is removed with it;
+this focus-request path installs no Herdr mod or layout changes.
 If a future optional Herdr App read-back mod is installed, remove it **before**
 removing DeckShep too. It lives inside Herdr's App home and survives plugin
 uninstall. Its removal preview must revoke read-back, remove only unchanged

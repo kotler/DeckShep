@@ -241,7 +241,10 @@ checks safe file identities/ownership, exact bundle/build records and repeat
 peer/file observations. It never launches the App or accepts the current plist
 alone as proof. [Fixture validation](../validation/2026-11-08-herdr-app-focus-requests.md)
 covers the unwired sender/probe; production records and capabilities remain
-empty, and the helper is not distributed. This establishes no App/core binding,
+empty. Phase 2c now packages that helper and adds the experimental controller,
+separate request consent and passive App-only setup/doctor reporting; see
+[controller validation](../validation/2026-11-08-herdr-app-controller.md).
+This establishes no App/core binding,
 OS foreground identity, native focus completion or live isolation evidence.
 
 ## Isolation recipe derived from source; not executed
@@ -321,7 +324,7 @@ consents, preferences, golden JSON or release evidence is justified here.
 | Transport shapes       | Documented above; synthetic read-only fixtures can be authored after owner review                               |
 | Isolation              | Separate namespaces and a candidate owned-process launch derived from source; native calibration still required |
 | Original verified focus/Zoom | Still blocked on fresh independent binding/read-back; plain focus-only scope approved separately |
-| Milestone 1 requests | Selection feedback, guarded sender and peer/build verification implemented in fixtures; controller/consent/helper distribution and native App calibration pending |
+| Milestone 1 requests | Helper packaged; experimental request controller/consent/doctor covered in fixtures; production records empty and native App calibration pending |
 | Milestone 2            | Deferred and disabled; chat binding, passive native-view checks and delayed-write semantics unresolved  |
 | Composer               | No verified cursor/edit-mode snapshot; staged Send/Steer/Queue stay unavailable                                 |
 

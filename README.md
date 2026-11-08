@@ -52,7 +52,7 @@ The white dot marks the selected agent. **Page** cycles Home → Questions → P
 | Codex CLI | 0.166.0 / 0.167.0 for permission controls | Affected controls disabled |
 | Claude Code | 2.1.319 native controls, opt-in preview | Native controls disabled |
 | Herdr TUI | 0.9.5 / protocol 22 | Session refused |
-| Herdr App | Fixture foundation only | Production controls disabled |
+| Herdr App | Experimental preview | Production build records empty; [preview setup](docs/HERDR-APP.md) |
 
 Version checks fail closed by design. Verification of one control does not
 establish full provider parity or hardware support. See the generated

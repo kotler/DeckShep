@@ -129,7 +129,7 @@ and forbid history reads, attachments and mutations. Their tests create only
 private temporary fake sockets. See ADR 0007 for the unresolved focus/Zoom
 read-back and native isolation requirements; a passing transport fixture does
 not verify an App/core build or grant a control capability.
-Herdr App native operations additionally require a verified control ID and the
+Herdr App verified-focus, Zoom and provider-input paths require a verified control ID and the
 exact record key captured by the press. Keep the checks in mapping, provider
 dispatch, the delivery kernel, permit consumption and the backend. Local deck
 navigation never grants native authority. Existing Rex/Herdr TUI engines retain
@@ -141,27 +141,33 @@ do not weaken the verified-focus/input path or invent process identity from App
 pane records. Exact App build/action, endpoint/target identity, consent and stale
 press guards still apply. This scope approval grants no native-test permission
 or production capability; see H1/H4 in docs/plans/HERDR-APP-PLAN.md.
-The unwired `AppSelectionReader` brackets `ls` with `status` reads and returns
+`AppSelectionReader` brackets `ls` with `status` reads and returns
 App-model selection only (`verifiedFocus:false`), with a 1,000 ms total budget.
 Its pane references contain no fabricated PID/chat/core identity and grant no
 delivery authority. Keep selection feedback distinct from native focus proof.
-The unwired `GuardedAppFocusSender` now accepts only `requestFocus` and a
+`GuardedAppFocusSender` accepts only `requestFocus` and a
 separate single-use `AppFocusPermit`. It requires an explicit App home, exact
 request-build record, socket-bound peer proof, fresh local topology and explicit
 request consent in its supplied current state. It never grants verified focus
-or provider input authority. `APP_FOCUS_RECORDS` stays empty; no production
-controller or preferences setting enables this sender. Preserve the read-only
+or provider input authority. The dedicated experimental `HerdrAppController`
+routes selection/Next and local banks/Collapse without provider/legacy dispatch.
+`APP_FOCUS_RECORDS` stays empty, so no production setting can activate a sender.
+Preserve the read-only
 transport's mutation refusals and all existing verified-control guards.
 The new native peer probe inspects only inherited descriptor 3, using the macOS
 audit token, PID version/start identity and dynamically validated signing CDHash.
-It launches/connects to nothing and sends no socket bytes. Its source is fixture
-tested but is not packaged yet. Contract tests may compile/sign a temporary
+It launches/connects to nothing and sends no socket bytes. It is packaged at
+the fixed plugin-owned `bin/herdr-app-peer` path, with both architectures checked
+for universal packages. Preferences cannot select a different helper. Contract tests may compile/sign a temporary
 fixture that inspects only itself; this grants no live App/core authorization.
 With the experimental flag on, v3 has an independent App home/core socket,
-read-back consent, input consent and Claude-control opt-in. Migration grants
-none of these App consents, and rollback drops only the App profile. The App
-scope now owns an inactive preview controller; it must not inherit Rex/TUI
-discovery, metadata readers or integration setup. Default builds still use v2.
+read-back consent, separate focus-request consent, input consent and Claude-control
+opt-in. All App consents default off; older v3 stores also gain no request consent.
+Rollback drops only the App profile. App consent revocation must bypass the
+ordinary event queue and invalidate pending requests immediately. App-reported
+status and local deck selection never imply keyboard focus. Setup/doctor reporting
+is passive and App-only; it must not inherit Rex/TUI discovery, provider metadata
+readers or integration setup. Default builds still use v2 and both existing profiles.
 
 ## DeckShep maintenance
 
