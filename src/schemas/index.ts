@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { herdrAppSchemas } from './herdr-app';
 
 // Identity fields never accept terminal escape sequences. Pane text and hook
 // prompt payloads deliberately do: their existing digest/UI parsers own them.
@@ -231,6 +232,7 @@ export const hostEvent = z
   })
   .passthrough();
 export const schemas = {
+  ...herdrAppSchemas,
   config,
   globalSettings,
   rexResponse,

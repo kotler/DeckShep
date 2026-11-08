@@ -1,0 +1,30 @@
+{
+  "spaces": [
+    {
+      "id": "s1",
+      "name": "Sample",
+      "folder": "/sample",
+      "machine": null,
+      "active": true,
+      "tabs": [
+        {
+          "id": "c1",
+          "name": "One",
+          "active": true,
+          "settled": false,
+          "terminals": [
+            {
+              "terminal": "t1",
+              "pane": "p1",
+              "status": "idle",
+              "app": "codex",
+              "name": null,
+              "sub_agents": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "recent": []
+}

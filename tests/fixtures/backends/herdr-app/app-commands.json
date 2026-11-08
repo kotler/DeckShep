@@ -1,0 +1,12 @@
+[
+  {
+    "name": "agent.focus",
+    "about": "Show an agent.",
+    "args": [{ "name": "terminal", "required": true }]
+  },
+  {
+    "name": "terminal.peek",
+    "about": "Open a terminal overlay.",
+    "args": [{ "name": "terminal", "required": true }]
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "generation": 1,
+  "version": "0.1.18",
+  "core": { "id": "sample-core", "name": "Sample" },
+  "framed": false,
+  "methods": [
+    "hello",
+    "server.status",
+    "terminal.list",
+    "terminal.get",
+    "terminal.read",
+    "events.subscribe"
+  ],
+  "features": [
+    "framed",
+    "attach",
+    "events",
+    "status",
+    "shell",
+    "resize_notifications",
+    "automatic_input"
+  ]
+}

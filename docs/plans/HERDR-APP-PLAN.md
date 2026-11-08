@@ -5,9 +5,12 @@ decision in section 2 on 2026-11-08. Owner direction: Herdr App, the desktop
 app, is the main use case for DeckShep's first public release. Rex stays
 supported as beta; Herdr TUI stays as is.
 
-Implementation checkpoint, 2026-11-08: Phase 0's source review is recorded in
-[ADR 0007](../adr/0007-herdr-app-0.1.14-source-review.md), pending owner review
-before Phase 1. No native run or production capability has been enabled.
+Implementation checkpoint, 2026-11-08: the owner authorized continuation after
+Phase 0's [source review](../adr/0007-herdr-app-0.1.14-source-review.md).
+Phase 1's read-only transports, schemas and synthetic fixtures are complete;
+see the [validation record](../validation/2026-11-08-herdr-app-transport.md).
+They are not wired into production. No native run or production capability
+has been enabled.
 The exact running core build remains unestablished; the App does not bundle
 core. The ordinary control socket does not expose the full focus/Zoom
 read-back required by Milestone 1. `terminal.peek` opens an overlay, so it

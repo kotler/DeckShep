@@ -1,0 +1,31 @@
+{
+  "terminals": [
+    {
+      "address": "t1",
+      "labels": {},
+      "argv": ["codex"],
+      "cwd": "/sample",
+      "state": "live",
+      "created_ms": 1000,
+      "screen": "exact",
+      "cols": 80,
+      "rows": 24,
+      "pid": 41,
+      "foreground": {
+        "pid": 42,
+        "name": "codex",
+        "argv": ["codex"],
+        "cwd": "/sample"
+      },
+      "status": { "state": "idle" },
+      "records": {},
+      "status_ms": 1000,
+      "turn": 0,
+      "title": "Sample",
+      "name": null,
+      "parent": null,
+      "reported": true
+    }
+  ],
+  "hidden_finished": 0
+}

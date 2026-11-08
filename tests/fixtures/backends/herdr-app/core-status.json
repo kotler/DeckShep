@@ -1,0 +1,11 @@
+{
+  "core": { "id": "sample-core", "name": "Sample" },
+  "version": "0.1.18",
+  "pid": 40,
+  "uptime_ms": 1000,
+  "holder": null,
+  "holders": [],
+  "live": 1,
+  "finished": 0,
+  "installed_by": null
+}
