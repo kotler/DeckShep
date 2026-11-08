@@ -1,0 +1,33 @@
+{
+  "product": "DeckShep",
+  "version": "1.4.0",
+  "license": {
+    "spdx": "Apache-2.0",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  "providerMarks": {
+    "revision": "ea434b96e75813517b377825e01c0df61dee8836",
+    "provenanceSha256": "1989e55a46808aeb0302b3a1b3825717143d67afdc7f179ad0362a4de65502c8",
+    "trademarkPermission": "pending"
+  },
+  "launchValidation": {
+    "version": "1.4.0",
+    "ownerVerified": false,
+    "reviewedAt": null,
+    "evidence": null
+  },
+  "support": {
+    "issues": {
+      "url": "https://github.com/OWNER/REPOSITORY/issues",
+      "ownerVerified": false,
+      "reviewedAt": null,
+      "evidence": null
+    },
+    "email": {
+      "address": "SUPPORT_EMAIL_NOT_VERIFIED",
+      "ownerVerified": false,
+      "reviewedAt": null,
+      "evidence": null
+    }
+  }
+}

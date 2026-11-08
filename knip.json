@@ -1,0 +1,51 @@
+{
+  "workspaces": {
+    ".": {
+      "entry": [
+        "src/plugin/entry.mts",
+        "src/plugin/*entry.ts",
+        "src/inspector/index.ts",
+        "src/app/preferences.ts",
+        "tests/**/*.test.js",
+        "tests/fixtures/**/*.{js,cjs,ts}",
+        "scripts/*.{mjs,cjs}",
+        "eslint.config.mjs",
+        "commitlint.config.cjs",
+        ".dependency-cruiser.cjs",
+        "src/agents/claude/hook.ts",
+        "src/plugin/private-logger.ts",
+        "tests/integration/host/dependencies.ts",
+        "src/plugin/host-socket.mts"
+      ],
+      "project": [
+        "src/**/*.{ts,mts}",
+        "tests/**/*.{js,cjs,ts}",
+        "scripts/*.{mjs,cjs}"
+      ]
+    },
+    "com.local.rexagents.sdPlugin": {
+      "entry": [],
+      "project": []
+    },
+    "tools": {
+      "entry": [],
+      "project": []
+    }
+  },
+  "ignore": ["src/terminals/herdr-app/**", "src/terminals/contract/fixture.ts"],
+  "ignoreDependencies": [
+    "@elgato/cli",
+    "@eslint/js",
+    "@commitlint/cli",
+    "@commitlint/config-conventional",
+    "c8",
+    "eslint",
+    "globals",
+    "prettier",
+    "dependency-cruiser",
+    "knip",
+    "typescript",
+    "tsx",
+    "@typescript/native"
+  ]
+}

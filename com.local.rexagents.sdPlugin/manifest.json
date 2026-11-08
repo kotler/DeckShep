@@ -1,0 +1,41 @@
+{
+  "Name": "DeckShep",
+  "UUID": "com.local.rexagents",
+  "Author": "Everett Kotler",
+  "Version": "1.4.0.0",
+  "Description": "Local Stream Deck controls for coding agents in Rex and Herdr",
+  "Icon": "icon",
+  "Category": "DeckShep",
+  "CategoryIcon": "action-icon",
+  "CodePath": "bin/plugin.js",
+  "SDKVersion": 2,
+  "Nodejs": {
+    "Version": "20"
+  },
+  "OS": [
+    {
+      "Platform": "mac",
+      "MinimumVersion": "13"
+    }
+  ],
+  "Software": {
+    "MinimumVersion": "6.6"
+  },
+  "Actions": [
+    {
+      "Name": "DeckShep Key",
+      "UUID": "com.local.rexagents.key",
+      "Icon": "action-icon",
+      "Controllers": ["Keypad"],
+      "PropertyInspectorPath": "inspector.html",
+      "States": [
+        {
+          "Image": "loading",
+          "TitleAlignment": "middle",
+          "FontSize": 10,
+          "ShowTitle": true
+        }
+      ]
+    }
+  ]
+}

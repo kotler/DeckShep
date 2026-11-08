@@ -1,0 +1,25 @@
+{
+  "repository": "https://github.com/lobehub/lobe-icons",
+  "revision": "ea434b96e75813517b377825e01c0df61dee8836",
+  "retrievedAt": "2026-11-08",
+  "license": "MIT",
+  "rendering": "Vendored SVG files are unmodified; nested at 24 by 24 and rendered white in the existing key artwork.",
+  "trademarkPermission": "pending",
+  "files": [
+    {
+      "path": "codex-mark.svg",
+      "sourcePath": "packages/static-svg/icons/codex.svg",
+      "sha256": "d08b4e824cd6727e89617f59e4737273ff53e44c1da849d016dd64dfd08b33e1"
+    },
+    {
+      "path": "claude-mark.svg",
+      "sourcePath": "packages/static-svg/icons/claude.svg",
+      "sha256": "365a70a7eb3956d9b9a96086058ebe04e1dbd8e291a756ad964e8a283fbd6d38"
+    },
+    {
+      "path": "lobehub-LICENSE.txt",
+      "sourcePath": "LICENSE",
+      "sha256": "add9d7531d1b21646317a8958e38fc727506fa39d24bdecb44154d943c82753a"
+    }
+  ]
+}

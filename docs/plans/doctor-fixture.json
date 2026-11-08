@@ -1,0 +1,46 @@
+{
+  "fixture": true,
+  "note": "Injected ports only; no native installation queried.",
+  "checks": [
+    {
+      "id": "device",
+      "ok": true,
+      "reason": "15-key Stream Deck"
+    },
+    {
+      "id": "rex",
+      "ok": true,
+      "reason": "Rex installation found · fixture (not a native probe)"
+    },
+    {
+      "id": "connection",
+      "ok": true,
+      "reason": "Selected backend reachable"
+    },
+    {
+      "id": "herdr",
+      "ok": false,
+      "reason": "Start Herdr TUI and choose its private session socket"
+    },
+    {
+      "id": "codex",
+      "ok": true,
+      "reason": "Selected Codex metadata available"
+    },
+    {
+      "id": "claude",
+      "ok": false,
+      "reason": "Claude 2.1.319 required; preview the optional hooks below"
+    },
+    {
+      "id": "hooks",
+      "ok": false,
+      "reason": "Preview and apply optional Claude hooks"
+    },
+    {
+      "id": "herdr-session-1",
+      "ok": true,
+      "reason": "Fixture session · 0.9.5 / protocol 22"
+    }
+  ]
+}

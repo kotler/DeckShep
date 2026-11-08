@@ -1,0 +1,78 @@
+name: Draft reviewed release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag (vX.Y.Z or vX.Y.Z-beta.N)
+        required: true
+permissions:
+  contents: write
+jobs:
+  draft:
+    runs-on: macos-14
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint && npm run format:check && npm run typecheck && npm run deps
+      - run: npm run version:check && npm run compatibility:check
+      - run: npm run test:coverage && npm run test:bundled
+      - name: Public distribution prerequisites
+        run: npm run release:check
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm audit --audit-level=high
+      - name: Prepare optional Developer ID
+        env:
+          CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          SIGN_IDENTITY: ${{ secrets.APPLE_SIGN_IDENTITY }}
+        run: |
+          if [ -n "$CERTIFICATE" ] && [ -n "$CERTIFICATE_PASSWORD" ] && [ -n "$SIGN_IDENTITY" ]; then
+            KEYCHAIN="$RUNNER_TEMP/asw-signing.keychain-db"
+            KEYCHAIN_PASSWORD=$(openssl rand -hex 24)
+            printf '%s' "$CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/asw-signing.p12"
+            security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+            security import "$RUNNER_TEMP/asw-signing.p12" -k "$KEYCHAIN" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+            security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+            security list-keychains -d user -s "$KEYCHAIN"
+            printf 'ASW_SIGN_IDENTITY=%s\n' "$SIGN_IDENTITY" >> "$GITHUB_ENV"
+          else
+            echo 'Developer ID unavailable; using ad-hoc helper signing.'
+          fi
+      - run: npm run package -- --release --tag "$RELEASE_TAG" --require-clean
+      - name: Optional notarization
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -n "$ASW_SIGN_IDENTITY" ] && [ -n "$APPLE_ID" ] && [ -n "$APPLE_PASSWORD" ] && [ -n "$APPLE_TEAM" ]; then
+            xcrun notarytool submit dist/deckshep-*-macos.zip --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM" --wait
+          else
+            echo 'Notarization credentials unavailable; skipped.'
+          fi
+      - name: Create draft only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RELEASE_FLAGS=(--draft --verify-tag)
+          if [[ "$RELEASE_TAG" == *-beta.* ]]; then
+            RELEASE_FLAGS+=(--prerelease)
+          fi
+          gh release create "$RELEASE_TAG" dist/deckshep-*-macos.zip dist/*.sha256 dist/SHA256SUMS "${RELEASE_FLAGS[@]}" --title "$RELEASE_TAG" --notes-file docs/RELEASE-NOTES.md
+      - name: Remove temporary signing material
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/asw-signing.keychain-db" || true
+          rm -f "$RUNNER_TEMP/asw-signing.p12"

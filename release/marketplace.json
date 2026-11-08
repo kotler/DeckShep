@@ -1,0 +1,17 @@
+{
+  "status": "draft",
+  "name": "DeckShep",
+  "tagline": "Your agents. At your fingertips.",
+  "description": "DeckShep brings local coding-agent controls to your 15-key Stream Deck MK.2 on macOS. Select an agent in Rex or Herdr, see its project and status, and keep contextual controls close at hand. Switch between agents, zoom the selected pane, and respond to supported native questions and approval choices.\n\nIncludes separate Rex and Herdr profiles. Model, Effort and other controls depend on the selected provider, supported native version and verified terminal capabilities. Rex offers guarded prompt shortcuts and staged submission; Herdr submissions use your keyboard. Herdr and Claude Code support are experimental and require explicit setup.\n\nRequires macOS 13 or later, Stream Deck 6.6 or later, a 15-key Stream Deck MK.2, a supported Rex or Herdr installation, and your own Codex CLI or Claude Code account. Provider subscriptions and model usage are separate. Apple silicon is the initial launch target; Intel execution remains unverified.\n\nIndependent software by Everett Kotler; no vendor endorsement is implied. AI assistance was used in development, artwork and listing preparation.",
+  "supportUrl": null,
+  "privacyUrl": null,
+  "aiDisclosure": "AI assistance was used in code, original brand artwork, and listing/media preparation. The owner supplied product requirements and naming decisions. Final maintainer review and Marketplace eligibility confirmation are pending.",
+  "media": [
+    "app-icon.png",
+    "thumbnail.png",
+    "gallery-overview.png",
+    "gallery-context.png",
+    "gallery-questions.png"
+  ],
+  "free": true
+}

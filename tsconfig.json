@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "typeRoots": ["./tools/node_modules/@types", "./node_modules/@types"],
+    "types": ["node", "ws"],
+    "lib": ["ES2023", "DOM", "ES2022.Intl"],
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.mts", "src/**/*.js"]
+}
