@@ -1,13 +1,13 @@
 'use strict';
 const assert = require('node:assert/strict'),
   crypto = require('node:crypto');
-const { Bridge } = require('../../../com.local.rexagents.sdPlugin/core'),
-  C = require('../../../com.local.rexagents.sdPlugin/context-controls'),
+const { Bridge } = require('../../../src/app/session'),
+  C = require('../../../src/guards/context'),
   {
     ClaudeControls,
     composer,
     dialog,
-  } = require('../../../com.local.rexagents.sdPlugin/claude-controls'),
+  } = require('../../../src/agents/claude/controls'),
   defaults = require('../../../com.local.rexagents.sdPlugin/config.json');
 const hash = (s) => crypto.createHash('sha256').update(s).digest('hex');
 function fixture() {

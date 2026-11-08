@@ -1,9 +1,9 @@
 'use strict';
 const assert = require('node:assert/strict'),
-  { Bridge } = require('../../../com.local.rexagents.sdPlugin/core'),
+  { Bridge } = require('../../../src/app/session'),
   {
     composerSnapshot,
-  } = require('../../../com.local.rexagents.sdPlugin/native-input');
+  } = require('../../../src/agents/codex/native-input');
 const defaults = require('../../../com.local.rexagents.sdPlugin/config.json');
 function fixture() {
   const a = {

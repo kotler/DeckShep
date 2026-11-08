@@ -1,10 +1,10 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../../domain/types").Config} Config */
+/** @typedef {import("../../domain/types").PressContext} PressContext */
 'use strict';
 const crypto = require('node:crypto'),
-  S = require('./claude-state');
+  S = require('./state');
 const hash =
   /** @param {any} s */
   (s) => crypto.createHash('sha256').update(s).digest('hex');
@@ -358,7 +358,7 @@ class ClaudeControls {
       cursor = /\x1b\[(\d+);(\d+)H$/.exec(before?.content || '');
     if (before?.id || !cursor)
       throw Error('Claude viewport/cursor unavailable');
-    const text = await new (require('./setup-presets').Setup)(this.b).screen(a),
+    const text = await new (require('../codex/setup-presets').Setup)(this.b).screen(a),
       after = await this.b.run(args);
     if (after?.id || hash(before.content) !== hash(after?.content || ''))
       throw Error('Claude view changed');
@@ -503,7 +503,7 @@ class ClaudeControls {
           try {
             const view = await this.view(a);
             if (a.backend === 'herdr')
-              require('./claude-cycle').configurationView(view, {
+              require('./cycle').configurationView(view, {
                 requireEmpty: true,
               });
             else if (
@@ -546,7 +546,7 @@ class ClaudeControls {
                 )
               )
                 throw error;
-              require('./claude-cycle').configurationView(view);
+              require('./cycle').configurationView(view);
             }
             if (automatic) a.claudeCycling = true;
             else {
@@ -680,7 +680,7 @@ class ClaudeControls {
   /** @param {string} kind
    * @param {any} initial */
   async cycle(kind, initial) {
-    return require('./claude-cycle').cycle(this, kind, initial);
+    return require('./cycle').cycle(this, kind, initial);
   }
   /** @param {any} a
    * @param {string} key */

@@ -4,7 +4,7 @@ const assert = require('node:assert/strict'),
   fs = require('node:fs'),
   os = require('node:os'),
   path = require('node:path');
-const S = require('../../com.local.rexagents.sdPlugin/claude-state');
+const S = require('../../src/agents/claude/state');
 test('claude state', async () => {
   const own = await S.processInfo(process.pid);
   assert.equal(own.pid, process.pid);

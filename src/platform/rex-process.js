@@ -1,7 +1,7 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../domain/types").Config} Config */
+/** @typedef {import("../domain/types").PressContext} PressContext */
 'use strict';
 // Rex can omit path for a still-running binary removed/replaced by an upgrade.
 // Resolve only the exact foreground PID; never infer an agent from ancestors.

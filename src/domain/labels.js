@@ -1,7 +1,7 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("./types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("./types").Config} Config */
+/** @typedef {import("./types").PressContext} PressContext */
 'use strict';
 const clean =
   /** @param {unknown} text */
@@ -47,7 +47,7 @@ function ellipsize(text, width = 126, fontSize = 18) {
 /** @param {AgentSnapshot} agent
  * @param {any} [aliases] */
 function agentLines(agent, aliases = {}) {
-  const status = require('./context-controls').isBackground(agent)
+  const status = require('../guards/context').isBackground(agent)
     ? 'BACKGROUND'
     : {
         idle: 'READY',

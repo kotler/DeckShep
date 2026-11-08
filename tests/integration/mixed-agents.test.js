@@ -1,18 +1,18 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict'),
-  { Bridge, identify } = require('../../com.local.rexagents.sdPlugin/core'),
+  { Bridge, identify } = require('../../src/app/session'),
   {
     AgentMetadata,
-  } = require('../../com.local.rexagents.sdPlugin/agent-metadata'),
+  } = require('../../src/agents/codex/metadata'),
   {
     modelLines,
     sameTarget,
-  } = require('../../com.local.rexagents.sdPlugin/agent-labels'),
+  } = require('../../src/domain/labels'),
   { harness } = require('../helpers/plugin-harness'),
-  { svg } = require('../../com.local.rexagents.sdPlugin/visuals'),
+  { svg } = require('../../src/render/visuals'),
   defaults = require('../../com.local.rexagents.sdPlugin/config.json'),
-  C = require('../../com.local.rexagents.sdPlugin/context-controls');
+  C = require('../../src/guards/context');
 test('mixed agents', async () => {
   const entries = Array.from({ length: 7 }, (_, i) => ({
     session: 's',
@@ -224,7 +224,7 @@ test('mixed agents', async () => {
       lines: ['Claude', 'project', 'READY'],
     }).includes('data:image/png'),
   );
-  const prefs = require('../../com.local.rexagents.sdPlugin/preferences');
+  const prefs = require('../../src/app/preferences');
   assert.equal(
     prefs.apply(defaults, { claudeEnabled: true }).claude.enabled,
     true,

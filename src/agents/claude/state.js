@@ -1,14 +1,16 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../../domain/types").Config} Config */
+/** @typedef {import("../../domain/types").PressContext} PressContext */
 'use strict';
+const { pluginDirectory } = require("../../platform/paths.ts");
+
 // Metadata only: no transcripts, prompts, tool inputs/outputs or credentials on disk.
 const fs = require('node:fs'),
   path = require('node:path'),
   crypto = require('node:crypto'),
   { execFile } = require('node:child_process');
-const directory = () => path.join(__dirname, 'state', 'claude');
+const directory = () => path.join(pluginDirectory, 'state', 'claude');
 const hash =
   /** @param {any} value */
   (value) =>

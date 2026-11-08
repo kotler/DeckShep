@@ -1,11 +1,13 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../../domain/types").Config} Config */
+/** @typedef {import("../../domain/types").PressContext} PressContext */
 'use strict';
+const { pluginDirectory } = require("../../platform/paths.ts");
+
 const fs = require('node:fs'),
   path = require('node:path');
-const { Bridge, token } = require('./core'),
+const { Bridge, token } = require('../../app/session'),
   { Setup } = require('./setup-presets'),
   P = require('./presets');
 const {
@@ -13,7 +15,7 @@ const {
   socketFor,
   DaemonRpc,
   loadedThread,
-} = require('./daemon-controls');
+} = require('./daemon');
 /** @param {string} original */
 function statusLineWithId(original) {
   if (!/^\/statusline(?: [a-z0-9-]+)+$/.test(original))
@@ -105,7 +107,7 @@ async function configure(bridge, agent, directory) {
 module.exports = { configure, statusLineWithId };
 if (require.main === module) {
   (async () => {
-    const directory = process.argv[2] || __dirname,
+    const directory = process.argv[2] || pluginDirectory,
       config = JSON.parse(
         /** @type {any} */ (
           fs.readFileSync(path.join(directory, 'config.json'))

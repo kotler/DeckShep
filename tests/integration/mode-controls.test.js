@@ -4,10 +4,10 @@ const assert = require('node:assert/strict'),
   { harness } = require('../helpers/plugin-harness');
 const {
   reviewerLines,
-} = require('../../com.local.rexagents.sdPlugin/agent-labels');
+} = require('../../src/domain/labels');
 const {
   AgentMetadata,
-} = require('../../com.local.rexagents.sdPlugin/agent-metadata');
+} = require('../../src/agents/codex/metadata');
 test('mode controls', async () => {
   const h = harness();
   h.change('a', {

@@ -3,8 +3,8 @@ const fs = require('node:fs'),
   path = require('node:path'),
   vm = require('node:vm'),
   { EventEmitter } = require('node:events');
-const { Bridge } = require('../../com.local.rexagents.sdPlugin/core'),
-  C = require('../../com.local.rexagents.sdPlugin/context-controls');
+const { Bridge } = require('../../src/app/session'),
+  C = require('../../src/guards/context');
 function harness() {
   const directory = path.join(__dirname, '../../com.local.rexagents.sdPlugin');
   let clock = 10000,
@@ -138,11 +138,11 @@ function harness() {
     require: (name) =>
       name === 'ws'
         ? Socket
-        : name === './core'
+        : name === './session'
           ? { Bridge: FixtureBridge }
-          : name === './herdr-bridge'
+          : name === './herdr-session'
             ? { HerdrBridge: FixtureBridge }
-            : name === './agent-metadata'
+            : name === '../agents/codex/metadata'
               ? {
                   AgentMetadata: class {
                     hydrate() {}
@@ -151,16 +151,16 @@ function harness() {
                     }
                   },
                 }
-              : name.startsWith('./')
-                ? require(path.join(directory, name))
+              : name.startsWith('.')
+                ? require(path.resolve(path.resolve(__dirname, '../../src/app'), name))
                 : require(name),
   };
   vm.createContext(context);
   vm.runInContext(
-    fs.readFileSync(path.join(directory, 'plugin.js'), 'utf8') +
+    fs.readFileSync(path.resolve(__dirname, '../../src/app/controller.js'), 'utf8') +
       '\nglobalThis.api=getController("rex");globalThis.controllers=controllers;globalThis.profileController=getController;',
     context,
-    { filename: path.join(directory, 'plugin.js') },
+    { filename: path.resolve(__dirname, '../../src/app/controller.js') },
   );
   const api = context.api;
   for (let row = 0; row < 3; row++)

@@ -1,10 +1,10 @@
 'use strict';
 const assert = require('node:assert/strict'),
-  { Bridge } = require('../../../com.local.rexagents.sdPlugin/core'),
+  { Bridge } = require('../../../src/app/session'),
   {
     composerSnapshot,
-  } = require('../../../com.local.rexagents.sdPlugin/native-input'),
-  C = require('../../../com.local.rexagents.sdPlugin/context-controls');
+  } = require('../../../src/agents/codex/native-input'),
+  C = require('../../../src/guards/context');
 const id = '01a1ae31-d050-7503-afec-fd2b40d2bc26';
 function fixture(state = 'working', kind) {
   const agent = {

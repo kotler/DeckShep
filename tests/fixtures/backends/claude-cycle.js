@@ -1,16 +1,16 @@
 'use strict';
 const assert = require('node:assert/strict'),
   crypto = require('node:crypto');
-const { Bridge } = require('../../../com.local.rexagents.sdPlugin/core'),
+const { Bridge } = require('../../../src/app/session'),
   {
     HerdrBridge,
-  } = require('../../../com.local.rexagents.sdPlugin/herdr-bridge'),
+  } = require('../../../src/app/herdr-session'),
   {
     ClaudeControls,
-  } = require('../../../com.local.rexagents.sdPlugin/claude-controls'),
-  P = require('../../../com.local.rexagents.sdPlugin/claude-cycle'),
-  C = require('../../../com.local.rexagents.sdPlugin/context-controls'),
-  { validate } = require('../../../com.local.rexagents.sdPlugin/herdr-rpc'),
+  } = require('../../../src/agents/claude/controls'),
+  P = require('../../../src/agents/claude/cycle'),
+  C = require('../../../src/guards/context'),
+  { validate } = require('../../../src/terminals/herdr-tui/rpc'),
   defaults = require('../../../com.local.rexagents.sdPlugin/config.json');
 const hash = (s) => crypto.createHash('sha256').update(s).digest('hex');
 function fixture(backend = 'rex') {

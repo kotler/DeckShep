@@ -1,11 +1,13 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../domain/types").Config} Config */
+/** @typedef {import("../domain/types").PressContext} PressContext */
 'use strict';
+const { pluginDirectory } = require("../platform/paths.ts");
+
 const { execFile } = require('node:child_process');
 const path = require('node:path');
-const P = require('./presets');
+const P = require('../agents/codex/presets');
 const REX =
   '/Applications/Rex Beta.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex';
 /** @param {string[]} args
@@ -48,7 +50,7 @@ function activateRex() {
 function visiblePane(clientId) {
   return new Promise((resolve, reject) => {
     execFile(
-      path.join(__dirname, 'bin', 'visible-pane'),
+      path.join(pluginDirectory, 'bin', 'visible-pane'),
       [REX, clientId],
       { timeout: 4500, maxBuffer: 2048 },
       (e, out) => {
@@ -143,7 +145,7 @@ class Bridge {
     /** @type {{session: string, block: string}[]} */
     this.slots = [];
     this.draft = null;
-    this.claude = new (require('./claude-controls').ClaudeControls)(this);
+    this.claude = new (require('../agents/claude/controls').ClaudeControls)(this);
   }
   async client() {
     const { clients = [] } = await this.run(['client', 'ls', '--json']);
@@ -168,7 +170,7 @@ class Bridge {
     let p = await this.method(t, 'process');
     if (!p || !Object.hasOwn(p, 'foreground'))
       throw Error('Incomplete terminal process metadata');
-    const processIdentity = require('./rex-process');
+    const processIdentity = require('../platform/rex-process');
     if (processIdentity.candidate(p.foreground)) {
       const before = p.foreground;
       let file;
@@ -255,7 +257,7 @@ class Bridge {
     if (
       this.lastTarget?.app === 'claude-code' &&
       !agents.some((a) =>
-        require('./agent-labels').sameTarget(a, this.lastTarget),
+        require('../domain/labels').sameTarget(a, this.lastTarget),
       )
     ) {
       this.lastTarget = null;
@@ -323,20 +325,20 @@ class Bridge {
     const a = await this.agent(matches[0]);
     if (!a) throw focusError('Visible pane is not a supported agent');
     if (this.actionContext) {
-      require('./context-controls').assertContext(this.actionContext, a);
+      require('../guards/context').assertContext(this.actionContext, a);
       if (this.actionContext.verifyChat) {
         if (!this.actionContext.target.chatId)
           throw Error('Chat metadata loading; try again');
         if (a.app === 'claude-code')
           this.claude.assert(this.actionContext.target, a);
         else if (
-          (await require('./daemon-controls').readFooter(this, a)) !==
+          (await require('../agents/codex/daemon').readFooter(this, a)) !==
           this.actionContext.target.chatId
         )
           throw Error('Selected chat changed');
       }
     }
-    this.lastTarget = /** @type {import("../src/domain/types").TargetRef} */ ({
+    this.lastTarget = /** @type {import("../domain/types").TargetRef} */ ({
       session: a.session,
       block: a.block,
       pid: a.pid,
@@ -424,7 +426,7 @@ class Bridge {
     this.draft = null;
     this.picker = null;
     this.selectionNotice = false;
-    this.lastTarget = /** @type {import("../src/domain/types").TargetRef} */ ({
+    this.lastTarget = /** @type {import("../domain/types").TargetRef} */ ({
       session: a.session,
       block: a.block,
       pid: a.pid,
@@ -483,7 +485,7 @@ class Bridge {
     const control = ['model', 'effort'].includes(action),
       read =
         /** @type {any} */ (this).readStagedComposer ||
-        require('./native-input').readIdleComposer;
+        require('../agents/codex/native-input').readIdleComposer;
     if (!control && /^\s*[!\/]/.test(text))
       throw Error('Prompt shortcuts require plain text');
     if (!control && (a.app !== 'codex' || !this.config.controlVerified?.codex))
@@ -544,7 +546,7 @@ class Bridge {
     if (!control) {
       try {
         if (!d.snapshot) throw Error('Draft not verified; use Rex');
-        const { sameComposer, readIdleComposer } = require('./native-input'),
+        const { sameComposer, readIdleComposer } = require('../agents/codex/native-input'),
           read =
             /** @type {any} */ (this).readStagedComposer || readIdleComposer;
         const before = await read(this, d.target);
@@ -646,24 +648,24 @@ class Bridge {
     if (kind === 'effort') {
       if (!this.config.daemonControls?.enabled)
         throw Error('Effort daemon unavailable');
-      return new (require('./daemon-controls').DaemonControls)(
+      return new (require('../agents/codex/daemon').DaemonControls)(
         this,
       ).cycleEffort(a);
     }
     if (kind === 'model' && this.config.daemonControls?.enabled)
-      return new (require('./daemon-controls').DaemonControls)(this).cycle(a);
+      return new (require('../agents/codex/daemon').DaemonControls)(this).cycle(a);
     if (
       kind === 'permissions' &&
       this.config.daemonControls?.enabled &&
       this.config.daemonControls.permissionsEnabled
     )
-      return new (require('./daemon-controls').DaemonControls)(
+      return new (require('../agents/codex/daemon').DaemonControls)(
         this,
       ).cyclePermissions(a);
     await this.checked(a, true);
-    const file = path.join(__dirname, 'state', 'native-presets.json');
+    const file = path.join(pluginDirectory, 'state', 'native-presets.json');
     if (kind !== 'permissions' && this.config.modelDiscovery?.enabled)
-      return new (require('./model-controls').ModelControls)(this).cycle(
+      return new (require('../agents/codex/models').ModelControls)(this).cycle(
         kind,
         a,
         file,
@@ -671,7 +673,7 @@ class Bridge {
     let registry = P.readRegistry(file),
       record = registry.agents[token(a)];
     if (!record && this.config.cycles?.autoSetupNewSessions) {
-      await new (require('./setup-presets').Setup)(this).configure(
+      await new (require('../agents/codex/setup-presets').Setup)(this).configure(
         a,
         this.config.cycles,
         file,
@@ -758,7 +760,7 @@ class Bridge {
       await /** @type {any} */ (
         /** @type {any} */ (this).verifyRunning
           ? /** @type {any} */ (this).verifyRunning(a)
-          : new (require('./background-controls').BackgroundControls)(
+          : new (require('../agents/codex/background').BackgroundControls)(
               this,
             ).running(a)
       );
@@ -771,10 +773,10 @@ class Bridge {
   async stopTerminals() {
     const a = await this.focused(),
       target = this.actionContext?.target;
-    if (!target || !require('./context-controls').isBackground(target))
+    if (!target || !require('../guards/context').isBackground(target))
       throw Error('Select the background-terminal control');
     await this.checked(a);
-    return new (require('./background-controls').BackgroundControls)(this).stop(
+    return new (require('../agents/codex/background').BackgroundControls)(this).stop(
       target,
     );
   }
@@ -845,7 +847,7 @@ class Bridge {
     if (!waiting(agent)) throw Error('No native approval waiting');
     const read =
       /** @type {any} */ (this).readRequest ||
-      require('./native-input').requestSnapshot;
+      require('../agents/codex/native-input').requestSnapshot;
     const before = await read(this, agent),
       current = await this.checked(agent);
     if (
@@ -880,7 +882,7 @@ class Bridge {
     if (!running(agent)) throw Error('Agent is not running');
     const read =
         /** @type {any} */ (this).readComposer ||
-        require('./native-input').readComposer,
+        require('../agents/codex/native-input').readComposer,
       before = await read(this, agent),
       current = await this.checked(agent);
     if (!running(current)) throw Error('Run ended; no input sent');

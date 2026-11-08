@@ -69,9 +69,9 @@ function fixture(allowed = true, fail = false) {
         ? mockedFs
         : name === 'ws'
           ? BoundSocket
-          : name === './core'
+          : name === './session'
             ? { Bridge: FixtureBridge }
-            : name === './agent-metadata'
+            : name === '../agents/codex/metadata'
               ? {
                   AgentMetadata: class {
                     hydrate() {}
@@ -80,16 +80,16 @@ function fixture(allowed = true, fail = false) {
                     }
                   },
                 }
-              : name.startsWith('./')
-                ? require(path.join(directory, name))
+              : name.startsWith('.')
+                ? require(path.resolve(path.resolve(__dirname, '../../src/app'), name))
                 : require(name),
   };
   vm.createContext(context);
   vm.runInContext(
-    fs.readFileSync(path.join(directory, 'plugin.js'), 'utf8') +
+    fs.readFileSync(path.resolve(__dirname, '../../src/app/controller.js'), 'utf8') +
       '\nglobalThis.api=getController("rex");',
     context,
-    { filename: path.join(directory, 'plugin.js') },
+    { filename: path.resolve(__dirname, '../../src/app/controller.js') },
   );
   const api = context.api;
   for (let column = 0; column < 2; column++)

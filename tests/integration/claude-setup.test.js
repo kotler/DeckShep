@@ -10,7 +10,7 @@ test('claude setup', () => {
     plan,
     commands,
     EVENTS,
-  } = require('../../com.local.rexagents.sdPlugin/configure-claude');
+  } = require('../../src/agents/claude/configure');
   const root = '/plugin with space',
     node = '/node with space',
     options = { dir: root, node, statusline: true };
@@ -81,7 +81,7 @@ test('claude setup', () => {
     fs.writeFileSync(file, before, { mode: 0o600 });
     const script = path.join(
       __dirname,
-      '../../com.local.rexagents.sdPlugin/configure-claude.js',
+      '../../src/agents/claude/configure.js',
     );
     const args = [
       script,

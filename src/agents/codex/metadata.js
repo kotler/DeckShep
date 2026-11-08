@@ -1,7 +1,7 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../../domain/types").Config} Config */
+/** @typedef {import("../../domain/types").PressContext} PressContext */
 'use strict';
 const path = require('node:path');
 const {
@@ -9,8 +9,8 @@ const {
   socketFor,
   readFooter,
   readPermissionSettings,
-} = require('./daemon-controls');
-const { latestTurn, backgroundState } = require('./background-controls');
+} = require('./daemon');
+const { latestTurn, backgroundState } = require('./background');
 const key =
   /** @param {AgentSnapshot} agent */
   (agent) =>

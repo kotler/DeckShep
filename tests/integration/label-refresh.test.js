@@ -5,10 +5,10 @@ const assert = require('node:assert/strict'),
   path = require('node:path'),
   vm = require('node:vm'),
   { EventEmitter } = require('node:events');
-const { Bridge } = require('../../com.local.rexagents.sdPlugin/core'),
+const { Bridge } = require('../../src/app/session'),
   {
     AgentMetadata,
-  } = require('../../com.local.rexagents.sdPlugin/agent-metadata');
+  } = require('../../src/agents/codex/metadata');
 test('label refresh', async () => {
   const directory = path.join(__dirname, '../../com.local.rexagents.sdPlugin');
   const baseline = {
@@ -51,20 +51,20 @@ test('label refresh', async () => {
     require: (name) =>
       name === 'ws'
         ? Socket
-        : name === './core'
+        : name === './session'
           ? { Bridge: FixtureBridge }
-          : name === './agent-metadata'
+          : name === '../agents/codex/metadata'
             ? { AgentMetadata: FixtureMetadata }
-            : name.startsWith('./')
-              ? require(path.join(directory, name))
+            : name.startsWith('.')
+              ? require(path.resolve(path.resolve(__dirname, '../../src/app'), name))
               : require(name),
   };
   vm.createContext(context);
   vm.runInContext(
-    fs.readFileSync(path.join(directory, 'plugin.js'), 'utf8') +
+    fs.readFileSync(path.resolve(__dirname, '../../src/app/controller.js'), 'utf8') +
       '\nglobalThis.api=getController("rex");',
     context,
-    { filename: path.join(directory, 'plugin.js') },
+    { filename: path.resolve(__dirname, '../../src/app/controller.js') },
   );
   const api = context.api;
   api.bridge.slots = [{ session: baseline.session, block: baseline.block }];

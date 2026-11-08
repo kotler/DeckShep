@@ -1,7 +1,7 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { Setup } = require('../../com.local.rexagents.sdPlugin/setup-presets');
+const { Setup } = require('../../src/agents/codex/setup-presets');
 test('preset setup', async () => {
   const calls = [];
   const b = {

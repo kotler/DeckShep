@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../../domain/types").Config} Config */
+/** @typedef {import("../../domain/types").PressContext} PressContext */
 'use strict';
+const { pluginDirectory } = require("../../platform/paths.ts");
+
 // Explicit setup only. Preview by default; never invoked by discovery or a key press.
 const fs = require('node:fs'),
   path = require('node:path'),
@@ -170,7 +172,7 @@ function main(args = process.argv.slice(2)) {
      * @param {any} fallback */
     (name, fallback) =>
       args.includes(name) ? args[args.indexOf(name) + 1] : fallback;
-  const dir = path.resolve(option('--plugin-dir', __dirname)),
+  const dir = path.resolve(option('--plugin-dir', pluginDirectory)),
     file = path.resolve(
       option(
         '--settings',

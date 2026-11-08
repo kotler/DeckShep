@@ -1,7 +1,7 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { Bridge } = require('../../com.local.rexagents.sdPlugin/core');
+const { Bridge } = require('../../src/app/session');
 const defaults = require('../../com.local.rexagents.sdPlugin/config.json');
 test('effort', async () => {
   const calls = [],

@@ -1,8 +1,10 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../domain/types").Config} Config */
+/** @typedef {import("../domain/types").PressContext} PressContext */
 'use strict';
+const { pluginDirectory } = require("../platform/paths.ts");
+
 const esc =
   /** @param {any} s */
   (s) =>
@@ -12,15 +14,15 @@ const esc =
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
 const codexIcon = require('node:fs')
-  .readFileSync(require('node:path').join(__dirname, 'assets/codex-app.png'))
+  .readFileSync(require('node:path').join(pluginDirectory, 'assets/codex-app.png'))
   .toString('base64');
 const codexMark = require('node:fs')
-  .readFileSync(require('node:path').join(__dirname, 'assets/codex-mark.png'))
+  .readFileSync(require('node:path').join(pluginDirectory, 'assets/codex-mark.png'))
   .toString('base64');
 const claudeMark = /** @type {RegExpMatchArray} */ (
   require('node:fs')
     .readFileSync(
-      require('node:path').join(__dirname, 'assets/claude-mark.svg'),
+      require('node:path').join(pluginDirectory, 'assets/claude-mark.svg'),
       'utf8',
     )
     .match(/<svg[^>]*>([\s\S]*?)<\/svg>/)
@@ -80,7 +82,7 @@ function svg({
   style = 'signal',
 }) {
   if (style === 'signal')
-    return require('./signal-visuals').signalSvg({
+    return require('./signal').signalSvg({
       icon,
       lines,
       color,

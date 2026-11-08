@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { test } = require('node:test');
 const { harness } = require('../helpers/plugin-harness');
-const C = require('../../com.local.rexagents.sdPlugin/context-controls');
+const C = require('../../src/guards/context');
 
 const goldenDirectory = path.join(__dirname, '../fixtures/golden');
 const states = {

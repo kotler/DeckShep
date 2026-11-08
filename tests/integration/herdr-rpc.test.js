@@ -8,7 +8,7 @@ const assert = require('node:assert/strict'),
 const {
   HerdrRpc,
   endpoint,
-} = require('../../com.local.rexagents.sdPlugin/herdr-rpc');
+} = require('../../src/terminals/herdr-tui/rpc');
 test('herdr rpc', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'switchboard-herdr-rpc-'));
   fs.chmodSync(dir, 0o700);

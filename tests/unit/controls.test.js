@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { Bridge } = require('../../com.local.rexagents.sdPlugin/core');
-const { svg, pulse } = require('../../com.local.rexagents.sdPlugin/visuals');
+const { Bridge } = require('../../src/app/session');
+const { svg, pulse } = require('../../src/render/visuals');
 const c = require('../../com.local.rexagents.sdPlugin/config.json');
 test('controls', async () => {
   const a = {

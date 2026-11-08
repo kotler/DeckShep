@@ -1,11 +1,11 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict'),
-  { HerdrBridge } = require('../../com.local.rexagents.sdPlugin/herdr-bridge'),
+  { HerdrBridge } = require('../../src/app/herdr-session'),
   {
     ClaudeControls,
-  } = require('../../com.local.rexagents.sdPlugin/claude-controls'),
-  C = require('../../com.local.rexagents.sdPlugin/context-controls'),
+  } = require('../../src/agents/claude/controls'),
+  C = require('../../src/guards/context'),
   defaults = require('../../com.local.rexagents.sdPlugin/config.json');
 test('claude herdr', async () => {
   const id = '01a1ae31-d050-7503-afec-fd2b40d2bc26',

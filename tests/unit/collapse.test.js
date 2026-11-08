@@ -1,7 +1,7 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { Bridge } = require('../../com.local.rexagents.sdPlugin/core');
+const { Bridge } = require('../../src/app/session');
 const slot = (block, session = 's') => ({ session, block });
 const live = (block, session = 's') => ({
   ...slot(block, session),

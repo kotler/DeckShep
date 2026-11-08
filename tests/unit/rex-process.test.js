@@ -1,12 +1,12 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict'),
-  { Bridge, identify } = require('../../com.local.rexagents.sdPlugin/core'),
+  { Bridge, identify } = require('../../src/app/session'),
   {
     executable,
     candidate,
     sameForeground,
-  } = require('../../com.local.rexagents.sdPlugin/rex-process'),
+  } = require('../../src/platform/rex-process'),
   defaults = require('../../com.local.rexagents.sdPlugin/config.json');
 test('rex process', async () => {
   const pid = 42,

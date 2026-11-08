@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // @ts-check
 'use strict';
-const S = require('./claude-state');
+const { pluginDirectory } = require("../../platform/paths.ts");
+
+const S = require('./state');
 async function main() {
   const statusline = process.argv.includes('--statusline'),
     lost = async () => {
@@ -37,7 +39,7 @@ async function main() {
       { spawn } = require('node:child_process');
     const saved = JSON.parse(
       fs.readFileSync(
-        path.join(__dirname, 'state', 'claude-setup.json'),
+        path.join(pluginDirectory, 'state', 'claude-setup.json'),
         'utf8',
       ),
     );

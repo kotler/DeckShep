@@ -1,13 +1,13 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const P = require('../../com.local.rexagents.sdPlugin/presets');
+const P = require('../../src/agents/codex/presets');
 const {
   catalog,
   snapshot,
   next,
   ModelControls,
-} = require('../../com.local.rexagents.sdPlugin/model-controls');
+} = require('../../src/agents/codex/models');
 test('model discovery', async () => {
   const raw = {
     models: [

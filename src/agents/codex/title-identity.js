@@ -1,12 +1,12 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../../domain/types").Config} Config */
+/** @typedef {import("../../domain/types").PressContext} PressContext */
 'use strict';
 const fs = require('node:fs'),
   crypto = require('node:crypto');
-const D = require('./daemon-controls'),
-  { latestTurn, backgroundState } = require('./background-controls');
+const D = require('./daemon'),
+  { latestTurn, backgroundState } = require('./background');
 const uuid =
   /** @param {any} s */
   (s) =>
@@ -73,7 +73,7 @@ class TitleIdentity {
     this.socketIdentity = deps.socketIdentity || socketIdentity;
     this.connect =
       deps.connect ||
-      /** @type {(endpoint: {socket: string}) => Promise<import("./daemon-controls").DaemonRpc>} */ (
+      /** @type {(endpoint: {socket: string}) => Promise<import("./daemon").DaemonRpc>} */ (
         async (endpoint) => {
           const rpc = new D.DaemonRpc(endpoint.socket);
           try {

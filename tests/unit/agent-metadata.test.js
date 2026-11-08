@@ -3,13 +3,13 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const {
   AgentMetadata,
-} = require('../../com.local.rexagents.sdPlugin/agent-metadata');
+} = require('../../src/agents/codex/metadata');
 const {
   agentLines,
   modelLines,
   ellipsize,
-} = require('../../com.local.rexagents.sdPlugin/agent-labels');
-const { svg } = require('../../com.local.rexagents.sdPlugin/visuals');
+} = require('../../src/domain/labels');
+const { svg } = require('../../src/render/visuals');
 const id = '01a1ae31-d050-7503-afec-fd2b40d2bc26';
 function fixture() {
   let time = 1000,

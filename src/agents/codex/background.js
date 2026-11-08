@@ -1,9 +1,9 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../../domain/types").Config} Config */
+/** @typedef {import("../../domain/types").PressContext} PressContext */
 'use strict';
-const { DaemonRpc, socketFor, readFooter } = require('./daemon-controls');
+const { DaemonRpc, socketFor, readFooter } = require('./daemon');
 const supported =
   /** @param {string} version */
   (version) => ['0.166.0', '0.167.0'].includes(version);

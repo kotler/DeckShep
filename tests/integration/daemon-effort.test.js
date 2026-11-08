@@ -7,10 +7,10 @@ const {
   nextEffort,
   permissionSnapshot,
   sameExceptEffort,
-} = require('../../com.local.rexagents.sdPlugin/daemon-controls');
+} = require('../../src/agents/codex/daemon');
 const {
   effortLines,
-} = require('../../com.local.rexagents.sdPlugin/agent-labels');
+} = require('../../src/domain/labels');
 const id = '01a1ae31-d050-7503-afec-fd2b40d2bc26';
 function fixture() {
   let state = {

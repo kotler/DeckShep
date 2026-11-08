@@ -1,10 +1,10 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../../domain/types").Config} Config */
+/** @typedef {import("../../domain/types").PressContext} PressContext */
 'use strict';
 const crypto = require('node:crypto');
-const { readFooter, DaemonRpc, socketFor } = require('./daemon-controls');
+const { readFooter, DaemonRpc, socketFor } = require('./daemon');
 const { Setup } = require('./setup-presets');
 const digest =
   /** @param {string} text */

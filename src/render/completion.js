@@ -1,9 +1,9 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../domain/types").Config} Config */
+/** @typedef {import("../domain/types").PressContext} PressContext */
 'use strict';
-const { sameTarget } = require('./agent-labels');
+const { sameTarget } = require('../domain/labels');
 // Acknowledge a result locally. Native agent state and execution policy are untouched.
 class CompletionDisplay {
   /** @param {any} [dwellMs] */

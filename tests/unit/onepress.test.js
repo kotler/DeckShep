@@ -1,8 +1,8 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const P = require('../../com.local.rexagents.sdPlugin/presets');
-const { Bridge, token } = require('../../com.local.rexagents.sdPlugin/core');
+const P = require('../../src/agents/codex/presets');
+const { Bridge, token } = require('../../src/app/session');
 const defaults = require('../../com.local.rexagents.sdPlugin/config.json');
 test('onepress', async () => {
   const config = {

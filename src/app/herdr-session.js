@@ -1,15 +1,15 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../domain/types").Config} Config */
+/** @typedef {import("../domain/types").PressContext} PressContext */
 'use strict';
 const path = require('node:path'),
   crypto = require('node:crypto'),
   { execFile } = require('node:child_process');
-const { Bridge } = require('./core'),
-  C = require('./context-controls'),
-  { TitleIdentity } = require('./herdr-title-identity'),
-  { HerdrRpc, paneId } = require('./herdr-rpc');
+const { Bridge } = require('./session'),
+  C = require('../guards/context'),
+  { TitleIdentity } = require('../agents/codex/title-identity'),
+  { HerdrRpc, paneId } = require('../terminals/herdr-tui/rpc');
 const changed = () =>
   Object.assign(Error('Reselect agent on deck'), { code: 'SELECTION_CHANGED' });
 const isFocused =
@@ -20,7 +20,7 @@ const isFocused =
     s.focused_pane_id === a.block &&
     s.focused_tab_id === a.window &&
     s.focused_workspace_id === a.workspaceId;
-/** @returns {import("../src/domain/types").TargetRef} */
+/** @returns {import("../domain/types").TargetRef} */
 const target =
   /** @param {any} a */
   (a) =>
@@ -640,7 +640,7 @@ class HerdrBridge extends Bridge {
           throw changed();
         if (pane.scroll?.offset_from_bottom !== 0)
           throw Error('Scroll the Herdr pane to bottom');
-        const S = require('./claude-state'),
+        const S = require('../agents/claude/state'),
           r = S.validate(record, a, process, this.claude.now()),
           binding = this.claude.bindings.get(C.actor(a)),
           defaults = await this.claude.bindingsDefault(r.configDirectory),
@@ -673,7 +673,7 @@ class HerdrBridge extends Bridge {
         )
           throw Error('Claude waiting request changed');
         const view = await this.claude.view(a, rpc),
-          d = require('./claude-controls').dialog(
+          d = require('../agents/claude/controls').dialog(
             view.text,
             picker ? 'picker' : kind,
           ),
@@ -807,7 +807,7 @@ class HerdrBridge extends Bridge {
           ) {
             const view = await this.claude.view(a);
             if (
-              require('./claude-cycle').configurationView(view) !==
+              require('../agents/claude/cycle').configurationView(view) !==
               /** @type {{ actor: string; identity: any; id: `${string}-${string}-${string}-${string}-${string}`; openedAt: any; pending: boolean; }} */ /** @type {any} */ (
                 this.claude.picker
               ).composerHash

@@ -4,7 +4,7 @@ const assert = require('node:assert/strict'),
   {
     TitleIdentity,
     titlePrefix,
-  } = require('../../com.local.rexagents.sdPlugin/herdr-title-identity');
+  } = require('../../src/agents/codex/title-identity');
 const id = '01a1ae31-d050-7503-afec-fd2b40d2bc26',
   title = id.slice(0, 29) + '...';
 function fixture() {

@@ -1,13 +1,15 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../domain/types").Config} Config */
+/** @typedef {import("../domain/types").PressContext} PressContext */
 'use strict';
+const { pluginDirectory } = require("../platform/paths.ts");
+
 const fs = require('fs'),
   path = require('path'),
   WebSocket = require('ws');
-const { Bridge } = require('./core'),
-  { svg, pulse } = require('./visuals');
+const { Bridge } = require('./session'),
+  { svg, pulse } = require('../render/visuals');
 const {
     agentLines,
     modelLines,
@@ -15,11 +17,11 @@ const {
     effortLines,
     reviewerLines,
     sameTarget,
-  } = require('./agent-labels'),
-  { AgentMetadata } = require('./agent-metadata');
-const C = require('./context-controls');
-const { controlAccent } = require('./signal-visuals');
-const { CompletionDisplay } = require('./completion-display');
+  } = require('../domain/labels'),
+  { AgentMetadata } = require('../agents/codex/metadata');
+const C = require('../guards/context');
+const { controlAccent } = require('../render/signal');
+const { CompletionDisplay } = require('../render/completion');
 const preferences = require('./preferences');
 const args = process.argv.slice(2),
   arg = /** @param {any} k */ (k) => args[args.indexOf(k) + 1],
@@ -63,7 +65,7 @@ function applyAllSettings() {
 }
 /** @param {any} scope */
 function createController(scope) {
-  const configPath = path.join(__dirname, 'config.json');
+  const configPath = path.join(pluginDirectory, 'config.json');
   let diskConfig = JSON.parse(/** @type {any} */ (fs.readFileSync(configPath))),
     config = preferences.profileConfig(diskConfig, saved, scope);
   let /** @type {any} */ activePress = null,
@@ -97,7 +99,7 @@ function createController(scope) {
   function makeBridge(c) {
     const b =
       c.backend === 'herdr'
-        ? new (require('./herdr-bridge').HerdrBridge)(c)
+        ? new (require('./herdr-session').HerdrBridge)(c)
         : new Bridge(c);
     /** @type {any} */ (b).backendKey = backendKey(c);
     /** @type {any} */ (b).generation = ++sequence;
@@ -903,7 +905,7 @@ function createController(scope) {
         throw Error('Select a ready Codex agent on the deck');
       const display = { target: C.snapshot(a), verifyChat: false };
       await bridge.withContext(display, () =>
-        require('./setup-daemon-controls').configure(bridge, a, __dirname),
+        require('../agents/codex/setup-daemon').configure(bridge, a, pluginDirectory),
       );
       await refresh(true);
       inspectorStatus(e.context, 'Status line configured; no prompt submitted');

@@ -1,7 +1,7 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../../domain/types").Config} Config */
+/** @typedef {import("../../domain/types").PressContext} PressContext */
 'use strict';
 const crypto = require('node:crypto');
 const digest =
@@ -476,7 +476,7 @@ async function cycle(c, kind, initial) {
     throw error;
   }
 }
-const S = require('./claude-state');
+const S = require('./state');
 const actorKey =
   /** @param {any} a */
   (a) =>

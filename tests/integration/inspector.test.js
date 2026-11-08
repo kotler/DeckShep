@@ -5,7 +5,7 @@ test('inspector', () => {
     vm = require('node:vm'),
     path = require('node:path'),
     assert = require('node:assert/strict');
-  const P = require('../../com.local.rexagents.sdPlugin/preferences'),
+  const P = require('../../src/app/preferences'),
     defaults = require('../../com.local.rexagents.sdPlugin/config.json');
   const nodes = new Map(),
     frames = [];
@@ -52,14 +52,14 @@ test('inspector', () => {
   vm.createContext(context);
   vm.runInContext(
     fs.readFileSync(
-      path.join(__dirname, '../../com.local.rexagents.sdPlugin/inspector.js'),
+      path.join(__dirname, '../../src/inspector/index.js'),
       'utf8',
     ),
     context,
     {
       filename: path.join(
         __dirname,
-        '../../com.local.rexagents.sdPlugin/inspector.js',
+        '../../src/inspector/index.js',
       ),
     },
   );

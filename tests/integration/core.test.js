@@ -5,7 +5,7 @@ const {
   Bridge,
   identify,
   state,
-} = require('../../com.local.rexagents.sdPlugin/core');
+} = require('../../src/app/session');
 const defaults = require('../../com.local.rexagents.sdPlugin/config.json');
 test('core', async () => {
   const config = { ...defaults, allowClipboardFocus: true };

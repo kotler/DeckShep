@@ -1,7 +1,7 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict'),
-  { Bridge } = require('../../com.local.rexagents.sdPlugin/core'),
+  { Bridge } = require('../../src/app/session'),
   { harness } = require('../helpers/plugin-harness');
 test('lifecycle', async () => {
   const h = harness();

@@ -1,7 +1,7 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../domain/types").Config} Config */
+/** @typedef {import("../domain/types").PressContext} PressContext */
 'use strict';
 /** @param {AgentSnapshot | null | undefined} agent */
 function isBackground(agent) {
@@ -47,7 +47,7 @@ function modeOf(agent) {
   return 'unknown';
 }
 const actor =
-  /** @param {import("../src/domain/types").TargetRef | null | undefined} a */
+  /** @param {import("../domain/types").TargetRef | null | undefined} a */
   (a) =>
     a &&
     [a.session, a.block, a.app, a.pid, a.name, a.terminalId || ''].join('|');

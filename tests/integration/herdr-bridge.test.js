@@ -1,9 +1,9 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict'),
-  { HerdrBridge } = require('../../com.local.rexagents.sdPlugin/herdr-bridge'),
-  D = require('../../com.local.rexagents.sdPlugin/daemon-controls'),
-  C = require('../../com.local.rexagents.sdPlugin/context-controls');
+  { HerdrBridge } = require('../../src/app/herdr-session'),
+  D = require('../../src/agents/codex/daemon'),
+  C = require('../../src/guards/context');
 const defaults = require('../../com.local.rexagents.sdPlugin/config.json'),
   id = '01a1ae31-d050-7503-afec-fd2b40d2bc26';
 function fixture() {
@@ -154,7 +154,7 @@ function fixture() {
       identity: {
         resolve: async (a, title) => {
           const prefix =
-            require('../../com.local.rexagents.sdPlugin/herdr-title-identity').titlePrefix(
+            require('../../src/agents/codex/title-identity').titlePrefix(
               title,
             );
           const full = prefix.length === 36 ? prefix : id;
@@ -355,7 +355,7 @@ test('herdr bridge', async () => {
     /Reselect/,
   );
   assert.equal(chat.mutations().length, 0);
-  const labels = require('../../com.local.rexagents.sdPlugin/agent-labels'),
+  const labels = require('../../src/domain/labels'),
     labelAgent = {
       ...agents[0],
       model: 'current',

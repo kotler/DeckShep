@@ -1,7 +1,7 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict'),
-  P = require('../../com.local.rexagents.sdPlugin/preferences'),
+  P = require('../../src/app/preferences'),
   defaults = require('../../com.local.rexagents.sdPlugin/config.json'),
   { harness } = require('../helpers/plugin-harness');
 test('preferences', async () => {

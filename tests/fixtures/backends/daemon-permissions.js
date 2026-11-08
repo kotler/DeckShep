@@ -6,7 +6,7 @@ const {
   DaemonRpc,
   permissionSnapshot,
   sameOtherSettings,
-} = require('../../../com.local.rexagents.sdPlugin/daemon-controls');
+} = require('../../../src/agents/codex/daemon');
 const id = '01a1ae31-d050-7503-afec-fd2b40d2bc26',
   other = '01a1ae31-f4ee-7212-b16a-f3b61ddf3688';
 function fixture() {

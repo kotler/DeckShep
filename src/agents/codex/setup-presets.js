@@ -1,11 +1,13 @@
 // @ts-check
-/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
-/** @typedef {import("../src/domain/types").Config} Config */
-/** @typedef {import("../src/domain/types").PressContext} PressContext */
+/** @typedef {import("../../domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../../domain/types").Config} Config */
+/** @typedef {import("../../domain/types").PressContext} PressContext */
 'use strict';
+const { pluginDirectory } = require("../../platform/paths.ts");
+
 const path = require('node:path'),
   fs = require('node:fs');
-const { Bridge, cli, token } = require('./core');
+const { Bridge, cli, token } = require('../../app/session');
 const P = require('./presets');
 const pause =
   /** @param {number} ms */
@@ -298,7 +300,7 @@ class Setup {
 module.exports = { Setup };
 if (require.main === module) {
   (async () => {
-    const dir = process.argv[2] || __dirname,
+    const dir = process.argv[2] || pluginDirectory,
       config = JSON.parse(
         /** @type {any} */ (fs.readFileSync(path.join(dir, 'config.json'))),
       );

@@ -2,7 +2,7 @@ const { test } = require('node:test');
 test('profile preferences', () => {
   'use strict';
   const assert = require('node:assert/strict'),
-    P = require('../../com.local.rexagents.sdPlugin/preferences'),
+    P = require('../../src/app/preferences'),
     defaults = require('../../com.local.rexagents.sdPlugin/config.json');
   const legacy = {
     version: 1,

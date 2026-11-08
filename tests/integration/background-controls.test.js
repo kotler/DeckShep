@@ -5,13 +5,13 @@ const assert = require('node:assert/strict'),
 const {
   BackgroundControls,
   terminalIds,
-} = require('../../com.local.rexagents.sdPlugin/background-controls');
+} = require('../../src/agents/codex/background');
 const {
     AgentMetadata,
-  } = require('../../com.local.rexagents.sdPlugin/agent-metadata'),
-  { DaemonRpc } = require('../../com.local.rexagents.sdPlugin/daemon-controls'),
-  C = require('../../com.local.rexagents.sdPlugin/context-controls'),
-  { agentLines } = require('../../com.local.rexagents.sdPlugin/agent-labels'),
+  } = require('../../src/agents/codex/metadata'),
+  { DaemonRpc } = require('../../src/agents/codex/daemon'),
+  C = require('../../src/guards/context'),
+  { agentLines } = require('../../src/domain/labels'),
   { harness } = require('../helpers/plugin-harness');
 const id = '01a1af76-6618-7492-9377-d709a7fe8594';
 function fixture() {
