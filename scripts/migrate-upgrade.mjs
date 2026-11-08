@@ -7,6 +7,9 @@ import { spawnSync } from 'node:child_process';
 import { requireStopped, mergedConfig } from './install.mjs';
 
 const plugin = 'com.local.rexagents.sdPlugin';
+const lifecycle = (name) => /^state\/claude\/\d+\.(?:json|invalid)$/.test(name);
+const ephemeralLock = (name) =>
+  name.startsWith('state/claude/') && /(?:\.lock|\.tmp)$/.test(name);
 const digest = (bytes) =>
   crypto.createHash('sha256').update(bytes).digest('hex');
 function directory(dir, create = false) {
@@ -200,9 +203,17 @@ export function restoreUpgrade({
       2,
     ) + '\n',
   );
-  const state = new Map([...old].filter(([name]) => name.startsWith('state/')));
+  const state = new Map(
+    [...old].filter(
+      ([name]) => name.startsWith('state/') && !ephemeralLock(name),
+    ),
+  );
   for (const [name, bytes] of state)
-    if (current.has(name) && !current.get(name).equals(bytes))
+    if (
+      !lifecycle(name) &&
+      current.has(name) &&
+      !current.get(name).equals(bytes)
+    )
       throw Error(
         'Installed integration state changed; reconcile before restoring',
       );
@@ -243,7 +254,22 @@ export function restoreUpgrade({
       if (current.has(name)) continue;
       const file = path.join(locations.installed, name);
       directory(path.dirname(file), true);
-      fs.writeFileSync(file, bytes, { mode: 0o600, flag: 'wx' });
+      try {
+        fs.writeFileSync(file, bytes, { mode: 0o600, flag: 'wx' });
+      } catch (error) {
+        // A running hook may publish fresh lifecycle data after preflight.
+        // Preserve it; setup records and other durable state still refuse races.
+        if (error.code !== 'EEXIST' || !lifecycle(name)) throw error;
+        const stat = fs.lstatSync(file);
+        if (
+          !stat.isFile() ||
+          stat.isSymbolicLink() ||
+          stat.nlink !== 1 ||
+          stat.uid !== process.getuid() ||
+          stat.mode & 0o077
+        )
+          throw Error('Unsafe fresh lifecycle record', { cause: error });
+      }
     }
     for (const [name, bytes] of oldProfiles)
       replace(locations.profiles, name, bytes);

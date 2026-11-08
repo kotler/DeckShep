@@ -52,8 +52,9 @@ Fresh installs still use one plugin file.
    backups until verified. Never delete setup records while hooks are installed.
 
 Native installer preservation of plugin-folder state is not assumed. Changed
-integration records cause a refusal for manual reconciliation, rather than
-replacement of newer state. Global SDK/agent settings are never rewritten by the
+durable integration setup records cause a refusal for manual reconciliation.
+Fresh lifecycle reports from running Claude hooks are retained, and stale
+runtime locks are never restored. Global SDK/agent settings are never rewritten by the
 migration. Do not share backup directories: they contain private customizations.
 
 The built-checkout fallback `node scripts/install.mjs` also retains the previous

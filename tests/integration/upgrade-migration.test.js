@@ -176,3 +176,31 @@ test('migration rejects tampering, other installations, symlinks, changed integr
     }),
   );
 });
+test('upgrade retains newer reports from running Claude hooks and never restores stale locks', async (t) => {
+  const f = await fixture(t);
+  fs.writeFileSync(
+    path.join(f.installed, 'state/claude/123.lock'),
+    'old hook lock',
+  );
+  const backup = f.backupUpgrade(f.options).backup;
+  f.upgrade();
+  fs.mkdirSync(path.join(f.installed, 'state/claude'), {
+    recursive: true,
+    mode: 0o700,
+  });
+  fs.writeFileSync(
+    path.join(f.installed, 'state/claude/123.json'),
+    '{"fresh":"running agent"}\n',
+    { mode: 0o600 },
+  );
+  f.restoreUpgrade({ ...f.options, backup, apply: true });
+  assert.equal(
+    fs.readFileSync(path.join(f.installed, 'state/claude/123.json'), 'utf8'),
+    '{"fresh":"running agent"}\n',
+  );
+  assert(!fs.existsSync(path.join(f.installed, 'state/claude/123.lock')));
+  assert.equal(
+    fs.readFileSync(path.join(f.installed, 'state/claude-setup.json'), 'utf8'),
+    '{"active":true,"commands":{"hook":"stable"}}\n',
+  );
+});
