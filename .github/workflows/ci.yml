@@ -46,4 +46,3 @@ jobs:
             dist/agent-switchboard-*-macos.zip
             dist/*.sha256
             dist/SHA256SUMS
-            coverage/coverage-summary.json
