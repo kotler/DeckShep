@@ -27,6 +27,7 @@ class VirtualHost {
   private server?: WebSocketServer;
   private socket?: WebSocket;
   private stopped = false;
+  private commandId = 0;
 
   readonly directory: string;
 
@@ -142,6 +143,33 @@ class VirtualHost {
       if (Date.now() > end) throw Error('Host event timeout: ' + this.errors);
       await new Promise((resolve) => setTimeout(resolve, 10));
     }
+  }
+
+  async command(command: string, value?: unknown): Promise<FixtureMessage> {
+    if (!this.child?.connected) throw Error('Fixture child unavailable');
+    const id = ++this.commandId;
+    this.child.send({ command, value, id });
+    await this.until(() =>
+      this.input.some((m) => m.kind === 'fixtureAck' && m.id === id),
+    );
+    const ack = this.input.find((m) => m.kind === 'fixtureAck' && m.id === id)!;
+    if (ack.error) throw Error(String(ack.error));
+    return ack;
+  }
+
+  /** A host-protocol round trip queued after any preceding key events. */
+  async settled(): Promise<HostFrame> {
+    const start = this.frames.length;
+    this.send('propertyInspectorDidAppear', 0);
+    this.send('sendToPlugin', 0, { kind: 'status' });
+    await this.until(() =>
+      this.frames
+        .slice(start)
+        .some((f) => f.event === 'sendToPropertyInspector'),
+    );
+    return this.frames
+      .slice(start)
+      .find((f) => f.event === 'sendToPropertyInspector')!;
   }
 
   closeSocket(): void {

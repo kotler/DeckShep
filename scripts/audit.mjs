@@ -60,6 +60,24 @@ export const PAYLOAD = [
   'scripts/profiles.mjs',
 ];
 export const digest = (data) => createHash('sha256').update(data).digest('hex');
+// Distribution checks intentionally own this denylist; they never import tests.
+const fixtureMarkers = [
+  'fixtureInput',
+  'fixtureAck',
+  'idle-two-codex',
+  'working-rex',
+  'background-terminals',
+  'closed-slot',
+  'overflow-banks',
+  'claude-mixed',
+];
+export function assertProductionBundle(bytes) {
+  // Generic state names (question/approval/offline) and backend ID herdr-tui
+  // already belong to production. Deny fixture-only identifiers instead.
+  for (const marker of fixtureMarkers)
+    if (bytes.includes(Buffer.from(marker)))
+      throw Error('Virtual fixture code in distribution');
+}
 export function auditArchive(
   data,
   { home = os.homedir(), workspace = root } = {},
@@ -80,12 +98,17 @@ export function auditArchive(
               '.env',
               '.DS_Store',
               'node_modules',
+              'tests',
+              'ms-playwright',
+              'playwright-report',
+              'test-results',
             ].includes(p) ||
             p.startsWith('.env.') ||
             p.endsWith('.log'),
         )
     )
       throw Error('Private/development file in archive');
+    if (/\.[cm]?js$/.test(name)) assertProductionBundle(bytes);
     if ([home, workspace].some((p) => p && bytes.includes(Buffer.from(p))))
       throw Error('Local home/workspace path in archive');
   }
