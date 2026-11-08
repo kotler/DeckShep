@@ -15,6 +15,7 @@
         "src/agents/claude/hook.ts",
         "src/plugin/private-logger.ts",
         "tests/integration/host/dependencies.ts",
+        "tests/e2e/virtual-host/scenario-dependencies.ts",
         "src/plugin/host-socket.mts"
       ],
       "project": [
