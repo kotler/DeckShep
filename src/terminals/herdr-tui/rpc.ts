@@ -1,3 +1,4 @@
+const boundary = require('../../schemas');
 type StringDecoder = import("node:string_decoder").StringDecoder;
 type AgentSnapshot = import("../../domain/types").AgentSnapshot;
 type Config = import("../../domain/types").Config;
@@ -198,7 +199,7 @@ class HerdrRpc {
                         return;
                     let message: any;
                     try {
-                        message = JSON.parse(buffer.slice(0, end));
+                        message = boundary.parse('herdrFrame', buffer.slice(0, end));
                     }
                     catch {
                         finish(Error('Invalid Herdr response'));

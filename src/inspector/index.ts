@@ -1,3 +1,4 @@
+const boundary = require('../schemas');
 type AgentSnapshot = import("../domain/types").AgentSnapshot;
 type Config = import("../domain/types").Config;
 type PressContext = import("../domain/types").PressContext;
@@ -168,7 +169,7 @@ byId('action').addEventListener('change', () => send('setSettings', { ...keySett
 ((window) as any).connectElgatoStreamDeckSocket =
     (port: any, uuid: any, event: any, info: any, actionInfo: any) => {
         registration = uuid;
-        const initial: any = JSON.parse(actionInfo);
+        const initial: any = boundary.parse('registry', actionInfo);
         actionContext = uuid;
         keySettings = initial.payload.settings || {};
         byId('action').value = ((keySettings) as any).action || '';
@@ -180,7 +181,7 @@ byId('action').addEventListener('change', () => send('setSettings', { ...keySett
         socket.onmessage =
             (raw: any) => {
                 try {
-                    const message: any = JSON.parse(raw.data);
+                    const message: any = boundary.parse('hostEvent', raw.data);
                     if (message.event === 'sendToPropertyInspector' &&
                         message.payload?.kind === 'status')
                         fill(message.payload);

@@ -1,3 +1,4 @@
+const boundary = require('../schemas');
 type GuardPipeline = import("../guards/pipeline").GuardPipeline;
 type CompletionDisplay = import("../render/completion").CompletionDisplay;
 type AgentSnapshot = import("../domain/types").AgentSnapshot;
@@ -72,7 +73,7 @@ function createApplication(dependencies: Record<string, any>) {
     }
     function createRuntime(scope: any) {
         const configPath: string = path.join(pluginDirectory, 'config.json');
-        let diskConfig: any = JSON.parse(((fs.readFileSync(configPath)) as any)), config: any = preferences.profileConfig(diskConfig, saved, scope);
+        let diskConfig: any = boundary.parse('config', fs.readFileSync(configPath)), config: any = preferences.profileConfig(diskConfig, saved, scope);
         let activePress: any = null, visibility: number = 0, actionBusy: boolean = false, settingsError: string = '', setupBusy: boolean = false, inspectorMessage: string = '';
         const backendKey: (c: any) => string = (c: any) => c.backend +
             '|claude:' +
@@ -108,7 +109,7 @@ function createApplication(dependencies: Record<string, any>) {
         });
         function loadConfig() {
             try {
-                diskConfig = JSON.parse(((fs.readFileSync(configPath)) as any));
+                diskConfig = boundary.parse('config', fs.readFileSync(configPath));
                 settingsError = '';
             }
             catch {
@@ -934,10 +935,10 @@ function createApplication(dependencies: Record<string, any>) {
     });
     ws.on('message', (raw: any) => {
         try {
-            const e: any = JSON.parse(raw);
+            const e: any = boundary.parse('hostEvent', raw);
             if (e.event === 'didReceiveGlobalSettings') {
                 try {
-                    const input: any = e.payload?.settings || {};
+                    const input: any = boundary.validate('globalSettings', e.payload?.settings || {});
                     if (input.version !== 2 && loadedV2)
                         return;
                     const incoming: {

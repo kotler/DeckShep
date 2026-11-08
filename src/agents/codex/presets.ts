@@ -1,3 +1,4 @@
+const boundary = require('../../schemas');
 type AgentSnapshot = import("../../domain/types").AgentSnapshot;
 type Config = import("../../domain/types").Config;
 type PressContext = import("../../domain/types").PressContext;
@@ -10,7 +11,7 @@ function readPresets() {
 }
 function readRegistry(file: string) {
     try {
-        return JSON.parse(fs.readFileSync(file, 'utf8'));
+        return boundary.parse('registry', fs.readFileSync(file, 'utf8'));
     }
     catch (e: unknown) {
         if (((e) as Error & {

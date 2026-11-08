@@ -1,3 +1,4 @@
+const boundary = require('../../schemas');
 type AgentSnapshot = import("../../domain/types").AgentSnapshot;
 type Config = import("../../domain/types").Config;
 type PressContext = import("../../domain/types").PressContext;
@@ -225,7 +226,7 @@ class DaemonRpc {
         this.ws.on('message', (raw: any) => {
             let message: any;
             try {
-                message = JSON.parse(raw.toString());
+                message = boundary.parse('daemonFrame', raw.toString());
             }
             catch {
                 return this.fail();

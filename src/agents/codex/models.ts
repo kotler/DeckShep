@@ -1,3 +1,4 @@
+const boundary = require('../../schemas');
 type Setup = import("./setup-presets").Setup;
 type AgentSnapshot = import("../../domain/types").AgentSnapshot;
 type Config = import("../../domain/types").Config;
@@ -60,7 +61,7 @@ function loadCatalog(binary: string, cwd: any, include: string[]) {
             if (e)
                 return reject(Error('Codex model discovery failed; no setting sent'));
             try {
-                resolve(catalog(JSON.parse(out), include));
+                resolve(catalog(boundary.parse('modelCatalog', out), include));
             }
             catch {
                 reject(Error('Invalid Codex model catalog'));

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+const boundary = require('../../schemas');
 type AgentSnapshot = import("../../domain/types").AgentSnapshot;
 type Config = import("../../domain/types").Config;
 type PressContext = import("../../domain/types").PressContext;
@@ -141,9 +142,9 @@ function main(args: string[] | undefined = process.argv.slice(2)) {
     const original: string | null = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
     let settings: any, saved: any;
     try {
-        settings = original === null ? {} : JSON.parse(original);
+        settings = original === null ? {} : boundary.parse('claudeSettings', original);
         saved = fs.existsSync(registry)
-            ? JSON.parse(fs.readFileSync(registry, 'utf8'))
+            ? boundary.parse('setupRecord', fs.readFileSync(registry, 'utf8'))
             : null;
     }
     catch {

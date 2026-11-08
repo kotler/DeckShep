@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+const boundary = require('../../schemas');
 type AgentSnapshot = import("../../domain/types").AgentSnapshot;
 type Config = import("../../domain/types").Config;
 type PressContext = import("../../domain/types").PressContext;
@@ -25,7 +26,7 @@ async function main() {
     const input: Buffer<ArrayBuffer> = Buffer.concat(chunks);
     let data: any;
     try {
-        data = JSON.parse(input.toString('utf8'));
+        data = boundary.parse('claudePayload', input.toString('utf8'));
     }
     catch {
         await lost();
@@ -37,7 +38,7 @@ async function main() {
     catch { }
     if (statusline) {
         const fs = require('node:fs'), path = require('node:path'), { spawn } = require('node:child_process');
-        const saved: any = JSON.parse(fs.readFileSync(path.join(pluginDirectory, 'state', 'claude-setup.json'), 'utf8'));
+        const saved: any = boundary.parse('setupRecord', fs.readFileSync(path.join(pluginDirectory, 'state', 'claude-setup.json'), 'utf8'));
         const command: any = saved.originalStatusLine?.command;
         if (command) {
             const child: import("child_process").ChildProcessByStdio<import("stream").Writable, import("stream").Readable, null> = spawn('/bin/sh', ['-c', command], {

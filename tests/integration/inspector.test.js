@@ -37,6 +37,7 @@ test('inspector', () => {
     }
   }
   const context = {
+    require: () => require('../../src/schemas'),
     window: {},
     document: { getElementById: node, activeElement: null },
     WebSocket: Socket,

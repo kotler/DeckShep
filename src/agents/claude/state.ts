@@ -1,3 +1,4 @@
+const boundary = require('../../schemas');
 type AgentSnapshot = import("../../domain/types").AgentSnapshot;
 type Config = import("../../domain/types").Config;
 type PressContext = import("../../domain/types").PressContext;
@@ -122,7 +123,7 @@ function readRecord(pid: number, dir: string | undefined = directory(), { allowI
             s.mode & 0o077 ||
             s.size > 16384)
             throw Error('Unsafe Claude metadata');
-        const data: any = JSON.parse(fs.readFileSync(fd, 'utf8')), after: import("node:fs").Stats = fs.fstatSync(fd);
+        const data: any = boundary.parse('claudeRecord', fs.readFileSync(fd, 'utf8')), after: import("node:fs").Stats = fs.fstatSync(fd);
         if (s.mtimeMs !== after.mtimeMs || s.size !== after.size)
             throw Error('Claude metadata changed');
         return data;
