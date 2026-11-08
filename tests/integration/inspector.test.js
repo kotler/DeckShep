@@ -51,10 +51,7 @@ test('inspector', () => {
   };
   vm.createContext(context);
   vm.runInContext(
-    fs.readFileSync(
-      path.join(__dirname, '../../src/inspector/index.js'),
-      'utf8',
-    ),
+    require('typescript').transpileModule(fs.readFileSync(path.join(__dirname, '../../src/inspector/index.ts'), 'utf8').replace(/export \{\};?/, ''), { compilerOptions: { target: 9, module: 0 } }).outputText,
     context,
     {
       filename: path.join(

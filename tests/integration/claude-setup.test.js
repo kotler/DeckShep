@@ -82,7 +82,7 @@ test('claude setup', () => {
     fs.writeFileSync(file, before, { mode: 0o600 });
     const script = path.join(
       __dirname,
-      '../../src/agents/claude/configure.js',
+      '../../src/agents/claude/configure.ts',
     );
     const args = [
       script,
