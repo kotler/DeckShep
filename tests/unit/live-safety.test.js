@@ -63,3 +63,107 @@ test('settings hashes detect changed global files and refuse symbolic links', (t
   );
   assert.throws(() => settingsHashes(home));
 });
+test('private live environment drops routing and shared credentials; access-only auth cannot refresh the owner login', (t) => {
+  const {
+    isolatedEnvironment,
+    accessOnly,
+  } = require('../live/environment.cjs');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'asw-env-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const env = isolatedEnvironment(dir, {
+    PATH: '/test',
+    CODEX_HOME: '/shared',
+    HERDR_SESSION: 'existing',
+    CODEX_THREAD_ID: 'existing',
+    OPENAI_API_KEY: 'secret',
+    NODE_OPTIONS: 'unsafe',
+    CLAUDE_CODE_OAUTH_TOKEN: 'secret',
+  });
+  assert.equal(env.PATH, '/test');
+  assert.equal(env.HERDR_SESSION, undefined);
+  assert.equal(env.CODEX_THREAD_ID, undefined);
+  assert.equal(env.NODE_OPTIONS, undefined);
+  assert.equal(env.OPENAI_API_KEY, undefined);
+  assert.equal(env.CLAUDE_CODE_OAUTH_TOKEN, undefined);
+  assert(env.CODEX_HOME.startsWith(dir));
+  const now = Date.now(),
+    token =
+      'header.' +
+      Buffer.from(
+        JSON.stringify({ exp: Math.floor(now / 1000) + 3600 }),
+      ).toString('base64url') +
+      '.signature';
+  const original = {
+    tokens: { access_token: token, refresh_token: 'owner-refresh' },
+  };
+  assert.equal(accessOnly(original, now).tokens.refresh_token, '');
+  assert.equal(original.tokens.refresh_token, 'owner-refresh');
+  assert.throws(() => accessOnly(original, now + 3600000), /expires/);
+});
+test('observed descendant cleanup rechecks start time and ancestry before signalling', () => {
+  let started = 'same';
+  const signals = [];
+  const child = { pid: 100, exitCode: null, kill: () => {} };
+  const owned = new OwnedProcesses(
+    (pid) => ({
+      pid,
+      ppid: pid === 101 ? 100 : 1,
+      started: pid === 101 ? started : 'root',
+    }),
+    () => child,
+    (pid, signal) => signals.push([pid, signal]),
+  );
+  owned.spawn('fixture', [], {});
+  owned.observe(101);
+  owned.close();
+  assert.deepEqual(signals, [[101, 'SIGTERM']]);
+  started = 'replaced';
+  owned.close();
+  assert.equal(signals.length, 1);
+  assert.throws(() => owned.observe(200));
+});
+test('bounded shutdown force-stops only proven descendants when graceful exit is ignored', async () => {
+  const alive = new Set([100, 101, 200]),
+    signals = [];
+  const child = {
+    pid: 100,
+    exitCode: null,
+    signalCode: null,
+    kill: (signal) => {
+      signals.push([100, signal]);
+      if (signal === 'SIGKILL') {
+        alive.delete(100);
+        child.signalCode = signal;
+      }
+    },
+  };
+  const owned = new OwnedProcesses(
+    (pid) => {
+      if (!alive.has(pid)) throw Error('Exited');
+      return { pid, ppid: pid === 101 ? 100 : 1, started: 'original-' + pid };
+    },
+    () => child,
+    (pid, signal) => {
+      signals.push([pid, signal]);
+      if (signal === 'SIGKILL') alive.delete(pid);
+    },
+  );
+  owned.spawn('fixture', [], {});
+  await owned.shutdown({
+    rows: [
+      [100, 1],
+      [101, 100],
+      [200, 1],
+    ],
+    graceMs: 1,
+  });
+  assert.deepEqual(signals, [
+    [101, 'SIGTERM'],
+    [100, 'SIGTERM'],
+    [101, 'SIGKILL'],
+    [100, 'SIGKILL'],
+  ]);
+  assert(alive.has(200));
+  assert(!alive.has(101));
+  assert(!alive.has(100));
+});

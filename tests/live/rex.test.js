@@ -8,6 +8,7 @@ const {
   settingsHashes,
   OwnedProcesses,
 } = require('./safety.cjs');
+const { isolatedEnvironment } = require('./environment.cjs');
 const reason = authorization('rex');
 test(
   'live Rex: explicit extra gate and test-owned process proof',
@@ -20,27 +21,26 @@ test(
       'Provide a launcher for a disposable Rex instance; existing instances are never adopted',
     );
     const before = settingsHashes(os.homedir()),
-      directory = fs.mkdtempSync(path.join('/tmp', 'asw-rex-live-')),
+      directory = fs.realpathSync(
+        fs.mkdtempSync(path.join('/tmp', 'asw-rex-live-')),
+      ),
       owned = new OwnedProcesses();
-    t.after(() => {
+    t.after(async () => {
       try {
-        owned.close();
+        await owned.shutdown();
       } finally {
-        assert.deepEqual(settingsHashes(os.homedir()), before);
-        fs.rmSync(directory, { recursive: true, force: true });
+        try {
+          assert.deepEqual(settingsHashes(os.homedir()), before);
+        } finally {
+          fs.rmSync(directory, { recursive: true, force: true });
+        }
       }
     });
     const child = owned.spawn(
       process.env.ASW_REX_ISOLATED_LAUNCHER,
       ['--asw-owned-home', directory],
       {
-        env: {
-          ...process.env,
-          HOME: directory,
-          REX_SESSION: '',
-          REX_BLOCK: '',
-          REX_CLIENT: '',
-        },
+        env: isolatedEnvironment(directory),
         cwd: directory,
       },
     );
