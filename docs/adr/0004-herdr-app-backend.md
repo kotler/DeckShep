@@ -2,6 +2,13 @@
 
 Status: source spike complete; native validation remains required.
 
+Revision, 2026-11-08: [ADR 0007](0007-herdr-app-0.1.14-source-review.md)
+pins App 0.1.14 and the core 0.1.18 release, distinguishes the earlier
+development snapshots, and records the control/read/isolation constraints.
+In particular, `terminal.peek` opens an overlay; the richer mod focus/zoom
+snapshot is not exposed by the ordinary control socket. Production
+capabilities remain empty pending the planned review and native evidence.
+
 Sources inspected on 2026-11-07:
 
 - [herdr-app 7fe7ac3](https://github.com/herdrdev/herdr-app/tree/7fe7ac34fef8a3ee76cb5d2f17bc8d6331e50bd8), Cargo version 0.1.13.
