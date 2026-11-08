@@ -1,2 +1,5 @@
 # Formatting only; verified unchanged Babel ASTs for all 73 JavaScript files.
 46c2ef922e68a1ef5cc3f5f9a867e3932cf6b449
+
+# Typed-source formatting; verified equivalent normalized ASTs for 116 files.
+8514650c497355e387e39a7063e4092d3fb654f4
