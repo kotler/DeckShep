@@ -5,16 +5,44 @@ on:
     branches: [main, refactor/v2-foundation]
 permissions:
   contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run lint
+      - run: npm run format:check
       - run: npm run typecheck
-      - run: npm test
+      - run: npm run deps
+      - run: npm run version:check
+      - run: npm run compatibility:check
+      - run: npm run test:coverage
+      - run: npm run test:bundled
+      - run: npm audit --omit=dev --audit-level=high
+      - name: Commit conventions
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/tool.mjs @commitlint/cli --from "$BASE_SHA" --to "$HEAD_SHA"
+      - run: npm run build -- --universal
+      - run: node scripts/tool.mjs @elgato/cli validate dist/com.local.rexagents.sdPlugin --no-update-check
+      - run: npm run package -- --skip-build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-beta
+          path: |
+            dist/agent-switchboard-*-macos.zip
+            dist/*.sha256
+            dist/SHA256SUMS
+            coverage/coverage-summary.json

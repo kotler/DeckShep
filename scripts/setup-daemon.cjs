@@ -1,9 +1,8 @@
 const { Bridge } = require('../src/app/session');
 const {pluginDirectory}=require('../src/platform/paths.ts');
 const path=require('node:path'),fs=require('node:fs');
-const P=require('../src/agents/codex/presets');
 const {configure}=require('../src/agents/codex/setup-daemon');
-if (true) {
+{
   (async () => {
     const directory = process.argv[2] || pluginDirectory,
       config = JSON.parse(

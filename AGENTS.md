@@ -5,22 +5,22 @@ The baseline is plugin 1.3.4 at `0262267`, tagged `v1.3.4-pre-refactor`.
 
 ## Commands
 
-Use Node 22.13+ (`.nvmrc` selects 22), Python 3 and macOS Command Line Tools.
+Use Node 22.13+ (`.nvmrc` selects 22) and macOS Command Line Tools.
 The installed plugin retains its existing Stream Deck Node runtime.
 
 - `npm ci`: install the locked root workspace (`com.local.rexagents.sdPlugin`, `tools`).
-- `npm test`: run every isolated `node:test` group, including the eight legacy Python distribution checks.
+- `npm test`: run every isolated `node:test` group, including the ported Node distribution checks.
 - `npm run test:golden`: baseline layouts, routing, native transport traces and refusals.
 - `npm run test:coverage`: c8 reports in ignored `coverage/`; baseline in `docs/plans/coverage-baseline.json`.
-- `npm run typecheck`: strict checkJs and domain contracts; no type-error suppressions.
+- `npm run typecheck`: strict TypeScript and domain contracts; no type-error suppressions.
 - `npm run lint`: recommended ESLint rules, with documented legacy-only TODOs.
 - `npm run format:check` / `npm run format`: format JS/TS/HTML/JSON/YAML; golden JSON stays byte-stable.
 - `npm run knip`: unused-file/dependency scan; confirm findings with `rg` before removal. Dynamic CommonJS exports, VM imports, fixture lookup and icon names need manual verification.
-- `npm run build` (or `npm run build -- --universal`): legacy portable build; never installs or restarts anything.
+- `npm run build` (or `npm run build -- --universal`): portable Node/Swift build; never installs or restarts anything.
 - `npm run clean`: delete only generated `dist/` and `coverage/`; preserve all backups.
 
-Keep nested dependency installation until bundling replaces the legacy builder.
-Do not run `install.py`, `streamdeck restart`, optional setup, or any live command
+No Python installer is required.
+Do not run `scripts/install.mjs`, `streamdeck restart`, optional setup, or any live command
 as a verification shortcut. Fixture tests may inspect only their own process and
 create private sockets/files under a temporary directory.
 
@@ -84,3 +84,26 @@ that does not depend on it; verify against existing evidence or ask the owner.
 Use named functions, descriptive variables and comments explaining why guards
 exist. Target functions under about 60 lines and moved files under about 400.
 Maintain these instructions as commands and architecture evolve.
+
+## Completed foundation tooling
+
+Application source is now TypeScript under `src/`; root plugin JavaScript entries
+are generated. `npm run build -- --universal` uses Node + Swift and bundles the
+SDK, hook, configure helper, inspector and doctor. No Python or node_modules ships.
+`npm run package` validates/packs/audits locally and never installs or uploads.
+`node scripts/package.mjs --verify <zip>` verifies an existing distribution.
+
+Use `npm run deps`, `npm run version:check`, `npm run compatibility:check`, and
+`npm run test:bundled` with lint/typecheck/coverage. Only the SDK adapter and CLI
+entry wrappers are excluded from c8's source gate; the subprocess fake-host test
+covers the adapter independently. Do not lower thresholds to hide a regression.
+Knip's explicit entries include dynamic Rollup hook/SDK-log/fixture substitutions.
+
+`node scripts/install.mjs` retains the stopped-Stream-Deck backup/config merge as
+an upgrade fallback. Do not run it as verification. Native installer preservation
+of customized plugin-folder state has not been established. `npm run dev` links
+and restarts this plugin UUID only, and is never part of automated verification.
+
+Herdr App's production capabilities remain empty. Experimental v3 preferences
+and its preview profile require the explicitly enabled config flag; default
+builds retain v2 and both existing profiles. Read ADR 0004 before changing this.

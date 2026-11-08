@@ -1,7 +1,22 @@
 {
   "all": true,
-  "include": ["com.local.rexagents.sdPlugin/*.js"],
-  "exclude": ["**/node_modules/**", "tests/**", "dist/**"],
-  "reporter": ["text", "json-summary", "lcov"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.mts"
+  ],
+  "exclude": [
+    "**/node_modules/**",
+    "tests/**",
+    "dist/**",
+    "src/**/*.d.ts",
+    "src/domain/types.ts",
+    "src/domain/backend.ts",
+    "src/plugin/**"
+  ],
+  "reporter": [
+    "text",
+    "json-summary",
+    "lcov"
+  ],
   "reports-dir": "coverage"
 }
