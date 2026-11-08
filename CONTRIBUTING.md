@@ -28,6 +28,33 @@ Read [AGENTS.md](AGENTS.md) for architecture and standing safety requirements.
 Use Conventional Commits, separate logic, moves, formatting and documentation,
 and describe behavior changes, validation, golden changes and open questions.
 
+## Browser fixture preview
+
+After npm ci, run `npm run deck:preview` and open its printed random loopback
+URL. It displays the actual 15 SVG/title frames from a disposable bundled plugin.
+Scenario/profile controls, manual time and a synthetic input trace need no agent
+account, installed Stream Deck, hardware or Swift build. Ctrl-C cleans up the
+owned child, temporary HOME/plugin directory and sockets.
+
+Run `npm run e2e:install` once, then `npm run test:e2e`. The exactly pinned
+tools-workspace Playwright version determines the Chromium build. Installation
+fetches only its headless shell and standard FFmpeg companion from Playwright's
+CDN; it installs no full browser or system dependencies. This download is outside
+the npm lock file's integrity checks and lands in the OS user cache:
+`~/Library/Caches/ms-playwright` on macOS, `~/.cache/ms-playwright` on Linux.
+Neither npm ci nor build/package downloads or distributes a browser. Remove the
+cache with `node scripts/tool.mjs @playwright/test uninstall`, or run
+`npx playwright uninstall` from tools. See [Playwright browser documentation](https://playwright.dev/docs/browsers).
+
+The suite checks exact normalized SVGs, labels and input traces. Its six deck-only
+PNG smoke images have OS-specific baselines. `npm run test:e2e:update` is an
+explicit baseline change: review the images and explain the reason in the PR.
+Never regenerate existing golden JSON to accommodate the browser harness.
+CI caches browsers by exact lock-file version, OS and architecture, and uploads
+failure reports/diffs for seven days. Reports contain synthetic fixture activity.
+Native provider/focus/clipboard behavior and physical deck scaling still need
+their separate validation. See [the harness guide](tests/e2e/README.md).
+
 ## Safety boundaries
 
 Keep identity, process ownership, stale-press, focus, cursor/digest, generation,

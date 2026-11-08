@@ -47,3 +47,75 @@ jobs:
             dist/deckshep-*-macos.zip
             dist/*.sha256
             dist/SHA256SUMS
+
+  e2e:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - id: playwright
+        name: Read locked browser tool version
+        run: node -e "const fs=require('node:fs'); const lock=JSON.parse(fs.readFileSync('package-lock.json')); console.log('version='+lock.packages['tools/node_modules/@playwright/test'].version)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v6
+        with:
+          path: ~/Library/Caches/ms-playwright
+          key: ${{ runner.os }}-${{ runner.arch }}-playwright-${{ steps.playwright.outputs.version }}
+      - run: npm run e2e:install
+      - run: npm audit --audit-level=high
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: virtual-deck-macos-failure
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # Temporary platform calibration; retain macOS until Linux output is reviewed.
+  e2e-linux-trial:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - id: playwright
+        name: Read locked browser tool version
+        run: node -e "const fs=require('node:fs'); const lock=JSON.parse(fs.readFileSync('package-lock.json')); console.log('version='+lock.packages['tools/node_modules/@playwright/test'].version)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-${{ runner.arch }}-playwright-${{ steps.playwright.outputs.version }}
+      - run: npm run e2e:install
+      - run: npm run test:e2e:update
+      - run: npm run test:e2e
+      - name: Compare platform PNGs
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const directory = 'tests/e2e/__screenshots__/';
+          const files = fs.readdirSync(directory).filter(name => name.endsWith('-linux.png'));
+          if (files.length !== 6) throw Error('Expected six Linux smoke images');
+          const different = files.filter(name => !fs.readFileSync(directory + name).equals(fs.readFileSync(directory + name.replace('-linux.png', '-darwin.png'))));
+          const message = `Linux fixture checks passed with six own baselines; ${different.length}/6 PNGs differ from macOS. Keep macOS pending platform review.\n`;
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, message);
+          console.log(message);
+          JS
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: virtual-deck-linux-trial
+          path: |
+            tests/e2e/__screenshots__/*-linux.png
+            playwright-report/
+            test-results/
+          retention-days: 7
