@@ -119,6 +119,40 @@ const herdrAppMessage = z.union([
   herdrAppCommands,
   z.object({ error: z.string().max(16000) }).strict(),
 ]);
+const digest = z.string().regex(/^[a-f0-9]{64}$/);
+const cdHash = z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/);
+const herdrAppPeer = z
+  .object({
+    protocol: z.literal(1),
+    pid: integer.positive(),
+    uid: integer,
+    pidVersion: integer.positive(),
+    startSeconds: z.string().regex(/^[1-9][0-9]{0,19}$/),
+    startMicros: integer.max(999999),
+    executable: id.refine((value) => value.startsWith('/')),
+    cdHash,
+  })
+  .strict();
+const herdrAppFocusRecord = z
+  .object({
+    key: word,
+    contract: z.literal(1),
+    bundleId: z.literal('dev.herdr.app'),
+    executable: z.literal('Herdr'),
+    version,
+    build: id,
+    executableSha256: digest,
+    plistSha256: digest,
+    cdHash,
+  })
+  .strict();
+const herdrAppFocusInput = z
+  .object({ kind: z.literal('requestFocus') })
+  .strict();
+const herdrAppFocusReply = z.union([
+  z.object({ ok: z.literal(true) }).strict(),
+  z.object({ error: z.string().max(16000) }).strict(),
+]);
 
 const herdrCoreHello = z
   .object({
@@ -233,6 +267,10 @@ export const herdrAppSchemas = {
   herdrAppWorld,
   herdrAppStatus,
   herdrAppCommands,
+  herdrAppPeer,
+  herdrAppFocusRecord,
+  herdrAppFocusInput,
+  herdrAppFocusReply,
   herdrCoreRequest,
   herdrCoreMessage,
   herdrCoreHello,
