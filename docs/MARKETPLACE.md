@@ -42,6 +42,11 @@ or submits products. Marketplace eligibility is separate from `release:check`.
 - Choose and test public support/privacy URLs and an active support email;
   placeholder URLs or private repository pages cannot serve public users.
 - Complete physical and independent validation for the advertised scope.
+- If the optional Herdr App mod proceeds, review installing executable code
+  into another app under current Elgato Marketplace rules and Herdr's mod
+  policies/licensing. Review consent, per-window layout setup, code provenance,
+  updates and removal before plugin uninstall. This is a pending distribution
+  gate, not policy clearance; no mod is currently implemented or installed.
 - Review final public media and current Maker Console field requirements.
 - Run `npm run release:check` and reviewed `--release` packaging from a clean commit.
 

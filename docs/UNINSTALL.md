@@ -7,6 +7,15 @@ status line when still owned. Private Claude lifecycle records are removed after
 **Undo last change** is available unless those files changed afterward.
 
 Then remove DeckShep from Stream Deck and delete its profiles if wanted.
+If a future optional Herdr App read-back mod is installed, remove it **before**
+removing DeckShep too. It lives inside Herdr's App home and survives plugin
+uninstall. Its removal preview must revoke read-back, remove only unchanged
+manifest-owned code/state and the owned layout node, and preserve user edits
+and backups. Repeat for every App home where it was installed. The proposed
+mod and its removal/doctor support are not implemented yet; the current Claude
+removal helper does not remove Herdr mods. Do not delete an entire mods folder
+or overwrite a customized layout. See the [read-back design](plans/HERDR-APP-READBACK-DESIGN.md).
+
 For an older preview with another plugin ID, use that preview's original removal
 helper before deleting it; see [IDENTITY.md](IDENTITY.md).
 Existing Rex, Herdr and agent processes are left alone. Keep external recovery

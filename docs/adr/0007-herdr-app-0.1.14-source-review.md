@@ -84,6 +84,60 @@ read-back bridge/mod or an upstream surface must resolve this; do not silently
 substitute core state, a success reply, UI-scale `zoom` or persisted files.
 This is an owner-review question, not permission to contact maintainers.
 
+### Read-back design review, 2026-11-08
+
+The full window/Zoom contract above must not obscure a cheaper selection-only
+surface: socket `status.focused_pane`, `space` and `tab` can be joined to `ls`
+pane/terminal records and active space/tab flags. Bracketing `ls` with matching
+status reads can detect some races, but cannot make the reads atomic. In
+`sync()`, `self.focused_pane` follows model/layout presentation state while
+modal dialogs may retain the keyboard. `focused_terminal()` separately looks
+for actual terminal keyboard ownership, including peeks/floats/swaps. Therefore
+socket selection feedback deserves fixture/isolated evaluation; it is not
+verified OS or contextual-input focus. `status.zoom` remains UI scale.
+[Control, synchronization and keyboard ownership][app-window]
+
+The mod proposal has two unresolved gates, not an established binding recipe:
+
+- `panes()` shares terminal address, pane/tab and mutable descriptive facts
+  with App/core data. It does not expose connected core ID, terminal PID/start
+  identity or native window ID. Core `address` is unique **within its core**;
+  titles/cwd/program and App-written space/tab labels cannot prove core ownership.
+  The App's `hc connect` hello is internal. Neither socket nor mod can currently
+  bind a local address to an independently verified core by these fields alone.
+  The broader `terminals()` snapshot retains `address`, `created_ms` and nullable
+  `pid` from core records; those offer a stronger consistency candidate than
+  address alone, but remain cached facts without process start time or the
+  App's core connection epoch. They need evaluation, not an assumed binding.
+- Command callbacks read the latest published host snapshot. They do not force
+  a native keyboard query or publication revision barrier. A challenge proves
+  a response was produced after dispatch, not that its underlying view facts
+  were newly observed. [Snapshots][app-mods], [connection][app-hc],
+  [core records][core-schema]
+
+Source-only runtime checks establish that a mod can write files and receive a
+nonce, with important constraints. `fs/promises.writeFile` writes directly and
+exports no rename operation. `herdr.writeTextFile(path,text,expected)` uses
+same-directory temporary-file replacement only for an existing file; a new
+file is written directly. A future protocol therefore needs precreated private
+slots and expected previous contents. `<mod>.snapshot:<nonce>` passes the
+suffix string to `nextCommand()` on all shown copies; request args are not
+forwarded. `focusable:false` avoids `pane.go` navigation into a chrome mod block,
+but does not sandbox trusted code against requesting focus. A plain indicator
+must omit focusable widgets/handlers and still needs native click calibration.
+[File replacement][app-mod-files], [filesystem module][app-mod-fs],
+[filesystem writer][app-mod-fs-host], [dispatch/navigation][app-window]
+
+If no shown mod accepts a command, `run_as` logs its full name. A nonce in that
+name can therefore reach Herdr's own logs. The proposed no-challenge-logging
+rule is another unresolved constraint; no sender has been implemented.
+
+The [revised proposal](../plans/HERDR-APP-READBACK-DESIGN.md) puts these checks
+first, defers mod implementation and compares a focus-only scope amendment
+with waiting for verified Milestone 1. H1/H4 remain unchanged pending owner
+direction. Zoom and contextual input remain disabled. No native test or
+upstream contact was performed for this review.
+
 ## Core protocol: bounded clients and identity
 
 The pinned [OpenRPC schema][core-schema] is authoritative for field types.
@@ -284,6 +338,9 @@ Native questions to preserve in the validation checklist:
 [app-hc]: https://github.com/herdrdev/herdr-app/blob/2405bf388c568c3ed479f05b8e405ccfa44b3f2c/src/hc.rs
 [app-commands]: https://github.com/herdrdev/herdr-app/blob/2405bf388c568c3ed479f05b8e405ccfa44b3f2c/src/commands.rs
 [app-mods]: https://github.com/herdrdev/herdr-app/blob/2405bf388c568c3ed479f05b8e405ccfa44b3f2c/src/mods.rs
+[app-mod-files]: https://github.com/herdrdev/herdr-app/blob/2405bf388c568c3ed479f05b8e405ccfa44b3f2c/src/mod_files.rs
+[app-mod-fs]: https://github.com/herdrdev/herdr-app/blob/2405bf388c568c3ed479f05b8e405ccfa44b3f2c/vendor/gpui-kit/crates/shell/src/engine/quickjs/standard/fs.rs
+[app-mod-fs-host]: https://github.com/herdrdev/herdr-app/blob/2405bf388c568c3ed479f05b8e405ccfa44b3f2c/vendor/gpui-kit/crates/shell/src/engine/quickjs/host.rs
 [app-window]: https://github.com/herdrdev/herdr-app/blob/2405bf388c568c3ed479f05b8e405ccfa44b3f2c/src/window.rs
 [app-main]: https://github.com/herdrdev/herdr-app/blob/2405bf388c568c3ed479f05b8e405ccfa44b3f2c/src/main.rs
 [app-mirror]: https://github.com/herdrdev/herdr-app/blob/2405bf388c568c3ed479f05b8e405ccfa44b3f2c/src/mirror.rs

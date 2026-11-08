@@ -19,9 +19,13 @@ core. The ordinary control socket does not expose the full focus/Zoom
 read-back required by Milestone 1. `terminal.peek` opens an overlay, so it
 cannot be used as a passive read. Those source findings qualify the proposed
 API steps below; see the ADR's hand-back and native questions.
-The recommended next read-back approach is an optional read-only mod, with a
-[concrete design proposal](HERDR-APP-READBACK-DESIGN.md) pending owner review.
-No mod has been implemented, installed or treated as native evidence.
+The optional read-only mod is [on hold after source review](HERDR-APP-READBACK-DESIGN.md):
+the public surface lacks independent App/core binding and a fresh native
+observation barrier. Evaluate ordinary `status.focused_pane` plus `ls` as
+selection feedback first. The owner must choose whether to retain verified
+Milestone 1 or amend H1/H4 to plain focus requests with no verified-focus claim,
+Zoom or contextual input. No scope amendment is assumed. No mod has been
+implemented, installed or treated as native evidence.
 
 Read `AGENTS.md` and [ADR 0004](../adr/0004-herdr-app-backend.md) first. Every
 safety rule applies. In particular: never connect to, focus, zoom, read from or
@@ -84,6 +88,9 @@ generated `docs/COMPATIBILITY.md`, contains:
 
 - App version and build identifier
 - core version, protocol version and the exact advertised feature set
+- if a mod is used: its protocol/version, canonical manifest hash and SHA-256
+  of executable files, checked independently against installed bytes and a
+  verified loaded-build/copy epoch; self-reported hashes alone are insufficient
 - the capabilities and the individual controls actually validated (for
   example `focus`, `zoom`, `questionPrev`, `questionNext`; see Phase 1a),
   never "all"
@@ -189,9 +196,12 @@ without changing Rex or Herdr TUI behavior:
 3. **Focus** through the App action, followed by a read-back of the App's
    focused view. A press that cannot be proven to have focused the right
    terminal reports a refusal and is never retried.
-   Phase 0 found that this view is an in-process mod snapshot, not the ordinary
-   socket response. Resolve the read-back surface in ADR 0007 before enabling
-   Focus or Zoom; neither `{ok:true}` nor saved view files replace it.
+   The ordinary socket exposes model/presentation selection through
+   `status.focused_pane` and `ls` active flags; evaluate that cheaper feedback
+   path before requiring a mod. It does not prove keyboard ownership or the
+   App/core binding. See the design's source-only Step 0 and owner scope choice.
+   H1/H4 still require verified selection until explicitly amended; neither
+   `{ok:true}` nor saved view files replace proof. Zoom needs separate read-back.
 4. **Zoom is verified separately from focus**, because focus can stay correct
    while Zoom does nothing or changes a different screen:
    - before mutation: resolve the target's window, screen and pane from the App;
