@@ -66,6 +66,10 @@ export default [
     languageOptions: { sourceType: 'commonjs' },
   },
   {
+    files: ['tests/e2e/virtual-deck/*.js'],
+    languageOptions: { sourceType: 'script', globals: globals.browser },
+  },
+  {
     files: ['com.kotl3r.deckshep.sdPlugin/inspector.js'],
     languageOptions: {
       sourceType: 'script',

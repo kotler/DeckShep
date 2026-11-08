@@ -16,6 +16,7 @@
         "src/plugin/private-logger.ts",
         "tests/integration/host/dependencies.ts",
         "tests/e2e/virtual-host/scenario-dependencies.ts",
+        "tests/e2e/virtual-deck/app.js",
         "src/plugin/host-socket.mts"
       ],
       "project": [

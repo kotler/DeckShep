@@ -158,10 +158,10 @@ class VirtualHost {
   }
 
   /** A host-protocol round trip queued after any preceding key events. */
-  async settled(): Promise<HostFrame> {
+  async settled(index = 0): Promise<HostFrame> {
     const start = this.frames.length;
-    this.send('propertyInspectorDidAppear', 0);
-    this.send('sendToPlugin', 0, { kind: 'status' });
+    this.send('propertyInspectorDidAppear', index);
+    this.send('sendToPlugin', index, { kind: 'status' });
     await this.until(() =>
       this.frames
         .slice(start)

@@ -34,7 +34,8 @@
     "commitlint": "node scripts/tool.mjs @commitlint/cli",
     "marketplace:media": "node --require tsx/cjs scripts/marketplace-media.mjs",
     "marketplace:check": "node scripts/marketplace-check.mjs",
-    "release:check": "node scripts/release-readiness.mjs"
+    "release:check": "node scripts/release-readiness.mjs",
+    "deck:preview": "node --import tsx scripts/virtual-deck.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.4",
