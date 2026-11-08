@@ -42,7 +42,7 @@
     "@rollup/plugin-commonjs": "29.0.3",
     "@rollup/plugin-json": "6.1.0",
     "@rollup/plugin-node-resolve": "16.0.3",
-    "@types/node": "20.19.43",
+    "@types/node": "26.6.6",
     "@types/ws": "8.18.2",
     "dependency-cruiser": "18.7.2",
     "rollup": "4.68.0",
