@@ -160,6 +160,12 @@ It launches/connects to nothing and sends no socket bytes. It is packaged at
 the fixed plugin-owned `bin/herdr-app-peer` path, with both architectures checked
 for universal packages. Preferences cannot select a different helper. Contract tests may compile/sign a temporary
 fixture that inspects only itself; this grants no live App/core authorization.
+The test-only App calibration harness is under `tests/live/app-calibration/`.
+It additionally requires `ASW_LIVE_HERDR_APP=1` and separately authorized source
+artifacts; invoke only `tests/live/herdr-app.test.js` for that calibration.
+It never approves production records. Its fixture tests inject process/peer
+effects and use private in-process sockets; they never launch an App/core.
+See `tests/live/APP-CALIBRATION.md` for artifact attestations and remaining gates.
 With the experimental flag on, v3 has an independent App home/core socket,
 read-back consent, separate focus-request consent, input consent and Claude-control
 opt-in. All App consents default off; older v3 stores also gain no request consent.

@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "buildMode": "source-no-updater",
+  "appSource": "2405bf388c568c3ed479f05b8e405ccfa44b3f2c",
+  "coreSource": "3965a46caae095a3ead01de237fa13955e52b8c6",
+  "appTreeSha256": "PENDING",
+  "appRecord": {
+    "key": "calibration-only",
+    "contract": 1,
+    "bundleId": "dev.herdr.app",
+    "executable": "Herdr",
+    "version": "0.1.14",
+    "build": "0.1.14",
+    "executableSha256": "PENDING",
+    "plistSha256": "PENDING",
+    "cdHash": "PENDING"
+  },
+  "core": {
+    "version": "0.1.18",
+    "sha256": "PENDING",
+    "cdHash": "PENDING"
+  },
+  "helperSha256": "PENDING"
+}

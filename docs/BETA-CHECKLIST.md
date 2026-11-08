@@ -18,6 +18,9 @@ is not authorization to reuse a running agent.
 
 ## Remaining physical and independent validation
 
+- [ ] Separately authorize and run the source-only Herdr App calibration harness; review ownership, latency, cleanup and settings fingerprints before considering any build record.
+- [ ] Validate App focus requests across windows/screens, hidden/minimized/full-screen states, dialogs and restart/reconnect; acknowledgements never prove keyboard focus.
+- [ ] Review release-build updater isolation separately; source-build calibration cannot approve the installed release.
 - [ ] Claude physical multi-select Toggle → Review → Submit.
 - [ ] Claude running controls and Zoom in both hosts; Rex Claude questions, approvals and guarded submissions.
 - [ ] Sign off on Claude approval/navigation responsiveness.

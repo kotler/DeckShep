@@ -28,6 +28,13 @@ App-only setup/doctor reporting. See
 [controller validation](../validation/2026-11-08-herdr-app-controller.md).
 Production records/capabilities remain empty, live groups disabled, and default
 builds still use v2 with the existing Rex/Herdr profiles.
+Checkpoint 2d adds a [test-only calibration harness](../../tests/live/APP-CALIBRATION.md)
+for a separately authorized source-build run. Fixture validation exercises its
+launch/ownership/refusal/cleanup lifecycle with synthetic effects; no native
+App/core calibration has run and no production record is approved. This initial
+harness covers two local spaces and request-only semantics. Native window/screen,
+release-build/update and hardware validation remain separate gates.
+See [harness fixture validation](../validation/2026-11-08-herdr-app-calibration-harness.md).
 The exact running core build remains unestablished; the App does not bundle
 core. The ordinary control socket does not expose the full focus/Zoom
 read-back required by the original verified Milestone 1. `terminal.peek` opens an overlay, so it

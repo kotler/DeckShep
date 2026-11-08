@@ -307,7 +307,9 @@ Before application requests, prove both endpoint paths, socket owner/mode and
 peer PID/start identity; repeat endpoint checks for new connections. Peer
 credentials require a connection, so distinguish path/ownership checks
 **before connect** from peer verification **before the first request**. A
-macOS peer-PID adapter and its fake tests remain to be implemented. Abort
+macOS peer-PID adapter now exists, as does the test-only calibration harness in
+`tests/live/app-calibration/`, with synthetic ownership/lifecycle tests. Native
+App/core calibration has not run. Abort
 before a request on ambiguous or non-owned peers; no production fallback.
 Observe and retain start identities for owned descendants before cleanup,
 and check settings hashes in a failure-safe finally path. No live recipe was
