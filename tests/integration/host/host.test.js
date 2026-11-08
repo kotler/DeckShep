@@ -147,6 +147,17 @@ test(
       ).size,
       15,
     );
+    send('propertyInspectorDidAppear', 0);
+    send('sendToPlugin', 0, { kind: 'status' });
+    await until(() =>
+      frames.some((frame) => frame.event === 'sendToPropertyInspector'),
+    );
+    const status = frames.find(
+      (frame) => frame.event === 'sendToPropertyInspector',
+    ).payload;
+    assert.equal(status.profileScope, 'rex');
+    assert.equal(status.preferences.allowClipboardFocus, false);
+    assert.equal(status.preferences.claudeEnabled, false);
     await new Promise((resolve) => setTimeout(resolve, 400));
     send('keyDown', 0);
     send('keyUp', 0);
@@ -171,6 +182,13 @@ test(
     assert(
       !fs.existsSync(path.join(plugin, 'logs')),
       'Host settings never reach SDK log files',
+    );
+    socket.close();
+    await until(() => child.exitCode !== null);
+    assert.equal(
+      child.exitCode,
+      0,
+      'SDK disconnect must invalidate keys and exit like the baseline',
     );
     const production = path.join(plugin, 'bin/production.js');
     await bundle(path.resolve('src/plugin/entry.mts'), production);

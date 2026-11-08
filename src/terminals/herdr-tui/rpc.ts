@@ -130,6 +130,7 @@ class HerdrRpc {
   declare closed: boolean;
   declare timeout: any;
   declare endpoint: any;
+  info: { protocol: number; version: string } | null = null;
   constructor(socketPath: any, deps: Record<string, any> | undefined = {}) {
     this.socketPath = socketPath;
     this.resolve = deps.endpoint || endpoint;
@@ -154,6 +155,7 @@ class HerdrRpc {
         !/^0\.9\.5(?:[-+].*)?$/.test(pong.version || '')
       )
         throw Error('Herdr version/protocol not verified');
+      this.info = { protocol: pong.protocol, version: pong.version };
       this.verified = true;
       return this;
     } catch (error: unknown) {

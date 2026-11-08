@@ -4,6 +4,7 @@ type Config = import('../domain/types').Config;
 type PressContext = import('../domain/types').PressContext;
 ('use strict');
 const { state, token } = require('../domain/identity');
+const { isRexRead } = require('../domain/transport');
 const { pluginDirectory } = require('../platform/paths.ts');
 const path = require('node:path');
 const P = require('../agents/codex/presets');
@@ -101,11 +102,7 @@ class Bridge {
         (beforeIO: () => void) => this.#transport(args, input, beforeIO),
         target,
       );
-    if (
-      !this.#fixture &&
-      !['client', 'ls', 'session', 'block'].includes(args[0])
-    )
-      this.requireGuardedMutation();
+    if (!this.#fixture && !isRexRead(args)) this.requireGuardedMutation();
     return this.#transport(args, input);
   }
   deliverMutation(

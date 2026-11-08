@@ -29,7 +29,12 @@ const {
   preferenceCodec,
   experimentalScope,
 } = require('./experimental-preferences');
-const { IntegrationSetup, diagnostics, herdrSessions } = require('./setup');
+const {
+  IntegrationSetup,
+  diagnostics,
+  sessionChoices,
+  sessionChecks,
+} = require('./setup');
 const { Controller } = require('./profile-controller');
 const { CodexProvider } = require('../agents/codex/provider.ts');
 const { ClaudeProvider } = require('../agents/claude/provider.ts');
@@ -954,14 +959,16 @@ function createApplication(dependencies: Record<string, any>) {
     async function inspectorRequest(e: any) {
       if (!keys.has(e.context)) return;
       if (e.payload?.kind === 'doctor') {
+        const checks = await (dependencies.diagnostics || diagnostics)({
+          selected: selected(),
+          online: !offline,
+          model: e.payload.model,
+        });
+        const sessions = await (dependencies.herdrSessions || sessionChoices)();
         emit('sendToPropertyInspector', e.context, {
           kind: 'doctor',
-          checks: await (dependencies.diagnostics || diagnostics)({
-            selected: selected(),
-            online: !offline,
-            model: e.payload.model,
-          }),
-          sessions: (dependencies.herdrSessions || herdrSessions)(),
+          checks: [...checks, ...sessionChecks(sessions)],
+          sessions,
         });
         return;
       }
@@ -1219,8 +1226,25 @@ function createApplication(dependencies: Record<string, any>) {
             dependencies.experimentalHerdrApp === true,
           )
         ) {
+          // A reused key context must lose its old controller before rendering
+          // a preview. Otherwise a preview press could reach the old backend.
+          const prior = owners.get(e.context);
+          if (prior) getController(prior).detach(e.context);
+          owners.delete(e.context);
+          emit('setImage', e.context, {
+            image:
+              'data:image/svg+xml;base64,' +
+              Buffer.from(
+                svg({
+                  icon: 'blank',
+                  lines: ['Herdr App', 'Preview only'],
+                  color: '#38414b',
+                }),
+              ).toString('base64'),
+            target: 0,
+          });
           emit('setTitle', e.context, {
-            title: 'Herdr App\nPreview only',
+            title: '',
             target: 0,
           });
           return;

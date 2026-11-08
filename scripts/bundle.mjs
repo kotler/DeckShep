@@ -19,6 +19,11 @@ export async function bundle(input, file, options = {}) {
         name: 'composition-and-privacy',
         resolveId(source, importer) {
           if (
+            source === 'ws' &&
+            importer?.endsWith('/@elgato/streamdeck/dist/plugin/connection.js')
+          )
+            return path.resolve('src/plugin/host-socket.mts');
+          if (
             options.fixture &&
             /(?:^|\/)dependencies(?:\.ts)?$/.test(source) &&
             importer?.endsWith('/src/plugin/entry.mts')
@@ -76,7 +81,7 @@ export async function bundle(input, file, options = {}) {
     await build.write({
       file,
       format: options.browser ? 'iife' : 'cjs',
-      name: options.name,
+      name: options.name ?? (options.browser ? 'AgentInspector' : undefined),
       sourcemap: false,
       exports: 'auto',
       inlineDynamicImports: true,

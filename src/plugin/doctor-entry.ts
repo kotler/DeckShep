@@ -1,6 +1,10 @@
-const { diagnostics } = require('../app/setup');
-void diagnostics()
-  .then((checks: { id: string; ok: boolean; reason: string }[]) => {
+const { diagnostics, sessionChoices, sessionChecks } = require('../app/setup');
+void Promise.all([diagnostics(), sessionChoices()])
+  .then(([base, sessions]) => {
+    const checks: { id: string; ok: boolean; reason: string }[] = [
+      ...base,
+      ...sessionChecks(sessions),
+    ];
     console.log(
       process.argv.includes('--json')
         ? JSON.stringify(checks, null, 2)

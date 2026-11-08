@@ -81,6 +81,16 @@ class AgentKey extends SingletonAction {
     });
   }
 }
+function disconnected(code: number): void {
+  host.readyState = 0;
+  for (const context of host.keys.keys())
+    app.receive({ event: 'willDisappear', context });
+  host.keys.clear();
+  if (code) process.stderr.write('Stream Deck connection unavailable\n');
+  process.exit(code);
+}
+process.once('asw:host:close', () => disconnected(0));
+process.once('asw:host:error', () => disconnected(1));
 streamDeck.actions.registerAction(new AgentKey());
 streamDeck.settings.onDidReceiveGlobalSettings((event) => {
   try {

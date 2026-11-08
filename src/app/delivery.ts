@@ -1,3 +1,4 @@
+import { isRexRead } from '../domain/transport';
 import { GuardPipeline } from '../guards/pipeline';
 import { GuardedBackend } from '../terminals/contract/backend';
 import { RexBackend } from '../terminals/rex/backend';
@@ -27,13 +28,6 @@ interface SessionPort {
   zoom(): Promise<void>;
   readPane(target: TargetRef): Promise<import('../domain/backend').PaneView>;
 }
-const rexReads = new Set([
-  'process',
-  'program_status',
-  'modes',
-  'size',
-  'format',
-]);
 const herdrReads = new Set([
   'session.snapshot',
   'agent.get',
@@ -159,19 +153,7 @@ export class DeliveryKernel {
     operation: (beforeIO: () => void) => Promise<unknown>,
     explicit?: TargetRef,
   ): Promise<unknown> {
-    if (
-      (args[0] === 'client' &&
-        args[1] === 'ls' &&
-        args[2] === '--json' &&
-        args.length === 3) ||
-      (args[0] === 'ls' && args[1] === '--json' && args.length === 2) ||
-      (args[0] === 'session' &&
-        args[1] === 'inspect' &&
-        args[3] === '--json' &&
-        args.length === 4) ||
-      (args[0] === 'block' && args[1] === 'call' && rexReads.has(args[6] ?? ''))
-    )
-      return operation(() => {});
+    if (isRexRead(args)) return operation(() => {});
     if (args[0] === '-C' && args[2] === 'do' && args[3] === 'session.select')
       return this.deliver(
         this.target(undefined, undefined, explicit),

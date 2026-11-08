@@ -128,3 +128,39 @@ test('experimental codec keeps shared edits and opt-ins independent across expli
   assert.equal(experimentalScope(undefined, true), null);
   assert.equal(experimentalScope({}, false), null);
 });
+test('experimental preview detaches a reused Rex context and grants no input authority', async () => {
+  const { harness } = require('../helpers/plugin-harness');
+  const h = harness({ experimentalHerdrApp: true });
+  await h.appear('rex');
+  await h.ready();
+  assert(h.api.keys.has('rex:0,0'));
+  const count = h.calls.length;
+  h.socket.emit(
+    'message',
+    JSON.stringify({
+      event: 'willAppear',
+      context: 'rex:0,0',
+      payload: {
+        settings: { profileScope: 'herdr-app' },
+        coordinates: { row: 0, column: 0 },
+      },
+    }),
+  );
+  assert(!h.api.keys.has('rex:0,0'));
+  h.socket.emit(
+    'message',
+    JSON.stringify({ event: 'keyDown', context: 'rex:0,0' }),
+  );
+  await h.api.settled();
+  assert.equal(h.calls.length, count);
+  const image = h.socket.frames
+    .filter(
+      (frame) => frame.event === 'setImage' && frame.context === 'rex:0,0',
+    )
+    .at(-1).payload.image;
+  assert(
+    Buffer.from(image.split(',')[1], 'base64')
+      .toString()
+      .includes('Preview only'),
+  );
+});

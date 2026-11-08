@@ -261,8 +261,11 @@ byId('action').addEventListener('change', () =>
             .join('\n');
           const list = byId('sessions') as any;
           list.textContent = '';
-          for (const session of payload.sessions)
-            list.add(new Option(session.label, session.path));
+          for (const session of payload.sessions) {
+            const option = new Option(session.label, session.path);
+            option.disabled = session.verified === false;
+            list.add(option);
+          }
         }
         if (payload?.kind === 'claudePreview') {
           byId('claudeDiff').textContent =

@@ -3,6 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import crypto from 'node:crypto';
 import { parse } from '../schemas';
+import { exec } from '../platform/exec';
 import { discoverRex, pluginDirectory } from '../platform/paths';
 const configure = require('../agents/claude/configure');
 export interface Check {
@@ -286,17 +287,90 @@ export function herdrSessions(
   } catch {}
   return sessions;
 }
+export async function sessionChoices(
+  home = os.homedir(),
+  ports: {
+    list?: typeof herdrSessions;
+    open?: (socket: string) => Promise<any>;
+  } = {},
+) {
+  const open =
+    ports.open ||
+    (async (socket: string) =>
+      new (require('../terminals/herdr-tui/rpc').HerdrRpc)(socket, {
+        timeout: 700,
+      }).connect());
+  return Promise.all(
+    (ports.list || herdrSessions)(home)
+      .slice(0, 32)
+      .map(async (session) => {
+        let rpc: any;
+        try {
+          rpc = await open(session.path);
+          return {
+            ...session,
+            label:
+              session.label +
+              ' · ' +
+              rpc.info.version +
+              ' / protocol ' +
+              rpc.info.protocol,
+            verified:
+              rpc.info.protocol === 22 &&
+              /^0\.9\.5(?:[-+].*)?$/.test(rpc.info.version),
+          };
+        } catch {
+          return {
+            ...session,
+            label: session.label + ' · unverified (0.9.5 / 22 required)',
+            verified: false,
+          };
+        } finally {
+          rpc?.close();
+        }
+      }),
+  );
+}
+export function sessionChecks(
+  sessions: { label: string; verified?: boolean }[],
+): Check[] {
+  return sessions.map((session, index) => ({
+    id: 'herdr-session-' + (index + 1),
+    ok: session.verified === true,
+    reason: session.label,
+  }));
+}
+async function rexVersion(application: string): Promise<string> {
+  const version = (
+    await exec(
+      '/usr/libexec/PlistBuddy',
+      [
+        '-c',
+        'Print :CFBundleShortVersionString',
+        path.join(application, 'Contents/Info.plist'),
+      ],
+      { timeout: 1500, maxBuffer: 256 },
+    )
+  ).trim();
+  return /^\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9.-]+)?$/.test(version)
+    ? version
+    : 'unknown version';
+}
 export async function diagnostics({
   home = os.homedir(),
   selected,
   model,
   rex = discoverRex,
+  version = rexVersion,
+  paths = setupPaths(),
   online = false,
 }: {
   home?: string;
   selected?: Record<string, unknown> | null;
   model?: number;
   rex?: typeof discoverRex;
+  version?: (application: string) => Promise<string>;
+  paths?: SetupPaths;
   online?: boolean;
 } = {}): Promise<Check[]> {
   const checks: Check[] = [
@@ -308,8 +382,16 @@ export async function diagnostics({
     },
   ];
   try {
-    await rex();
-    checks.push({ id: 'rex', ok: true, reason: 'Rex installation found' });
+    const installation = await rex();
+    let foundVersion = 'version unavailable';
+    try {
+      foundVersion = await version(installation.application);
+    } catch {}
+    checks.push({
+      id: 'rex',
+      ok: true,
+      reason: 'Rex installation found · ' + foundVersion,
+    });
   } catch {
     checks.push({
       id: 'rex',
@@ -329,15 +411,16 @@ export async function diagnostics({
     id: 'herdr',
     ok: !!sessions.length,
     reason: sessions.length
-      ? `${sessions.length} private session socket(s); protocol checked on selection (22 required)`
+      ? `${sessions.length} private session socket(s); versions listed below (22 required)`
       : 'Start Herdr TUI and choose its private session socket',
   });
   checks.push({
     id: 'codex',
-    ok: !!selected?.chatId,
-    reason: selected?.chatId
-      ? 'Selected Codex metadata available'
-      : 'Select a ready Codex agent, then set up its status line',
+    ok: selected?.app === 'codex' && !!selected.chatId,
+    reason:
+      selected?.app === 'codex' && selected.chatId
+        ? 'Selected Codex metadata available'
+        : 'Select a ready Codex agent, then set up its status line',
   });
   checks.push({
     id: 'claude',
@@ -346,6 +429,33 @@ export async function diagnostics({
       selected?.app === 'claude-code' && selected.nativeVerified === true
         ? 'Claude identity and native version verified'
         : 'Claude 2.1.319 required; preview the optional hooks below',
+  });
+  let hooks = false;
+  try {
+    const source = readSetup(paths),
+      saved = source.saved;
+    hooks =
+      saved?.active === true &&
+      configure.EVENTS.every(
+        (event: string) =>
+          Array.isArray(source.settings.hooks?.[event]) &&
+          (source.settings.hooks![event] as any[]).some(
+            (entry) =>
+              Array.isArray(entry?.hooks) &&
+              entry.hooks.some(
+                (hook: any) =>
+                  hook?.type === 'command' &&
+                  hook.command === saved.commands.hook,
+              ),
+          ),
+      );
+  } catch {}
+  checks.push({
+    id: 'hooks',
+    ok: hooks,
+    reason: hooks
+      ? 'Owned Claude hooks installed'
+      : 'Preview and apply optional Claude hooks',
   });
   return checks;
 }
