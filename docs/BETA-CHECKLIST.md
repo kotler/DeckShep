@@ -36,6 +36,4 @@ only test-owned PIDs. Do not operate existing agents or the user's shared daemon
 
 ## Owner release decisions
 
-Product/display name, license, artwork redistribution, signing/notarization,
-release visibility and merge timing remain owner decisions. Keep existing names,
-UUIDs, profile IDs, consent defaults and settings compatibility while refactoring.
+The owner selected DeckShep, profiles Rex / Herdr, proprietary licensing and Everett Kotler as seller. Artwork permission, name clearance, finalized customer terms, support contact, signing/notarization, release visibility and merge timing remain pending. See [commercial preparation](COMMERCIAL-READINESS.md). Preserve UUIDs, profile IDs, consent defaults and settings compatibility.

@@ -1,4 +1,4 @@
-# Agent Switchboard standing instructions
+# DeckShep standing instructions
 
 Read [the refactor plan](docs/plans/REFACTOR-PLAN.md) before each refactor phase.
 The baseline is plugin 1.3.4 at `0262267`, tagged `v1.3.4-pre-refactor`.
@@ -35,7 +35,10 @@ Never change plugin UUID `com.local.rexagents`, action UUID
 `com.local.rexagents.key`, `PROFILE_IDS`/`PAGE_IDS`, per-key UUID5 ActionIDs,
 `profileScope`, global-settings v2/v1 migration, or config-key semantics as a
 routine refactor. Existing keys, profiles and settings must upgrade in place.
-Names remain Rex Agents / Herdr Agents until the owner explicitly decides.
+The owner approved profile labels Rex / Herdr for commercial preparation. Keep
+their existing UUIDs and key identities; product branding is DeckShep. The owner selected a proprietary commercial license
+and Everett Kotler as seller. Official provider artwork stays pending permission;
+never treat these decisions as trademark clearance or permission to publish.
 
 Fresh clipboard/visible-pane consent, Herdr title identity, Claude native controls
 and Claude hooks stay off. Fewer setup steps never imply consent. Hook paths

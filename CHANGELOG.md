@@ -1,3 +1,9 @@
+## 1.4.0 DeckShep private review — not released
+
+- Renames the product to DeckShep and profiles to Rex / Herdr, with original key-and-crook branding and seller Everett Kotler. Existing plugin, action, profile and per-key UUIDs, hook paths, consent and settings remain compatible.
+- Selects proprietary licensing and adds customer-license and provider-permission drafts, a preliminary name screen, privacy explanation and a commercial-release evidence check. Official provider art remains pending approval. No sale or public release is authorized by this checkpoint.
+- Isolated native validation from the refactor remains applicable; physical, clean-Mac, Intel execution and launch checks remain open.
+
 # Changelog
 
 All notable changes are documented here. Versions follow Semantic Versioning;

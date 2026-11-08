@@ -1,0 +1,67 @@
+{
+  "product": "DeckShep",
+  "version": "1.4.0",
+  "seller": "Everett Kotler",
+  "reviews": {
+    "nameAndLogo": {
+      "approved": false,
+      "reviewedAt": null,
+      "evidence": null
+    },
+    "openaiMarks": {
+      "approved": false,
+      "reviewedAt": null,
+      "evidence": null
+    },
+    "anthropicMarks": {
+      "approved": false,
+      "reviewedAt": null,
+      "evidence": null
+    },
+    "customerTerms": {
+      "approved": false,
+      "reviewedAt": null,
+      "evidence": null
+    },
+    "launchValidation": {
+      "approved": false,
+      "reviewedAt": null,
+      "evidence": null
+    }
+  },
+  "assets": [
+    {
+      "path": "assets/plugin-icon-source.svg",
+      "sha256": "a63be03a72d23ae82185f8e7a34b25bafe4cbefe2c62d2baefc8fd27411a998b"
+    },
+    {
+      "path": "action-icon.svg",
+      "sha256": "e683c1cbc6d9b6077d95e410fa09453a045cf6e3d8ec12ff830fbc16ed862b42"
+    },
+    {
+      "path": "icon.png",
+      "sha256": "5de5e112e927b52cc72864a64b151f9ef69eeee5b5ee18215fa9764d5910ea80"
+    },
+    {
+      "path": "icon@2x.png",
+      "sha256": "8b27a8945f767abf211d1a963e746acc92c72f4cc949758a563f283043a98215"
+    },
+    {
+      "path": "assets/codex-app.png",
+      "sha256": "1ecca96720bcb54a6ddb2d4f0604731f9e1633ef9da4d0f8c535d508b207a34a"
+    },
+    {
+      "path": "assets/codex-mark.png",
+      "sha256": "fe9ee0abd9a67f9c6584dae670ce32b1701e5618cf86c3d85e9e3585ba09aca0"
+    },
+    {
+      "path": "assets/claude-mark.svg",
+      "sha256": "c1115985b21a574caf97f445399b9424a4cf1fc2662df9b5b48334f01f9715b9"
+    }
+  ],
+  "support": {
+    "contact": null,
+    "verified": false,
+    "evidence": null
+  }
+}

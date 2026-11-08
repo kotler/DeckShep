@@ -5,8 +5,8 @@ Stream Deck MK.2. Independent fresh-account installation and Intel execution
 still need release validation.
 
 1. Extract the ZIP and open `com.local.rexagents.streamDeckPlugin`.
-2. Accept the bundled **Rex Agents** and **Herdr Agents** profiles. Existing fixed
-   profile IDs and key ActionIDs are reused. Choose Rex Agents on the deck.
+2. Accept the bundled **Rex** and **Herdr** profiles. Existing fixed
+   profile IDs and key ActionIDs are reused. Choose Rex on the deck.
 3. Select a key in Stream Deck to open its setup panel. Open Rex and enable
    Remote Control there if it is not already enabled.
 4. Click **Enable visible-pane checks** explicitly. The helper temporarily copies
@@ -19,7 +19,7 @@ Initial terminal installation, Remote Control, macOS permissions and selecting a
 ready agent are prerequisites; the five-action target still needs an independent
 fresh-account walkthrough.
 
-For Herdr, choose **Herdr Agents**, select a private session socket in the panel,
+For Herdr, choose **Herdr**, select a private session socket in the panel,
 and explicitly enable thread-ID title matching after `/title thread-id` in each
 Codex pane. See [Herdr](HERDR.md). Herdr submissions require the keyboard.
 

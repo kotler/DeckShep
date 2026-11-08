@@ -1,6 +1,6 @@
 {
-  "name": "agent-switchboard",
-  "version": "1.3.4",
+  "name": "deckshep",
+  "version": "1.4.0",
   "private": true,
   "workspaces": [
     "com.local.rexagents.sdPlugin",
@@ -31,7 +31,8 @@
     "version:sync": "node scripts/version.mjs",
     "compatibility": "node --import tsx scripts/compatibility.mjs",
     "compatibility:check": "node --import tsx scripts/compatibility.mjs --check",
-    "commitlint": "node scripts/tool.mjs @commitlint/cli"
+    "commitlint": "node scripts/tool.mjs @commitlint/cli",
+    "commercial:check": "node scripts/commercial.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.4",
@@ -57,5 +58,7 @@
         "zod": "4.6.7"
       }
     }
-  }
+  },
+  "license": "UNLICENSED",
+  "author": "Everett Kotler"
 }

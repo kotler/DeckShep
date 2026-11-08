@@ -2,7 +2,7 @@
 
 Root `package.json` is the version authority. `npm run version:sync -- X.Y.Z`
 updates manifest/plugin/lockfile versions; `npm run version:check` checks identity.
-Use SemVer `vX.Y.Z-beta.N` tags. Existing display names and UUIDs remain unchanged.
+Use SemVer `vX.Y.Z-beta.N` tags. DeckShep display names are owner-approved; existing UUIDs and stable integration paths remain unchanged.
 
 From a clean source commit:
 
@@ -14,8 +14,8 @@ npm run typecheck
 npm run deps
 npm run test:coverage
 npm run test:bundled
-npm run package -- --tag v1.3.4-beta.1 --require-clean
-node scripts/package.mjs --verify dist/agent-switchboard-1.3.4-beta.1-macos.zip
+npm run package -- --tag v1.4.0-beta.1 --require-clean
+node scripts/package.mjs --verify dist/deckshep-1.4.0-beta.1-macos.zip
 ```
 
 Packaging builds/signs a universal helper, validates through Elgato, packs the
@@ -39,7 +39,7 @@ not receive a stapled app ticket; verify the downloaded artifact on a clean Mac.
 The owner must configure main to require the CI check and one review, with squash
 or rebase merges. A successful remote workflow and draft-release dry run cannot
 be asserted until these workflows are pushed and run. Keep the current repository
-visibility and resolve the project license/OpenAI artwork before public release.
+visibility. The proprietary license policy is selected; provider artwork permission, name clearance, support and final customer terms remain pending. `npm run commercial:check` must pass before remote release creation. See [commercial preparation](COMMERCIAL-READINESS.md).
 
 `npm run dev` is an explicit developer command: it watches source, builds, links
 the built plugin and restarts only `com.local.rexagents`. Never use it as a test

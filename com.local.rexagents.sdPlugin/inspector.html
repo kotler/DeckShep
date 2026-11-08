@@ -13,6 +13,14 @@
     margin: 0;
     padding: 14px;
   }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    color: #86e1b6;
+    font-size: 18px;
+  }
   h2 {
     font-size: 14px;
     margin: 18px 0 8px;
@@ -83,7 +91,10 @@
     color: #b7bbc5;
   }
 </style>
-<h2 id="profileName">Agent Switchboard</h2>
+<div class="brand">
+  <img src="icon.png" alt="" width="32" height="32" /><strong>DeckShep</strong>
+</div>
+<h2 id="profileName">Rex</h2>
 <p id="connection" role="status" aria-live="polite">Connecting to plugin…</p>
 <p id="selection"></p>
 <p id="message" role="status" aria-live="polite"></p>
@@ -126,9 +137,9 @@
   </p>
 </div>
 <p class="note">
-  Switch between Rex Agents and Herdr Agents using Stream Deck’s profile
-  selector. Connection and consent settings stay with this controller; animation
-  and prompt text are shared. Changes save automatically.
+  Switch between Rex and Herdr using Stream Deck’s profile selector. Connection
+  and consent settings stay with this controller; animation and prompt text are
+  shared. Changes save automatically.
 </p>
 <div id="rexSetup">
   <sdpi-checkbox
@@ -164,8 +175,8 @@
   label="Enable Claude native controls after hook setup"
 ></sdpi-checkbox>
 <p class="note">
-  Native Claude 2.1.319 only; live validation is pending. Install the optional
-  metadata hooks with <code>configure-claude.js</code> as described in
+  Native Claude 2.1.319 only; physical validation is pending. Install the
+  optional metadata hooks with <code>configure-claude.js</code> as described in
   docs/CLAUDE.md. Existing hooks and status lines are preserved. Enabling this
   checkbox does not install hooks or change permissions. Model and Effort cycle
   settings for this session; Mode uses the Claude keyboard. Herdr submissions

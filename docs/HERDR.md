@@ -9,7 +9,7 @@ The 1.3.1 development preview also adds [Claude and mixed-agent routing](CLAUDE.
 ## Setup
 
 1. Run a local Herdr session with Codex connected to its existing local daemon. Codex command-line configuration overrides can force embedded mode, which has no accessible daemon for these controls.
-2. Select **Herdr Agents** in Stream Deck’s profile selector. In a key’s settings, enter the session socket, for example `~/.config/herdr/sessions/NAME/herdr.sock`.
+2. Select **Herdr** in Stream Deck’s profile selector. In a key’s settings, enter the session socket, for example `~/.config/herdr/sessions/NAME/herdr.sock`.
 3. Enable **Match Codex thread-ID titles (experimental)**. It is off by default.
 4. In each intended Codex pane, with an empty composer, run `/title thread-id`. Use this title item alone. Select the agent on the deck.
 
@@ -17,7 +17,7 @@ This native slash command changes the current chat's title display without persi
 
 The adapter does not use hook-reported session claims as authority for native controls. The upstream shared-daemon issue can leave those claims missing or misattributed. Title matching does not repair Herdr's own saved session references or restore behavior.
 
-Herdr focus checks use its API; they do not use the clipboard. Switch back using Stream Deck’s **Rex Agents** profile. Navigation and connection settings are independent; switching clears tracked pending submissions. See [profile behavior](PROFILES.md).
+Herdr focus checks use its API; they do not use the clipboard. Switch back using Stream Deck’s **Rex** profile. Navigation and connection settings are independent; switching clears tracked pending submissions. See [profile behavior](PROFILES.md).
 
 ## Controls
 

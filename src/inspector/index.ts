@@ -109,7 +109,7 @@ function fill(status: any) {
   byId('backend').value = status.backend || 'rex';
   byId('backend').disabled = true;
   byId('profileName').textContent =
-    status.profileName || (herdr ? 'Herdr Agents' : 'Rex Agents');
+    status.profileName || (herdr ? 'Herdr' : 'Rex');
   byId('herdrConnection').hidden = !herdr;
   byId('herdrHelp').hidden = !herdr;
   byId('rexSetup').hidden = herdr;

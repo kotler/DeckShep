@@ -1,18 +1,18 @@
-# Agent Switchboard
+# DeckShep
 
-**One deck. Many agents.** A local Stream Deck controller for existing coding agents in **Rex** and **Herdr** on macOS. Select a chat, see its project and status, and use a third row of controls that follows what the agent is doing.
+**Your agents. At your fingertips.** A local Stream Deck controller for existing coding agents in **Rex** and **Herdr** on macOS. Select a chat, see its project and status, and use a third row of controls that follows what the agent is doing.
 
 This beta targets **Codex CLI on a 15-key Stream Deck MK.2**. Rex is the default controller; Herdr is experimental and requires explicit setup. Your agents and their existing daemon stay running.
 
 ## Claude and mixed-agent development preview
 
-The 1.3.4 development preview adds experimental Claude Code support and mixed Claude/Codex banks. Claude controls are off by default; local physical validation is in progress. Model and Effort now cycle directly from Home in both profiles, with session-only changes. See [Claude setup, capabilities and limits](docs/CLAUDE.md). The published 1.2.1 beta and its existing hardware results remain the release baseline.
+The 1.4.0 private review build includes experimental Claude Code support and mixed Claude/Codex banks. Claude controls are off by default; isolated native validation passed, with physical validation still in progress. Model and Effort now cycle directly from Home in both profiles, with session-only changes. See [Claude setup, capabilities and limits](docs/CLAUDE.md). The published 1.2.1 beta and its existing hardware results remain the release baseline.
 
 ## Get started
 
-Download the versioned macOS ZIP from [GitHub Releases](https://github.com/kotler/agent-switchboard/releases), extract it, and follow [Installation and upgrades](docs/INSTALL.md). Use the ZIP attached to the release, rather than GitHub's automatically generated source archive.
+This repository is a private commercial-preparation checkpoint. No DeckShep public release or sale is available yet. When an approved build is supplied, download the versioned macOS ZIP from [GitHub Releases](https://github.com/kotler/DeckShep/releases), extract it, and follow [Installation and upgrades](docs/INSTALL.md). Use the ZIP attached to the release, rather than GitHub's automatically generated source archive.
 
-The single plugin installer includes the **Rex Agents** and **Herdr Agents** profiles; the ZIP also includes setup guides, build information and checksums. The existing Rex profile identity and `com.local.rexagents` identifier are retained so upgrades keep working with your keys.
+The single plugin installer includes the **Rex** and **Herdr** profiles; the ZIP also includes setup guides, build information and checksums. The existing Rex profile identity and `com.local.rexagents` identifier are retained so upgrades keep working with your keys.
 
 - [Switching profiles](docs/PROFILES.md)
 - [Rex setup](docs/INSTALL.md#rex-setup)
@@ -69,20 +69,20 @@ Agent keys use full status-color backgrounds, a Codex watermark and larger chat/
 
 ## Preferences
 
-Select any **Rex Agent Key** in Stream Deck's editor. Choose **Rex Agents** or **Herdr Agents** using Stream Deck’s profile selector. Each profile pins its controller and keeps its own connection, consent, selected agent, bank and page. Animation and prompt text are shared. See [profiles and migration](docs/PROFILES.md). New installations keep clipboard checks and Herdr title matching off until explicitly enabled.
+Select any **DeckShep Key** in Stream Deck's editor. Choose **Rex** or **Herdr** using Stream Deck’s profile selector. Each profile pins its controller and keeps its own connection, consent, selected agent, bank and page. Animation and prompt text are shared. See [profiles and migration](docs/PROFILES.md). New installations keep clipboard checks and Herdr title matching off until explicitly enabled.
 
 Advanced aliases, palette, bindings and model filters live in `config.json`. Legacy upgrades use the ZIP’s one-time backup/migration helper to preserve disk customizations; shared UI preferences override their corresponding defaults. The settings panel accepts no sandbox or approval-policy fields. Unknown metadata or unsupported native versions disable the affected action.
 
 ## Build from source
 
-Requires macOS, Node 22.13+ (see `.nvmrc`), Python 3 and Xcode Command Line Tools. Stream Deck supplies the installed plugin's Node runtime.
+Requires macOS, Node 22.13+ (see `.nvmrc`) and Xcode Command Line Tools. Stream Deck supplies the installed plugin's Node runtime.
 
 ```sh
 npm ci
 npm run lint
 npm test
 npm run test:coverage
-npm run package -- --tag v1.3.4-beta.1
+npm run package -- --tag v1.4.0-beta.1
 ```
 
 This builds a universal helper, validates and packs with the pinned official Elgato CLI, audits the actual archives and writes a versioned ZIP under `dist/`. It never uploads. See [source installation](docs/INSTALL.md#install-from-source) and [release procedure](docs/RELEASING.md).
@@ -95,8 +95,8 @@ checkout-local backups remain yours to retain or remove.
 
 ## Project status and attribution
 
-No account, hosted status service or separate OpenAI API key is required by this plugin. It uses the existing local terminal APIs and Codex daemon. Claude controls are an opt-in development preview pending live validation; other terminals, Windows and alternative deck layouts remain outside the supported beta scope.
+No account, hosted status service or separate OpenAI API key is required by this plugin. It uses the existing local terminal APIs and Codex daemon. Claude controls are an opt-in preview with isolated native validation and remaining physical validation; other terminals, Windows and alternative deck layouts remain outside the supported beta scope.
 
-No project license has been chosen. OpenAI artwork is retained for local/private beta use; redistribution must be resolved before a public release. See [third-party notices](THIRD-PARTY-NOTICES.md). This project is independent of OpenAI, Elgato, Rex and Herdr.
+Copyright © 2026 Everett Kotler. DeckShep is proprietary software; see [LICENSE](LICENSE). Official Codex and Claude artwork remains pending permission and is retained for private review only. Sale and public distribution are blocked pending the [commercial prerequisites](docs/COMMERCIAL-READINESS.md), including name clearance and a working support contact. See [third-party notices](THIRD-PARTY-NOTICES.md) and [local data processing](docs/PRIVACY.md). DeckShep is independent of OpenAI, Anthropic, Elgato, Rex, Herdr and products named Shepherd.
 
 References: [Rex CLI](https://www.superlogical.com/rex/docs/reference/cli), [program status](https://www.superlogical.com/rex/docs/build/program-status), [Stream Deck SDK](https://docs.elgato.com/streamdeck/sdk/).

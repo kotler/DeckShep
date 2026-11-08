@@ -3,6 +3,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { build, root, run } from './build.mjs';
 import { zip, tree, readRegular } from './archive.mjs';
+import { commercialFailures } from './commercial.mjs';
 import {
   PAYLOAD,
   PROFILES,
@@ -17,6 +18,11 @@ if (option('--verify')) {
   verifyBundle(fs.readFileSync(option('--verify')));
   console.log('Bundle verified');
 } else {
+  if (args.includes('--commercial')) {
+    const failures = commercialFailures();
+    if (failures.length)
+      throw Error('Commercial distribution blocked: ' + failures.join('; '));
+  }
   const version = JSON.parse(
       fs.readFileSync(path.join(root, 'package.json')),
     ).version,
@@ -98,7 +104,7 @@ if (option('--verify')) {
   files.set('SHA256SUMS', Buffer.from(checksums));
   const archive = zip(files);
   verifyBundle(archive);
-  const name = `agent-switchboard-${tag.slice(1)}-macos.zip`;
+  const name = `deckshep-${tag.slice(1)}-macos.zip`;
   fs.writeFileSync(path.join(out, name), archive);
   fs.writeFileSync(
     path.join(out, name + '.sha256'),

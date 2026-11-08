@@ -12,11 +12,13 @@ import {
 export const root = fileURLToPath(new URL('..', import.meta.url));
 export const PLUGIN = 'com.local.rexagents.sdPlugin',
   INSTALLER = 'com.local.rexagents.streamDeckPlugin';
-export const PROFILES = [
-  'Rex Agents.streamDeckProfile',
-  'Herdr Agents.streamDeckProfile',
-];
+export const PROFILES = ['Rex.streamDeckProfile', 'Herdr.streamDeckProfile'];
 export const DOCS = [
+  'LICENSE',
+  'docs/COMMERCIAL-READINESS.md',
+  'docs/NAME-SCREEN.md',
+  'docs/CUSTOMER-LICENSE-DRAFT.md',
+  'docs/PRIVACY.md',
   'CHANGELOG.md',
   'SECURITY.md',
   'docs/validation/MANUAL-SMOKE.md',
@@ -40,6 +42,7 @@ export const DOCS = [
   'docs/validation/2026-11-07-beta-checkpoint.md',
   'docs/validation/2026-11-06-herdr.md',
   'docs/validation/2026-11-07-claude.md',
+  'docs/validation/2026-11-07-deckshep.md',
 ];
 export const PAYLOAD = [
   INSTALLER,

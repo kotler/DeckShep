@@ -13,9 +13,9 @@ export const PAGE_IDS = {
   'herdr-app': 'E7746240-85AC-5602-A4DC-769EC6F3E868',
 };
 export const PROFILE_NAMES = {
-  rex: 'Rex Agents',
-  herdr: 'Herdr Agents',
-  'herdr-app': 'Herdr App Agents',
+  rex: 'Rex',
+  herdr: 'Herdr',
+  'herdr-app': 'Herdr App',
 };
 export const deviceTemplate = { Model: '20GBL9901', UUID: '@(0)[]' };
 export function actionId(index, backend) {
@@ -58,9 +58,9 @@ export function profile(destination, device, backend, version) {
     actions[`${i % 5},${Math.floor(i / 5)}`] = {
       ActionID: actionId(i, backend),
       LinkedTitle: true,
-      Name: 'Rex Agent Key',
+      Name: 'DeckShep Key',
       Plugin: {
-        Name: 'Rex Agents',
+        Name: 'DeckShep',
         UUID: 'com.local.rexagents',
         Version: version,
       },

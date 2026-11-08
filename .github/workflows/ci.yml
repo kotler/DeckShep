@@ -43,6 +43,6 @@ jobs:
         with:
           name: verified-beta
           path: |
-            dist/agent-switchboard-*-macos.zip
+            dist/deckshep-*-macos.zip
             dist/*.sha256
             dist/SHA256SUMS

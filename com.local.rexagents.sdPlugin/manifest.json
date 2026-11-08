@@ -1,11 +1,11 @@
 {
-  "Name": "Rex Agents",
+  "Name": "DeckShep",
   "UUID": "com.local.rexagents",
-  "Author": "Local integration",
-  "Version": "1.3.4.0",
-  "Description": "Local guarded Rex and experimental Herdr controls for Codex and Claude Code",
+  "Author": "Everett Kotler",
+  "Version": "1.4.0.0",
+  "Description": "Local Stream Deck controls for coding agents in Rex and Herdr",
   "Icon": "icon",
-  "Category": "Rex Agents",
+  "Category": "DeckShep",
   "CategoryIcon": "action-icon",
   "CodePath": "bin/plugin.js",
   "SDKVersion": 2,
@@ -23,7 +23,7 @@
   },
   "Actions": [
     {
-      "Name": "Rex Agent Key",
+      "Name": "DeckShep Key",
       "UUID": "com.local.rexagents.key",
       "Icon": "action-icon",
       "Controllers": ["Keypad"],

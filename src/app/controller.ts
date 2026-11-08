@@ -919,7 +919,7 @@ function createApplication(dependencies: Record<string, any>) {
       emit('sendToPropertyInspector', context, {
         kind: 'status',
         profileScope: scope,
-        profileName: scope === 'herdr' ? 'Herdr Agents' : 'Rex Agents',
+        profileName: scope === 'herdr' ? 'Herdr' : 'Rex',
         backend: config.backend || 'rex',
         preferences: preferences.view(config),
         offline,

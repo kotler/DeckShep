@@ -203,7 +203,7 @@ function main(args: string[] | undefined = process.argv.slice(2)) {
   }
   if (args.includes('--remove') && !saved)
     throw Error(
-      'Setup record unavailable; remove only the exact Agent Switchboard hook commands manually',
+      'Setup record unavailable; remove only the exact DeckShep hook commands manually',
     );
   const result: {
     settings: any;
@@ -215,7 +215,7 @@ function main(args: string[] | undefined = process.argv.slice(2)) {
   });
   console.log(
     (args.includes('--remove') ? 'Remove' : 'Install') +
-      ' Agent Switchboard Claude hooks' +
+      ' DeckShep Claude hooks' +
       (args.includes('--statusline')
         ? ' and chain the existing status line'
         : '') +

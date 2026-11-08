@@ -1,3 +1,9 @@
+## 1.4.0 DeckShep private review — not released
+
+- Renames the product to DeckShep and profiles to Rex / Herdr, with original key-and-crook branding and seller Everett Kotler. Existing plugin, action, profile and per-key UUIDs, hook paths, consent and settings remain compatible.
+- Selects proprietary licensing and adds customer-license and provider-permission drafts, a preliminary name screen, privacy explanation and a commercial-release evidence check. Official provider art remains pending approval. No sale or public release is authorized by this checkpoint.
+- Isolated native validation from the refactor remains applicable; physical, clean-Mac, Intel execution and launch checks remain open.
+
 # 1.3.4 Claude validation preview — not released
 
 - Claude Model and Effort cycle directly from Home in Rex and Herdr, with session-only application and verified readback. Native defaults, permissions and drafts are preserved; unexpected consent or credit prompts require the keyboard.

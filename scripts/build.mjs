@@ -56,9 +56,11 @@ export async function build({ universal = false } = {}) {
     fs.readFileSync(path.join(root, 'package.json')),
   ).version;
   const metadata = {
-    name: 'rex-agent-switchboard',
+    name: 'deckshep-streamdeck',
     version,
     private: true,
+    license: 'UNLICENSED',
+    author: 'Everett Kotler',
     description: 'Local Stream Deck agent controller',
   };
   fs.writeFileSync(
@@ -151,6 +153,10 @@ export async function build({ universal = false } = {}) {
   fs.copyFileSync(
     path.join(root, 'THIRD-PARTY-NOTICES.md'),
     path.join(destination, 'THIRD-PARTY-NOTICES.md'),
+  );
+  fs.copyFileSync(
+    path.join(root, 'LICENSE'),
+    path.join(destination, 'LICENSE'),
   );
   const require = createRequire(import.meta.url),
     sdkRequire = createRequire(require.resolve('@elgato/streamdeck'));

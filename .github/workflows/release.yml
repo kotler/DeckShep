@@ -27,6 +27,8 @@ jobs:
       - run: npm run lint && npm run format:check && npm run typecheck && npm run deps
       - run: npm run version:check && npm run compatibility:check
       - run: npm run test:coverage && npm run test:bundled
+      - name: Public distribution prerequisites
+        run: npm run commercial:check
       - run: npm audit --omit=dev --audit-level=high
       - run: npm audit --audit-level=high
       - name: Prepare optional Developer ID
@@ -56,14 +58,14 @@ jobs:
           APPLE_TEAM: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           if [ -n "$ASW_SIGN_IDENTITY" ] && [ -n "$APPLE_ID" ] && [ -n "$APPLE_PASSWORD" ] && [ -n "$APPLE_TEAM" ]; then
-            xcrun notarytool submit dist/agent-switchboard-*-macos.zip --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM" --wait
+            xcrun notarytool submit dist/deckshep-*-macos.zip --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM" --wait
           else
             echo 'Notarization credentials unavailable; skipped.'
           fi
       - name: Create draft only
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$RELEASE_TAG" dist/agent-switchboard-*-macos.zip dist/*.sha256 dist/SHA256SUMS --draft --prerelease --verify-tag --title "$RELEASE_TAG" --notes-file docs/RELEASE-NOTES.md
+        run: gh release create "$RELEASE_TAG" dist/deckshep-*-macos.zip dist/*.sha256 dist/SHA256SUMS --draft --prerelease --verify-tag --title "$RELEASE_TAG" --notes-file docs/RELEASE-NOTES.md
       - name: Remove temporary signing material
         if: always()
         run: |
