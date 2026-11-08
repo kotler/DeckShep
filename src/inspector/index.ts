@@ -93,7 +93,7 @@ function send(event: any, payload: any, context: any = registration) {
         context,
         payload,
         ...(event === 'sendToPlugin' || event === 'setSettings'
-          ? { action: 'com.local.rexagents.key' }
+          ? { action: 'com.kotl3r.deckshep.key' }
           : {}),
       }),
     );

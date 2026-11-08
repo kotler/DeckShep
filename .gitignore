@@ -10,12 +10,12 @@ __pycache__/
 *.log
 config.local.json
 
-com.local.rexagents.sdPlugin/bin/
+com.kotl3r.deckshep.sdPlugin/bin/
 
-com.local.rexagents.sdPlugin/state/
+com.kotl3r.deckshep.sdPlugin/state/
 
 # Generated entries; source lives under src/.
-com.local.rexagents.sdPlugin/claude-hook.js
-com.local.rexagents.sdPlugin/configure-claude.js
-com.local.rexagents.sdPlugin/inspector.js
-com.local.rexagents.sdPlugin/preferences.js
+com.kotl3r.deckshep.sdPlugin/claude-hook.js
+com.kotl3r.deckshep.sdPlugin/configure-claude.js
+com.kotl3r.deckshep.sdPlugin/inspector.js
+com.kotl3r.deckshep.sdPlugin/preferences.js

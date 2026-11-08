@@ -55,8 +55,8 @@ test(
       0,
     );
     const env = isolatedEnvironment(directory);
-    const plugin = path.join(directory, 'com.local.rexagents.sdPlugin');
-    fs.cpSync(path.resolve('dist/com.local.rexagents.sdPlugin'), plugin, {
+    const plugin = path.join(directory, 'com.kotl3r.deckshep.sdPlugin');
+    fs.cpSync(path.resolve('dist/com.kotl3r.deckshep.sdPlugin'), plugin, {
       recursive: true,
     });
     const configured = spawnSync(
@@ -315,7 +315,7 @@ test(
     });
     await request('pane.send_keys', { pane_id: firstPane, keys: ['Enter'] });
     const { HerdrBridge } = require('../../src/app/herdr-session');
-    const defaults = require('../../com.local.rexagents.sdPlugin/config.json');
+    const defaults = require('../../com.kotl3r.deckshep.sdPlugin/config.json');
     const bridge = new HerdrBridge({
       ...defaults,
       backend: 'herdr',

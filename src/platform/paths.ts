@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { exec } from './exec.ts';
 
-export const pluginName = 'com.local.rexagents.sdPlugin';
+export const pluginName = 'com.kotl3r.deckshep.sdPlugin';
 
 /** Works in source tests, compiled modules and the installed bundle. */
 export function findPluginDirectory(

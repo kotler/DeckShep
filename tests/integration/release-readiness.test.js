@@ -27,7 +27,7 @@ test('release gate requires exact version, Apache hash, LobeHub provenance and v
   write('NOTICE', 'Fixture attribution');
   write('TRADEMARKS.md', 'Reserved fixture mark');
   write('release/evidence.txt', 'Fixture evidence only');
-  const assetRoot = 'com.local.rexagents.sdPlugin/assets/';
+  const assetRoot = 'com.kotl3r.deckshep.sdPlugin/assets/';
   const files = Object.entries({
     'codex-mark.svg': 'packages/static-svg/icons/codex.svg',
     'claude-mark.svg': 'packages/static-svg/icons/claude.svg',

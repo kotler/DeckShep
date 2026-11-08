@@ -112,7 +112,7 @@ test('claude setup', () => {
     fs.unlinkSync(file + '.switchboard-lock');
     execFileSync(process.execPath, [...args, '--apply']);
     assert.equal(
-      fs.readdirSync(d).filter((x) => x.includes('switchboard-backup')).length,
+      fs.readdirSync(d).filter((x) => x.includes('deckshep-backup')).length,
       1,
     );
     assert.deepEqual(
@@ -131,7 +131,7 @@ test('claude setup', () => {
     assert.deepEqual(JSON.parse(fs.readFileSync(file)), original);
     for (const f of fs
       .readdirSync(d)
-      .filter((x) => x.includes('switchboard-backup')))
+      .filter((x) => x.includes('deckshep-backup')))
       assert.equal(fs.statSync(path.join(d, f)).mode & 0o777, 0o600);
   } finally {
     fs.rmSync(d, { recursive: true, force: true });

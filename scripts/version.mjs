@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 const files = [
   'package.json',
-  'com.local.rexagents.sdPlugin/package.json',
+  'com.kotl3r.deckshep.sdPlugin/package.json',
   'package-lock.json',
-  'com.local.rexagents.sdPlugin/package-lock.json',
-  'com.local.rexagents.sdPlugin/manifest.json',
+  'com.kotl3r.deckshep.sdPlugin/package-lock.json',
+  'com.kotl3r.deckshep.sdPlugin/manifest.json',
 ];
 const read = (file) => JSON.parse(fs.readFileSync(file));
 export function checkVersions() {
@@ -15,7 +15,7 @@ export function checkVersions() {
     plugin.version !== version ||
     lock.version !== version ||
     lock.packages[''].version !== version ||
-    lock.packages['com.local.rexagents.sdPlugin'].version !== version ||
+    lock.packages['com.kotl3r.deckshep.sdPlugin'].version !== version ||
     pluginLock.version !== version ||
     pluginLock.packages[''].version !== version ||
     manifest.Version !== version + '.0'
@@ -36,8 +36,8 @@ else {
       data.version = value;
       if (data.packages) {
         data.packages[''].version = value;
-        if (data.packages['com.local.rexagents.sdPlugin'])
-          data.packages['com.local.rexagents.sdPlugin'].version = value;
+        if (data.packages['com.kotl3r.deckshep.sdPlugin'])
+          data.packages['com.kotl3r.deckshep.sdPlugin'].version = value;
       }
     }
     fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n');

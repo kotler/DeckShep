@@ -7,4 +7,4 @@ node_modules/
 tests/fixtures/golden/*.json
 
 vendor/
-com.local.rexagents.sdPlugin/*js
+com.kotl3r.deckshep.sdPlugin/*js

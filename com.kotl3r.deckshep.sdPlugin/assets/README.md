@@ -25,4 +25,4 @@ Lucide control icons
 DeckShep original brand artwork
 ==============================
 
-`plugin-icon-source.svg`, the plugin PNGs, `action-icon.svg` and `loading.svg` use an original key-and-shepherd-crook design and ink/mint/amber palette. Copyright (c) 2026 Everett Kotler. Recreate PNGs with `swift -module-cache-path /tmp/deckshep-swift-cache scripts/brand-icons.swift com.local.rexagents.sdPlugin` from the repository root. No third-party logo is incorporated into this brand mark. Provider marks remain separate and pending permission.
+`plugin-icon-source.svg`, the plugin PNGs, `action-icon.svg` and `loading.svg` use an original key-and-shepherd-crook design and ink/mint/amber palette. Copyright (c) 2026 Everett Kotler. Recreate PNGs with `swift -module-cache-path /tmp/deckshep-swift-cache scripts/brand-icons.swift com.kotl3r.deckshep.sdPlugin` from the repository root. No third-party logo is incorporated into this brand mark. Provider marks remain separate and pending permission.

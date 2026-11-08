@@ -12,11 +12,11 @@ test(
   async (t) => {
     const { bundle } = await import('../../../scripts/bundle.mjs');
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'asw-host-')),
-      plugin = path.join(directory, 'com.local.rexagents.sdPlugin');
+      plugin = path.join(directory, 'com.kotl3r.deckshep.sdPlugin');
     fs.mkdirSync(path.join(plugin, 'bin'), { recursive: true });
     for (const name of ['manifest.json', 'config.json', 'assets'])
       fs.cpSync(
-        path.resolve('com.local.rexagents.sdPlugin', name),
+        path.resolve('com.kotl3r.deckshep.sdPlugin', name),
         path.join(plugin, name),
         { recursive: true },
       );
@@ -45,7 +45,7 @@ test(
         platform: 'mac',
         platformVersion: '15.0',
       },
-      plugin: { uuid: 'com.local.rexagents', version: '1.3.4.0' },
+      plugin: { uuid: 'com.kotl3r.deckshep', version: '1.3.4.0' },
       devicePixelRatio: 2,
       devices: [
         {
@@ -62,7 +62,7 @@ test(
         '-port',
         String(server.address().port),
         '-pluginUUID',
-        'com.local.rexagents',
+        'com.kotl3r.deckshep',
         '-registerEvent',
         'registerPlugin',
         '-info',
@@ -114,13 +114,13 @@ test(
     await until(() => frames.some((frame) => frame.event === 'registerPlugin'));
     assert.deepEqual(
       frames.find((frame) => frame.event === 'registerPlugin'),
-      { event: 'registerPlugin', uuid: 'com.local.rexagents' },
+      { event: 'registerPlugin', uuid: 'com.kotl3r.deckshep' },
     );
     function send(event, index, extra = {}) {
       socket.send(
         JSON.stringify({
           event,
-          action: 'com.local.rexagents.key',
+          action: 'com.kotl3r.deckshep.key',
           context: 'key-' + index,
           device: 'fixture-device',
           payload: {

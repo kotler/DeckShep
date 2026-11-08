@@ -38,7 +38,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: node scripts/tool.mjs @commitlint/cli --from "$BASE_SHA" --to "$HEAD_SHA"
       - run: npm run build -- --universal
-      - run: node scripts/tool.mjs @elgato/cli validate dist/com.local.rexagents.sdPlugin --no-update-check
+      - run: node scripts/tool.mjs @elgato/cli validate dist/com.kotl3r.deckshep.sdPlugin --no-update-check
       - run: npm run package -- --skip-build
       - uses: actions/upload-artifact@v7
         with:

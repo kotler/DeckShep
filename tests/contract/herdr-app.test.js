@@ -110,7 +110,7 @@ test('experimental codec keeps shared edits and opt-ins independent across expli
   assert.deepEqual(codec.serialize(updated), updated);
   assert.equal(
     codec.profileConfig(
-      require('../../com.local.rexagents.sdPlugin/config.json'),
+      require('../../com.kotl3r.deckshep.sdPlugin/config.json'),
       updated,
       'herdr',
     ).backend,

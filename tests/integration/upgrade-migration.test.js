@@ -11,7 +11,7 @@ async function fixture(t) {
     home,
     'Library/Application Support/com.elgato.StreamDeck',
   );
-  const installed = path.join(base, 'Plugins/com.local.rexagents.sdPlugin'),
+  const installed = path.join(base, 'Plugins/com.kotl3r.deckshep.sdPlugin'),
     profiles = path.join(base, 'ProfilesV3');
   fs.mkdirSync(path.join(installed, 'state/claude'), { recursive: true });
   fs.mkdirSync(path.join(profiles, 'fixed-profile/Profiles/fixed-page'), {
@@ -19,7 +19,7 @@ async function fixture(t) {
   });
   fs.writeFileSync(
     path.join(installed, 'manifest.json'),
-    JSON.stringify({ UUID: 'com.local.rexagents', Version: '1.3.4.0' }),
+    JSON.stringify({ UUID: 'com.kotl3r.deckshep', Version: '1.3.4.0' }),
   );
   fs.writeFileSync(
     path.join(installed, 'config.json'),
@@ -48,7 +48,7 @@ async function fixture(t) {
     fs.mkdirSync(path.join(installed, 'bin'), { recursive: true });
     fs.writeFileSync(
       path.join(installed, 'manifest.json'),
-      '{"UUID":"com.local.rexagents","Version":"1.3.4.0"}',
+      '{"UUID":"com.kotl3r.deckshep","Version":"1.3.4.0"}',
     );
     fs.writeFileSync(
       path.join(installed, 'config.json'),

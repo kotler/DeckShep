@@ -23,7 +23,7 @@
         "scripts/*.{mjs,cjs}"
       ]
     },
-    "com.local.rexagents.sdPlugin": {
+    "com.kotl3r.deckshep.sdPlugin": {
       "entry": [],
       "project": []
     },

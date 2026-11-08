@@ -174,7 +174,7 @@ class HerdrRpc {
     return this.exchange(method, params, beforeWrite);
   }
   exchange(method: string, params: any, beforeWrite?: () => void) {
-    const id: string = 'switchboard-' + ++this.nextId;
+    const id: string = 'deckshep-' + ++this.nextId;
     return new Promise(
       (resolve: (value: any) => void, reject: (reason?: any) => void) => {
         let socket: any,

@@ -224,6 +224,7 @@ export class IntegrationSetup {
       throw Error(
         'Settings changed after setup; preserve and reconcile them manually',
       );
+    // Share the settings mutex with the standalone and old preview helpers.
     const lock = this.paths.settings + '.switchboard-lock',
       fd = fs.openSync(lock, 'wx', 0o600);
     try {

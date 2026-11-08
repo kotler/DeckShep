@@ -2,7 +2,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   P = require('../../src/app/preferences'),
-  defaults = require('../../com.local.rexagents.sdPlugin/config.json'),
+  defaults = require('../../com.kotl3r.deckshep.sdPlugin/config.json'),
   { harness } = require('../helpers/plugin-harness');
 test('preferences', async () => {
   const before = JSON.stringify(defaults),

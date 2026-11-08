@@ -27,6 +27,21 @@ function commands(dir: string, node: any = process.execPath) {
     quote(node) + ' ' + quote(path.join(dir, 'claude-hook.js'));
   return { hook, status: hook + ' --statusline' };
 }
+function hasPreviousPluginSetup(settings: any): boolean {
+  const hooks = Object.values(settings.hooks ?? {}).flatMap((entries: any) =>
+    Array.isArray(entries)
+      ? entries.flatMap((entry: any) =>
+          Array.isArray(entry?.hooks) ? entry.hooks : [],
+        )
+      : [],
+  );
+  return [settings.statusLine, ...hooks].some(
+    (hook: any) =>
+      hook?.type === 'command' &&
+      typeof hook.command === 'string' &&
+      hook.command.includes('com.local.rexagents.sdPlugin/claude-hook.js'),
+  );
+}
 function plan(
   settings: any,
   saved: any,
@@ -45,6 +60,10 @@ function plan(
       (typeof settings.hooks !== 'object' || Array.isArray(settings.hooks)))
   )
     throw Error('Invalid Claude settings');
+  if (!remove && hasPreviousPluginSetup(settings))
+    throw Error(
+      'Remove Claude setup from the previous plugin before setting up DeckShep',
+    );
   const result: any = structuredClone(settings),
     c: {
       hook: string;
@@ -242,6 +261,7 @@ function main(args: string[] | undefined = process.argv.slice(2)) {
     rs.mode & 0o022
   )
     throw Error('Unsafe integration state directory');
+  // Share the existing mutex with old preview tools; different locks could race.
   const lock: string = file + '.switchboard-lock',
     lockFd: number = fs.openSync(lock, 'wx', 0o600);
   try {
@@ -256,7 +276,7 @@ function main(args: string[] | undefined = process.argv.slice(2)) {
         );
     };
     unchanged();
-    const backup: string = file + '.switchboard-backup-' + crypto.randomUUID();
+    const backup: string = file + '.deckshep-backup-' + crypto.randomUUID();
     if (fs.existsSync(file))
       fs.copyFileSync(file, backup, fs.constants.COPYFILE_EXCL);
     if (fs.existsSync(backup)) fs.chmodSync(backup, 0o600);

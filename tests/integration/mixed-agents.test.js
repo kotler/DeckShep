@@ -6,7 +6,7 @@ const assert = require('node:assert/strict'),
   { modelLines, sameTarget } = require('../../src/domain/labels'),
   { harness } = require('../helpers/plugin-harness'),
   { svg } = require('../../src/render/visuals'),
-  defaults = require('../../com.local.rexagents.sdPlugin/config.json'),
+  defaults = require('../../com.kotl3r.deckshep.sdPlugin/config.json'),
   C = require('../../src/guards/context');
 test('mixed agents', async () => {
   const entries = Array.from({ length: 7 }, (_, i) => ({

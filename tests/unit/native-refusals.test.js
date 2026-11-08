@@ -78,7 +78,7 @@ test('Herdr native metadata refuses every missing identity field and ambiguous/r
     42,
   );
   const bridge = new HerdrBridge(
-    require('../../com.local.rexagents.sdPlugin/config.json'),
+    require('../../com.kotl3r.deckshep.sdPlugin/config.json'),
     {
       connect: async () => {
         throw Error('No test transport');
