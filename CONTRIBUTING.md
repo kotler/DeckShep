@@ -52,6 +52,8 @@ explicit baseline change: review the images and explain the reason in the PR.
 Never regenerate existing golden JSON to accommodate the browser harness.
 CI caches browsers by exact lock-file version, OS and architecture, and uploads
 failure reports/diffs for seven days. Reports contain synthetic fixture activity.
+An Ubuntu 24.04 trial passed both runs, but all six PNGs differed from macOS;
+CI retains macOS 15. The harness itself requires only Node/Rollup, not Swift.
 Native provider/focus/clipboard behavior and physical deck scaling still need
 their separate validation. See [the harness guide](tests/e2e/README.md).
 

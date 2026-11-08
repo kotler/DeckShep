@@ -163,4 +163,5 @@ cache or fixture identifiers. Remove cached browsers with
 from tools). No live authorization is implied by fixture/browser testing.
 See tests/e2e/README.md for control API, clock, baseline policy and native/hardware
 limits. CI uses a macOS 15 browser job, version/OS/architecture-specific caching
-and failure reports; Linux is a separate temporary platform trial.
+and failure reports. An Ubuntu 24.04 trial passed both browser runs, but all six
+PNG baselines differed, so macOS remains the CI platform. See the validation record.
