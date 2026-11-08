@@ -89,10 +89,76 @@ export const config = z
       .passthrough()
       .optional(),
     claude: z.object({ enabled: bool }).passthrough().optional(),
-    rexPath: identifier.optional(),
+    rexPath: z
+      .string()
+      .max(4096)
+      .regex(/^[^\x00-\x1f\x7f]*$/)
+      .optional(),
+    clientLabel: z
+      .string()
+      .max(1024)
+      .regex(/^[^\x00-\x1f\x7f]*$/)
+      .optional(),
+    statusMaxAgeMs: z.number().finite().nonnegative().optional(),
+    draftMaxAgeMs: z.number().finite().nonnegative().optional(),
+    metadataRefreshMs: z.number().finite().nonnegative().optional(),
+    daemonControls: z
+      .object({ enabled: bool, permissionsEnabled: bool })
+      .passthrough()
+      .optional(),
+    effortKeys: z
+      .object({
+        increase: identifier.optional(),
+        decrease: identifier.optional(),
+      })
+      .passthrough()
+      .optional(),
+    sendKeys: z.record(z.string(), identifier).optional(),
+    controlVerified: z.record(z.string(), z.boolean()).optional(),
+    animation: z
+      .object({
+        enabled: bool,
+        frameMs: z.number().finite().nonnegative().optional(),
+        workingPeriodMs: z.number().finite().nonnegative().optional(),
+        completePulseMs: z.number().finite().nonnegative().optional(),
+      })
+      .passthrough()
+      .optional(),
+    palette: z.record(z.string(), identifier).optional(),
+    cycles: z
+      .object({
+        models: z
+          .array(z.object({ id: identifier, label: identifier }).passthrough())
+          .max(1000)
+          .optional(),
+        efforts: z.array(identifier).max(1000).optional(),
+        autoSetupNewSessions: bool,
+      })
+      .passthrough()
+      .optional(),
+    modelDiscovery: z
+      .object({
+        enabled: bool,
+        include: z.array(identifier).max(1000).optional(),
+        effortLevels: z.array(identifier).max(1000).optional(),
+      })
+      .passthrough()
+      .optional(),
+    appearance: z
+      .object({ style: identifier.optional() })
+      .passthrough()
+      .optional(),
     experimental: z.object({ herdrApp: bool }).strict().optional(),
     prompts: z.record(z.string(), prompt).optional(),
-    aliases: z.record(z.string(), identifier).optional(),
+    aliases: z
+      .record(
+        z.string(),
+        z
+          .string()
+          .max(1024)
+          .regex(/^[^\x00-\x1f\x7f]*$/),
+      )
+      .optional(),
   })
   .passthrough();
 export const rexResponse = z.union([

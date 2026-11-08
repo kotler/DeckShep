@@ -114,3 +114,29 @@ test('boundary tree caps reject excessive width, depth, keys and private IDs wit
     }).success,
   );
 });
+test('config validates every known field without rejecting an empty override or empty alias', () => {
+  const defaults = require('../../com.local.rexagents.sdPlugin/config.json');
+  assert.deepEqual(S.validate('config', defaults), defaults);
+  assert.equal(
+    S.validate('config', { rexPath: '', aliases: { fixture: '' } }).rexPath,
+    '',
+  );
+  for (const value of [
+    { statusMaxAgeMs: 'old' },
+    { draftMaxAgeMs: -1 },
+    { metadataRefreshMs: NaN },
+    { clientLabel: 'bad\0label' },
+    { daemonControls: { enabled: 'yes' } },
+    { effortKeys: { increase: [] } },
+    { sendKeys: { codex: 1 } },
+    { controlVerified: { codex: 'yes' } },
+    { animation: { frameMs: -1 } },
+    { palette: [] },
+    { cycles: { models: [{ id: 'model' }] } },
+    { cycles: { efforts: [42] } },
+    { cycles: { autoSetupNewSessions: 1 } },
+    { modelDiscovery: { include: 'model' } },
+    { appearance: { style: false } },
+  ])
+    assert.throws(() => S.validate('config', value));
+});
