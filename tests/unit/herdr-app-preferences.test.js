@@ -11,6 +11,7 @@ const base = require('../../com.kotl3r.deckshep.sdPlugin/config.json');
 const codec = preferenceCodec(true);
 const disabled = {
   herdrAppReadbackEnabled: false,
+  herdrAppFocusRequestEnabled: false,
   herdrAppInputEnabled: false,
   claudeEnabled: false,
 };
@@ -75,6 +76,7 @@ test('App settings and shared edits round-trip without entering Rex or Herdr pro
     herdrAppHome: '/sample/app',
     herdrAppCoreSocketPath: '/sample/core.sock',
     herdrAppReadbackEnabled: true,
+    herdrAppFocusRequestEnabled: true,
     herdrAppInputEnabled: true,
     claudeEnabled: false,
     animationEnabled: false,
@@ -130,6 +132,7 @@ test('App runtime projection overrides inherited native opt-ins and uses only Ap
     home: '',
     coreSocketPath: '',
     readbackEnabled: false,
+    focusRequestEnabled: false,
     inputEnabled: false,
   });
   const view = codec.view(config);
@@ -157,6 +160,7 @@ test('corrupt, unknown, foreign-profile and malformed App preferences fail close
     { sendKeys: true },
     { herdrAppInputEnabled: 'true' },
     { herdrAppReadbackEnabled: 1 },
+    { herdrAppFocusRequestEnabled: 'true' },
     { herdrAppHome: 'relative' },
     { herdrAppCoreSocketPath: '/sample\nprivate' },
   ])
@@ -189,4 +193,34 @@ test('corrupt, unknown, foreign-profile and malformed App preferences fail close
   );
   for (const profile of [null, [], { herdrAppInputEnabled: 1 }])
     assert.throws(() => boundary.validate('herdrAppProfile', profile));
+});
+
+test('older v3 stores gain no focus-request consent and request-only consent neither inherits nor enables other controls', () => {
+  const old = codec.store();
+  old.profiles['herdr-app'] = {
+    herdrAppReadbackEnabled: true,
+    herdrAppInputEnabled: true,
+    claudeEnabled: true,
+  };
+  const migrated = codec.store(old);
+  assert.equal(
+    migrated.profiles['herdr-app'].herdrAppFocusRequestEnabled,
+    false,
+  );
+  const fresh = codec.update(codec.store(), 'herdr-app', {
+    herdrAppFocusRequestEnabled: true,
+  });
+  const config = codec.profileConfig(base, fresh, 'herdr-app');
+  assert.equal(config.herdrApp.focusRequestEnabled, true);
+  assert.equal(config.herdrApp.readbackEnabled, false);
+  assert.equal(config.herdrApp.inputEnabled, false);
+  assert.equal(config.claude.enabled, false);
+  assert.deepEqual(codec.store(JSON.parse(JSON.stringify(fresh))), fresh);
+  const previous = rollbackV2(codec.store());
+  previous.revision = fresh.revision;
+  assert.deepEqual(rollbackV2(fresh), previous);
+  for (const scope of ['rex', 'herdr'])
+    assert.throws(() =>
+      codec.update(fresh, scope, { herdrAppFocusRequestEnabled: true }),
+    );
 });

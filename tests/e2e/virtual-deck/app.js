@@ -94,6 +94,7 @@ const names = [
   'overflow-banks',
   'claude-mixed',
   'herdr-tui',
+  'herdr-app-panes',
   'offline',
 ];
 for (const name of names) {
@@ -114,7 +115,9 @@ document.getElementById('consent').onclick = () => {
     'setPreferences',
     state.profile === 'rex'
       ? { allowClipboardFocus: true }
-      : { herdrTitleIdentity: true },
+      : state.profile === 'herdr-app'
+        ? { herdrAppHome: '/virtual/app', herdrAppFocusRequestEnabled: true }
+        : { herdrTitleIdentity: true },
   ).catch(showError);
 };
 document.getElementById('claude').onclick = () => {

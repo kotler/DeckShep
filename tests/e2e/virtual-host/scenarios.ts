@@ -1,4 +1,8 @@
 import type { AgentSnapshot } from '../../../src/domain/types';
+import type {
+  AppPaneStatus,
+  AppPaneRef,
+} from '../../../src/domain/app-selection';
 
 export const scenarioNames = [
   'idle-two-codex',
@@ -11,6 +15,7 @@ export const scenarioNames = [
   'claude-mixed',
   'herdr-tui',
   'offline',
+  'herdr-app-panes',
 ] as const;
 export type ScenarioName = (typeof scenarioNames)[number];
 export interface Scenario {
@@ -18,6 +23,7 @@ export interface Scenario {
   focused: string;
   offline?: boolean;
   slots?: { session: string; block: string }[];
+  app?: { panes: AppPaneStatus[]; selected: AppPaneRef | null; epoch: number };
 }
 // Identity/state fields follow plugin-harness and the running/background fixtures.
 // These synthetic records never come from a process, account or workspace.
@@ -52,6 +58,24 @@ export function scenario(input: ScenarioName | Scenario): Scenario {
     return structuredClone(input);
   }
   if (!scenarioNames.includes(input)) throw Error('Unknown fixture scenario');
+  if (input === 'herdr-app-panes') {
+    const panes: AppPaneStatus[] = Array.from({ length: 7 }, (_, index) => ({
+      target: {
+        space: 's1',
+        tab: 'c1',
+        pane: 'p' + (index + 1),
+        terminal: 't' + (index + 1),
+      },
+      reportedApp: index === 1 ? 'claude-code' : 'codex',
+      reportedStatus: index === 0 ? 'working' : 'idle',
+      name: 'Pane ' + (index + 1),
+    }));
+    return {
+      agents: [],
+      focused: '',
+      app: { panes, selected: panes[0].target, epoch: 1 },
+    };
+  }
   const agents = ['a', 'b'].map(agent);
   if (input === 'working-rex' || input === 'herdr-tui')
     Object.assign(agents[0], { state: 'working', runId: 'turn-1' });

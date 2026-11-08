@@ -15,6 +15,7 @@ const byId: (id: any) => HTMLElement & {
   checked: boolean;
   disabled: boolean;
   add: HTMLSelectElement['add'];
+  options: HTMLSelectElement['options'];
 } = (
   id: any,
 ): HTMLElement & {
@@ -22,14 +23,16 @@ const byId: (id: any) => HTMLElement & {
   checked: boolean;
   disabled: boolean;
   add: HTMLSelectElement['add'];
+  options: HTMLSelectElement['options'];
 } => document.getElementById(id) as any;
-const connectionFields: string[] = ['herdrSocketPath'];
+const connectionFields: string[] = ['herdrSocketPath', 'herdrAppHome'];
 const booleans: string[] = [
     'allowClipboardFocus',
     'bringToFront',
     'animationEnabled',
     'herdrTitleIdentity',
     'claudeEnabled',
+    'herdrAppFocusRequestEnabled',
   ],
   promptNames: string[] = ['review', 'tests', 'continue'];
 for (const action of [
@@ -105,29 +108,40 @@ function fill(status: any) {
   filling = true;
   lastStatus = status;
   shared = status.preferences;
-  const herdr: boolean = status.backend === 'herdr';
+  const herdr: boolean = status.backend === 'herdr',
+    app = status.backend === 'herdr-app';
   byId('backend').value = status.backend || 'rex';
   byId('backend').disabled = true;
   byId('profileName').textContent =
     status.profileName || (herdr ? 'Herdr' : 'Rex');
   byId('herdrConnection').hidden = !herdr;
   byId('herdrHelp').hidden = !herdr;
-  byId('rexSetup').hidden = herdr;
+  byId('rexSetup').hidden = herdr || app;
+  byId('herdrAppSetup').hidden = !app;
+  byId('providerSetup').hidden = app;
+  byId('promptShortcuts').hidden = app;
+  byId('herdrSessionChoices').hidden = !herdr;
   for (const name of connectionFields) {
     byId(name).disabled = status.setupBusy;
     if (document.activeElement !== byId(name))
       byId(name).value = shared[name] || '';
   }
-  byId('connection').textContent = status.offline
-    ? herdr
-      ? 'Herdr unavailable — choose its running session socket'
-      : 'Rex unavailable — open Rex and enable Remote Control'
-    : `${status.agents} agent${status.agents === 1 ? '' : 's'} · ${status.metadata}/${status.codex} Codex${status.claude ? ' · ' + status.claudeIdentified + '/' + status.claude + ' Claude' : ''} chats identified`;
-  byId('selection').textContent = status.selectionNotice
-    ? 'Selection changed. Select an agent on the deck.'
-    : status.selected
-      ? `Selected: ${status.selected.app} · ${status.selected.state}${status.selected.mode ? ' · ' + status.selected.mode : ''}`
-      : 'Select an agent on the deck to enable controls.';
+  byId('connection').textContent = app
+    ? status.offline
+      ? 'Herdr App preview — no matched App build'
+      : `${status.agents} pane(s) · App-reported status`
+    : status.offline
+      ? herdr
+        ? 'Herdr unavailable — choose its running session socket'
+        : 'Rex unavailable — open Rex and enable Remote Control'
+      : `${status.agents} agent${status.agents === 1 ? '' : 's'} · ${status.metadata}/${status.codex} Codex${status.claude ? ' · ' + status.claudeIdentified + '/' + status.claude + ' Claude' : ''} chats identified`;
+  byId('selection').textContent = app
+    ? 'Focus requests do not verify keyboard focus. Input remains disabled.'
+    : status.selectionNotice
+      ? 'Selection changed. Select an agent on the deck.'
+      : status.selected
+        ? `Selected: ${status.selected.app} · ${status.selected.state}${status.selected.mode ? ' · ' + status.selected.mode : ''}`
+        : 'Select an agent on the deck to enable controls.';
   byId('message').textContent =
     status.message || status.selected?.identityMessage || '';
   for (const key of booleans) {
@@ -143,10 +157,28 @@ function fill(status: any) {
       byId(name).value = shared.prompts[name];
   }
   byId('herdrTitleIdentity').disabled = !herdr || status.setupBusy;
-  byId('allowClipboardFocus').disabled = herdr || status.setupBusy;
-  byId('bringToFront').disabled = herdr || status.setupBusy;
+  byId('allowClipboardFocus').disabled = herdr || app || status.setupBusy;
+  byId('bringToFront').disabled = herdr || app || status.setupBusy;
+  byId('claudeEnabled').disabled = app || status.setupBusy;
+  byId('herdrAppHome').disabled = !app || status.setupBusy;
+  byId('herdrAppFocusRequestEnabled').disabled = !app || status.setupBusy;
+  for (const option of Array.from(byId('action').options))
+    option.disabled =
+      app &&
+      ![
+        'none',
+        'collapse',
+        'banknext',
+        'next',
+        'agent:0',
+        'agent:1',
+        'agent:2',
+        'agent:3',
+        'agent:4',
+      ].includes(option.value);
   byId('setup').disabled =
     herdr ||
+    app ||
     status.offline ||
     status.setupBusy ||
     !shared.allowClipboardFocus ||
@@ -166,7 +198,10 @@ function save(key: string) {
           : byId(key).value,
       };
   try {
-    const patch: Record<string, unknown> = RexPreferences.normalize(value);
+    const patch: Record<string, unknown> =
+      lastStatus?.backend === 'herdr-app'
+        ? boundary.validate('herdrAppPreferencePatch', value)
+        : RexPreferences.normalize(value);
     send(
       'sendToPlugin',
       { kind: 'preferences', preferences: patch },

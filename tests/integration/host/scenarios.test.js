@@ -33,9 +33,18 @@ test(
       assert.equal(status.offline, name === 'offline', name);
       assert.equal(
         status.agents,
-        name === 'offline' ? 0 : name === 'overflow-banks' ? 7 : 2,
+        name === 'offline' || name === 'herdr-app-panes'
+          ? 0
+          : name === 'overflow-banks'
+            ? 7
+            : 2,
         name,
       );
+      if (name === 'herdr-app-panes') {
+        // App panes are a separate model, never synthetic Rex agents/PIDs.
+        assert.equal(status.metadata, 0);
+        assert.equal(status.selected, null);
+      }
       assert.equal(
         new Set(
           host.frames

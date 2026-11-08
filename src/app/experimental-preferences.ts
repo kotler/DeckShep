@@ -12,6 +12,7 @@ export interface PreferencesV3 extends Omit<
 function appProfile(input: unknown): HerdrAppPreferences {
   return {
     herdrAppReadbackEnabled: false,
+    herdrAppFocusRequestEnabled: false,
     herdrAppInputEnabled: false,
     claudeEnabled: false,
     ...validate('herdrAppProfile', input),
@@ -100,6 +101,7 @@ function profileConfig(base: Config, saved: unknown, scope: string): Config {
       home: app.herdrAppHome ?? '',
       coreSocketPath: app.herdrAppCoreSocketPath ?? '',
       readbackEnabled: app.herdrAppReadbackEnabled === true,
+      focusRequestEnabled: app.herdrAppFocusRequestEnabled === true,
       inputEnabled: app.herdrAppInputEnabled === true,
     },
   };
@@ -151,6 +153,8 @@ export function preferenceCodec(enabled: boolean): typeof legacy {
             herdrAppHome: config.herdrApp?.home ?? '',
             herdrAppCoreSocketPath: config.herdrApp?.coreSocketPath ?? '',
             herdrAppReadbackEnabled: config.herdrApp?.readbackEnabled === true,
+            herdrAppFocusRequestEnabled:
+              config.herdrApp?.focusRequestEnabled === true,
             herdrAppInputEnabled: config.herdrApp?.inputEnabled === true,
           }
         : legacy.view(config),

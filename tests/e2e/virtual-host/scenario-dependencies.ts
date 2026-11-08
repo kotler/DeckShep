@@ -6,6 +6,7 @@ import type {
   TargetRef,
 } from '../../../src/domain/types';
 import { scenario, type Scenario, type ScenarioName } from './scenarios';
+import { virtualAppFocus } from './app-focus';
 const { Bridge } = require('../../../src/app/session');
 const C = require('../../../src/guards/context');
 let current = scenario('idle-two-codex');
@@ -173,6 +174,19 @@ export function applicationDependencies() {
       void command(message as Record<string, unknown>);
   });
   return {
+    experimentalHerdrApp: true,
+    appFocusBackend: virtualAppFocus(
+      () => current,
+      async () => {
+        if (pauseNext) {
+          pauseNext = false;
+          await new Promise<void>((resolve) => {
+            releaseFocus = resolve;
+            process.send?.({ kind: 'fixturePaused' });
+          });
+        }
+      },
+    ),
     clock: () => clock,
     setInterval(callback: () => void, period: number) {
       timers.push({ callback, period, next: clock + period });

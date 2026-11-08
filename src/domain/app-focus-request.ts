@@ -1,4 +1,4 @@
-import type { AppPaneRef } from './app-selection';
+import type { AppPaneRef, AppSelectionSnapshot } from './app-selection';
 
 declare const requestPermit: unique symbol;
 /** Deliberately incompatible with provider/verified-focus delivery permits. */
@@ -21,7 +21,11 @@ export interface AppFocusContext {
   recordKey: string;
   target: AppPaneRef;
 }
-export interface AppFocusState extends Omit<AppFocusContext, 'pressedAt'> {
+export interface AppFocusState extends Omit<
+  AppFocusContext,
+  'pressedAt' | 'target'
+> {
+  target: AppPaneRef | null;
   visible: boolean;
   setupBusy: boolean;
   focusRequestEnabled: boolean;
@@ -31,6 +35,22 @@ export interface AppFocusLease {
   check(): void;
   consume(peerKey: string, recordKey: string, generation: number): void;
   postflight(): void;
+}
+/** Composition port shared by the real sender and isolated test backends. */
+export interface AppFocusPort {
+  readonly generation: number;
+  readonly peerKey: string;
+  readonly recordKey: string;
+  observe(signal?: AbortSignal): Promise<AppSelectionSnapshot>;
+  deliver(
+    input: { kind: 'requestFocus' },
+    permit: AppFocusPermit,
+    signal?: AbortSignal,
+  ): Promise<{
+    status: 'requested';
+    verifiedFocus: false;
+  }>;
+  dispose(): void;
 }
 /** Exact request-only build contract; not a native-focus verification record. */
 export interface AppFocusRecord {

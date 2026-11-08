@@ -81,6 +81,7 @@ export const settingsV3 = settingsV2.extend({
           .regex(/^(?:\/[^\x00-\x1f\x7f]*)?$/)
           .optional(),
         herdrAppReadbackEnabled: bool,
+        herdrAppFocusRequestEnabled: bool,
         herdrAppInputEnabled: bool,
         claudeEnabled: bool,
       })
@@ -105,6 +106,7 @@ export const config = z
         home: herdrAppProfile.shape.herdrAppHome,
         coreSocketPath: herdrAppProfile.shape.herdrAppCoreSocketPath,
         readbackEnabled: bool,
+        focusRequestEnabled: bool,
         inputEnabled: bool,
       })
       .strict()

@@ -1,5 +1,16 @@
 const { diagnostics, sessionChoices, sessionChecks } = require('../app/setup');
-void Promise.all([diagnostics(), sessionChoices()])
+const { herdrAppChecks } = require('../app/herdr-app-diagnostics');
+const { appFocusBackend } = require('../app/herdr-app-backend');
+const result = process.argv.includes('--herdr-app')
+  ? Promise.resolve([
+      herdrAppChecks({
+        helperAvailable: appFocusBackend.helperAvailable(),
+        recordCount: appFocusBackend.recordCount,
+      }),
+      [],
+    ])
+  : Promise.all([diagnostics(), sessionChoices()]);
+void result
   .then(([base, sessions]) => {
     const checks: { id: string; ok: boolean; reason: string }[] = [
       ...base,

@@ -161,6 +161,7 @@ export interface HerdrAppPreferences {
   herdrAppHome?: string;
   herdrAppCoreSocketPath?: string;
   herdrAppReadbackEnabled?: boolean;
+  herdrAppFocusRequestEnabled?: boolean;
   herdrAppInputEnabled?: boolean;
   claudeEnabled?: boolean;
 }
@@ -170,6 +171,7 @@ export interface Config {
     home: string;
     coreSocketPath: string;
     readbackEnabled: boolean;
+    focusRequestEnabled?: boolean;
     inputEnabled: boolean;
   };
   herdr: { socketPath: string; titleIdentity: boolean };

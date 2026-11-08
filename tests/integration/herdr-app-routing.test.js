@@ -2,6 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { harness } = require('../helpers/plugin-harness');
 const { HerdrAppPreview } = require('../../src/app/herdr-app-preview');
+const { HerdrAppController } = require('../../src/app/herdr-app-controller');
 const { DeliveryKernel } = require('../../src/app/delivery');
 const { GuardPipeline } = require('../../src/guards/pipeline');
 const { GuardedBackend } = require('../../src/terminals/contract/backend');
@@ -22,12 +23,12 @@ test('App owns routed key contexts and settings without using legacy discovery, 
   });
   await h.appear('herdr-app');
   const app = h.controller('herdr-app');
-  assert(app.bridge instanceof HerdrAppPreview);
+  assert(app.runtime instanceof HerdrAppController);
   assert.equal(app.keys.size, 15);
   assert.equal(app.bridge.config.backend, 'herdr-app');
-  assert.equal(app.bridge.delivery.backend.id, 'herdr-app');
-  assert.equal(app.bridge.delivery.backend.verifiedControls.size, 0);
-  const before = app.bridge;
+  assert.equal(app.bridge.delivery, undefined);
+  assert.deepEqual(backendCapabilities['herdr-app'], []);
+  const before = app.bridge.generation;
   const context = 'herdr-app:0,0';
   h.socket.emit(
     'message',
@@ -47,7 +48,7 @@ test('App owns routed key contexts and settings without using legacy discovery, 
     }),
   );
   await app.settled();
-  assert.notEqual(app.bridge, before);
+  assert(app.bridge.generation > before);
   assert.equal(app.bridge.config.herdrApp.inputEnabled, true);
   assert.equal(h.api.bridge.config.claude.enabled, false);
   for (const kind of [
@@ -88,11 +89,8 @@ test('App owns routed key contexts and settings without using legacy discovery, 
           .includes('Preview only'),
       ),
   );
-  await assert.rejects(app.bridge.focused(), /unverified/);
-  await assert.rejects(app.bridge.focus({}), /unverified/);
-  await assert.rejects(app.bridge.zoom(), /unverified/);
-  await assert.rejects(app.bridge.readPane({}), /unverified/);
-  assert.deepEqual(await app.bridge.collapse(), { removed: 0 });
+  for (const method of ['focused', 'focus', 'zoom', 'readPane'])
+    assert.equal(app.bridge[method], undefined);
 });
 
 test('disabled App routing refuses the profile and context reuse detaches its previous owner', async () => {

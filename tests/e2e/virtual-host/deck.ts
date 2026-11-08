@@ -74,7 +74,7 @@ export class VirtualDeck {
       this.time = Number(ack.clock);
       await this.settle();
     } else if (method === 'switchProfile') {
-      if (!['rex', 'herdr'].includes(String(args[0])))
+      if (!['rex', 'herdr', 'herdr-app'].includes(String(args[0])))
         throw Error('Invalid profile');
       for (let i = 0; i < 15; i++) this.send('willDisappear', i);
       this.profile = String(args[0]);

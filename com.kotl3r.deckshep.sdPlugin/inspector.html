@@ -101,13 +101,16 @@
 <button id="refresh" type="button">Refresh status</button>
 <h2>Setup checklist</h2>
 <pre id="checklist" role="status">Checking local setup…</pre>
-<sdpi-item label="Herdr sessions"><select id="sessions"></select></sdpi-item>
-<sdpi-button id="useSession">Use this session</sdpi-button>
+<div id="herdrSessionChoices">
+  <sdpi-item label="Herdr sessions"><select id="sessions"></select></sdpi-item>
+  <sdpi-button id="useSession">Use this session</sdpi-button>
+</div>
 <h2>Setup and preferences</h2>
 <label
   >Controller for this profile<select id="backend" disabled>
     <option value="rex">Rex</option>
     <option value="herdr">Herdr (experimental)</option>
+    <option value="herdr-app">Herdr App (preview)</option>
   </select></label
 >
 <label id="herdrConnection"
@@ -134,6 +137,25 @@
     Connect to local Herdr 0.9.5. Type messages in Herdr; draft submission needs
     cursor support. The plugin does not change your titles, global Codex
     settings or Herdr's saved session references.
+  </p>
+</div>
+<div id="herdrAppSetup" hidden>
+  <label
+    >Herdr App home<input
+      id="herdrAppHome"
+      type="text"
+      maxlength="1024"
+      placeholder="Absolute path to this App instance's home"
+  /></label>
+  <sdpi-checkbox
+    id="herdrAppFocusRequestEnabled"
+    disabled
+    label="Allow plain focus requests"
+  ></sdpi-checkbox>
+  <p class="note">
+    Selection and Next can request a pane. They do not verify keyboard focus or
+    allow typing. Zoom and terminal input remain unavailable. No App build is
+    approved in this preview.
   </p>
 </div>
 <p class="note">
@@ -168,40 +190,42 @@
     label="Bring Rex forward when selecting an agent"
   ></sdpi-checkbox>
 </div>
-<h2>Claude Code (experimental)</h2>
-<sdpi-checkbox
-  id="claudeEnabled"
-  disabled
-  label="Enable Claude native controls after hook setup"
-></sdpi-checkbox>
-<p class="note">
-  Native Claude 2.1.319 only; physical validation is pending. Install the
-  optional metadata hooks with <code>configure-claude.js</code> as described in
-  docs/CLAUDE.md. Existing hooks and status lines are preserved. Enabling this
-  checkbox does not install hooks or change permissions. Model and Effort cycle
-  settings for this session; Mode uses the Claude keyboard. Herdr submissions
-  remain unavailable.
-</p>
-<sdpi-checkbox
-  id="chainStatus"
-  label="Chain the existing Claude status line (optional)"
-></sdpi-checkbox>
-<sdpi-button id="claudePreview">Preview changes</sdpi-button>
-<sdpi-button id="claudeApply" disabled>Apply with backup</sdpi-button>
-<sdpi-button id="claudeUndo">Undo last change</sdpi-button>
-<sdpi-button id="removeIntegrations"
-  >Preview removal of integrations</sdpi-button
->
-<pre
-  id="claudeDiff"
-  style="white-space: pre-wrap; overflow-wrap: anywhere"
-></pre>
+<div id="providerSetup">
+  <h2>Claude Code (experimental)</h2>
+  <sdpi-checkbox
+    id="claudeEnabled"
+    disabled
+    label="Enable Claude native controls after hook setup"
+  ></sdpi-checkbox>
+  <p class="note">
+    Native Claude 2.1.319 only; physical validation is pending. Install the
+    optional metadata hooks with <code>configure-claude.js</code> as described
+    in docs/CLAUDE.md. Existing hooks and status lines are preserved. Enabling
+    this checkbox does not install hooks or change permissions. Model and Effort
+    cycle settings for this session; Mode uses the Claude keyboard. Herdr
+    submissions remain unavailable.
+  </p>
+  <sdpi-checkbox
+    id="chainStatus"
+    label="Chain the existing Claude status line (optional)"
+  ></sdpi-checkbox>
+  <sdpi-button id="claudePreview">Preview changes</sdpi-button>
+  <sdpi-button id="claudeApply" disabled>Apply with backup</sdpi-button>
+  <sdpi-button id="claudeUndo">Undo last change</sdpi-button>
+  <sdpi-button id="removeIntegrations"
+    >Preview removal of integrations</sdpi-button
+  >
+  <pre
+    id="claudeDiff"
+    style="white-space: pre-wrap; overflow-wrap: anywhere"
+  ></pre>
+</div>
 <sdpi-checkbox
   id="animationEnabled"
   disabled
   label="Animate working and waiting status"
 ></sdpi-checkbox>
-<details>
+<details id="promptShortcuts">
   <summary>Prompt shortcuts</summary>
   <p>
     These append text in Rex. Send checks the same chat, input and turn before

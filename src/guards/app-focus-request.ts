@@ -5,7 +5,9 @@ import type {
   AppFocusState,
 } from '../domain/app-focus-request';
 
-function validContext(context: Omit<AppFocusContext, 'pressedAt'>): boolean {
+function validContext(
+  context: Omit<AppFocusState, 'visible' | 'setupBusy' | 'focusRequestEnabled'>,
+): boolean {
   const numbers = [
     context.appearance,
     context.visibility,
@@ -31,10 +33,12 @@ function validContext(context: Omit<AppFocusContext, 'pressedAt'>): boolean {
       (value) =>
         typeof value === 'string' && /^[^\x00-\x1f\x7f]{1,1024}$/.test(value),
     ) &&
-    /^t[1-9][0-9]*$/.test(context.target.terminal)
+    /^t[1-9][0-9]*$/.test(context.target?.terminal ?? '')
   );
 }
-function identity(context: Omit<AppFocusContext, 'pressedAt'>): string {
+function identity(
+  context: Omit<AppFocusState, 'visible' | 'setupBusy' | 'focusRequestEnabled'>,
+): string {
   return JSON.stringify([
     context.scope,
     context.control,
@@ -48,10 +52,10 @@ function identity(context: Omit<AppFocusContext, 'pressedAt'>): string {
     context.endpointGeneration,
     context.peerKey,
     context.recordKey,
-    context.target.space,
-    context.target.tab,
-    context.target.pane,
-    context.target.terminal,
+    context.target?.space,
+    context.target?.tab,
+    context.target?.pane,
+    context.target?.terminal,
   ]);
 }
 

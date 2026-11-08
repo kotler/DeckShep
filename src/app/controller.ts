@@ -32,6 +32,8 @@ const { controlAccent } = require('../render/signal');
 const { CompletionDisplay } = require('../render/completion');
 const { preferenceCodec } = require('./experimental-preferences');
 const { HerdrAppPreview } = require('./herdr-app-preview');
+const { HerdrAppController } = require('./herdr-app-controller');
+const { appFocusBackend } = require('./herdr-app-backend');
 const { GuardedBackend } = require('../terminals/contract/backend');
 const {
   IntegrationSetup,
@@ -50,6 +52,7 @@ function createApplication(dependencies: Record<string, any>) {
   const arg: (key: string) => any = (key: string) => dependencies.args?.[key];
   const fs: any = dependencies.fs || defaultFs;
   const clock: any = dependencies.clock || (() => Date.now());
+  const focusClock = dependencies.clock || (() => performance.now());
   const { svg, pulse } = dependencies.renderer || {
     svg: defaultSvg,
     pulse: defaultPulse,
@@ -120,7 +123,42 @@ function createApplication(dependencies: Record<string, any>) {
     )
       throw Error('Unknown controller profile');
     if (!controllers.has(scope))
-      controllers.set(scope, new Controller(scope, createRuntime(scope)));
+      controllers.set(
+        scope,
+        new Controller(
+          scope,
+          scope === 'herdr-app'
+            ? new HerdrAppController({
+                config: () =>
+                  preferences.profileConfig(
+                    boundary.parse(
+                      'config',
+                      fs.readFileSync(
+                        path.join(pluginDirectory, 'config.json'),
+                      ),
+                    ),
+                    saved,
+                    'herdr-app',
+                  ),
+                view: (config: Config) => preferences.view(config),
+                save: (patch: unknown) => {
+                  saved = preferences.update(saved, 'herdr-app', patch);
+                  persist();
+                  applyAllSettings();
+                },
+                emit,
+                svg,
+                clock: focusClock,
+                nextGeneration: () => ++sequence,
+                enqueue: (work: () => Promise<void>) => {
+                  queue = queue.then(work).catch(() => {});
+                },
+                settled,
+                backend: dependencies.appFocusBackend || appFocusBackend,
+              })
+            : createRuntime(scope),
+        ),
+      );
     return controllers.get(scope);
   }
   function applyAllSettings() {
@@ -1369,6 +1407,12 @@ function createApplication(dependencies: Record<string, any>) {
         return;
       }
       if (e.event === 'sendToPlugin') {
+        // Revocation must invalidate an in-flight App request before its final
+        // write; it cannot wait behind that request in the ordinary event queue.
+        if (scope === 'herdr-app' && e.payload?.kind === 'preferences') {
+          void runtime.inspectorRequest(e).catch(() => {});
+          return;
+        }
         const appearance: any = runtime.keys.get(e.context)?.appearance;
         queue = queue
           .then(() =>
@@ -1384,7 +1428,11 @@ function createApplication(dependencies: Record<string, any>) {
         const k: any = runtime.keys.get(e.context),
           shown: any = k?.presented,
           display: any = shown
-            ? { ...shown, pressedAt: clock(), setupBusy: runtime.setupBusy }
+            ? {
+                ...shown,
+                pressedAt: scope === 'herdr-app' ? focusClock() : clock(),
+                setupBusy: runtime.setupBusy,
+              }
             : undefined;
         queue = queue
           .then(() =>

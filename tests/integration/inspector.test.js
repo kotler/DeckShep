@@ -152,6 +152,65 @@ test('inspector', () => {
   node('herdrTitleIdentity').checked = true;
   node('herdrTitleIdentity').handlers.change();
   assert.equal(frames.at(-1).payload.preferences.herdrTitleIdentity, true);
+  const codec =
+    require('../../src/app/experimental-preferences').preferenceCodec(true);
+  const appConfig = codec.profileConfig(defaults, codec.store(), 'herdr-app');
+  socket.onmessage({
+    data: JSON.stringify({
+      event: 'sendToPropertyInspector',
+      payload: {
+        kind: 'status',
+        backend: 'herdr-app',
+        profileName: 'Herdr App',
+        preferences: codec.view(appConfig),
+        offline: true,
+        agents: 0,
+        setupBusy: false,
+        verifiedFocus: false,
+      },
+    }),
+  });
+  assert.equal(node('herdrAppSetup').hidden, false);
+  assert.equal(node('providerSetup').hidden, true);
+  assert.equal(node('promptShortcuts').hidden, true);
+  assert.equal(node('herdrSessionChoices').hidden, true);
+  assert.equal(node('rexSetup').hidden, true);
+  assert.equal(node('claudeEnabled').disabled, true);
+  assert.equal(node('herdrAppFocusRequestEnabled').checked, false);
+  assert(node('selection').textContent.includes('do not verify'));
+  assert(
+    node('action').options.find((option) => option.value === 'zoom').disabled,
+  );
+  assert(
+    !node('action').options.find((option) => option.value === 'next').disabled,
+  );
+  node('herdrAppHome').value = '/sample/app';
+  node('herdrAppHome').handlers.change();
+  assert.equal(frames.at(-1).payload.preferences.herdrAppHome, '/sample/app');
+  node('herdrAppFocusRequestEnabled').checked = true;
+  node('herdrAppFocusRequestEnabled').handlers.change();
+  assert.deepEqual(Object.keys(frames.at(-1).payload.preferences), [
+    'herdrAppFocusRequestEnabled',
+  ]);
+  assert.equal(
+    frames.at(-1).payload.preferences.herdrAppFocusRequestEnabled,
+    true,
+  );
+  const count = frames.length;
+  node('herdrAppHome').value = 'relative';
+  node('herdrAppHome').handlers.change();
+  assert.equal(frames.length, count);
+  socket.onmessage({
+    data: JSON.stringify({
+      event: 'sendToPropertyInspector',
+      payload: {
+        kind: 'doctor',
+        checks: [{ ok: false, reason: 'No App build approved' }],
+        sessions: [],
+      },
+    }),
+  });
+  assert(node('checklist').textContent.includes('No App build approved'));
   console.log(
     'PASS inspector registration context, status connection, explicit setup consent, shared preferences and action overrides',
   );

@@ -2,8 +2,8 @@ import { spawn } from 'node:child_process';
 import * as path from 'node:path';
 import type { Socket } from 'node:net';
 
-/** The helper inspects inherited descriptor 3; it never connects by pathname.
- * This adapter is unwired, and its helper is not yet included in distributions. */
+/** The packaged helper inspects inherited descriptor 3; it never connects by
+ * pathname. Empty production build records keep the App path disabled. */
 export function nativeAppPeerProbe(helper: string) {
   if (!path.isAbsolute(helper) || /[\x00-\x1f\x7f]/.test(helper))
     throw Error('Peer unverified');
