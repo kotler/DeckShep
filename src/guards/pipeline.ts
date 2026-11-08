@@ -1,5 +1,5 @@
 import type { DeliveryPermit, InputAction } from '../domain/backend';
-import type { PressContext, TargetRef } from '../domain/types';
+import type { PressContext, TargetRef, ControlId } from '../domain/types';
 
 export interface CurrentPress {
   visible?: boolean;
@@ -35,6 +35,8 @@ interface Grant {
   target: string;
   generation: number;
   used: boolean;
+  controlId?: ControlId;
+  verificationKey?: string;
 }
 
 /** Every mutation consumes an unforgeable, single-use grant immediately before I/O. */
@@ -89,6 +91,8 @@ export class GuardPipeline {
       target: targetKey(target),
       generation,
       used: false,
+      controlId: context.controlId,
+      verificationKey: context.verificationKey,
     });
     return token;
   }
@@ -111,6 +115,14 @@ export class GuardPipeline {
     )
       throw Error('Input target changed');
     if (!actions.has(input.kind)) throw Error('Unsupported input action');
+    if (
+      grant.controlId !== undefined &&
+      (input.controlId !== grant.controlId ||
+        grant.context.controlId !== grant.controlId ||
+        input.verificationKey !== grant.verificationKey ||
+        grant.context.verificationKey !== grant.verificationKey)
+    )
+      throw Error('Control input changed');
   }
 
   postflight(context: PressContext): void {

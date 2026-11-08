@@ -4,6 +4,7 @@ import type {
   BackendId,
   TargetRef,
   PressContext,
+  ControlId,
 } from './types';
 
 declare const permitBrand: unique symbol;
@@ -11,17 +12,24 @@ declare const permitBrand: unique symbol;
 export interface DeliveryPermit {
   readonly [permitBrand]: true;
 }
-export type InputAction =
+export type InputAction = (
   | { kind: 'keys'; keys: readonly string[] }
   | { kind: 'paste'; text: string }
   | { kind: 'focus' }
   | { kind: 'selectWindow' }
   | { kind: 'zoom' }
-  | { kind: 'providerMutation'; method: string };
+  | { kind: 'providerMutation'; method: string }
+) & { controlId?: ControlId; verificationKey?: string };
+export interface ControlVerification {
+  readonly key: string;
+  readonly controls: ReadonlySet<ControlId>;
+}
 export interface BackendInfo {
   id: BackendId;
   version: string;
   capabilities: ReadonlySet<BackendCapability>;
+  verifiedControls: ReadonlySet<ControlId>;
+  verificationKey: string;
 }
 export interface PaneView {
   text: string;
@@ -32,6 +40,8 @@ export interface TerminalBackend {
   readonly id: BackendId;
   readonly generation: number;
   readonly capabilities: ReadonlySet<BackendCapability>;
+  readonly verifiedControls: ReadonlySet<ControlId>;
+  readonly verificationKey: string;
   connect(signal: AbortSignal): Promise<BackendInfo>;
   discover(): Promise<AgentSnapshot[]>;
   focused(): Promise<AgentSnapshot>;

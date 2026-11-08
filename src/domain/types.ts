@@ -70,6 +70,7 @@ export interface AgentSnapshot extends TargetRef {
 }
 export type ControlId =
   | `agent:${number}`
+  | 'focus'
   | 'collapse'
   | 'banknext'
   | 'next'
@@ -121,6 +122,8 @@ export interface PressContext {
   generation: number;
   backendKey: string;
   action: string;
+  controlId?: ControlId;
+  verificationKey?: string;
   page: number;
   stamp: string;
   target: AgentSnapshot | null;

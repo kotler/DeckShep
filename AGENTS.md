@@ -129,6 +129,11 @@ and forbid history reads, attachments and mutations. Their tests create only
 private temporary fake sockets. See ADR 0007 for the unresolved focus/Zoom
 read-back and native isolation requirements; a passing transport fixture does
 not verify an App/core build or grant a control capability.
+Herdr App native operations additionally require a verified control ID and the
+exact record key captured by the press. Keep the checks in mapping, provider
+dispatch, the delivery kernel, permit consumption and the backend. Local deck
+navigation never grants native authority. Existing Rex/Herdr TUI engines retain
+their native guards and exact golden behavior.
 
 ## DeckShep maintenance
 

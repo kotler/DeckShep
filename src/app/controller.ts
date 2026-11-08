@@ -23,6 +23,11 @@ const {
 const C = require('../guards/context');
 const { GuardPipeline } = require('../guards/pipeline.ts');
 const { DeliveryKernel } = require('./delivery.ts');
+const {
+  controlIdForAction,
+  verifiedAction,
+} = require('../domain/capabilities');
+const { assertVerifiedControl } = require('../guards/verified-control');
 const { controlAccent } = require('../render/signal');
 const { CompletionDisplay } = require('../render/completion');
 const {
@@ -228,7 +233,7 @@ function createApplication(dependencies: Record<string, any>) {
     function selected() {
       return bridge.agents?.find((a: any) => sameTarget(bridge.lastTarget, a));
     }
-    function mapping(k: any) {
+    function rawMapping(k: any) {
       const override: any = k.settings.action;
       if (override) {
         if (override === 'tools') return 'questions';
@@ -247,9 +252,22 @@ function createApplication(dependencies: Record<string, any>) {
       const { column: c, row: r } = k.coordinates;
       return r === 0
         ? 'agent:' + c
-        : C.layout(page, selected(), bridge.delivery?.backend.capabilities)[
-            (r - 1) * 5 + c
-          ];
+        : C.layout(
+            page,
+            selected(),
+            bridge.delivery?.backend.capabilities,
+            bridge.delivery?.backend.id === 'herdr-app'
+              ? bridge.delivery.backend.verifiedControls
+              : undefined,
+          )[(r - 1) * 5 + c];
+    }
+    function mapping(k: any) {
+      const action = rawMapping(k),
+        backend = bridge.delivery?.backend;
+      return backend?.id === 'herdr-app' &&
+        !verifiedAction(action, backend.capabilities, backend.verifiedControls)
+        ? 'none'
+        : action;
     }
     function bankLines() {
       if (offline) return ['Agents ▶', backendName() + ' offline'];
@@ -283,6 +301,12 @@ function createApplication(dependencies: Record<string, any>) {
         visibility,
         generation: (bridge as any).generation,
         action,
+        ...(bridge.delivery?.backend.id === 'herdr-app'
+          ? {
+              controlId: controlIdForAction(action),
+              verificationKey: bridge.delivery.backend.verificationKey,
+            }
+          : {}),
         page,
         backendKey: (bridge as any).backendKey,
         stamp: contextStamp,
@@ -811,6 +835,18 @@ function createApplication(dependencies: Record<string, any>) {
       try {
         let result: any;
         guards.preflight(display, C.needsContext(a));
+        if (
+          bridge.delivery?.backend.id === 'herdr-app' &&
+          ![
+            'collapse',
+            'banknext',
+            'more',
+            'questions',
+            'prompts',
+            'back',
+          ].includes(a)
+        )
+          assertVerifiedControl(bridge.delivery.backend, display);
         if (C.needsContext(a)) {
           result = await bridge.withContext(display, () => perform(a, display));
         } else result = await perform(a, display);

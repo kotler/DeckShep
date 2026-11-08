@@ -1,9 +1,13 @@
 import { isRexRead } from '../domain/transport';
 import { GuardPipeline } from '../guards/pipeline';
-import { GuardedBackend } from '../terminals/contract/backend';
 import { RexBackend } from '../terminals/rex/backend';
 import { HerdrTuiBackend } from '../terminals/herdr-tui/backend';
-import type { InputAction } from '../domain/backend';
+import type { InputAction, TerminalBackend } from '../domain/backend';
+import { assertVerifiedControl } from '../guards/verified-control';
+import type {
+  BackendDriver,
+  DeliveryAuthority,
+} from '../terminals/contract/backend';
 import type {
   AgentSnapshot,
   BackendId,
@@ -39,40 +43,50 @@ const herdrReads = new Set([
 /** Legacy command adapters terminate here. Unknown commands are denied, never
  * treated as reads; every existing native check still runs before this gate. */
 export class DeliveryKernel {
-  readonly backend: GuardedBackend;
+  readonly backend: TerminalBackend;
   readonly #operations = new WeakMap<InputAction, () => Promise<unknown>>();
   constructor(
     private readonly session: SessionPort,
     private readonly guards: GuardPipeline,
     private readonly active: () => PressContext | null,
+    createBackend?: (
+      driver: BackendDriver,
+      authority: DeliveryAuthority,
+    ) => TerminalBackend,
   ) {
+    const driver: BackendDriver = {
+      discover: () => session.discover(),
+      focused: () => session.focused(),
+      focus: (target) => session.focus(target),
+      readPane: (target) => session.readPane(target),
+      execute: async (target, input) => {
+        const operation = this.#operations.get(input);
+        this.#operations.delete(input);
+        if (operation) return operation();
+        if (input.kind === 'focus') return session.focus(target);
+        if (input.kind === 'zoom') return session.zoom();
+        throw Error('Input operation unavailable');
+      },
+    };
+    const authority: DeliveryAuthority = {
+      consume: (permit, target, generation, input) =>
+        guards.consume(permit, target, generation, input),
+      issue: (target) =>
+        guards.issue(this.context(), target, this.backend.generation),
+    };
+    if (createBackend) {
+      this.backend = createBackend(driver, authority);
+      return;
+    }
+    if (!['rex', 'herdr'].includes(session.config.backend))
+      throw Error('Backend unavailable');
     const id: BackendId =
       session.config.backend === 'herdr' ? 'herdr-tui' : 'rex';
     const Backend = id === 'herdr-tui' ? HerdrTuiBackend : RexBackend;
-    this.backend = new Backend(
-      {
-        discover: () => session.discover(),
-        focused: () => session.focused(),
-        focus: (target) => session.focus(target),
-        readPane: (target) => session.readPane(target),
-        execute: async (target, input) => {
-          const operation = this.#operations.get(input);
-          this.#operations.delete(input);
-          if (operation) return operation();
-          if (input.kind === 'focus') return session.focus(target);
-          if (input.kind === 'zoom') return session.zoom();
-          throw Error('Input operation unavailable');
-        },
-      },
-      {
-        consume: (permit, target, generation, input) =>
-          guards.consume(permit, target, generation, input),
-        issue: (target) =>
-          guards.issue(this.context(), target, this.backend.generation),
-      },
-    );
-    void this.backend.connect(new AbortController().signal);
-    this.backend.generation = session.generation;
+    const legacy = new Backend(driver, authority);
+    this.backend = legacy;
+    void legacy.connect(new AbortController().signal);
+    legacy.generation = session.generation;
   }
   private context(): PressContext {
     const context = this.active();
@@ -113,8 +127,16 @@ export class DeliveryKernel {
     operation: (beforeIO: () => void) => Promise<unknown>,
   ): Promise<unknown> {
     const context = this.context();
+    assertVerifiedControl(this.backend, context);
+    if (this.backend.id === 'herdr-app')
+      input = {
+        ...input,
+        controlId: context.controlId,
+        verificationKey: context.verificationKey,
+      };
     const permit = this.guards.issue(context, target, this.backend.generation);
     const beforeIO = () => {
+      assertVerifiedControl(this.backend, context);
       this.guards.preflight(context, false);
       if (this.backend.generation !== context.generation)
         throw Error('Controller changed; no input sent');

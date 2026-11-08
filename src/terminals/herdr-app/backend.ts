@@ -2,6 +2,7 @@ import type {
   AgentSnapshot,
   BackendCapability,
   TargetRef,
+  ControlId,
 } from '../../domain/types';
 import type {
   BackendInfo,
@@ -29,6 +30,10 @@ export class HerdrAppBackend implements TerminalBackend {
   get capabilities(): ReadonlySet<BackendCapability> {
     return new Set(this.#capabilities);
   }
+  get verifiedControls(): ReadonlySet<ControlId> {
+    return new Set();
+  }
+  readonly verificationKey = '';
   constructor(private readonly transport: AppFixtureTransport) {}
   async connect(signal: AbortSignal): Promise<BackendInfo> {
     this.#connected = false;
@@ -44,6 +49,8 @@ export class HerdrAppBackend implements TerminalBackend {
       id: this.id,
       version: /^[A-Za-z0-9.:_-]{1,64}$/.test(version) ? version : 'unknown',
       capabilities: this.capabilities,
+      verifiedControls: this.verifiedControls,
+      verificationKey: this.verificationKey,
     };
   }
   private async snapshot() {

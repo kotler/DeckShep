@@ -10,6 +10,7 @@ import type {
   ProviderId,
 } from '../../domain/types';
 import { controlSpec, supported } from '../../domain/capabilities';
+import { assertVerifiedControl } from '../../guards/verified-control';
 
 export class SessionProvider implements AgentProvider {
   constructor(readonly id: ProviderId) {}
@@ -59,6 +60,11 @@ export class SessionProvider implements AgentProvider {
       context.backend.id === 'herdr-app'
     )
       throw Error('Use keyboard');
+    if (context.backend.id === 'herdr-app') {
+      if (control !== context.press.action)
+        throw Error('Control input changed');
+      assertVerifiedControl(context.backend, context.press);
+    }
     return context.operations.execute(control, context.press);
   }
 }

@@ -1,6 +1,7 @@
 type AgentSnapshot = import('./types').AgentSnapshot;
 type Config = import('./types').Config;
 type PressContext = import('./types').PressContext;
+const { verifiedAction } = require('./capabilities');
 function isBackground(
   agent: import('./types').AgentSnapshot | null | undefined,
 ) {
@@ -83,7 +84,7 @@ function homeRow(
       return ['status', 'none', 'zoom', 'none', 'interrupt'];
   }
 }
-function layout(
+function rawLayout(
   page: number,
   agent: import('./types').AgentSnapshot | null | undefined,
   capabilities?: ReadonlySet<string> | undefined,
@@ -149,6 +150,20 @@ function layout(
     'more',
     ...homeRow(agent, capabilities),
   ];
+}
+function layout(
+  page: number,
+  agent: import('./types').AgentSnapshot | null | undefined,
+  capabilities?: ReadonlySet<string>,
+  controls?: ReadonlySet<import('./types').ControlId>,
+) {
+  const actions = rawLayout(page, agent, capabilities);
+  if (!controls) return actions;
+  return actions.map((action) =>
+    verifiedAction(action, capabilities ?? new Set(), controls)
+      ? action
+      : 'none',
+  );
 }
 const localActions: Set<string> = new Set([
   'none',
