@@ -15,6 +15,7 @@ else {
   const plugin = args.includes('--skip-build') ? path.join(root, 'dist/com.local.rexagents.sdPlugin') : await build({ universal: true });
   run(process.execPath, ['scripts/tool.mjs', '@elgato/cli', 'validate', plugin, '--no-update-check']);
   run(process.execPath, ['scripts/tool.mjs', '@elgato/cli', 'pack', plugin, '--output', path.join(root, 'dist'), '--force', '--no-update-check', '--no-file-list']);
+  run('lipo', ['-verify_arch', 'arm64', 'x86_64', path.join(plugin, 'bin/visible-pane')]);
   const out = path.join(root, 'dist'), info = { tag, packageVersion: version, pluginVersion: version + '.0', gitCommit: revision, workingTreeDirty: dirty, helperArchitectures: ['arm64', 'x86_64'] };
   fs.writeFileSync(path.join(out, 'BUILD-INFO.json'), JSON.stringify(info, null, 2) + '\n');
   const files = new Map([...PAYLOAD].sort().map(name => [name, fs.readFileSync(path.join([INSTALLER, ...PROFILES, 'BUILD-INFO.json'].includes(name) ? out : root, name))]));

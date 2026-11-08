@@ -41,3 +41,10 @@ test('doctor reasons contain no home paths or settings; unsafe session directori
   assert.deepEqual(herdrSessions(paths.home), []);
   assert.equal((await diagnostics({ rex: async () => { throw Error('secret'); } })).find(c => c.id === 'rex').ok, false);
 });
+test('removal disables hooks before clearing private lifecycle records and never follows a replaced state directory', t => {
+  const paths = fixture(t), setup = new IntegrationSetup(paths), directory = path.join(paths.plugin, 'state/claude');
+  setup.preview(); setup.apply(); fs.mkdirSync(directory, { mode: 0o700 }); fs.writeFileSync(path.join(directory, '42.json'), '{}', { mode: 0o600 }); fs.writeFileSync(path.join(directory, '42.invalid'), 'fixture', { mode: 0o600 });
+  setup.preview(true); setup.apply(); assert.deepEqual(fs.readdirSync(directory), []);
+  setup.preview(); setup.apply(); fs.rmSync(directory, { recursive: true }); fs.symlinkSync(path.dirname(paths.settings), directory);
+  setup.preview(true); assert.throws(() => setup.apply(), /Unsafe/); assert.deepEqual(JSON.parse(fs.readFileSync(paths.settings, 'utf8')), JSON.parse(paths.original));
+});

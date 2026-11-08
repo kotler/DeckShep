@@ -38,7 +38,7 @@ export async function build({ universal = false } = {}) {
     const identity = process.env.ASW_SIGN_IDENTITY || '-';
     run('codesign', ['--force', '--sign', identity, ...(identity === '-' ? [] : ['--options', 'runtime', '--timestamp']), helper]);
   } finally { fs.rmSync(temporary, { recursive: true, force: true }); }
-  const entries = [ ['src/plugin/entry.mts', 'bin/plugin.js'], ['src/agents/claude/hook.ts', 'claude-hook.js'], ['src/plugin/configure-entry.ts', 'configure-claude.js'], ['src/inspector/index.ts', 'inspector.js', { browser: true }], ['src/app/preferences.ts', 'preferences.js', { browser: true, name: 'RexPreferences' }], ['src/plugin/doctor-entry.ts', 'bin/doctor.js'] ];
+  const entries = [ ['src/plugin/entry.mts', 'bin/plugin.js'], ['src/plugin/hook-entry.ts', 'claude-hook.js'], ['src/plugin/configure-entry.ts', 'configure-claude.js'], ['src/inspector/index.ts', 'inspector.js', { browser: true }], ['src/app/preferences.ts', 'preferences.js', { browser: true, name: 'RexPreferences' }], ['src/plugin/doctor-entry.ts', 'bin/doctor.js'] ];
   for (const [entry, output, options] of entries) {
     if (!fs.existsSync(path.join(root, entry))) continue;
     await bundle(path.join(root, entry), path.join(destination, output), options);

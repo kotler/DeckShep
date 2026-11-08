@@ -25,6 +25,7 @@ export function auditInstaller(data) {
   if (manifest.UUID !== 'com.local.rexagents' || manifest.Version !== pkg.version + '.0' || lock.version !== pkg.version || lock.packages?.['']?.version !== pkg.version || manifest.CodePath !== 'bin/plugin.js') throw Error('Plugin identity/version mismatch');
   if (config.backend !== 'rex' || config.allowClipboardFocus !== false || JSON.stringify(config.herdr) !== JSON.stringify({ socketPath: '', titleIdentity: false }) || config.clientLabel || Object.keys(config.aliases || {}).length || config.focusRoutingVerified || config.claude?.enabled || config.experimental?.herdrApp) throw Error('Package must use fresh Rex defaults with consent and title matching off');
   for (const required of ['bin/visible-pane', 'bin/plugin.js', 'claude-hook.js', 'configure-claude.js', 'bin/doctor.js', 'inspector.html', 'inspector.js', 'sdpi-components.js']) if (!files.has(prefix + required)) throw Error('Missing plugin entry point');
+  if (manifest.Profiles?.length !== 2) throw Error('Fresh package must contain only the existing profiles');
   if (manifest.Actions?.length !== 1 || manifest.Actions[0].UUID !== 'com.local.rexagents.key') throw Error('Action identity mismatch');
   for (const [index, backend] of ['rex', 'herdr'].entries()) {
     const profile = manifest.Profiles?.[index];

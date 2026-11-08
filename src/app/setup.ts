@@ -19,6 +19,8 @@ function readSetup(paths: SetupPaths) {
   return { original, record, settings: original === null ? {} : parse('claudeSettings', original), saved: record === null ? null : parse('setupRecord', record) };
 }
 function atomic(file: string, data: string | null): void {
+  const parent = path.dirname(file);
+  if (fs.existsSync(parent)) { const stat = fs.lstatSync(parent); if (!stat.isDirectory() || stat.isSymbolicLink() || stat.uid !== process.getuid!() || stat.mode & 0o022) throw Error('Unsafe integration directory'); }
   if (data === null) { fs.rmSync(file, { force: true }); return; }
   fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
   const temp = file + '.' + crypto.randomUUID();
