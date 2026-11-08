@@ -31,6 +31,15 @@ export function mergedConfig(defaults, old) {
     Array.isArray(old)
   )
     throw Error('Invalid upgrade config');
+  function safeKeys(value) {
+    if (!value || typeof value !== 'object') return;
+    for (const [key, child] of Object.entries(value)) {
+      if (['__proto__', 'prototype', 'constructor'].includes(key))
+        throw Error('Unsafe upgrade config key');
+      safeKeys(child);
+    }
+  }
+  safeKeys(old);
   const config = structuredClone(defaults);
   for (const [key, value] of Object.entries(old)) {
     if (['__proto__', 'prototype', 'constructor'].includes(key))

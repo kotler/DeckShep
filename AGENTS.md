@@ -99,8 +99,11 @@ entry wrappers are excluded from c8's source gate; the subprocess fake-host test
 covers the adapter independently. Do not lower thresholds to hide a regression.
 Knip's explicit entries include dynamic Rollup hook/SDK-log/fixture substitutions.
 
-`node scripts/install.mjs` retains the stopped-Stream-Deck backup/config merge as
-an upgrade fallback. Do not run it as verification. Native installer preservation
+`node scripts/migrate-upgrade.mjs backup` and `restore <backup> [--apply]` provide
+the one-time external backup/native-installer migration path. Restore previews by
+default and keeps a pre-restore recovery backup. Never run them against real HOME
+as verification. `node scripts/install.mjs` retains the stopped-Stream-Deck
+backup/config merge as an upgrade fallback. Do not run it as verification. Native installer preservation
 of customized plugin-folder state has not been established. `npm run dev` links
 and restarts this plugin UUID only, and is never part of automated verification.
 

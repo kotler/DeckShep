@@ -281,6 +281,15 @@ test('upgrade merges customization and adds defaults while dropping obsolete foc
   assert(!('focusRoutingVerified' in result));
   assert.equal(defaults.allowClipboardFocus, false);
   assert.equal(I.mergedConfig(defaults, {}).allowClipboardFocus, false);
+  assert.throws(
+    () =>
+      I.mergedConfig(
+        defaults,
+        JSON.parse('{"prompts":{"__proto__":{"polluted":true}}}'),
+      ),
+    /Unsafe/,
+  );
+  assert.equal({}.polluted, undefined);
 });
 test('device choice refuses missing or ambiguous targets', async () => {
   const [, , , I] = await api(),

@@ -31,18 +31,34 @@ available; see [Claude](CLAUDE.md).
 
 ## Upgrading a customized 1.3.4 installation
 
-Native Stream Deck installer preservation of plugin-folder config/state has not
-been verified. Do not assume it preserves customized prompts or integration
-records. The Node recovery installer retains the previous guarded backup/merge
-behavior: quit Stream Deck, run `node scripts/install.mjs` from a built checkout,
-then reopen Stream Deck. It backs up profiles and the previous plugin outside the
-checkout before mutation, preserves existing profile bytes and Claude records,
-merges config defaults, and adds only missing profiles. Multiple MK.2 devices
-require `--device-uuid`.
+Use the one-time backup/migration helper included in the beta ZIP. It requires
+Node 22.13+ and keeps private backups outside the checkout and plugin directory.
+Fresh installs still use one plugin file.
 
-Keep that external backup until the upgrade is verified. Do not delete Claude
-setup records while its hooks are installed. A new install normally uses only
-the single plugin file; the recovery installer is an explicit upgrade fallback.
+1. Quit **Stream Deck**. Leave Rex, Herdr and all existing agents running.
+2. From the extracted ZIP directory, run `node scripts/migrate-upgrade.mjs backup`.
+   Keep the printed backup directory. The helper checks ownership, rejects links
+   and refuses an incomplete or changing snapshot.
+3. Open `com.local.rexagents.streamDeckPlugin` to upgrade. Quit Stream Deck again
+   before restoring customizations.
+4. Run `node scripts/migrate-upgrade.mjs restore "<backup-directory>"` to preview,
+   then repeat with `--apply`. Expand the printed `~/` to your home directory when
+   supplying it as a quoted argument. The helper verifies backup integrity and
+   destination, merges your config into the new defaults, restores Claude setup
+   records at their stable paths and restores exact saved profile file bytes.
+   It keeps the new runtime and any newly added profiles. A second external
+   backup captures the installation immediately before restore.
+5. Reopen Stream Deck and verify your existing keys and preferences. Keep both
+   backups until verified. Never delete setup records while hooks are installed.
+
+Native installer preservation of plugin-folder state is not assumed. Changed
+integration records cause a refusal for manual reconciliation, rather than
+replacement of newer state. Global SDK/agent settings are never rewritten by the
+migration. Do not share backup directories: they contain private customizations.
+
+The built-checkout fallback `node scripts/install.mjs` also retains the previous
+stopped-app backup/merge installation; multiple MK.2 devices require
+`--device-uuid`. Build/package commands never invoke either upgrade path.
 
 ## Diagnose
 

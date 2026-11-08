@@ -41,7 +41,16 @@ export const DOCS = [
   'docs/validation/2026-11-06-herdr.md',
   'docs/validation/2026-11-07-claude.md',
 ];
-export const PAYLOAD = [INSTALLER, ...PROFILES, 'BUILD-INFO.json', ...DOCS];
+export const PAYLOAD = [
+  INSTALLER,
+  ...PROFILES,
+  'BUILD-INFO.json',
+  ...DOCS,
+  'scripts/migrate-upgrade.mjs',
+  'scripts/install.mjs',
+  'scripts/archive.mjs',
+  'scripts/profiles.mjs',
+];
 export const digest = (data) => createHash('sha256').update(data).digest('hex');
 export function auditArchive(
   data,
