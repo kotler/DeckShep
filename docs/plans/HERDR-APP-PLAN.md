@@ -19,6 +19,9 @@ core. The ordinary control socket does not expose the full focus/Zoom
 read-back required by Milestone 1. `terminal.peek` opens an overlay, so it
 cannot be used as a passive read. Those source findings qualify the proposed
 API steps below; see the ADR's hand-back and native questions.
+The recommended next read-back approach is an optional read-only mod, with a
+[concrete design proposal](HERDR-APP-READBACK-DESIGN.md) pending owner review.
+No mod has been implemented, installed or treated as native evidence.
 
 Read `AGENTS.md` and [ADR 0004](../adr/0004-herdr-app-backend.md) first. Every
 safety rule applies. In particular: never connect to, focus, zoom, read from or
