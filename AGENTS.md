@@ -16,6 +16,10 @@ The installed plugin retains its existing Stream Deck Node runtime.
 - `npm run lint`: recommended ESLint rules, with documented legacy-only TODOs.
 - `npm run format:check` / `npm run format`: format JS/TS/HTML/JSON/YAML; golden JSON stays byte-stable.
 - `npm run knip`: unused-file/dependency scan; confirm findings with `rg` before removal. Dynamic CommonJS exports, VM imports, fixture lookup and icon names need manual verification.
+- `npm run deck:preview`: print an owned random loopback URL for the synthetic 15-key browser deck.
+- `npm run e2e:install`: one-time pinned Chromium headless-shell download; no full browser/system dependencies.
+- `npm run test:e2e`: exact SVG/label/trace checks plus six deck-only visual smoke checks.
+- `npm run test:e2e:update`: deliberately regenerate OS-specific smoke images; review and justify changes.
 - `npm run build` (or `npm run build -- --universal`): portable Node/Swift build; never installs or restarts anything.
 - `npm run clean`: delete only generated `dist/` and `coverage/`; preserve all backups.
 
@@ -142,3 +146,22 @@ corresponding explicit instruction. Marketplace AI disclosure and eligibility
 still need owner review. Do not purchase email plans, change DNS, send requests
 or accept Maker agreements without explicit owner instruction. Runtime hardening
 belongs in a separately reviewed change; do not weaken existing guards.
+
+## Virtual deck verification
+
+The virtual host bundles fixtures only; its child receives a private temporary
+HOME and no agent routing/auth environment. It never needs the Swift build.
+Time advances explicitly; animation is disabled. Keep e2e imports under tests
+and tools, never src, and preserve the production-bundle/package fixture audits.
+Playwright is exactly pinned in the tools workspace. `e2e:install` fetches the
+pinned headless shell plus standard FFmpeg from Playwright's CDN, outside npm's
+lock-file integrity verification. The cache is `~/Library/Caches/ms-playwright`
+on macOS (`~/.cache/ms-playwright` on Linux), outside the repository. Never add a
+browser download to npm ci, build or package. Never ship tests, reports, browser
+cache or fixture identifiers. Remove cached browsers with
+`node scripts/tool.mjs @playwright/test uninstall` (or `npx playwright uninstall`
+from tools). No live authorization is implied by fixture/browser testing.
+See tests/e2e/README.md for control API, clock, baseline policy and native/hardware
+limits. CI uses a macOS 15 browser job, version/OS/architecture-specific caching
+and failure reports. An Ubuntu 24.04 trial passed both browser runs, but all six
+PNG baselines differed, so macOS remains the CI platform. See the validation record.
