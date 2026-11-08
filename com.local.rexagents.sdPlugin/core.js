@@ -1,9 +1,15 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 const { execFile } = require('node:child_process');
 const path = require('node:path');
 const P = require('./presets');
 const REX =
   '/Applications/Rex Beta.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex';
+/** @param {string[]} args
+ * @param {any} input */
 function cli(args, input) {
   return new Promise((resolve, reject) => {
     const p = execFile(
@@ -23,9 +29,10 @@ function cli(args, input) {
         }
       },
     );
-    if (input !== undefined) p.stdin.end(input);
+    if (input !== undefined) /** @type {any} */ (p.stdin).end(input);
   });
 }
+/** @returns {Promise<void>} */
 function activateRex() {
   return new Promise((resolve, reject) => {
     execFile(
@@ -37,6 +44,7 @@ function activateRex() {
     );
   });
 }
+/** @param {string} clientId */
 function visiblePane(clientId) {
   return new Promise((resolve, reject) => {
     execFile(
@@ -61,9 +69,11 @@ function visiblePane(clientId) {
     );
   });
 }
+/** @param {any} p */
 function identify(p) {
   const f = p.foreground;
-  if (!f || f.user_id !== process.getuid()) return null;
+  if (!f || f.user_id !== /** @type {() => number} */ (process.getuid)())
+    return null;
   const n = path.basename(f.path || '');
   const s = f.script || '';
   if (n === 'codex')
@@ -88,6 +98,10 @@ function identify(p) {
     };
   return null; // Never infer input safety from an ancestor or a status record.
 }
+/** @param {any[]} records
+ * @param {Pick<AgentSnapshot, "app" | "pid" | "name">} agent
+ * @param {number} [now]
+ * @param {number} [maxAge] */
 function state(records, agent, now = Date.now(), maxAge = 86400000) {
   const valid = records.filter(
     (r) =>
@@ -105,10 +119,17 @@ function state(records, agent, now = Date.now(), maxAge = 86400000) {
   }
   return { state: 'unknown' };
 }
-const focusError = (message) =>
-  Object.assign(Error(message), { code: 'SELECTION_CHANGED' });
-const token = (t) => [t.session, t.block, t.app, t.pid, t.name].join('|');
+const focusError =
+  /** @param {string} message */
+  (message) => Object.assign(Error(message), { code: 'SELECTION_CHANGED' });
+const token =
+  /** @param {any} t */
+  (t) => [t.session, t.block, t.app, t.pid, t.name].join('|');
 class Bridge {
+  /** @param {Config} config
+   * @param {any} [run]
+   * @param {any} [activate]
+   * @param {any} [readVisible] */
   constructor(
     config,
     run = cli,
@@ -119,6 +140,7 @@ class Bridge {
     this.run = run;
     this.activate = activate;
     this.readVisible = readVisible;
+    /** @type {{session: string, block: string}[]} */
     this.slots = [];
     this.draft = null;
     this.claude = new (require('./claude-controls').ClaudeControls)(this);
@@ -126,7 +148,7 @@ class Bridge {
   async client() {
     const { clients = [] } = await this.run(['client', 'ls', '--json']);
     const apps = clients.filter(
-      (c) =>
+      /** @param {any} c */ (c) =>
         c.info?.kind === 'app' &&
         c.info?.platform === 'macos' &&
         c.info?.name === 'Rex Beta' &&
@@ -136,9 +158,12 @@ class Bridge {
     if (apps.length !== 1) throw new Error('Rex app ambiguous or offline');
     return apps[0];
   }
+  /** @param {any} t
+   * @param {any} m */
   method(t, m) {
     return this.run(['block', 'call', '-s', t.session, '-b', t.block, m]);
   }
+  /** @param {any} t */
   async agent(t) {
     let p = await this.method(t, 'process');
     if (!p || !Object.hasOwn(p, 'foreground'))
@@ -148,9 +173,11 @@ class Bridge {
       const before = p.foreground;
       let file;
       try {
-        file = await (this.resolveExecutable || processIdentity.executable)(
-          before.pid,
-        );
+        // prettier-ignore -- retain the receiver cast used for an injected legacy hook.
+        file = await /** @type {any} */ (
+          /** @type {any} */ (this).resolveExecutable ||
+            processIdentity.executable
+        )(before.pid);
       } catch {
         return null;
       }
@@ -251,7 +278,9 @@ class Bridge {
     await this.discover();
     const removed = this.slotGaps();
     this.slots = this.slots.filter((s) =>
-      this.agents.some((a) => a.session === s.session && a.block === s.block),
+      /** @type {any[]} */ (this.agents).some(
+        (a) => a.session === s.session && a.block === s.block,
+      ),
     );
     // Keep the existing relative order, selected agent, draft and picker untouched.
     return {
@@ -307,7 +336,7 @@ class Bridge {
           throw Error('Selected chat changed');
       }
     }
-    this.lastTarget = {
+    this.lastTarget = /** @type {import("../src/domain/types").TargetRef} */ ({
       session: a.session,
       block: a.block,
       pid: a.pid,
@@ -321,20 +350,28 @@ class Bridge {
             nativeIdentity: a.nativeIdentity,
           }
         : {}),
-    };
+    });
     return a;
   }
   async contextPreflight() {
     return this.focused();
   }
+  /** @param {any} context
+   * @param {() => any} action */
   async withContext(context, action) {
     if (this.actionContext) throw Error('Another action is in progress');
     this.actionContext = context;
     try {
-      this.actionPreflight = await this.contextPreflight(context);
+      this.actionPreflight =
+        await /** @type {(...args: any[]) => Promise<any>} */ (
+          this.contextPreflight
+        )(context);
       return await action();
     } catch (error) {
-      if (error.code === 'SELECTION_CHANGED') {
+      if (
+        /** @type {Error & {code?: string}} */ (error).code ===
+        'SELECTION_CHANGED'
+      ) {
         this.lastTarget = null;
         this.draft = null;
         this.picker = null;
@@ -354,6 +391,8 @@ class Bridge {
     }
     return this.focused();
   }
+  /** @param {any} t
+   * @param {any} [ready] */
   async checked(t, ready = false) {
     const a = await this.focused();
     if (token(a) !== token(t)) throw focusError('Focus or process changed');
@@ -361,6 +400,7 @@ class Bridge {
       throw new Error('Agent not ready for a prompt');
     return a;
   }
+  /** @param {any} t */
   async focus(t) {
     const c = await this.client();
     const a = await this.agent(t);
@@ -384,7 +424,7 @@ class Bridge {
     this.draft = null;
     this.picker = null;
     this.selectionNotice = false;
-    this.lastTarget = {
+    this.lastTarget = /** @type {import("../src/domain/types").TargetRef} */ ({
       session: a.session,
       block: a.block,
       pid: a.pid,
@@ -398,18 +438,26 @@ class Bridge {
             nativeIdentity: a.nativeIdentity,
           }
         : {}),
-    };
+    });
     if (this.config.bringToFront !== false) await this.activate();
   }
+  /** @param {number} delta */
   async navigate(delta) {
     await this.discover();
     const a = await this.focused();
-    const i = this.agents.findIndex((x) => token(x) === token(a));
-    if (i < 0 || !this.agents.length) throw new Error('No agents');
+    const i = /** @type {any[]} */ (this.agents).findIndex(
+      (x) => token(x) === token(a),
+    );
+    if (i < 0 || !(/** @type {any[]} */ (this.agents).length))
+      throw new Error('No agents');
     await this.focus(
-      this.agents[(i + delta + this.agents.length) % this.agents.length],
+      /** @type {any[]} */ (this.agents)[
+        (i + delta + /** @type {any[]} */ (this.agents).length) %
+          /** @type {any[]} */ (this.agents).length
+      ],
     );
   }
+  /** @param {string} action */
   async stage(action) {
     const a = await this.focused();
     if (a.app === 'claude-code') return this.claude.stage(action);
@@ -434,14 +482,19 @@ class Bridge {
       throw new Error('Invalid single-line prompt');
     const control = ['model', 'effort'].includes(action),
       read =
-        this.readStagedComposer || require('./native-input').readIdleComposer;
+        /** @type {any} */ (this).readStagedComposer ||
+        require('./native-input').readIdleComposer;
     if (!control && /^\s*[!\/]/.test(text))
       throw Error('Prompt shortcuts require plain text');
     if (!control && (a.app !== 'codex' || !this.config.controlVerified?.codex))
       throw Error('Prompt controls verified for Codex only');
     const before = control ? null : await read(this, a, { allowEmpty: true });
     const modes = await this.method(a, 'modes');
-    if (!modes.modes?.some((m) => m.number === 2004 && m.set))
+    if (
+      !modes.modes?.some(
+        /** @param {any} m */ (m) => m.number === 2004 && m.set,
+      )
+    )
       throw new Error('Bracketed paste unavailable');
     await this.checked(a, true);
     // stdin keeps prompts out of process argument listings; no clipboard or logs.
@@ -492,7 +545,8 @@ class Bridge {
       try {
         if (!d.snapshot) throw Error('Draft not verified; use Rex');
         const { sameComposer, readIdleComposer } = require('./native-input'),
-          read = this.readStagedComposer || readIdleComposer;
+          read =
+            /** @type {any} */ (this).readStagedComposer || readIdleComposer;
         const before = await read(this, d.target);
         await this.checked(d.target, true);
         const after = await read(this, d.target);
@@ -541,6 +595,8 @@ class Bridge {
     p.at = Date.now();
     return p;
   }
+  /** @param {any} p
+   * @param {string} key */
   async pickerKey(p, key) {
     await this.run([
       'send-key',
@@ -551,6 +607,7 @@ class Bridge {
       key,
     ]);
   }
+  /** @param {string} kind */
   async cyclePicker(kind) {
     const a = await this.focused();
     if (!this.config.controlVerified?.[a.app])
@@ -573,6 +630,7 @@ class Bridge {
       await this.pickerKey(p, 'down');
     } else await this.pickerKey(p, kind === 'effort' ? 'right' : 'down');
   }
+  /** @param {string} kind */
   async cycleControl(kind) {
     if (!['model', 'effort', 'permissions'].includes(kind))
       throw new Error('Unsupported cycle');
@@ -623,7 +681,9 @@ class Bridge {
     }
     if (!record || record.signature !== P.signature(this.config.cycles))
       throw new Error('Native presets need setup in this session');
-    const entries = record.entries.filter((e) => e.kind === kind);
+    const entries = record.entries.filter(
+      /** @param {any} e */ (e) => e.kind === kind,
+    );
     if (!entries.length) throw new Error('No cycle entries');
     P.validateOnDisk(entries);
     const i = (record.indices[kind] || 0) % entries.length,
@@ -643,6 +703,7 @@ class Bridge {
     P.saveRegistry(file, registry);
     return { kind, label: entry.label };
   }
+  /** @param {string} direction */
   async adjustEffort(direction) {
     if (!['increase', 'decrease'].includes(direction))
       throw new Error('Unsupported effort direction');
@@ -650,7 +711,9 @@ class Bridge {
     if (a.app !== 'codex' || !this.config.controlVerified?.codex)
       throw new Error('Effort shortcuts not verified for this agent');
     if (this.picker) throw new Error('Close the native picker first');
-    const key = this.config.effortKeys?.[direction];
+    const key = /** @type {Record<string, any>} */ (this.config.effortKeys)?.[
+      direction
+    ];
     if (!['shift+up', 'shift+down', 'alt+.', 'alt+,'].includes(key))
       throw new Error('Effort shortcut unavailable');
     await this.checked(a, true);
@@ -690,12 +753,15 @@ class Bridge {
     const a = await this.focused();
     if (a.app === 'claude-code') return this.claude.interrupt();
     if (a.state !== 'working') throw new Error('Interrupt only while working');
+    // prettier-ignore -- retain the receiver cast used for an injected legacy hook.
     if (a.app === 'codex')
-      await (this.verifyRunning
-        ? this.verifyRunning(a)
-        : new (require('./background-controls').BackgroundControls)(
-            this,
-          ).running(a));
+      await /** @type {any} */ (
+        /** @type {any} */ (this).verifyRunning
+          ? /** @type {any} */ (this).verifyRunning(a)
+          : new (require('./background-controls').BackgroundControls)(
+              this,
+            ).running(a)
+      );
     const current = await this.checked(a);
     if (current.state !== 'working')
       throw Error('Run ended; no interrupt sent');
@@ -712,6 +778,7 @@ class Bridge {
       target,
     );
   }
+  /** @param {string} key */
   async menu(key) {
     if (!['up', 'down', 'left', 'right', 'escape'].includes(key))
       throw new Error('Unsupported menu key');
@@ -721,6 +788,7 @@ class Bridge {
     this.draft = null;
     await this.run(['send-key', '-s', a.session, '-b', a.block, key]);
   }
+  /** @param {string} key */
   async questionKey(key) {
     if (
       ![
@@ -736,11 +804,13 @@ class Bridge {
       ].includes(key)
     )
       throw Error('Unsupported question key');
-    const waiting = (a) =>
-      a.app === 'codex' &&
-      this.config.controlVerified?.codex &&
-      a.state === 'blocked' &&
-      a.kind === 'question';
+    const waiting =
+      /** @param {any} a */
+      (a) =>
+        a.app === 'codex' &&
+        this.config.controlVerified?.codex &&
+        a.state === 'blocked' &&
+        a.kind === 'question';
     const agent = await this.providerAgent();
     if (agent.app === 'claude-code')
       return this.claude.waiting(key, 'question', agent);
@@ -758,19 +828,24 @@ class Bridge {
       key,
     ]);
   }
+  /** @param {string} key */
   async approvalKey(key) {
     if (!['up', 'down', 'enter', 'escape'].includes(key))
       throw Error('Unsupported approval key');
-    const waiting = (a) =>
-      a.app === 'codex' &&
-      this.config.controlVerified?.codex &&
-      a.state === 'blocked' &&
-      a.kind === 'permission';
+    const waiting =
+      /** @param {any} a */
+      (a) =>
+        a.app === 'codex' &&
+        this.config.controlVerified?.codex &&
+        a.state === 'blocked' &&
+        a.kind === 'permission';
     const agent = await this.providerAgent();
     if (agent.app === 'claude-code')
       return this.claude.waiting(key, 'permission', agent);
     if (!waiting(agent)) throw Error('No native approval waiting');
-    const read = this.readRequest || require('./native-input').requestSnapshot;
+    const read =
+      /** @type {any} */ (this).readRequest ||
+      require('./native-input').requestSnapshot;
     const before = await read(this, agent),
       current = await this.checked(agent);
     if (
@@ -790,17 +865,22 @@ class Bridge {
       key,
     ]);
   }
+  /** @param {string} kind */
   async submitRunning(kind) {
     if (!['steer', 'queue'].includes(kind))
       throw Error('Unsupported running action');
-    const running = (a) =>
-      a.app === 'codex' &&
-      this.config.controlVerified?.codex &&
-      a.state === 'working';
+    const running =
+      /** @param {any} a */
+      (a) =>
+        a.app === 'codex' &&
+        this.config.controlVerified?.codex &&
+        a.state === 'working';
     const agent = await this.focused();
     if (agent.app === 'claude-code') return this.claude.running(kind);
     if (!running(agent)) throw Error('Agent is not running');
-    const read = this.readComposer || require('./native-input').readComposer,
+    const read =
+        /** @type {any} */ (this).readComposer ||
+        require('./native-input').readComposer,
       before = await read(this, agent),
       current = await this.checked(agent);
     if (!running(current)) throw Error('Run ended; no input sent');
@@ -809,11 +889,11 @@ class Bridge {
       throw Error('Typed message changed; press again');
     const identity = token(current) + '|' + before.chatId + '|' + before.hash;
     if (
-      this.submittedInput?.identity === identity &&
-      Date.now() - this.submittedInput.at < 10000
+      /** @type {any} */ (this).submittedInput?.identity === identity &&
+      Date.now() - /** @type {any} */ (this).submittedInput.at < 10000
     )
       throw Error('Already submitted; check Codex');
-    this.submittedInput = { identity, at: Date.now() };
+    /** @type {any} */ (this).submittedInput = { identity, at: Date.now() };
     this.draft = null;
     await this.run([
       'send-key',

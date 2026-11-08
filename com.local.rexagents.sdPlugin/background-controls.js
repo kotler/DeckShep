@@ -1,15 +1,28 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 const { DaemonRpc, socketFor, readFooter } = require('./daemon-controls');
-const supported = (version) => ['0.166.0', '0.167.0'].includes(version);
-const validId = (id) =>
-  typeof id === 'string' &&
-  id.length > 0 &&
-  id.length <= 256 &&
-  !/[\x00-\x1f\x7f]/.test(id);
-const sameIds = (a, b) =>
-  Array.isArray(a) &&
-  Array.isArray(b) &&
-  JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
+const supported =
+  /** @param {string} version */
+  (version) => ['0.166.0', '0.167.0'].includes(version);
+const validId =
+  /** @param {any} id */
+  (id) =>
+    typeof id === 'string' &&
+    id.length > 0 &&
+    id.length <= 256 &&
+    !/[\x00-\x1f\x7f]/.test(id);
+const sameIds =
+  /** @param {any} a
+   * @param {any} b */
+  (a, b) =>
+    Array.isArray(a) &&
+    Array.isArray(b) &&
+    JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
+/** @param {Record<string, any>} rpc
+ * @param {any} id */
 async function latestTurn(rpc, id) {
   const result = await rpc.request('thread/turns/list', {
       threadId: id,
@@ -30,18 +43,23 @@ async function latestTurn(rpc, id) {
     throw Error('Turn metadata unavailable');
   return { id: turn.id, status: turn.status };
 }
+/** @param {Record<string, any>} rpc
+ * @param {any} id */
 async function terminalIds(rpc, id) {
   if (!supported(rpc.serverVersion))
     throw Error('Background-terminal daemon version not verified');
   let cursor = null;
-  const ids = [],
+  const /** @type {string[]} */ ids = [],
     seen = new Set();
   for (let page = 0; page < 20; page++) {
-    const result = await rpc.request('thread/backgroundTerminals/list', {
-      threadId: id,
-      limit: 100,
-      ...(cursor ? { cursor } : {}),
-    });
+    const /** @type {any} */ result = await rpc.request(
+        'thread/backgroundTerminals/list',
+        {
+          threadId: id,
+          limit: 100,
+          ...(cursor ? { cursor } : {}),
+        },
+      );
     if (!Array.isArray(result?.data) || !Object.hasOwn(result, 'nextCursor'))
       throw Error('Terminal list incomplete');
     // Retain identifiers only, never command text, cwd, output or resource statistics.
@@ -58,6 +76,7 @@ async function terminalIds(rpc, id) {
   }
   throw Error('Terminal list incomplete');
 }
+/** @param {any} thread */
 function accepting(thread) {
   return (
     thread?.status?.type === 'idle' ||
@@ -66,6 +85,10 @@ function accepting(thread) {
       thread.status.activeFlags.length === 0)
   );
 }
+/** @param {Record<string, any>} rpc
+ * @param {any} id
+ * @param {any} thread
+ * @param {any} [turn] */
 async function backgroundState(rpc, id, thread, turn) {
   if (!accepting(thread)) return null;
   turn ??= await latestTurn(rpc, id);
@@ -79,23 +102,28 @@ async function backgroundState(rpc, id, thread, turn) {
   };
 }
 class BackgroundControls {
+  /** @param {Record<string, any>} bridge
+   * @param {Record<string, any>} [deps] */
   constructor(bridge, deps = {}) {
     this.b = bridge;
     this.socketFor = deps.socketFor || socketFor;
     this.footer = deps.footer || readFooter;
     this.connect =
       deps.connect ||
-      (async (endpoint) => {
-        const rpc = new DaemonRpc(endpoint.socket);
-        try {
-          await rpc.connect();
-          return rpc;
-        } catch (error) {
-          rpc.close();
-          throw error;
+      /** @type {(endpoint: {socket: string}) => Promise<DaemonRpc>} */ (
+        async (endpoint) => {
+          const rpc = new DaemonRpc(endpoint.socket);
+          try {
+            await rpc.connect();
+            return rpc;
+          } catch (error) {
+            rpc.close();
+            throw error;
+          }
         }
-      });
+      );
   }
+  /** @param {AgentSnapshot} agent */
   async running(agent) {
     const endpoint = await this.socketFor(agent.pid),
       rpc = await this.connect(endpoint);
@@ -126,6 +154,7 @@ class BackgroundControls {
       rpc.close();
     }
   }
+  /** @param {AgentSnapshot} agent */
   async stop(agent) {
     if (
       agent.app !== 'codex' ||
@@ -143,30 +172,39 @@ class BackgroundControls {
     try {
       if (!supported(rpc.serverVersion))
         throw Error('Background-terminal daemon version not verified');
-      const verify = async (ids) => {
-        const current = await this.b.checked(agent);
-        if (
-          !['working', 'idle', 'done'].includes(current.state) ||
-          (await this.footer(this.b, current)) !== id
-        )
-          throw Error('Agent or chat changed');
-        const latest = await this.socketFor(agent.pid);
-        if (latest.pid !== endpoint.pid || latest.socket !== endpoint.socket)
-          throw Error('Daemon changed');
-        const thread = (
-          await rpc.request('thread/read', {
-            threadId: id,
-            includeTurns: false,
-          })
-        )?.thread;
-        if (thread?.id !== id || thread.cwd !== agent.cwd || !accepting(thread))
-          throw Error('Chat no longer ready');
-        const turn = await latestTurn(rpc, id);
-        if (turn.id !== agent.backgroundTurnId || turn.status === 'inProgress')
-          throw Error('Agent started a new turn');
-        if (!sameIds(await terminalIds(rpc, id), ids))
-          throw Error('Background terminals changed; press again');
-      };
+      const verify =
+        /** @param {any} ids */
+        async (ids) => {
+          const current = await this.b.checked(agent);
+          if (
+            !['working', 'idle', 'done'].includes(current.state) ||
+            (await this.footer(this.b, current)) !== id
+          )
+            throw Error('Agent or chat changed');
+          const latest = await this.socketFor(agent.pid);
+          if (latest.pid !== endpoint.pid || latest.socket !== endpoint.socket)
+            throw Error('Daemon changed');
+          const thread = (
+            await rpc.request('thread/read', {
+              threadId: id,
+              includeTurns: false,
+            })
+          )?.thread;
+          if (
+            thread?.id !== id ||
+            thread.cwd !== agent.cwd ||
+            !accepting(thread)
+          )
+            throw Error('Chat no longer ready');
+          const turn = await latestTurn(rpc, id);
+          if (
+            turn.id !== agent.backgroundTurnId ||
+            turn.status === 'inProgress'
+          )
+            throw Error('Agent started a new turn');
+          if (!sameIds(await terminalIds(rpc, id), ids))
+            throw Error('Background terminals changed; press again');
+        };
       await verify(expected);
       const key = JSON.stringify([
         agent.session,

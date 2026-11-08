@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 // Explicit setup only. Preview by default; never invoked by discovery or a key press.
 const fs = require('node:fs'),
@@ -16,11 +20,16 @@ const EVENTS = [
   'PermissionRequest',
   'Notification',
 ];
-const quote = (s) => "'" + s.replace(/'/g, "'\\''") + "'";
+const quote = /** @param {any} s */ (s) => "'" + s.replace(/'/g, "'\\''") + "'";
+/** @param {string} dir
+ * @param {any} [node] */
 function commands(dir, node = process.execPath) {
   const hook = quote(node) + ' ' + quote(path.join(dir, 'claude-hook.js'));
   return { hook, status: hook + ' --statusline' };
 }
+/** @param {any} settings
+ * @param {any} saved
+ * @param {Record<string, any>} [options] */
 function plan(
   settings,
   saved,
@@ -59,7 +68,8 @@ function plan(
       throw Error('Invalid existing hook entry; no changes made');
     const clean = list.flatMap((entry) => {
       const hooks = entry.hooks.filter(
-        (h) => !(h.type === 'command' && h.command === owned.hook),
+        /** @param {any} h */ (h) =>
+          !(h.type === 'command' && h.command === owned.hook),
       );
       return hooks.length === entry.hooks.length
         ? [entry]
@@ -125,20 +135,27 @@ function plan(
     },
   };
 }
+/** @param {string} file
+ * @param {any} [optional] */
 function secure(file, optional = false) {
   try {
     const s = fs.lstatSync(file);
     if (
       !s.isFile() ||
       s.isSymbolicLink() ||
-      s.uid !== process.getuid() ||
+      s.uid !== /** @type {() => number} */ (process.getuid)() ||
       s.mode & 0o022
     )
       throw Error('Unsafe settings or setup record');
   } catch (error) {
-    if (!optional || error.code !== 'ENOENT') throw error;
+    if (
+      !optional ||
+      /** @type {Error & {code?: string}} */ (error).code !== 'ENOENT'
+    )
+      throw error;
   }
 }
+/** @param {string[]} [args] */
 function main(args = process.argv.slice(2)) {
   const flags = new Set(['--apply', '--remove', '--statusline']),
     values = new Set(['--settings', '--plugin-dir']);
@@ -148,8 +165,11 @@ function main(args = process.argv.slice(2)) {
         throw Error('Missing option value');
     } else if (!flags.has(args[i])) throw Error('Unknown option');
   }
-  const option = (name, fallback) =>
-    args.includes(name) ? args[args.indexOf(name) + 1] : fallback;
+  const option =
+    /** @param {any} name
+     * @param {any} fallback */
+    (name, fallback) =>
+      args.includes(name) ? args[args.indexOf(name) + 1] : fallback;
   const dir = path.resolve(option('--plugin-dir', __dirname)),
     file = path.resolve(
       option(
@@ -200,11 +220,19 @@ function main(args = process.argv.slice(2)) {
   const parent = path.dirname(file);
   fs.mkdirSync(parent, { recursive: true, mode: 0o700 });
   const ps = fs.lstatSync(parent);
-  if (ps.isSymbolicLink() || ps.uid !== process.getuid() || ps.mode & 0o022)
+  if (
+    ps.isSymbolicLink() ||
+    ps.uid !== /** @type {() => number} */ (process.getuid)() ||
+    ps.mode & 0o022
+  )
     throw Error('Unsafe Claude settings directory');
   fs.mkdirSync(path.dirname(registry), { recursive: true, mode: 0o700 });
   const rs = fs.lstatSync(path.dirname(registry));
-  if (rs.isSymbolicLink() || rs.uid !== process.getuid() || rs.mode & 0o022)
+  if (
+    rs.isSymbolicLink() ||
+    rs.uid !== /** @type {() => number} */ (process.getuid)() ||
+    rs.mode & 0o022
+  )
     throw Error('Unsafe integration state directory');
   const lock = file + '.switchboard-lock',
     lockFd = fs.openSync(lock, 'wx', 0o600);
@@ -256,7 +284,7 @@ if (require.main === module)
   try {
     main();
   } catch (error) {
-    console.error(error.message);
+    console.error(/** @type {Error & {code?: string}} */ (error).message);
     process.exitCode = 1;
   }
 module.exports = { EVENTS, commands, plan, main };

@@ -1,8 +1,18 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 const crypto = require('node:crypto');
 const { readFooter, DaemonRpc, socketFor } = require('./daemon-controls');
 const { Setup } = require('./setup-presets');
-const digest = (text) => crypto.createHash('sha256').update(text).digest('hex');
+const digest =
+  /** @param {string} text */
+  (text) => crypto.createHash('sha256').update(text).digest('hex');
+/** @param {string} view
+ * @param {any} cursor
+ * @param {any} chatId
+ * @param {Record<string, any>} [options] */
 function composerSnapshot(view, cursor, chatId, { allowEmpty = false } = {}) {
   const lines = view.split('\n'),
     footer = lines.findIndex((line) =>
@@ -32,10 +42,13 @@ function composerSnapshot(view, cursor, chatId, { allowEmpty = false } = {}) {
     .filter((x) => x.match && x.index >= regionStart && x.index <= row);
   if (starts.length !== 1) throw Error('Native composer is ambiguous');
   const start = starts[0],
-    prefix = start.match[1].length + 2;
+    prefix = /** @type {RegExpExecArray} */ (start.match)[1].length + 2;
   if (column < 0) throw Error('Composer cursor unavailable');
   const before = lines.slice(start.index, row + 1);
-  before[before.length - 1] = before.at(-1).slice(0, column);
+  before[before.length - 1] = /** @type {string} */ (before.at(-1)).slice(
+    0,
+    column,
+  );
   before[0] = before[0].slice(prefix);
   const text = before.join('\n').trim();
   if (!text && !allowEmpty) throw Error('Type a message first');
@@ -49,6 +62,10 @@ function composerSnapshot(view, cursor, chatId, { allowEmpty = false } = {}) {
     empty: !text,
   };
 }
+/** @param {Record<string, any>} bridge
+ * @param {AgentSnapshot} agent
+ * @param {any} chatId
+ * @param {Record<string, any>} options */
 async function composerView(bridge, agent, chatId, options) {
   const args = [
     'block',
@@ -78,6 +95,9 @@ async function composerView(bridge, agent, chatId, options) {
     options,
   );
 }
+/** @param {Record<string, any>} bridge
+ * @param {AgentSnapshot} agent
+ * @param {Record<string, any>} [options] */
 async function readIdleComposer(bridge, agent, options = {}) {
   if (agent.app !== 'codex')
     throw Error('Draft verification supports Codex only');
@@ -133,12 +153,17 @@ async function readIdleComposer(bridge, agent, options = {}) {
     throw Error('Chat changed while reading');
   return { ...snapshot, turnStamp };
 }
-const sameComposer = (a, b) =>
-  a?.chatId === b?.chatId &&
-  a?.hash === b?.hash &&
-  a?.turnStamp === b?.turnStamp &&
-  a?.cursor?.row === b?.cursor?.row &&
-  a?.cursor?.column === b?.cursor?.column;
+const sameComposer =
+  /** @param {any} a
+   * @param {any} b */
+  (a, b) =>
+    a?.chatId === b?.chatId &&
+    a?.hash === b?.hash &&
+    a?.turnStamp === b?.turnStamp &&
+    a?.cursor?.row === b?.cursor?.row &&
+    a?.cursor?.column === b?.cursor?.column;
+/** @param {Record<string, any>} bridge
+ * @param {AgentSnapshot} agent */
 async function readComposer(bridge, agent) {
   const chatId = await readFooter(bridge, agent);
   const endpoint = await socketFor(agent.pid),
@@ -205,6 +230,8 @@ async function readComposer(bridge, agent) {
     runId,
   };
 }
+/** @param {Record<string, any>} bridge
+ * @param {AgentSnapshot} agent */
 async function requestSnapshot(bridge, agent) {
   const view = await bridge.run([
     'block',

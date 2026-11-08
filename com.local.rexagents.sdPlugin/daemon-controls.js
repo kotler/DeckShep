@@ -1,3 +1,7 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 const fs = require('node:fs'),
   path = require('node:path'),
@@ -6,10 +10,15 @@ const { execFile } = require('node:child_process');
 const { isDeepStrictEqual } = require('node:util');
 const WebSocket = require('ws');
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
-const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const permissionVersionVerified = (version) =>
-  ['0.166.0', '0.167.0'].includes(version);
+const pause =
+  /** @param {number} ms */
+  (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const permissionVersionVerified =
+  /** @param {string} version */
+  (version) => ['0.166.0', '0.167.0'].includes(version);
 
+/** @param {string} listing
+ * @param {number} pid */
 function socketFromListing(listing, pid) {
   const rows = listing
     .split('\n')
@@ -23,23 +32,56 @@ function socketFromListing(listing, pid) {
     .filter(Boolean);
   const peers = new Set(
     rows
-      .filter((r) => r.pid === pid && /^->0x[0-9a-f]+$/.test(r.name))
-      .map((r) => r.name.slice(2)),
+      .filter(
+        (r) =>
+          /** @type {{ pid: number; address: string; name: string; }} */ (r)
+            .pid === pid &&
+          /^->0x[0-9a-f]+$/.test(
+            /** @type {{ pid: number; address: string; name: string; }} */ (r)
+              .name,
+          ),
+      )
+      .map((r) =>
+        /** @type {{ pid: number; address: string; name: string; }} */ (
+          r
+        ).name.slice(2),
+      ),
   );
   const found = rows.filter(
-    (r) => peers.has(r.address) && path.isAbsolute(r.name),
+    (r) =>
+      peers.has(
+        /** @type {{ pid: number; address: string; name: string; }} */ (r)
+          .address,
+      ) &&
+      path.isAbsolute(
+        /** @type {{ pid: number; address: string; name: string; }} */ (r).name,
+      ),
   );
   const unique = [
     ...new Map(
-      found.map((r) => [r.pid + '|' + r.name, { pid: r.pid, socket: r.name }]),
+      found.map((r) => [
+        /** @type {{ pid: number; address: string; name: string; }} */ (r).pid +
+          '|' +
+          /** @type {{ pid: number; address: string; name: string; }} */ (r)
+            .name,
+        {
+          pid: /** @type {{ pid: number; address: string; name: string; }} */ (
+            r
+          ).pid,
+          socket:
+            /** @type {{ pid: number; address: string; name: string; }} */ (r)
+              .name,
+        },
+      ]),
     ).values(),
   ];
   if (unique.length !== 1)
     throw Error('CLI daemon connection unavailable or ambiguous');
   return unique[0];
 }
+/** @param {string} file */
 function safeSocket(file) {
-  const uid = process.getuid(),
+  const uid = /** @type {() => number} */ (process.getuid)(),
     parent = fs.lstatSync(path.dirname(file)),
     socket = fs.lstatSync(file);
   if (
@@ -52,11 +94,18 @@ function safeSocket(file) {
   )
     throw Error('Unsafe CLI daemon socket');
 }
+/** @param {number} pid */
 async function socketFor(pid) {
   const listing = await new Promise((resolve, reject) =>
     execFile(
       '/usr/sbin/lsof',
-      ['-n', '-a', '-U', '-u', String(process.getuid())],
+      [
+        '-n',
+        '-a',
+        '-U',
+        '-u',
+        String(/** @type {() => number} */ (process.getuid)()),
+      ],
       { timeout: 4000, maxBuffer: 4e6 },
       (error, out) =>
         error
@@ -68,6 +117,8 @@ async function socketFor(pid) {
   safeSocket(endpoint.socket);
   return endpoint;
 }
+/** @param {string} view
+ * @param {number} cursorRow */
 function footerId(view, cursorRow) {
   const lines = view.split('\n'),
     nonempty = lines
@@ -91,8 +142,10 @@ function footerId(view, cursorRow) {
     candidates[0].row < cursorRow + 2
   )
     throw Error('Session-ID footer missing; run daemon setup');
-  return candidates[0].match[1].toLowerCase();
+  return /** @type {RegExpExecArray} */ (candidates[0].match)[1].toLowerCase();
 }
+/** @param {Record<string, any>} bridge
+ * @param {AgentSnapshot} agent */
 async function readFooter(bridge, agent) {
   if (bridge.backend === 'herdr') return bridge.nativeChatId(agent);
   const args = [
@@ -133,6 +186,8 @@ async function readFooter(bridge, agent) {
 }
 
 class DaemonRpc {
+  /** @param {any} socket
+   * @param {any} [makeSocket] */
   constructor(
     socket,
     makeSocket = () =>
@@ -153,48 +208,52 @@ class DaemonRpc {
       this.ws.once('open', resolve);
       this.ws.once('error', () => reject(Error('CLI daemon unavailable')));
     });
-    this.ws.on('message', (raw) => {
-      let message;
-      try {
-        message = JSON.parse(raw.toString());
-      } catch {
-        return this.fail();
-      }
-      if (
-        message.method === 'thread/settings/updated' &&
-        this.watchedSettings.has(message.params?.threadId)
-      ) {
-        let state = null;
+    this.ws.on(
+      'message',
+      /** @param {any} raw */ (raw) => {
+        let message;
         try {
-          state = permissionSnapshot(message.params.threadSettings, false);
-        } catch {}
-        this.settingsByThread.set(message.params.threadId, {
-          state,
-          sequence: ++this.settingsSequence,
-        });
-        return;
-      }
-      if (
-        message.method ||
-        (!Object.hasOwn(message, 'result') && !Object.hasOwn(message, 'error'))
-      )
-        return;
-      const p = this.pending.get(message.id);
-      if (!p) return;
-      this.pending.delete(message.id);
-      clearTimeout(p.timer);
-      if (message.error) {
-        const error = Error('CLI daemon rejected ' + p.method);
-        error.code = 'DAEMON_REJECTED';
+          message = JSON.parse(raw.toString());
+        } catch {
+          return this.fail();
+        }
         if (
-          String(message.error.message).startsWith(
-            'no rollout found for thread id ',
-          )
+          message.method === 'thread/settings/updated' &&
+          this.watchedSettings.has(message.params?.threadId)
+        ) {
+          let state = null;
+          try {
+            state = permissionSnapshot(message.params.threadSettings, false);
+          } catch {}
+          this.settingsByThread.set(message.params.threadId, {
+            state,
+            sequence: ++this.settingsSequence,
+          });
+          return;
+        }
+        if (
+          message.method ||
+          (!Object.hasOwn(message, 'result') &&
+            !Object.hasOwn(message, 'error'))
         )
-          error.kind = 'NO_ROLLOUT';
-        p.reject(error);
-      } else p.resolve(message.result);
-    });
+          return;
+        const p = this.pending.get(message.id);
+        if (!p) return;
+        this.pending.delete(message.id);
+        clearTimeout(p.timer);
+        if (message.error) {
+          const error = Error('CLI daemon rejected ' + p.method);
+          /** @type {any} */ (error).code = 'DAEMON_REJECTED';
+          if (
+            String(message.error.message).startsWith(
+              'no rollout found for thread id ',
+            )
+          )
+            /** @type {any} */ (error).kind = 'NO_ROLLOUT';
+          p.reject(error);
+        } else p.resolve(message.result);
+      },
+    );
     this.ws.on('error', () => this.fail());
     this.ws.on('close', () => this.fail());
   }
@@ -221,6 +280,8 @@ class DaemonRpc {
       )?.[1] || null;
     this.ws.send(JSON.stringify({ method: 'initialized', params: {} }));
   }
+  /** @param {string} method
+   * @param {any} params */
   request(method, params) {
     if (
       ![
@@ -324,10 +385,12 @@ class DaemonRpc {
       }
     });
   }
+  /** @param {any} id */
   watchSettings(id) {
     this.watchedSettings.add(id);
     return this.settingsSequence;
   }
+  /** @param {any} id */
   latestSettings(id) {
     return this.settingsByThread.get(id) || null;
   }
@@ -338,6 +401,8 @@ class DaemonRpc {
     this.ws.terminate();
   }
 }
+/** @param {any} raw
+ * @param {any} resumed */
 function permissionSnapshot(raw, resumed) {
   if (
     !raw ||
@@ -374,11 +439,15 @@ function permissionSnapshot(raw, resumed) {
     multiAgentMode: raw.multiAgentMode,
   });
 }
+/** @param {any} a
+ * @param {any} b */
 function sameOtherSettings(a, b) {
   const { reviewer: ignoredA, ...left } = a,
     { reviewer: ignoredB, ...right } = b;
   return isDeepStrictEqual(left, right);
 }
+/** @param {Record<string, any>} rpc
+ * @param {any} id */
 async function readPermissionSettings(rpc, id) {
   if (!permissionVersionVerified(rpc.serverVersion))
     throw Error('Settings daemon version not verified');
@@ -391,7 +460,10 @@ async function readPermissionSettings(rpc, id) {
       excludeTurns: true,
     });
   } catch (error) {
-    if (error.kind === 'NO_ROLLOUT')
+    if (
+      /** @type {Error & {code?: string}} */ /** @type {any} */ (error).kind ===
+      'NO_ROLLOUT'
+    )
       throw Error('Settings need completed chat history');
     throw error;
   }
@@ -417,14 +489,16 @@ async function readPermissionSettings(rpc, id) {
     throw Error('Settings changed while subscribing');
   return state;
 }
+/** @param {Record<string, any>} rpc
+ * @param {any} id */
 async function loadedThread(rpc, id) {
   let cursor = null,
     found = false;
   for (let page = 0; page < 20; page++) {
-    const list = await rpc.request('thread/loaded/list', {
-      limit: 100,
-      ...(cursor ? { cursor } : {}),
-    });
+    const /** @type {any} */ list = await rpc.request('thread/loaded/list', {
+        limit: 100,
+        ...(cursor ? { cursor } : {}),
+      });
     if (!Array.isArray(list?.data))
       throw Error('Invalid loaded-thread metadata');
     if (list.data.includes(id)) {
@@ -450,29 +524,35 @@ async function loadedThread(rpc, id) {
   // Discard previews, titles, turns, and all unrelated response fields immediately.
   return { id: t.id, model: t.model, effort: t.reasoningEffort, cwd: t.cwd };
 }
+/** @param {Record<string, any>} rpc
+ * @param {string[]} [include] */
 async function availableModels(rpc, include = []) {
   let cursor = null,
     all = [];
   for (let page = 0; page < 10; page++) {
-    const list = await rpc.request('model/list', {
-      limit: 100,
-      includeHidden: false,
-      ...(cursor ? { cursor } : {}),
-    });
+    const /** @type {any} */ list = await rpc.request('model/list', {
+        limit: 100,
+        includeHidden: false,
+        ...(cursor ? { cursor } : {}),
+      });
     if (!Array.isArray(list?.data)) throw Error('Invalid daemon model catalog');
     all.push(
       ...list.data
         .filter(
-          (m) =>
+          /** @param {any} m */ (m) =>
             m.hidden === false &&
             /^[a-zA-Z0-9][a-zA-Z0-9._:/-]*$/.test(m.model) &&
             Array.isArray(m.supportedReasoningEfforts),
         )
-        .map((m) => ({
-          id: m.model,
-          label: m.displayName || m.model,
-          efforts: m.supportedReasoningEfforts.map((e) => e.reasoningEffort),
-        })),
+        .map(
+          /** @param {any} m */ (m) => ({
+            id: m.model,
+            label: m.displayName || m.model,
+            efforts: m.supportedReasoningEfforts.map(
+              /** @param {any} e */ (e) => e.reasoningEffort,
+            ),
+          }),
+        ),
     );
     cursor = list.nextCursor;
     if (!cursor) break;
@@ -485,20 +565,30 @@ async function availableModels(rpc, include = []) {
     throw Error('No unique available models');
   return models;
 }
+/** @param {any} current
+ * @param {any} models */
 function nextModel(current, models) {
   const compatible = models.filter(
-    (m) => current.effort == null || m.efforts.includes(current.effort),
+    /** @param {any} m */ (m) =>
+      current.effort == null || m.efforts.includes(current.effort),
   );
   if (!compatible.length) throw Error('No model supports the current effort');
-  const i = compatible.findIndex((m) => m.id === current.model);
+  const i = compatible.findIndex(
+    /** @param {any} m */ (m) => m.id === current.model,
+  );
   return compatible[(i + 1) % compatible.length];
 }
+/** @param {any} current
+ * @param {any} models */
 function nextEffort(current, models) {
-  const levels = models.find((m) => m.id === current.model)?.efforts;
+  const levels = models.find(
+    /** @param {any} m */ (m) => m.id === current.model,
+  )?.efforts;
   if (
     !levels?.length ||
     levels.some(
-      (e) => typeof e !== 'string' || !/^[a-z][a-z0-9_]{0,31}$/.test(e),
+      /** @param {any} e */ (e) =>
+        typeof e !== 'string' || !/^[a-z][a-z0-9_]{0,31}$/.test(e),
     ) ||
     new Set(levels).size !== levels.length
   )
@@ -507,6 +597,9 @@ function nextEffort(current, models) {
   if (index < 0) throw Error('Current effort unavailable; check Codex');
   return levels[(index + 1) % levels.length];
 }
+/** @param {any} before
+ * @param {any} after
+ * @param {any} target */
 function sameExceptEffort(before, after, target) {
   // The native mode's reasoning setting follows an explicit effort change.
   const expected = structuredClone(before);
@@ -516,23 +609,28 @@ function sameExceptEffort(before, after, target) {
   return isDeepStrictEqual(expected, after);
 }
 class DaemonControls {
+  /** @param {Record<string, any>} bridge
+   * @param {any} [dependencies] */
   constructor(bridge, dependencies = {}) {
     this.b = bridge;
     this.socketFor = dependencies.socketFor || socketFor;
     this.footer = dependencies.footer || readFooter;
     this.connect =
       dependencies.connect ||
-      (async (endpoint) => {
-        const rpc = new DaemonRpc(endpoint.socket);
-        try {
-          await rpc.connect();
-          return rpc;
-        } catch (e) {
-          rpc.close();
-          throw e;
+      /** @type {(endpoint: {socket: string}) => Promise<DaemonRpc>} */ (
+        async (endpoint) => {
+          const rpc = new DaemonRpc(endpoint.socket);
+          try {
+            await rpc.connect();
+            return rpc;
+          } catch (e) {
+            rpc.close();
+            throw e;
+          }
         }
-      });
+      );
   }
+  /** @param {AgentSnapshot} agent */
   async cycleEffort(agent) {
     const endpoint = await this.socketFor(agent.pid),
       rpc = await this.connect(endpoint);
@@ -587,6 +685,7 @@ class DaemonControls {
       rpc.close();
     }
   }
+  /** @param {AgentSnapshot} agent */
   async cycle(agent) {
     const endpoint = await this.socketFor(agent.pid),
       rpc = await this.connect(endpoint);
@@ -643,6 +742,7 @@ class DaemonControls {
       rpc.close();
     }
   }
+  /** @param {AgentSnapshot} agent */
   async cyclePermissions(agent) {
     const endpoint = await this.socketFor(agent.pid),
       rpc = await this.connect(endpoint);

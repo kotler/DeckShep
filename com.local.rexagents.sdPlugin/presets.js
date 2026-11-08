@@ -1,46 +1,67 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 const fs = require('node:fs'),
   path = require('node:path'),
   crypto = require('node:crypto'),
   TOML = require('@iarna/toml');
-const codexFile = () => path.join(process.env.HOME, '.codex', 'config.toml');
-const signature = (c) =>
-  crypto.createHash('sha256').update(JSON.stringify(c)).digest('hex');
+const codexFile = () =>
+  path.join(/** @type {string} */ (process.env.HOME), '.codex', 'config.toml');
+const signature =
+  /** @param {any} c */
+  (c) => crypto.createHash('sha256').update(JSON.stringify(c)).digest('hex');
 function readPresets() {
-  return TOML.parse(fs.readFileSync(codexFile(), 'utf8')).tui?.presets || {};
+  return (
+    /** @type {any} */ (TOML.parse(fs.readFileSync(codexFile(), 'utf8')).tui)
+      ?.presets || {}
+  );
 }
+/** @param {string} file */
 function readRegistry(file) {
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
   } catch (e) {
-    if (e.code === 'ENOENT') return { agents: {} };
+    if (/** @type {Error & {code?: string}} */ (e).code === 'ENOENT')
+      return { agents: {} };
     throw e;
   }
 }
+/** @param {string} file
+ * @param {any} value */
 function saveRegistry(file, value) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const tmp = file + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(value, null, 2) + '\n', { mode: 0o600 });
   fs.renameSync(tmp, file);
 }
+/** @param {Record<string, any>} config
+ * @param {any} baseline */
 function choices(config, baseline) {
   if (
     !/^\/permissions\s+\S+\s+--approval-policy=/.test(baseline) ||
     !/ --reviewer=(user|auto_review)$/.test(baseline)
   )
     throw Error('Unsupported permission snapshot');
-  const models = config.models.map((m, i) => ({
-    slot: String(i + 1),
-    label: m.label,
-    input: '/model ' + m.id,
-    kind: 'model',
-  }));
-  const efforts = config.efforts.map((e, i) => ({
-    slot: String(models.length + i + 1),
-    label: e,
-    input: '/model --reasoning=' + e,
-    kind: 'effort',
-  }));
+  const models = config.models.map(
+    /** @param {any} m
+     * @param {any} i */ (m, i) => ({
+      slot: String(i + 1),
+      label: m.label,
+      input: '/model ' + m.id,
+      kind: 'model',
+    }),
+  );
+  const efforts = config.efforts.map(
+    /** @param {any} e
+     * @param {any} i */ (e, i) => ({
+      slot: String(models.length + i + 1),
+      label: e,
+      input: '/model --reasoning=' + e,
+      kind: 'effort',
+    }),
+  );
   if (models.length + efforts.length !== 7)
     throw Error('Setup needs three models and four effort levels');
   const permissions = [
@@ -70,6 +91,7 @@ function choices(config, baseline) {
       throw Error('Invalid effort');
   return [...models, ...efforts, ...permissions];
 }
+/** @param {any[]} entries */
 function validateOnDisk(entries) {
   const p = readPresets();
   for (const e of entries)

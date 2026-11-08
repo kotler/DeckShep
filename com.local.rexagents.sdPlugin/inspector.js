@@ -1,11 +1,18 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
-let socket,
-  registration,
-  actionContext,
+let /** @type {any} */ socket,
+  /** @type {any} */ registration,
+  /** @type {any} */ actionContext,
   keySettings = {},
-  shared = null,
+  /** @type {any} */ shared = null,
   lastStatus;
-const byId = (id) => document.getElementById(id);
+/** @returns {HTMLElement & {value: string, checked: boolean, disabled: boolean, add: HTMLSelectElement["add"]}} */
+const byId =
+  /** @param {any} id */
+  (id) => /** @type {any} */ (document.getElementById(id));
 const connectionFields = ['herdrSocketPath'];
 const booleans = [
     'allowClipboardFocus',
@@ -68,6 +75,9 @@ for (const action of [
       action,
     ),
   );
+/** @param {any} event
+ * @param {any} payload
+ * @param {any} [context] */
 function send(event, payload, context = registration) {
   if (socket?.readyState === 1)
     socket.send(
@@ -84,6 +94,7 @@ function send(event, payload, context = registration) {
 function query() {
   send('sendToPlugin', { kind: 'status' }, actionContext);
 }
+/** @param {any} status */
 function fill(status) {
   lastStatus = status;
   shared = status.preferences;
@@ -132,6 +143,7 @@ function fill(status) {
     status.selected?.app !== 'codex' ||
     !['idle', 'done'].includes(status.selected?.state);
 }
+/** @param {string} key */
 function save(key) {
   if (!shared) return;
   const value = promptNames.includes(key)
@@ -146,7 +158,9 @@ function save(key) {
     );
     byId('message').textContent = 'Saving preferences…';
   } catch (error) {
-    byId('message').textContent = error.message;
+    byId('message').textContent = /** @type {Error & {code?: string}} */ (
+      error
+    ).message;
   }
 }
 for (const key of [...booleans, ...promptNames, ...connectionFields])
@@ -163,41 +177,43 @@ byId('action').addEventListener('change', () =>
     actionContext,
   ),
 );
-window.connectElgatoStreamDeckSocket = (
-  port,
-  uuid,
-  event,
-  info,
-  actionInfo,
-) => {
-  registration = uuid;
-  const initial = JSON.parse(actionInfo);
-  actionContext = uuid;
-  keySettings = initial.payload.settings || {};
-  byId('action').value = keySettings.action || '';
-  socket = new WebSocket('ws://127.0.0.1:' + port);
-  socket.onopen = () => {
-    socket.send(JSON.stringify({ event, uuid }));
-    query();
+/** @type {any} */ (window).connectElgatoStreamDeckSocket =
+  /** @param {any} port
+   * @param {any} uuid
+   * @param {any} event
+   * @param {any} info
+   * @param {any} actionInfo */
+  (port, uuid, event, info, actionInfo) => {
+    registration = uuid;
+    const initial = JSON.parse(actionInfo);
+    actionContext = uuid;
+    keySettings = initial.payload.settings || {};
+    byId('action').value = /** @type {any} */ (keySettings).action || '';
+    socket = new WebSocket('ws://127.0.0.1:' + port);
+    socket.onopen = () => {
+      socket.send(JSON.stringify({ event, uuid }));
+      query();
+    };
+    socket.onmessage =
+      /** @param {any} raw */
+      (raw) => {
+        try {
+          const message = JSON.parse(raw.data);
+          if (
+            message.event === 'sendToPropertyInspector' &&
+            message.payload?.kind === 'status'
+          )
+            fill(message.payload);
+          if (message.event === 'didReceiveGlobalSettings') query();
+        } catch {
+          byId('message').textContent = 'Could not read plugin status';
+        }
+      };
+    socket.onclose = () => {
+      byId('connection').textContent = 'Plugin disconnected';
+      byId('setup').disabled = true;
+      for (const key of [...booleans, ...promptNames, ...connectionFields])
+        byId(key).disabled = true;
+    };
   };
-  socket.onmessage = (raw) => {
-    try {
-      const message = JSON.parse(raw.data);
-      if (
-        message.event === 'sendToPropertyInspector' &&
-        message.payload?.kind === 'status'
-      )
-        fill(message.payload);
-      if (message.event === 'didReceiveGlobalSettings') query();
-    } catch {
-      byId('message').textContent = 'Could not read plugin status';
-    }
-  };
-  socket.onclose = () => {
-    byId('connection').textContent = 'Plugin disconnected';
-    byId('setup').disabled = true;
-    for (const key of [...booleans, ...promptNames, ...connectionFields])
-      byId(key).disabled = true;
-  };
-};
 setInterval(query, 3000);

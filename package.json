@@ -19,6 +19,7 @@
     "format:check": "node tools/node_modules/prettier/bin/prettier.cjs --check \"**/*.{js,cjs,mjs,ts,html,json,yml,yaml}\"",
     "build": "python3 build.py",
     "clean": "node scripts/clean.mjs",
-    "knip": "node tools/node_modules/knip/bin/knip.js --include files,dependencies,unlisted,binaries --no-config-hints"
+    "knip": "node tools/node_modules/knip/bin/knip.js --include files,dependencies,unlisted,binaries --no-config-hints",
+    "typecheck": "node tools/node_modules/typescript/bin/tsc --pretty false"
   }
 }

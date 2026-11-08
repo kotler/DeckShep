@@ -1,11 +1,18 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 const fs = require('node:fs'),
   crypto = require('node:crypto');
 const D = require('./daemon-controls'),
   { latestTurn, backgroundState } = require('./background-controls');
-const uuid = (s) =>
-  typeof s === 'string' &&
-  /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(s);
+const uuid =
+  /** @param {any} s */
+  (s) =>
+    typeof s === 'string' &&
+    /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(s);
+/** @param {string} title */
 function titlePrefix(title) {
   // Codex 0.166 emits the first 29 UUID characters plus three ASCII dots.
   // Accept no surrounding names, spinner, whitespace, Unicode ellipsis or partial ID.
@@ -18,6 +25,7 @@ function titlePrefix(title) {
   if (!match) throw Error('In Codex, run /title thread-id');
   return match[1];
 }
+/** @param {any} endpoint */
 function socketIdentity(endpoint) {
   const s = fs.lstatSync(endpoint.socket, { bigint: true });
   D.safeSocket(endpoint.socket);
@@ -26,15 +34,16 @@ function socketIdentity(endpoint) {
     .update([endpoint.pid, endpoint.socket, s.dev, s.ino].join('|'))
     .digest('hex');
 }
+/** @param {Record<string, any>} rpc */
 async function loadedIds(rpc) {
-  const ids = [],
+  const /** @type {string[]} */ ids = [],
     cursors = new Set();
   let cursor = null;
   for (let page = 0; page < 20; page++) {
-    const r = await rpc.request('thread/loaded/list', {
-      limit: 100,
-      ...(cursor ? { cursor } : {}),
-    });
+    const /** @type {any} */ r = await rpc.request('thread/loaded/list', {
+        limit: 100,
+        ...(cursor ? { cursor } : {}),
+      });
     if (
       !Array.isArray(r?.data) ||
       !r.data.every(uuid) ||
@@ -58,22 +67,27 @@ async function loadedIds(rpc) {
   throw Error('Loaded chat pagination incomplete');
 }
 class TitleIdentity {
+  /** @param {Record<string, any>} [deps] */
   constructor(deps = {}) {
     this.socketFor = deps.socketFor || D.socketFor;
     this.socketIdentity = deps.socketIdentity || socketIdentity;
     this.connect =
       deps.connect ||
-      (async (endpoint) => {
-        const rpc = new D.DaemonRpc(endpoint.socket);
-        try {
-          await rpc.connect();
-          return rpc;
-        } catch (e) {
-          rpc.close();
-          throw e;
+      /** @type {(endpoint: {socket: string}) => Promise<import("./daemon-controls").DaemonRpc>} */ (
+        async (endpoint) => {
+          const rpc = new D.DaemonRpc(endpoint.socket);
+          try {
+            await rpc.connect();
+            return rpc;
+          } catch (e) {
+            rpc.close();
+            throw e;
+          }
         }
-      });
+      );
   }
+  /** @param {AgentSnapshot} agent
+   * @param {string} title */
   async resolve(agent, title) {
     const prefix = titlePrefix(title),
       endpoint = await this.socketFor(agent.pid),
@@ -115,7 +129,8 @@ class TitleIdentity {
         (!Array.isArray(status.activeFlags) ||
           status.activeFlags.length > 1 ||
           status.activeFlags.some(
-            (f) => !['waitingOnApproval', 'waitingOnUserInput'].includes(f),
+            /** @param {any} f */ (f) =>
+              !['waitingOnApproval', 'waitingOnUserInput'].includes(f),
           ))
       )
         throw Error('Codex waiting state unavailable');

@@ -1,3 +1,7 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 const path = require('node:path');
 const {
@@ -7,23 +11,27 @@ const {
   readPermissionSettings,
 } = require('./daemon-controls');
 const { latestTurn, backgroundState } = require('./background-controls');
-const key = (agent) =>
-  [
-    agent.session,
-    agent.block,
-    agent.app,
-    agent.pid,
-    agent.cwd,
-    agent.terminalId || '',
-    agent.herdrChatId || '',
-    agent.nativeIdentity || '',
-  ].join('|');
+const key =
+  /** @param {AgentSnapshot} agent */
+  (agent) =>
+    [
+      agent.session,
+      agent.block,
+      agent.app,
+      agent.pid,
+      agent.cwd,
+      agent.terminalId || '',
+      agent.herdrChatId || '',
+      agent.nativeIdentity || '',
+    ].join('|');
 const activityFields = [
   'backgroundOnly',
   'backgroundIds',
   'backgroundTurnId',
   'activityStatusAt',
 ];
+/** @param {AgentSnapshot} agent
+ * @param {any} value */
 function restore(agent, value) {
   const native = agent.backend === 'herdr',
     authoritative = [...activityFields, 'runId'];
@@ -33,7 +41,7 @@ function restore(agent, value) {
       (!activityFields.includes(field) ||
         value.activityStatusAt === agent.statusAt)
     )
-      agent[field] = item;
+      /** @type {Record<string, any>} */ (agent)[field] = item;
   if (!native && value.activityStatusAt !== agent.statusAt) {
     agent.backgroundOnly = false;
     agent.backgroundIds = [];
@@ -41,6 +49,8 @@ function restore(agent, value) {
   }
 }
 class AgentMetadata {
+  /** @param {Record<string, any>} bridge
+   * @param {any} [dependencies] */
   constructor(bridge, dependencies = {}) {
     this.b = bridge;
     this.cache = new Map();
@@ -50,17 +60,20 @@ class AgentMetadata {
     this.settings = dependencies.settings || readPermissionSettings;
     this.connect =
       dependencies.connect ||
-      (async (endpoint) => {
-        const rpc = new DaemonRpc(endpoint.socket);
-        try {
-          await rpc.connect();
-          return rpc;
-        } catch (error) {
-          rpc.close();
-          throw error;
+      /** @type {(endpoint: {socket: string}) => Promise<DaemonRpc>} */ (
+        async (endpoint) => {
+          const rpc = new DaemonRpc(endpoint.socket);
+          try {
+            await rpc.connect();
+            return rpc;
+          } catch (error) {
+            rpc.close();
+            throw error;
+          }
         }
-      });
+      );
   }
+  /** @param {AgentSnapshot[]} agents */
   hydrate(agents) {
     // Discovery creates new objects every poll. Restore all known labels synchronously,
     // before any render or awaited metadata read can expose a temporary fallback.
@@ -70,6 +83,7 @@ class AgentMetadata {
       if (cached) restore(agent, cached.value);
     }
   }
+  /** @param {AgentSnapshot} agent */
   async read(agent) {
     const started = this.now(),
       endpoint = await this.socketFor(agent.pid),
@@ -79,10 +93,13 @@ class AgentMetadata {
       let cursor = null,
         found = false;
       for (let page = 0; page < 20; page++) {
-        const list = await rpc.request('thread/loaded/list', {
-          limit: 100,
-          ...(cursor ? { cursor } : {}),
-        });
+        const /** @type {any} */ list = await rpc.request(
+            'thread/loaded/list',
+            {
+              limit: 100,
+              ...(cursor ? { cursor } : {}),
+            },
+          );
         if (!Array.isArray(list?.data))
           throw Error('Loaded metadata unavailable');
         if (list.data.includes(id)) {
@@ -169,6 +186,8 @@ class AgentMetadata {
       rpc.close();
     }
   }
+  /** @param {AgentSnapshot[]} agents
+   * @param {any} [force] */
   async refresh(agents, force = false) {
     const live = new Set(agents.map(key));
     for (const id of this.cache.keys())

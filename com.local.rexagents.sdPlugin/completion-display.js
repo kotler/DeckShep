@@ -1,11 +1,17 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 const { sameTarget } = require('./agent-labels');
 // Acknowledge a result locally. Native agent state and execution policy are untouched.
 class CompletionDisplay {
+  /** @param {any} [dwellMs] */
   constructor(dwellMs = 2000) {
     this.dwellMs = dwellMs;
     this.entries = new Map();
   }
+  /** @param {AgentSnapshot} agent */
   key(agent) {
     return JSON.stringify([
       agent.session,
@@ -15,6 +21,9 @@ class CompletionDisplay {
       agent.nativeIdentity || null,
     ]);
   }
+  /** @param {AgentSnapshot[]} agents
+   * @param {any} selected
+   * @param {number} now */
   update(agents, selected, now) {
     const live = new Set();
     for (const agent of agents) {
@@ -39,6 +48,8 @@ class CompletionDisplay {
     for (const key of this.entries.keys())
       if (!live.has(key)) this.entries.delete(key);
   }
+  /** @param {AgentSnapshot} agent
+   * @returns {AgentSnapshot} */
   agent(agent) {
     return agent.state === 'done' &&
       this.entries.get(this.key(agent))?.acknowledged

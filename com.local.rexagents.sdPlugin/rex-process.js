@@ -1,17 +1,29 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 // Rex can omit path for a still-running binary removed/replaced by an upgrade.
 // Resolve only the exact foreground PID; never infer an agent from ancestors.
 const { execFile } = require('node:child_process'),
   path = require('node:path');
-const run = (file, args) =>
-  new Promise((resolve, reject) =>
-    execFile(
-      file,
-      args,
-      { timeout: 1800, maxBuffer: 32768, env: { ...process.env, LC_ALL: 'C' } },
-      (error, out) => (error ? reject(error) : resolve(out)),
-    ),
-  );
+const run =
+  /** @param {string} file
+   * @param {string[]} args */
+  (file, args) =>
+    new Promise((resolve, reject) =>
+      execFile(
+        file,
+        args,
+        {
+          timeout: 1800,
+          maxBuffer: 32768,
+          env: { ...process.env, LC_ALL: 'C' },
+        },
+        (error, out) => (error ? reject(error) : resolve(out)),
+      ),
+    );
+/** @param {string} out */
 function processState(out) {
   const m =
     /^\s*(\d+)\s+([A-Z][a-z]{2}\s+[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+\d{4})\s+(.+?)\s*$/.exec(
@@ -19,12 +31,14 @@ function processState(out) {
     );
   if (
     !m ||
-    Number(m[1]) !== process.getuid() ||
+    Number(m[1]) !== /** @type {() => number} */ (process.getuid)() ||
     path.basename(m[3]) !== 'codex'
   )
     throw Error('Codex process identity unavailable');
   return [m[1], m[2].replace(/\s+/g, ' '), m[3]].join('|');
 }
+/** @param {number} pid
+ * @param {any} [execute] */
 async function executable(pid, execute = run) {
   if (!Number.isSafeInteger(pid) || pid <= 0)
     throw Error('Invalid foreground PID');
@@ -57,18 +71,21 @@ async function executable(pid, execute = run) {
     throw Error('Codex process replaced');
   return file;
 }
+/** @param {any} f */
 function candidate(f) {
   return (
     f &&
     !f.path &&
     f.name === 'codex' &&
-    f.user_id === process.getuid() &&
+    f.user_id === /** @type {() => number} */ (process.getuid)() &&
     Number.isSafeInteger(f.pid) &&
     f.pid > 0 &&
     typeof f.cwd === 'string' &&
     path.isAbsolute(f.cwd)
   );
 }
+/** @param {any} a
+ * @param {any} b */
 function sameForeground(a, b) {
   return (
     !!b &&

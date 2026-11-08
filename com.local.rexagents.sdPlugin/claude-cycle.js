@@ -1,24 +1,40 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 const crypto = require('node:crypto');
-const digest = (value) =>
-  crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
+const digest =
+  /** @param {any} value */
+  (value) =>
+    crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const levels = ['low', 'medium', 'high', 'xhigh', 'max'];
-const modelName = (text) =>
-  /\b(Opus|Sonnet|Fable|Haiku)\s+(\d+\.\d+(?:\.\d+)?)(?=\s|$)/.exec(text);
+const modelName =
+  /** @param {string} text */
+  (text) =>
+    /\b(Opus|Sonnet|Fable|Haiku)\s+(\d+\.\d+(?:\.\d+)?)(?=\s|$)/.exec(text);
+/** @param {{text: string, hash: string, cursor?: {row: number, column: number}|null}} view */
 function picker(view) {
   const lines = view.text.split('\n'),
-    start = lines.findLastIndex((line) =>
-      /^\s*(Select|Choose) model\s*$/.test(line),
+    start = lines.findLastIndex(
+      /** @param {any} line */ (line) =>
+        /^\s*(Select|Choose) model\s*$/.test(line),
     ),
-    end = lines.findLastIndex((line) =>
-      /Enter to set as default.*\bs to use this session only\b.*\bEsc to (cancel|exit)\b/.test(
-        line,
-      ),
+    end = lines.findLastIndex(
+      /** @param {any} line */ (line) =>
+        /Enter to set as default.*\bs to use this session only\b.*\bEsc to (cancel|exit)\b/.test(
+          line,
+        ),
     );
   if (
     start < 0 ||
     end <= start ||
-    lines.slice(end + 1).some((line) => line.trim() && !/^[─━\s]+$/.test(line))
+    lines
+      .slice(end + 1)
+      .some(
+        /** @param {any} line */ (line) =>
+          line.trim() && !/^[─━\s]+$/.test(line),
+      )
   )
     throw Error('Claude model picker changed');
   const rows = [];
@@ -46,7 +62,9 @@ function picker(view) {
         more,
       });
     } else if (rows.length && line.trim() && !/\beffort\b/i.test(line))
-      rows.at(-1).label += ' ' + line.trim();
+      /** @type {{ number: number; selected: boolean; label: string; name: string | null; model: string | null; isDefault: boolean; more: boolean; }} */ (
+        rows.at(-1)
+      ).label += ' ' + line.trim();
   }
   if (
     rows.length < 2 ||
@@ -57,7 +75,9 @@ function picker(view) {
     throw Error('Incomplete Claude model list');
   const effortLines = lines
     .slice(start + 1, end)
-    .filter((line) => /\beffort\b.*←\s*\/\s*→/.test(line));
+    .filter(
+      /** @param {any} line */ (line) => /\beffort\b.*←\s*\/\s*→/.test(line),
+    );
   if (effortLines.length > 1) throw Error('Ambiguous Claude effort control');
   const effort = effortLines.length
     ? /\b(extra high|xhigh|low|medium|high|max)\s+effort\b/i
@@ -93,30 +113,41 @@ function picker(view) {
     ),
   };
 }
+/** @param {any} p
+ * @param {any} current */
 function nextModel(p, current) {
   if (p.available.length < 2) throw Error('Only one Claude model is available');
-  const index = p.available.findIndex((row) => row.model === current);
+  const index = p.available.findIndex(
+    /** @param {any} row */ (row) => row.model === current,
+  );
   if (index < 0)
     throw Error('Current Claude model is outside the visible cycle');
   return p.available[(index + 1) % p.available.length];
 }
+/** @param {{text: string, hash: string, cursor?: {row: number, column: number}|null}} view
+ * @param {Record<string, any>} [options] */
 function configurationView(view, { requireEmpty = false } = {}) {
   const lines = view.text.split('\n'),
     border = /^[─━]{12,}(?:[ \u00a0]+[^\r\n]*[ \u00a0]+[─━]+)?\s*$/;
   const borders = lines
-      .map((line, i) => (border.test(line.trim()) ? i : -1))
-      .filter((i) => i >= 0),
+      .map(
+        /** @param {any} line
+         * @param {any} i */ (line, i) => (border.test(line.trim()) ? i : -1),
+      )
+      .filter(/** @param {any} i */ (i) => i >= 0),
     lower = borders.at(-1),
     upper = borders.at(-2);
   if (
     upper === undefined ||
     lower - upper > 18 ||
     !/^\s*❯(?:[ \u00a0]|$)/.test(lines[upper + 1] || '') ||
-    lines.slice(upper + 2, lower).some((line) => /^\s*❯/.test(line)) ||
+    lines
+      .slice(upper + 2, lower)
+      .some(/** @param {any} line */ (line) => /^\s*❯/.test(line)) ||
     lines
       .slice(lower + 1)
       .some(
-        (line) =>
+        /** @param {any} line */ (line) =>
           line.trim() &&
           !/^\s*(?:\?|!|⏵|⏸|◯|○|●|✳|✻|Claude|Opus|Sonnet|Haiku|Fable|Model|Effort|--\s*INSERT)/.test(
             line,
@@ -138,6 +169,9 @@ function configurationView(view, { requireEmpty = false } = {}) {
 }
 module.exports = { levels, picker, nextModel, configurationView };
 
+/** @param {any} c
+ * @param {string} kind
+ * @param {any} initial */
 async function cycle(c, kind, initial) {
   if (!['model', 'effort'].includes(kind))
     throw Error('Unsupported Claude setting');
@@ -167,10 +201,12 @@ async function cycle(c, kind, initial) {
   };
   c.picker = operation;
   b.draft = null;
-  const wait = (ms) =>
-    c.cycleWait
-      ? c.cycleWait(ms)
-      : new Promise((resolve) => setTimeout(resolve, ms));
+  const wait =
+    /** @param {number} ms */
+    (ms) =>
+      c.cycleWait
+        ? c.cycleWait(ms)
+        : new Promise((resolve) => setTimeout(resolve, ms));
   const read = async () => {
     let error;
     for (let attempt = 0; attempt < 10; attempt++) {
@@ -178,7 +214,11 @@ async function cycle(c, kind, initial) {
       try {
         view = await c.view(a);
       } catch (e) {
-        if (e.message !== 'Claude view changed') throw e;
+        if (
+          /** @type {Error & {code?: string}} */ (e).message !==
+          'Claude view changed'
+        )
+          throw e;
         await wait(60);
         continue;
       }
@@ -193,90 +233,114 @@ async function cycle(c, kind, initial) {
     }
     throw error;
   };
-  const guard = async (p) => {
-    for (let attempt = 0; attempt < 5; attempt++) {
-      if (c.picker !== operation) throw Error('Claude configuration changed');
-      const current = await b.checked(a);
-      c.assert(a, current);
-      if (current.claudeUiPending) {
-        await wait(60);
-        continue;
+  const guard =
+    /** @param {any} p */
+    async (p) => {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        if (c.picker !== operation) throw Error('Claude configuration changed');
+        const current = await b.checked(a);
+        c.assert(a, current);
+        if (current.claudeUiPending) {
+          await wait(60);
+          continue;
+        }
+        if (!current.claudePickerVisible || current.claudeViewHash !== p.hash)
+          throw Error('Claude picker changed; use its keyboard');
+        return current;
       }
-      if (!current.claudePickerVisible || current.claudeViewHash !== p.hash)
-        throw Error('Claude picker changed; use its keyboard');
-      return current;
-    }
-    throw Error('Claude view still updating');
-  };
-  const keys = async (p, list, goalEffort = null) => {
-    for (const batch of a.backend === 'herdr'
-      ? Array.from({ length: Math.ceil(list.length / 4) }, (_, i) =>
-          list.slice(i * 4, i * 4 + 4),
-        )
-      : [list]) {
-      const current = await guard(p);
-      operation.expectedViewHash = p.hash;
-      await b.run([
-        'send-key',
-        '-s',
-        current.session,
-        '-b',
-        current.block,
-        ...batch,
-      ]);
-      const direction = batch[0],
-        selected =
-          p.selected.number +
-          (direction === 'down'
-            ? batch.length
-            : direction === 'up'
-              ? -batch.length
-              : 0);
-      let next;
-      // API acknowledgement precedes terminal repaint. Wait for the intended
-      // selection or effort update; never replay the key to make it appear.
-      for (let attempt = 0; attempt < 10; attempt++) {
-        next = await read();
-        if (next.catalog !== p.catalog)
-          throw Error('Claude model list changed');
-        if (['up', 'down'].includes(direction)) {
-          if (next.selected.number === selected) break;
-          if (
-            next.selected.number < Math.min(p.selected.number, selected) ||
-            next.selected.number > Math.max(p.selected.number, selected)
+      throw Error('Claude view still updating');
+    };
+  const keys =
+    /** @param {any} p
+     * @param {any} list
+     * @param {any} [goalEffort] */
+    async (p, list, goalEffort = null) => {
+      for (const batch of a.backend === 'herdr'
+        ? Array.from({ length: Math.ceil(list.length / 4) }, (_, i) =>
+            list.slice(i * 4, i * 4 + 4),
           )
-            throw Error('Claude selected another model');
-        } else if (
-          goalEffort ? next.effort === goalEffort : next.effort !== p.effort
+        : [list]) {
+        const current = await guard(p);
+        /** @type {any} */ (operation).expectedViewHash = p.hash;
+        await b.run([
+          'send-key',
+          '-s',
+          current.session,
+          '-b',
+          current.block,
+          ...batch,
+        ]);
+        const direction = batch[0],
+          selected =
+            p.selected.number +
+            (direction === 'down'
+              ? batch.length
+              : direction === 'up'
+                ? -batch.length
+                : 0);
+        let next;
+        // API acknowledgement precedes terminal repaint. Wait for the intended
+        // selection or effort update; never replay the key to make it appear.
+        for (let attempt = 0; attempt < 10; attempt++) {
+          next = await read();
+          if (next.catalog !== p.catalog)
+            throw Error('Claude model list changed');
+          if (['up', 'down'].includes(direction)) {
+            if (
+              /** @type {{ number: number; selected: boolean; label: string; name: string | null; model: string | null; isDefault: boolean; more: boolean; }} */ (
+                next.selected
+              ).number === selected
+            )
+              break;
+            if (
+              /** @type {{ number: number; selected: boolean; label: string; name: string | null; model: string | null; isDefault: boolean; more: boolean; }} */ (
+                next.selected
+              ).number < Math.min(p.selected.number, selected) ||
+              /** @type {{ number: number; selected: boolean; label: string; name: string | null; model: string | null; isDefault: boolean; more: boolean; }} */ (
+                next.selected
+              ).number > Math.max(p.selected.number, selected)
+            )
+              throw Error('Claude selected another model');
+          } else if (
+            goalEffort ? next.effort === goalEffort : next.effort !== p.effort
+          )
+            break;
+          if (attempt === 9) break;
+          await wait(50);
+        }
+        if (
+          ['up', 'down'].includes(direction) &&
+          /** @type {any} */ (next).selected.number !== selected
         )
+          throw Error('Claude navigation not verified');
+        if (goalEffort && /** @type {any} */ (next).effort !== goalEffort)
+          throw Error('Claude effort wrap not verified');
+        p = next;
+        if (list.length > 1 && direction === 'left' && p.effort === 'low')
           break;
-        if (attempt === 9) break;
-        await wait(50);
       }
-      if (
-        ['up', 'down'].includes(direction) &&
-        next.selected.number !== selected
-      )
-        throw Error('Claude navigation not verified');
-      if (goalEffort && next.effort !== goalEffort)
-        throw Error('Claude effort wrap not verified');
-      p = next;
-      if (list.length > 1 && direction === 'left' && p.effort === 'low') break;
-    }
-    return p;
-  };
+      return p;
+    };
   try {
     await b.run(['send-key', '-s', a.session, '-b', a.block, 'alt+p']);
     let p = await read();
     operation.pending = false;
-    if (p.selected.model !== a.model)
+    if (
+      /** @type {{ number: number; selected: boolean; label: string; name: string | null; model: string | null; isDefault: boolean; more: boolean; }} */ (
+        p.selected
+      ).model !== a.model
+    )
       throw Error('Claude current model differs from picker');
     let expectedModel = a.model,
       expectedEffort = p.effort;
     if (kind === 'model') {
       const next = nextModel(p, a.model);
       expectedModel = next.model;
-      const distance = next.number - p.selected.number;
+      const distance =
+        next.number -
+        /** @type {{ number: number; selected: boolean; label: string; name: string | null; model: string | null; isDefault: boolean; more: boolean; }} */ (
+          p.selected
+        ).number;
       if (distance)
         p = await keys(
           p,
@@ -284,14 +348,22 @@ async function cycle(c, kind, initial) {
             distance > 0 ? 'down' : 'up',
           ),
         );
-      if (p.selected.number !== next.number || p.selected.model !== next.model)
+      if (
+        /** @type {{ number: number; selected: boolean; label: string; name: string | null; model: string | null; isDefault: boolean; more: boolean; }} */ (
+          p.selected
+        ).number !== next.number ||
+        /** @type {{ number: number; selected: boolean; label: string; name: string | null; model: string | null; isDefault: boolean; more: boolean; }} */ (
+          p.selected
+        ).model !== next.model
+      )
         throw Error('Claude selected another model');
       // Keep the current effort when the next model offers it; native caps win.
       if (a.effort && p.effort && levels.includes(a.effort))
         for (let step = 0; step < 5 && p.effort !== a.effort; step++) {
-          const previous = p.effort,
+          const /** @type {any} */ previous = p.effort,
             direction =
-              levels.indexOf(p.effort) < levels.indexOf(a.effort)
+              levels.indexOf(/** @type {string} */ (p.effort)) <
+              levels.indexOf(a.effort)
                 ? 'right'
                 : 'left';
           p = await keys(p, [direction]);
@@ -310,13 +382,18 @@ async function cycle(c, kind, initial) {
         );
         if (p.effort !== 'low') throw Error('Claude effort wrap not verified');
       }
-      if (p.selected.model !== expectedModel || !levels.includes(p.effort))
+      if (
+        /** @type {{ number: number; selected: boolean; label: string; name: string | null; model: string | null; isDefault: boolean; more: boolean; }} */ (
+          p.selected
+        ).model !== expectedModel ||
+        !levels.includes(/** @type {string} */ (p.effort))
+      )
         throw Error('Claude effort control changed');
       expectedEffort = p.effort;
     }
     const current = await guard(p);
-    operation.expectedViewHash = p.hash;
-    operation.applying = true;
+    /** @type {any} */ (operation).expectedViewHash = p.hash;
+    /** @type {any} */ (operation).applying = true;
     const appliedAt = c.now();
     // Only the visible session-only action is ever used; Enter saves defaults.
     await b.run(['send-key', '-s', current.session, '-b', current.block, 's']);
@@ -358,7 +435,7 @@ async function cycle(c, kind, initial) {
             'Claude composer is not visible',
             'Claude composer is ambiguous',
             'Claude idle configuration view unavailable',
-          ].includes(error.message)
+          ].includes(/** @type {Error & {code?: string}} */ (error).message)
         )
           throw error;
         await wait(60);
@@ -392,13 +469,16 @@ async function cycle(c, kind, initial) {
     b.lastEffort = { ...a, effort: result.effort, at: c.now() };
   } catch (error) {
     if (c.picker === operation) {
-      if (operation.applying || operation.pending) c.picker = null;
+      if (/** @type {any} */ (operation).applying || operation.pending)
+        c.picker = null;
       else operation.automatic = false;
     }
     throw error;
   }
 }
 const S = require('./claude-state');
-const actorKey = (a) =>
-  [a.session, a.block, a.app, a.pid, a.name, a.terminalId || ''].join('|');
+const actorKey =
+  /** @param {any} a */
+  (a) =>
+    [a.session, a.block, a.app, a.pid, a.name, a.terminalId || ''].join('|');
 module.exports.cycle = cycle;

@@ -1,11 +1,21 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 const crypto = require('node:crypto'),
   S = require('./claude-state');
-const hash = (s) => crypto.createHash('sha256').update(s).digest('hex');
-const actor = (a) =>
-  [a.session, a.block, a.app, a.pid, a.name, a.terminalId || ''].join('|');
+const hash =
+  /** @param {any} s */
+  (s) => crypto.createHash('sha256').update(s).digest('hex');
+const actor =
+  /** @param {any} a */
+  (a) =>
+    [a.session, a.block, a.app, a.pid, a.name, a.terminalId || ''].join('|');
 const changed = () =>
   Object.assign(Error('Reselect Claude agent'), { code: 'SELECTION_CHANGED' });
+/** @param {string[]} lines
+ * @param {any} hint */
 function approvalStart(lines, hint) {
   const panels = lines
     .slice(0, hint)
@@ -19,13 +29,18 @@ function approvalStart(lines, hint) {
     .filter((i) => i >= 0);
   return panels.length === 1 ? panels[0] : null;
 }
+/** @param {any} raw */
 function approvalFrame(raw) {
   const plain = raw.replace(/\x1b\[[0-9;:]*m/g, '').replace(/\r(?=\n|$)/g, '');
   if (plain.includes('\x1b')) return null;
   // Herdr trims text rows but retains styled right-padding and CRLF in ANSI.
   // Normalize only the plain comparison; keep all styled cells in the hash.
-  const lines = plain.split('\n').map((line) => line.trimEnd()),
-    hint = lines.findLastIndex((s) => /\b[Ee]sc to cancel\b/.test(s)),
+  const lines = plain
+      .split('\n')
+      .map(/** @param {any} line */ (line) => line.trimEnd()),
+    hint = lines.findLastIndex(
+      /** @param {any} s */ (s) => /\b[Ee]sc to cancel\b/.test(s),
+    ),
     start = approvalStart(lines, hint);
   if (
     start === null ||
@@ -33,7 +48,7 @@ function approvalFrame(raw) {
     lines
       .slice(hint + 1)
       .some(
-        (s) =>
+        /** @param {any} s */ (s) =>
           s.trim() &&
           !/^[─━]{12,}(?:[ \u00a0]+[^\r\n]*[ \u00a0]+[─━]+)?\s*$/.test(s),
       )
@@ -45,7 +60,9 @@ function approvalFrame(raw) {
         .slice(0, start)
         .join('\n')
         .match(/\x1b\[[0-9;:]*m/g) || [],
-    reset = styles.findLastIndex((code) => /^\x1b\[(?:0)?m$/.test(code));
+    reset = styles.findLastIndex(
+      /** @param {any} code */ (code) => /^\x1b\[(?:0)?m$/.test(code),
+    );
   return {
     text: lines.slice(start, hint + 1).join('\n'),
     styled:
@@ -53,6 +70,9 @@ function approvalFrame(raw) {
       rawLines.slice(start, hint + 1).join('\n'),
   };
 }
+/** @param {any} a
+ * @param {string} text
+ * @param {any} ansi */
 function waitingFrame(a, text, ansi) {
   if (a.state === 'blocked' && a.kind === 'permission') {
     const t = approvalFrame(text),
@@ -64,14 +84,18 @@ function waitingFrame(a, text, ansi) {
   }
   return { text, styled: ansi };
 }
+/** @param {string} view
+ * @param {any} type */
 function dialog(view, type) {
   if (type === 'question') {
     const lines = view.split('\n'),
       review = lines.findLastIndex(
-        (line) => line.trim() === 'Review your answers',
+        /** @param {any} line */ (line) =>
+          line.trim() === 'Review your answers',
       ),
       ready = lines.findLastIndex(
-        (line) => line.trim() === 'Ready to submit your answers?',
+        /** @param {any} line */ (line) =>
+          line.trim() === 'Ready to submit your answers?',
       );
     if (
       review >= 0 &&
@@ -101,15 +125,16 @@ function dialog(view, type) {
     }
   }
   const lines = view.split('\n'),
-    hint = lines.findLastIndex((s) =>
-      type === 'picker'
-        ? /Enter to set as default.*\bs to use this session only\b.*\bEsc to (?:cancel|exit)\b/.test(
-            s,
-          )
-        : type === 'permission'
-          ? /\b[Ee]sc to cancel\b/.test(s)
-          : /\b[Ee]nter to (?:select|confirm|submit)\b/.test(s) &&
-            /\b[Ee]sc\b/.test(s),
+    hint = lines.findLastIndex(
+      /** @param {any} s */ (s) =>
+        type === 'picker'
+          ? /Enter to set as default.*\bs to use this session only\b.*\bEsc to (?:cancel|exit)\b/.test(
+              s,
+            )
+          : type === 'permission'
+            ? /\b[Ee]sc to cancel\b/.test(s)
+            : /\b[Ee]nter to (?:select|confirm|submit)\b/.test(s) &&
+              /\b[Ee]sc\b/.test(s),
     );
   if (
     hint < 0 ||
@@ -165,6 +190,10 @@ function dialog(view, type) {
     hash: hash(view),
   };
 }
+/** @param {string} view
+ * @param {any} cursor
+ * @param {AgentSnapshot} agent
+ * @param {Record<string, any>} [options] */
 function composer(
   view,
   cursor,
@@ -221,7 +250,7 @@ function composer(
   )
     throw Error('Claude vim composer must show INSERT');
   let input = region.slice(0, row - upper);
-  input[input.length - 1] = input.at(-1).slice(0, col);
+  input[input.length - 1] = /** @type {string} */ (input.at(-1)).slice(0, col);
   input[0] = input[0].replace(/^\s*❯[ \u00a0]/, '');
   const typed = input.join('\n').trim();
   if (!typed && !allowEmpty) throw Error('Type a message first');
@@ -240,16 +269,21 @@ function composer(
     empty: !typed,
   };
 }
-const same = (a, b) =>
-  !!a &&
-  !!b &&
-  a.chatId === b.chatId &&
-  a.identity === b.identity &&
-  a.turnStamp === b.turnStamp &&
-  a.hash === b.hash &&
-  a.cursor.row === b.cursor.row &&
-  a.cursor.column === b.cursor.column;
+const same =
+  /** @param {any} a
+   * @param {any} b */
+  (a, b) =>
+    !!a &&
+    !!b &&
+    a.chatId === b.chatId &&
+    a.identity === b.identity &&
+    a.turnStamp === b.turnStamp &&
+    a.hash === b.hash &&
+    a.cursor.row === b.cursor.row &&
+    a.cursor.column === b.cursor.column;
 class ClaudeControls {
+  /** @param {Record<string, any>} bridge
+   * @param {Record<string, any>} [deps] */
   constructor(bridge, deps = {}) {
     this.b = bridge;
     this.read = deps.read || S.readRecord;
@@ -263,6 +297,7 @@ class ClaudeControls {
     this.bindingsDefault = deps.bindingsDefault || S.defaultBindings;
     this.cycleWait = deps.cycleWait;
   }
+  /** @param {AgentSnapshot[]} agents */
   prune(agents) {
     const live = new Set(
       agents.filter((a) => a.app === 'claude-code').map(actor),
@@ -273,32 +308,40 @@ class ClaudeControls {
     while (this.submissions.size > 256)
       this.submissions.delete(this.submissions.keys().next().value);
   }
+  /** @param {any} a
+   * @param {any} [connection] */
   async view(a, connection) {
     if (this.viewReader) return this.viewReader(a);
     if (a.backend === 'herdr') {
-      const read = async (rpc) => {
-        for (let attempt = 0; attempt < 3; attempt++) {
-          try {
-            const [text, ansi] = await Promise.all([
-                this.b.readView(rpc, a, 'text'),
-                this.b.readView(rpc, a, 'ansi'),
-              ]),
-              [after, styled] = await Promise.all([
-                this.b.readView(rpc, a, 'text'),
-                this.b.readView(rpc, a, 'ansi'),
-              ]),
-              before = waitingFrame(a, text, ansi),
-              next = waitingFrame(a, after, styled);
-            if (before.text !== next.text || before.styled !== next.styled)
-              throw Error('Claude view changed');
-            return { text, hash: hash(before.styled), cursor: null };
-          } catch (error) {
-            if (error.message !== 'Claude view changed' || attempt === 2)
-              throw error;
-            await new Promise((resolve) => setTimeout(resolve, 20));
+      const read =
+        /** @param {Record<string, any>} rpc */
+        async (rpc) => {
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              const [text, ansi] = await Promise.all([
+                  this.b.readView(rpc, a, 'text'),
+                  this.b.readView(rpc, a, 'ansi'),
+                ]),
+                [after, styled] = await Promise.all([
+                  this.b.readView(rpc, a, 'text'),
+                  this.b.readView(rpc, a, 'ansi'),
+                ]),
+                before = waitingFrame(a, text, ansi),
+                next = waitingFrame(a, after, styled);
+              if (before.text !== next.text || before.styled !== next.styled)
+                throw Error('Claude view changed');
+              return { text, hash: hash(before.styled), cursor: null };
+            } catch (error) {
+              if (
+                /** @type {Error & {code?: string}} */ (error).message !==
+                  'Claude view changed' ||
+                attempt === 2
+              )
+                throw error;
+              await new Promise((resolve) => setTimeout(resolve, 20));
+            }
           }
-        }
-      };
+        };
       return connection ? read(connection) : this.b.use(read);
     }
     const args = [
@@ -325,6 +368,7 @@ class ClaudeControls {
       hash: hash(before.content),
     };
   }
+  /** @param {AgentSnapshot} agent */
   async enrich(agent) {
     if (agent.app !== 'claude-code') return agent;
     const a = {
@@ -480,7 +524,11 @@ class ClaudeControls {
         const owned =
             this.picker?.actor === key &&
             this.picker.identity === a.nativeIdentity,
-          automatic = owned && this.picker.automatic;
+          automatic =
+            owned &&
+            /** @type {{ actor: string; identity: any; id: `${string}-${string}-${string}-${string}-${string}`; openedAt: any; pending: boolean; }} */ /** @type {any} */ (
+              this.picker
+            ).automatic;
         try {
           const view = await this.view(a);
           if (owned) {
@@ -489,7 +537,15 @@ class ClaudeControls {
               d = dialog(view.text, 'picker');
               a.claudePickerVisible = true;
             } catch (error) {
-              if (!automatic || !this.picker.applying) throw error;
+              if (
+                !automatic ||
+                !(
+                  /** @type {{ actor: string; identity: any; id: `${string}-${string}-${string}-${string}-${string}`; openedAt: any; pending: boolean; }} */ /** @type {any} */ (
+                    this.picker
+                  ).applying
+                )
+              )
+                throw error;
               require('./claude-cycle').configurationView(view);
             }
             if (automatic) a.claudeCycling = true;
@@ -497,7 +553,15 @@ class ClaudeControls {
               a.state = 'blocked';
               a.kind = 'question';
               a.claudePicker = true;
-              a.statusAt = 'picker:' + this.picker.id + ':' + d.semantic;
+              a.statusAt =
+                'picker:' +
+                /** @type {{ actor: string; identity: any; id: `${string}-${string}-${string}-${string}-${string}`; openedAt: any; pending: boolean; }} */ (
+                  this.picker
+                ).id +
+                ':' +
+                /** @type {{ multiSelect: boolean; review: boolean; semantic: string; hash: string; checkboxList?: undefined; } | { multiSelect: boolean; checkboxList: boolean; semantic: string; hash: string; review?: undefined; }} */ (
+                  d
+                ).semantic;
             }
           } else {
             const d = dialog(view.text, a.kind);
@@ -512,7 +576,11 @@ class ClaudeControls {
           // A changing viewport does not revoke the independently verified root.
           // Automatic configuration writes still require a fresh exact picker hash.
           a.claudeUiPending = true;
-          if (automatic && error.message === 'Claude view changed')
+          if (
+            automatic &&
+            /** @type {Error & {code?: string}} */ (error).message ===
+              'Claude view changed'
+          )
             a.claudeCycling = true;
           else {
             a.claudeControlsEnabled = false;
@@ -564,6 +632,8 @@ class ClaudeControls {
     }
     return a;
   }
+  /** @param {any} expected
+   * @param {any} current */
   assert(expected, current) {
     if (
       !current?.nativeVerified ||
@@ -583,6 +653,8 @@ class ClaudeControls {
     if (expected.runId && current.runId !== expected.runId)
       throw Error('Claude turn changed');
   }
+  /** @param {any} [ready]
+   * @param {any} [initial] */
   async selected(ready = false, initial) {
     const a = initial || (await this.b.focused());
     if (a.app !== 'claude-code') throw changed();
@@ -591,23 +663,31 @@ class ClaudeControls {
       throw Error('Claude is not ready');
     return a;
   }
+  /** @param {any} a
+   * @param {Record<string, any>} [options] */
   async readComposer(a, options = {}) {
     if (a.backend === 'herdr') throw Error('Use the Herdr keyboard');
     const view = await this.view(a);
     return composer(view.text, view.cursor, a, options);
   }
+  /** @param {any} a
+   * @param {...any} keys */
   async key(a, ...keys) {
     const fresh = await this.b.checked(a);
     this.assert(a, fresh);
     await this.b.run(['send-key', '-s', a.session, '-b', a.block, ...keys]);
   }
+  /** @param {string} kind
+   * @param {any} initial */
   async cycle(kind, initial) {
     return require('./claude-cycle').cycle(this, kind, initial);
   }
+  /** @param {any} a
+   * @param {string} key */
   configurationKeyAllowed(a, key) {
     const p = this.picker;
     return !!(
-      p?.automatic &&
+      /** @type {any} */ (p)?.automatic &&
       p.actor === actor(a) &&
       p.identity === a.nativeIdentity &&
       this.b.actionContext &&
@@ -644,13 +724,18 @@ class ClaudeControls {
     this.b.draft = null;
     return { kind: 'model', label: 'Use arrows / Confirm' };
   }
+  /** @param {string} key
+   * @param {string} kind
+   * @param {any} initial */
   async waiting(key, kind, initial) {
     const a = await this.selected(false, initial),
-      waiting = (x) =>
-        x.state === 'blocked' &&
-        (kind === 'permission'
-          ? x.kind === 'permission'
-          : x.kind === 'question');
+      waiting =
+        /** @param {any} x */
+        (x) =>
+          x.state === 'blocked' &&
+          (kind === 'permission'
+            ? x.kind === 'permission'
+            : x.kind === 'question');
     if (!waiting(a)) throw Error('No Claude ' + kind + ' waiting');
     if (
       ![
@@ -738,6 +823,7 @@ class ClaudeControls {
     await this.key(fresh, 'escape');
     return { kind: 'interrupt', label: 'Interrupt requested' };
   }
+  /** @param {string} action */
   async stage(action) {
     const a = await this.selected(true),
       text = this.b.config.prompts[action];
@@ -751,7 +837,11 @@ class ClaudeControls {
       throw Error('Invalid plain-text shortcut');
     const before = await this.readComposer(a, { allowEmpty: true }),
       modes = await this.b.method(a, 'modes');
-    if (!modes.modes?.some((m) => m.number === 2004 && m.set))
+    if (
+      !modes.modes?.some(
+        /** @param {any} m */ (m) => m.number === 2004 && m.set,
+      )
+    )
       throw Error('Bracketed paste unavailable');
     await this.b.checked(a, true);
     await this.b.run(
@@ -792,6 +882,7 @@ class ClaudeControls {
       throw error;
     }
   }
+  /** @param {string} kind */
   async running(kind) {
     if (!['steer', 'queue'].includes(kind))
       throw Error('Unsupported Claude input action');

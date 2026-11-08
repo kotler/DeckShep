@@ -1,3 +1,7 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 // Metadata only: no transcripts, prompts, tool inputs/outputs or credentials on disk.
 const fs = require('node:fs'),
@@ -5,14 +9,21 @@ const fs = require('node:fs'),
   crypto = require('node:crypto'),
   { execFile } = require('node:child_process');
 const directory = () => path.join(__dirname, 'state', 'claude');
-const hash = (value) =>
-  crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
-const text = (s, max = 200) =>
-  typeof s === 'string' &&
-  s.length > 0 &&
-  s.length <= max &&
-  !/[\x00-\x1f\x7f-\x9f]/.test(s);
-const session = (s) => text(s, 128) && /^[a-zA-Z0-9_-]+$/.test(s);
+const hash =
+  /** @param {any} value */
+  (value) =>
+    crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
+const text =
+  /** @param {any} s
+   * @param {number} [max] */
+  (s, max = 200) =>
+    typeof s === 'string' &&
+    s.length > 0 &&
+    s.length <= max &&
+    !/[\x00-\x1f\x7f-\x9f]/.test(s);
+const session =
+  /** @param {any} s */
+  (s) => text(s, 128) && /^[a-zA-Z0-9_-]+$/.test(s);
 const modes = new Set([
   'default',
   'acceptEdits',
@@ -21,34 +32,46 @@ const modes = new Set([
   'auto',
   'dontAsk',
 ]);
+/** @param {string} file */
 function nativeVersion(file) {
   const resolved = fs.realpathSync(file);
   return /\/claude\/versions\/(\d+\.\d+\.\d+)$/.exec(resolved)?.[1] || null;
 }
-const processRead = (file, args) =>
-  new Promise((resolve, reject) =>
-    execFile(
-      file,
-      args,
-      { timeout: 1800, maxBuffer: 32768, env: { ...process.env, LC_ALL: 'C' } },
-      (error, out) => (error ? reject(error) : resolve(out)),
-    ),
-  );
+const processRead =
+  /** @param {string} file
+   * @param {string[]} args */
+  (file, args) =>
+    new Promise((resolve, reject) =>
+      execFile(
+        file,
+        args,
+        {
+          timeout: 1800,
+          maxBuffer: 32768,
+          env: { ...process.env, LC_ALL: 'C' },
+        },
+        (error, out) => (error ? reject(error) : resolve(out)),
+      ),
+    );
+/** @param {string} out
+ * @param {number} pid */
 function parseProcess(out, pid) {
   const m =
     /^\s*(\d+)\s+(\d+)\s+([A-Z][a-z]{2}\s+[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+\d{4})\s+(.+?)\s*$/.exec(
       out || '',
     );
-  if (!m || Number(m[1]) !== process.getuid())
+  if (!m || Number(m[1]) !== /** @type {() => number} */ (process.getuid)())
     throw Error('Claude process owner unavailable');
   return {
     pid,
     ppid: Number(m[2]),
     startedAt: m[3].replace(/\s+/g, ' '),
     executable: m[4],
-    version: null,
+    version: /** @type {string | null} */ (null),
   };
 }
+/** @param {number} pid
+ * @param {any} [execute] */
 async function processInfo(pid, execute = processRead) {
   if (!Number.isSafeInteger(pid) || pid <= 0)
     throw Error('Claude process unavailable');
@@ -93,6 +116,8 @@ async function processInfo(pid, execute = processRead) {
   }
   return p;
 }
+/** @param {any} [start]
+ * @param {any} [inspect] */
 async function ancestor(start = process.ppid, inspect = processInfo) {
   let pid = start;
   for (let i = 0; i < 12 && pid > 1; i++) {
@@ -102,26 +127,32 @@ async function ancestor(start = process.ppid, inspect = processInfo) {
   }
   throw Error('No native Claude ancestor');
 }
+/** @param {string} dir */
 function defaultBindings(dir) {
   if (!text(dir, 4096) || !path.isAbsolute(dir)) return false;
   try {
     fs.lstatSync(path.join(dir, 'keybindings.json'));
     return false;
   } catch (error) {
-    return error.code === 'ENOENT';
+    return /** @type {Error & {code?: string}} */ (error).code === 'ENOENT';
   }
 }
+/** @param {string} dir
+ * @param {any} [create] */
 function privateDirectory(dir, create = false) {
   if (create) fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   const s = fs.lstatSync(dir);
   if (
     !s.isDirectory() ||
     s.isSymbolicLink() ||
-    s.uid !== process.getuid() ||
+    s.uid !== /** @type {() => number} */ (process.getuid)() ||
     s.mode & 0o077
   )
     throw Error('Unsafe Claude metadata directory');
 }
+/** @param {number} pid
+ * @param {string} [dir]
+ * @param {Record<string, any>} [options] */
 function readRecord(pid, dir = directory(), { allowInvalid = false } = {}) {
   privateDirectory(dir);
   if (!allowInvalid && fs.existsSync(path.join(dir, String(pid) + '.invalid')))
@@ -133,7 +164,7 @@ function readRecord(pid, dir = directory(), { allowInvalid = false } = {}) {
     if (
       !s.isFile() ||
       s.nlink !== 1 ||
-      s.uid !== process.getuid() ||
+      s.uid !== /** @type {() => number} */ (process.getuid)() ||
       s.mode & 0o077 ||
       s.size > 16384
     )
@@ -147,6 +178,10 @@ function readRecord(pid, dir = directory(), { allowInvalid = false } = {}) {
     fs.closeSync(fd);
   }
 }
+/** @param {any} record
+ * @param {AgentSnapshot} agent
+ * @param {any} p
+ * @param {number} [now] */
 function validate(record, agent, p, now = Date.now()) {
   if (
     record?.schema !== 1 ||
@@ -175,6 +210,12 @@ function validate(record, agent, p, now = Date.now()) {
     throw Error('Claude request identity unavailable');
   return record;
 }
+/** @param {any} previous
+ * @param {any} data
+ * @param {any} p
+ * @param {number} [now]
+ * @param {any} [id]
+ * @param {any} [statusline] */
 function reduce(
   previous,
   data,
@@ -337,12 +378,15 @@ function reduce(
   if (modes.has(data.permission_mode)) r.permissionMode = data.permission_mode;
   return r;
 }
+/** @param {any} p
+ * @param {string} dir */
 function markInvalid(p, dir) {
   const file = path.join(dir, String(p.pid) + '.invalid'),
     tmp = file + '.' + crypto.randomUUID();
   fs.writeFileSync(tmp, crypto.randomUUID(), { mode: 0o600, flag: 'wx' });
   fs.renameSync(tmp, file);
 }
+/** @param {Record<string, any>} [options] */
 async function invalidate({
   dir = directory(),
   inspect = processInfo,
@@ -352,6 +396,8 @@ async function invalidate({
   privateDirectory(dir, true);
   markInvalid(p, dir);
 }
+/** @param {any} data
+ * @param {Record<string, any>} [options] */
 async function record(
   data,
   {
@@ -372,7 +418,8 @@ async function record(
   try {
     initialInvalid = fs.readFileSync(invalid, 'utf8');
   } catch (error) {
-    if (error.code !== 'ENOENT') throw error;
+    if (/** @type {Error & {code?: string}} */ (error).code !== 'ENOENT')
+      throw error;
   }
   const deadline = Date.now() + lockTimeoutMs;
   for (;;) {
@@ -380,7 +427,8 @@ async function record(
       fd = fs.openSync(lock, 'wx', 0o600);
       break;
     } catch (error) {
-      if (error.code !== 'EEXIST') throw error;
+      if (/** @type {Error & {code?: string}} */ (error).code !== 'EEXIST')
+        throw error;
       if (statusline || Date.now() >= deadline) {
         if (!statusline) markInvalid(p, dir);
         return null;
@@ -393,7 +441,8 @@ async function record(
     try {
       prior = readRecord(p.pid, dir, { allowInvalid: true });
     } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
+      if (/** @type {Error & {code?: string}} */ (error).code !== 'ENOENT')
+        throw error;
     }
     if (
       statusline &&
@@ -440,7 +489,8 @@ async function record(
         if (fs.readFileSync(invalid, 'utf8') === initialInvalid)
           fs.unlinkSync(invalid);
       } catch (error) {
-        if (error.code !== 'ENOENT') throw error;
+        if (/** @type {Error & {code?: string}} */ (error).code !== 'ENOENT')
+          throw error;
       }
     }
     return next;

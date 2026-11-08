@@ -1,26 +1,37 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
-const clean = (text) =>
-  String(text ?? '').replace(
-    /[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g,
-    '',
-  );
+const clean =
+  /** @param {unknown} text */
+  (text) =>
+    String(text ?? '').replace(
+      /[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g,
+      '',
+    );
 const segments = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+/** @param {string} text
+ * @param {number} [width]
+ * @param {number} [fontSize] */
 function ellipsize(text, width = 126, fontSize = 18) {
   const glyphs = Array.from(
     segments.segment(clean(text)),
     (part) => part.segment,
   );
-  const measure = (g) =>
-    fontSize *
-    (/^[ilI.,'`!:;| ]$/.test(g)
-      ? 0.28
-      : /^[MW@#%]$/.test(g)
-        ? 0.9
-        : /^[A-Z]$/.test(g)
-          ? 0.66
-          : /^[\u0000-\u024f]$/.test(g)
-            ? 0.54
-            : 1);
+  const measure =
+    /** @param {any} g */
+    (g) =>
+      fontSize *
+      (/^[ilI.,'`!:;| ]$/.test(g)
+        ? 0.28
+        : /^[MW@#%]$/.test(g)
+          ? 0.9
+          : /^[A-Z]$/.test(g)
+            ? 0.66
+            : /^[\u0000-\u024f]$/.test(g)
+              ? 0.54
+              : 1);
   if (glyphs.reduce((sum, g) => sum + measure(g), 0) <= width)
     return glyphs.join('');
   let result = '',
@@ -33,6 +44,8 @@ function ellipsize(text, width = 126, fontSize = 18) {
   }
   return result + '…';
 }
+/** @param {AgentSnapshot} agent
+ * @param {any} [aliases] */
 function agentLines(agent, aliases = {}) {
   const status = require('./context-controls').isBackground(agent)
     ? 'BACKGROUND'
@@ -56,12 +69,15 @@ function agentLines(agent, aliases = {}) {
     status,
   ];
 }
+/** @param {any} model */
 function shortModel(model) {
   return clean(model)
     .replace(/^gpt[- ]?/i, '')
     .replace(/[-_]+/g, ' ')
     .replace(/\b[a-z]/g, (c) => c.toUpperCase());
 }
+/** @param {any} a
+ * @param {any} b */
 function sameTarget(a, b) {
   return (
     a &&
@@ -75,8 +91,11 @@ function sameTarget(a, b) {
     (a.nativeIdentity || null) === (b.nativeIdentity || null)
   );
 }
+/** @param {Record<string, any>} bridge */
 function modeLines(bridge) {
-  const agent = bridge.agents?.find((a) => sameTarget(bridge.lastTarget, a));
+  const agent = bridge.agents?.find(
+    /** @param {any} a */ (a) => sameTarget(bridge.lastTarget, a),
+  );
   if (!agent) return ['Mode'];
   if (agent.app === 'claude-code') return ['Mode', 'Use keyboard'];
   if (
@@ -87,13 +106,18 @@ function modeLines(bridge) {
   )
     return ['Updating…'];
   return [
-    { plan: 'Plan', default: 'Default' }[agent.collaborationMode] || 'Mode',
+    /** @type {Record<string, any>} */ ({ plan: 'Plan', default: 'Default' })[
+      agent.collaborationMode
+    ] || 'Mode',
   ];
 }
+/** @param {Record<string, any>} bridge */
 function modelLines(bridge) {
   const target = bridge.lastTarget;
   if (!target) return ['Model', 'Select agent'];
-  const agent = bridge.agents?.find((a) => sameTarget(a, target));
+  const agent = bridge.agents?.find(
+    /** @param {any} a */ (a) => sameTarget(a, target),
+  );
   if (!agent) return ['Model', 'Agent closed'];
   const recent =
       sameTarget(bridge.lastModel, target) &&
@@ -117,8 +141,11 @@ function modelLines(bridge) {
     ),
   ];
 }
+/** @param {Record<string, any>} bridge */
 function effortLines(bridge) {
-  const agent = bridge.agents?.find((a) => sameTarget(bridge.lastTarget, a));
+  const agent = bridge.agents?.find(
+    /** @param {any} a */ (a) => sameTarget(bridge.lastTarget, a),
+  );
   if (!agent) return ['Effort', 'Unknown'];
   const recent = bridge.lastEffort;
   const value =
@@ -132,8 +159,11 @@ function effortLines(bridge) {
     value ? clean(value).replace(/^./, (c) => c.toUpperCase()) : 'Unknown',
   ];
 }
+/** @param {Record<string, any>} bridge */
 function reviewerLines(bridge) {
-  const agent = bridge.agents?.find((a) => sameTarget(bridge.lastTarget, a));
+  const agent = bridge.agents?.find(
+    /** @param {any} a */ (a) => sameTarget(bridge.lastTarget, a),
+  );
   if (!agent) return ['Reviewer'];
   const recent = bridge.lastReviewer;
   const value =
@@ -142,7 +172,10 @@ function reviewerLines(bridge) {
     recent.at > (agent.metadataAt || 0)
       ? recent.reviewer
       : agent.reviewer;
-  const label = { user: 'Ask me', auto_review: 'Approve for me' }[value];
+  const label = /** @type {Record<string, any>} */ ({
+    user: 'Ask me',
+    auto_review: 'Approve for me',
+  })[value];
   return label ? ['Reviewer', label] : ['Reviewer'];
 }
 module.exports = {

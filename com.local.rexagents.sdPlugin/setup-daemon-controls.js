@@ -1,3 +1,7 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 const fs = require('node:fs'),
   path = require('node:path');
@@ -10,6 +14,7 @@ const {
   DaemonRpc,
   loadedThread,
 } = require('./daemon-controls');
+/** @param {string} original */
 function statusLineWithId(original) {
   if (!/^\/statusline(?: [a-z0-9-]+)+$/.test(original))
     throw Error('Invalid native status-line command');
@@ -22,6 +27,9 @@ function statusLineWithId(original) {
     fields.unshift('model-with-reasoning');
   return '/statusline session-id ' + fields.join(' ');
 }
+/** @param {Record<string, any>} bridge
+ * @param {AgentSnapshot} agent
+ * @param {string} directory */
 async function configure(bridge, agent, directory) {
   const setup = new Setup(bridge),
     file = path.join(directory, 'state', 'native-presets.json'),
@@ -54,7 +62,7 @@ async function configure(bridge, agent, directory) {
     await setup.key(agent, 'ctrl+x', 'p', '0');
     await setup.wait(
       agent,
-      (s) => /^\s*Configure Status Line\s*$/m.test(s),
+      /** @param {any} s */ (s) => /^\s*Configure Status Line\s*$/m.test(s),
       'Status-line picker missing',
     );
     const picker = await setup.screen(agent);
@@ -66,7 +74,7 @@ async function configure(bridge, agent, directory) {
     await setup.key(agent, 'enter');
     await setup.wait(
       agent,
-      (s) => !/^\s*Configure Status Line\s*$/m.test(s),
+      /** @param {any} s */ (s) => !/^\s*Configure Status Line\s*$/m.test(s),
       'Footer preferences were not saved',
     );
     let id;
@@ -98,7 +106,11 @@ module.exports = { configure, statusLineWithId };
 if (require.main === module) {
   (async () => {
     const directory = process.argv[2] || __dirname,
-      config = JSON.parse(fs.readFileSync(path.join(directory, 'config.json'))),
+      config = JSON.parse(
+        /** @type {any} */ (
+          fs.readFileSync(path.join(directory, 'config.json'))
+        ),
+      ),
       bridge = new Bridge(config),
       original = await bridge.focused();
     try {

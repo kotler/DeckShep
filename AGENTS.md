@@ -12,6 +12,7 @@ The installed plugin retains its existing Stream Deck Node runtime.
 - `npm test`: run every isolated `node:test` group, including the eight legacy Python distribution checks.
 - `npm run test:golden`: baseline layouts, routing, native transport traces and refusals.
 - `npm run test:coverage`: c8 reports in ignored `coverage/`; baseline in `docs/plans/coverage-baseline.json`.
+- `npm run typecheck`: strict checkJs and domain contracts; no type-error suppressions.
 - `npm run lint`: recommended ESLint rules, with documented legacy-only TODOs.
 - `npm run format:check` / `npm run format`: format JS/TS/HTML/JSON/YAML; golden JSON stays byte-stable.
 - `npm run knip`: unused-file/dependency scan; confirm findings with `rg` before removal. Dynamic CommonJS exports, VM imports, fixture lookup and icon names need manual verification.

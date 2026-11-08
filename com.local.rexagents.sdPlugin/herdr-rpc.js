@@ -1,3 +1,7 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 const { StringDecoder } = require('node:string_decoder');
 const fs = require('node:fs'),
@@ -16,6 +20,7 @@ const METHODS = new Set([
   'pane.get',
   'pane.zoom',
 ]);
+/** @param {any} value */
 function endpoint(value) {
   if (
     typeof value !== 'string' ||
@@ -34,10 +39,10 @@ function endpoint(value) {
   if (
     !parent.isDirectory() ||
     parent.isSymbolicLink() ||
-    parent.uid !== process.getuid() ||
+    parent.uid !== /** @type {() => number} */ (process.getuid)() ||
     parent.mode & 0o022 ||
     !stat.isSocket() ||
-    stat.uid !== process.getuid() ||
+    stat.uid !== /** @type {() => number} */ (process.getuid)() ||
     stat.mode & 0o077
   )
     throw Error('Unsafe Herdr session socket');
@@ -50,8 +55,11 @@ function endpoint(value) {
       crypto.createHash('sha256').update(identity).digest('hex').slice(0, 24),
   };
 }
-const paneId = (s) =>
-  typeof s === 'string' && /^w[a-zA-Z0-9_-]+:p[a-zA-Z0-9_-]+$/.test(s);
+const paneId =
+  /** @param {any} s */
+  (s) => typeof s === 'string' && /^w[a-zA-Z0-9_-]+:p[a-zA-Z0-9_-]+$/.test(s);
+/** @param {string} method
+ * @param {any} p */
 function validate(method, p) {
   if (!METHODS.has(method) || !p || typeof p !== 'object' || Array.isArray(p))
     throw Error('Unsupported Herdr request');
@@ -98,7 +106,7 @@ function validate(method, p) {
         p.keys.length > 1 &&
         p.keys.length <= 4 &&
         ['up', 'down', 'left', 'right'].includes(p.keys[0]) &&
-        p.keys.every((key) => key === p.keys[0]);
+        p.keys.every(/** @param {any} key */ (key) => key === p.keys[0]);
     if (keys !== 'keys,target' || !paneId(p.target) || (!one && !arrows))
       throw Error(
         'Only a guarded native key or bounded arrow batch is allowed',
@@ -114,10 +122,16 @@ function validate(method, p) {
     throw Error('Explicit Herdr pane required');
 }
 class HerdrRpc {
+  /** @param {any} socketPath
+   * @param {Record<string, any>} [deps] */
   constructor(socketPath, deps = {}) {
     this.socketPath = socketPath;
     this.resolve = deps.endpoint || endpoint;
-    this.open = deps.connect || ((file) => net.createConnection(file));
+    this.open =
+      deps.connect ||
+      /** @type {(file: string) => import("node:net").Socket} */ (
+        (file) => net.createConnection(file)
+      );
     this.nextId = 0;
     this.pending = new Map();
     this.verified = false;
@@ -141,6 +155,8 @@ class HerdrRpc {
       throw error;
     }
   }
+  /** @param {string} method
+   * @param {any} params */
   request(method, params) {
     try {
       validate(method, params);
@@ -151,23 +167,28 @@ class HerdrRpc {
     }
     return this.exchange(method, params);
   }
+  /** @param {string} method
+   * @param {any} params */
   exchange(method, params) {
     // Ordinary Herdr 0.9.5 requests use one connection each. The server closes
     // after its response; only subscription requests keep a stream open.
     const id = 'switchboard-' + ++this.nextId;
     return new Promise((resolve, reject) => {
-      let socket,
+      let /** @type {any} */ socket,
         done = false,
         buffer = '';
       const decoder = new StringDecoder('utf8');
-      const finish = (error, result) => {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        this.pending.delete(id);
-        socket?.destroy();
-        error ? reject(error) : resolve(result);
-      };
+      const /** @type {any} */ finish =
+          /** @param {any} error
+           * @param {any} [result] */
+          (error, result) => {
+            if (done) return;
+            done = true;
+            clearTimeout(timer);
+            this.pending.delete(id);
+            socket?.destroy();
+            error ? reject(error) : resolve(result);
+          };
       const timer = setTimeout(
         () => finish(Error('Herdr timeout; verify any requested change')),
         this.timeout,
@@ -200,7 +221,7 @@ class HerdrRpc {
               throw Error('Herdr session changed while connecting');
             socket.write(
               JSON.stringify({ id, method, params }) + '\n',
-              (error) => {
+              /** @param {any} error */ (error) => {
                 if (error)
                   finish(
                     Error('Herdr write failed; verify any requested change'),
@@ -211,31 +232,34 @@ class HerdrRpc {
             finish(error);
           }
         });
-        socket.on('data', (chunk) => {
-          buffer += decoder.write(chunk);
-          if (Buffer.byteLength(buffer) > 4e6) {
-            finish(Error('Herdr response too large'));
-            return;
-          }
-          const end = buffer.indexOf('\n');
-          if (end < 0) return;
-          let message;
-          try {
-            message = JSON.parse(buffer.slice(0, end));
-          } catch {
-            finish(Error('Invalid Herdr response'));
-            return;
-          }
-          if (message.id !== id) {
-            finish(Error('Unexpected Herdr response'));
-            return;
-          }
-          if (message.error)
-            finish(Error('Herdr request refused; verify the session'));
-          else if (!message.result || typeof message.result !== 'object')
-            finish(Error('Invalid Herdr response'));
-          else finish(null, message.result);
-        });
+        socket.on(
+          'data',
+          /** @param {any} chunk */ (chunk) => {
+            buffer += decoder.write(chunk);
+            if (Buffer.byteLength(buffer) > 4e6) {
+              finish(Error('Herdr response too large'));
+              return;
+            }
+            const end = buffer.indexOf('\n');
+            if (end < 0) return;
+            let message;
+            try {
+              message = JSON.parse(buffer.slice(0, end));
+            } catch {
+              finish(Error('Invalid Herdr response'));
+              return;
+            }
+            if (message.id !== id) {
+              finish(Error('Unexpected Herdr response'));
+              return;
+            }
+            if (message.error)
+              finish(Error('Herdr request refused; verify the session'));
+            else if (!message.result || typeof message.result !== 'object')
+              finish(Error('Invalid Herdr response'));
+            else finish(null, message.result);
+          },
+        );
       } catch (error) {
         finish(error);
       }

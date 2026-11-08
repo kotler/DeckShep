@@ -1,13 +1,21 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 const path = require('node:path'),
   fs = require('node:fs');
 const { Bridge, cli, token } = require('./core');
 const P = require('./presets');
-const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+const pause =
+  /** @param {number} ms */
+  (ms) => new Promise((r) => setTimeout(r, ms));
 class Setup {
+  /** @param {Record<string, any>} bridge */
   constructor(bridge) {
     this.b = bridge;
   }
+  /** @param {any} a */
   async screen(a) {
     const size = await this.b.method(a, 'size');
     const result = await this.b.run([
@@ -35,6 +43,9 @@ class Setup {
     if (lines.at(-1) === '') lines.pop();
     return lines.slice(-size.rows).join('\n'); // Configuration viewport only; never match stale scrollback dialogs.
   }
+  /** @param {any} a
+   * @param {any} test
+   * @param {string} message */
   async wait(a, test, message) {
     for (let i = 0; i < 35; i++) {
       const s = await this.screen(a);
@@ -43,30 +54,35 @@ class Setup {
     }
     throw Error(message);
   }
+  /** @param {any} a
+   * @param {...any} keys */
   async key(a, ...keys) {
     await this.b.checked(a, true);
     await this.b.run(['send-key', '-s', a.session, '-b', a.block, ...keys]);
   }
+  /** @param {any} a */
   async menu(a) {
     await this.key(a, 'ctrl+x', 'p');
     await this.wait(
       a,
-      (s) => /^\s*Presets\s*$/m.test(s),
+      /** @param {any} s */ (s) => /^\s*Presets\s*$/m.test(s),
       'Presets dialog not open',
     );
   }
+  /** @param {any} a */
   async currentModel(a) {
     await this.menu(a);
     await this.key(a, 's');
     await this.wait(
       a,
-      (s) => s.includes('Start preset from current settings'),
+      /** @param {any} s */ (s) =>
+        s.includes('Start preset from current settings'),
       'Settings preset dialog missing',
     );
     await this.key(a, 'enter');
     await this.wait(
       a,
-      (s) => /^\s*New preset\s*$/m.test(s),
+      /** @param {any} s */ (s) => /^\s*New preset\s*$/m.test(s),
       'New preset dialog missing',
     );
     const view = await this.screen(a),
@@ -89,7 +105,7 @@ class Setup {
     }
     await this.wait(
       a,
-      (s) =>
+      /** @param {any} s */ (s) =>
         !/^\s*(New preset|Start preset from current settings|Presets)\s*$/m.test(
           s,
         ),
@@ -99,18 +115,20 @@ class Setup {
       throw Error('Native model settings field unavailable');
     return matches[0][1];
   }
+  /** @param {any} a */
   async currentStatusLine(a) {
     await this.menu(a);
     await this.key(a, 's');
     await this.wait(
       a,
-      (s) => s.includes('Start preset from current settings'),
+      /** @param {any} s */ (s) =>
+        s.includes('Start preset from current settings'),
       'Settings preset dialog missing',
     );
     await this.key(a, 'down', 'down', 'down', 'enter');
     await this.wait(
       a,
-      (s) => /^\s*New preset\s*$/m.test(s),
+      /** @param {any} s */ (s) => /^\s*New preset\s*$/m.test(s),
       'New preset dialog missing',
     );
     const field = (await this.screen(a)).split(/^\s*New preset\s*$/m).at(-1);
@@ -131,18 +149,20 @@ class Setup {
       throw Error('Native status-line settings unavailable');
     return matches[0][1];
   }
+  /** @param {any} a */
   async currentPermissions(a) {
     await this.menu(a);
     await this.key(a, 's');
     await this.wait(
       a,
-      (s) => s.includes('Start preset from current settings'),
+      /** @param {any} s */ (s) =>
+        s.includes('Start preset from current settings'),
       'Settings preset dialog missing',
     );
     await this.key(a, 'down', 'enter');
     await this.wait(
       a,
-      (s) => /^\s*New preset\s*$/m.test(s),
+      /** @param {any} s */ (s) => /^\s*New preset\s*$/m.test(s),
       'New preset dialog missing',
     );
     const field = (await this.screen(a)).split(/^\s*New preset\s*$/m).at(-1);
@@ -161,13 +181,18 @@ class Setup {
       throw Error('Native permissions settings unavailable');
     return matches[0][1].trim();
   }
+  /** @param {any} a
+   * @param {string} slot
+   * @param {any} input
+   * @param {any} [snapshot] */
   async store(a, slot, input, snapshot = false) {
     await this.menu(a);
     // Start from a settings-generated single line, never from the user's composer draft.
     await this.key(a, 's');
     await this.wait(
       a,
-      (s) => s.includes('Start preset from current settings'),
+      /** @param {any} s */ (s) =>
+        s.includes('Start preset from current settings'),
       'Settings preset dialog missing',
     );
     if (snapshot === true || snapshot === 'permissions')
@@ -175,7 +200,7 @@ class Setup {
     else await this.key(a, 'enter');
     await this.wait(
       a,
-      (s) => /^\s*New preset\s*$/m.test(s),
+      /** @param {any} s */ (s) => /^\s*New preset\s*$/m.test(s),
       'New preset dialog missing',
     );
     if (!snapshot) {
@@ -187,26 +212,28 @@ class Setup {
       );
       await this.wait(
         a,
-        (s) =>
+        /** @param {any} s */ (s) =>
           s
             .split(/^\s*New preset\s*$/m)
             .at(-1)
             .split('\n')
-            .some((line) => line.trim() === '› ' + input),
+            .some(
+              /** @param {any} line */ (line) => line.trim() === '› ' + input,
+            ),
         'Preset field did not match requested command',
       );
     }
     await this.key(a, 'enter');
     await this.wait(
       a,
-      (s) => s.includes('Save preset to slot'),
+      /** @param {any} s */ (s) => s.includes('Save preset to slot'),
       'Slot picker missing',
     );
     const before = fs.statSync(P.codexFile()).mtimeMs;
     await this.key(a, slot);
     await this.wait(
       a,
-      (s) =>
+      /** @param {any} s */ (s) =>
         s.includes('Replace preset ' + slot + '?') ||
         (!s.includes('Save preset to slot') && !/^\s*New preset\s*$/m.test(s)),
       'Slot selection incomplete',
@@ -229,6 +256,9 @@ class Setup {
     }
     throw Error('Preset save not confirmed');
   }
+  /** @param {any} a
+   * @param {Record<string, any>} config
+   * @param {string} file */
   async configure(a, config, file) {
     await this.b.focus(a);
     await this.b.checked(a, true);
@@ -269,7 +299,9 @@ module.exports = { Setup };
 if (require.main === module) {
   (async () => {
     const dir = process.argv[2] || __dirname,
-      config = JSON.parse(fs.readFileSync(path.join(dir, 'config.json')));
+      config = JSON.parse(
+        /** @type {any} */ (fs.readFileSync(path.join(dir, 'config.json'))),
+      );
     const file = path.join(dir, 'state', 'native-presets.json');
     const b = new Bridge({ ...config, allowClipboardFocus: true }),
       original = await b.focused();

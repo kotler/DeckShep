@@ -1,3 +1,7 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
 const fs = require('fs'),
   path = require('path'),
@@ -18,11 +22,16 @@ const { controlAccent } = require('./signal-visuals');
 const { CompletionDisplay } = require('./completion-display');
 const preferences = require('./preferences');
 const args = process.argv.slice(2),
-  arg = (k) => args[args.indexOf(k) + 1],
+  arg = /** @param {any} k */ (k) => args[args.indexOf(k) + 1],
   ws = new WebSocket('ws://127.0.0.1:' + arg('-port'));
-const emit = (event, context, payload) => {
-  if (ws.readyState === 1) ws.send(JSON.stringify({ event, context, payload }));
-};
+const emit =
+  /** @param {any} event
+   * @param {any} context
+   * @param {any} payload */
+  (event, context, payload) => {
+    if (ws.readyState === 1)
+      ws.send(JSON.stringify({ event, context, payload }));
+  };
 let saved = preferences.store(),
   storeError = '',
   loadedV2 = false,
@@ -42,6 +51,7 @@ function persist() {
   loadedV2 = true;
   emit('setGlobalSettings', arg('-pluginUUID'), preferences.serialize(saved));
 }
+/** @param {any} scope */
 function getController(scope) {
   if (!['rex', 'herdr'].includes(scope))
     throw Error('Unknown controller profile');
@@ -51,24 +61,27 @@ function getController(scope) {
 function applyAllSettings() {
   for (const runtime of controllers.values()) runtime.applySettings();
 }
+/** @param {any} scope */
 function createController(scope) {
   const configPath = path.join(__dirname, 'config.json');
-  let diskConfig = JSON.parse(fs.readFileSync(configPath)),
+  let diskConfig = JSON.parse(/** @type {any} */ (fs.readFileSync(configPath))),
     config = preferences.profileConfig(diskConfig, saved, scope);
-  let activePress = null,
+  let /** @type {any} */ activePress = null,
     visibility = 0,
     actionBusy = false,
     settingsError = '',
     setupBusy = false,
     inspectorMessage = '';
-  const backendKey = (c) =>
-    c.backend +
-    '|claude:' +
-    String(c.claude?.enabled === true) +
-    '|' +
-    (c.backend === 'herdr'
-      ? [c.herdr?.socketPath || '', c.herdr?.titleIdentity === true].join('|')
-      : '');
+  const backendKey =
+    /** @param {any} c */
+    (c) =>
+      c.backend +
+      '|claude:' +
+      String(c.claude?.enabled === true) +
+      '|' +
+      (c.backend === 'herdr'
+        ? [c.herdr?.socketPath || '', c.herdr?.titleIdentity === true].join('|')
+        : '');
   function assertVisible() {
     if (!activePress) return;
     const { ctx, display } = activePress,
@@ -80,39 +93,50 @@ function createController(scope) {
     )
       throw Error('Profile changed; no further input sent');
   }
+  /** @param {any} c */
   function makeBridge(c) {
     const b =
       c.backend === 'herdr'
         ? new (require('./herdr-bridge').HerdrBridge)(c)
         : new Bridge(c);
-    b.backendKey = backendKey(c);
-    b.generation = ++sequence;
+    /** @type {any} */ (b).backendKey = backendKey(c);
+    /** @type {any} */ (b).generation = ++sequence;
     const focused = b.focused.bind(b);
-    b.focused = async (...args) => {
-      assertVisible();
-      const result = await focused(...args);
-      assertVisible();
-      return result;
-    };
-    const run = b.run.bind(b);
-    b.run = (args, ...rest) => {
-      if (['send', 'send-key', 'focus', 'zoom', '-C'].includes(args[0]))
+    b.focused =
+      /** @param {...any} args */
+      async (...args) => {
         assertVisible();
-      return run(args, ...rest);
-    };
+        const result = await /** @type {(...args: any[]) => Promise<any>} */ (
+          focused
+        )(...args);
+        assertVisible();
+        return result;
+      };
+    const run = b.run.bind(b);
+    b.run =
+      /** @param {string[]} args
+       * @param {...any} rest */
+      (args, ...rest) => {
+        if (['send', 'send-key', 'focus', 'zoom', '-C'].includes(args[0]))
+          assertVisible();
+        return run(args, ...rest);
+      };
     if (c.backend === 'herdr') {
-      const connect = b.connect?.bind(b);
+      const connect = /** @type {any} */ (b).connect?.bind(b);
       if (connect)
-        b.connect = async () => {
+        /** @type {any} */ (b).connect = async () => {
           const rpc = await connect(),
             request = rpc.request.bind(rpc);
-          rpc.request = (method, params) => {
-            if (
-              ['agent.focus', 'agent.send_keys', 'pane.zoom'].includes(method)
-            )
-              assertVisible();
-            return request(method, params);
-          };
+          rpc.request =
+            /** @param {string} method
+             * @param {any} params */
+            (method, params) => {
+              if (
+                ['agent.focus', 'agent.send_keys', 'pane.zoom'].includes(method)
+              )
+                assertVisible();
+              return request(method, params);
+            };
           return rpc;
         };
     }
@@ -130,16 +154,19 @@ function createController(scope) {
     metadataBusy = false,
     metadataAgain = false,
     startupSelectionRead = false,
-    contextState = { stamp: null, armedAt: 0 };
+    contextState = /** @type {{stamp: string | null, armedAt: number}} */ ({
+      stamp: null,
+      armedAt: 0,
+    });
   function loadConfig() {
     try {
-      diskConfig = JSON.parse(fs.readFileSync(configPath));
+      diskConfig = JSON.parse(/** @type {any} */ (fs.readFileSync(configPath)));
       settingsError = '';
     } catch {
       settingsError = 'Settings file invalid; using the last valid defaults';
     }
     const next = preferences.profileConfig(diskConfig, saved, scope);
-    if (backendKey(next) !== bridge.backendKey) {
+    if (backendKey(next) !== /** @type {any} */ (bridge).backendKey) {
       if (actionBusy || setupBusy) return;
       bridge = makeBridge(next);
       metadata = new AgentMetadata(bridge);
@@ -148,7 +175,10 @@ function createController(scope) {
       bank = 0;
       page = 0;
       transitions.clear();
-      contextState = { stamp: null, armedAt: 0 };
+      contextState = /** @type {{stamp: string | null, armedAt: number}} */ ({
+        stamp: null,
+        armedAt: 0,
+      });
       for (const k of keys.values()) {
         k.notice = null;
         k.feedback = null;
@@ -158,13 +188,16 @@ function createController(scope) {
     bridge.config = config;
   }
   const backendName = () => (scope === 'herdr' ? 'Herdr' : 'Rex');
-  const clean = (s) =>
-    String(s || '')
-      .replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g, '')
-      .slice(0, 15);
+  const clean =
+    /** @param {any} s */
+    (s) =>
+      String(s || '')
+        .replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g, '')
+        .slice(0, 15);
   function selected() {
     return bridge.agents?.find((a) => sameTarget(bridge.lastTarget, a));
   }
+  /** @param {any} k */
   function mapping(k) {
     const override = k.settings.action;
     if (override) {
@@ -205,6 +238,7 @@ function createController(scope) {
           : ['No agents']),
     ];
   }
+  /** @param {any} k */
   function capture(k) {
     const target = selected(),
       action = mapping(k),
@@ -214,10 +248,10 @@ function createController(scope) {
       scope,
       appearance: k.appearance,
       visibility,
-      generation: bridge.generation,
+      generation: /** @type {any} */ (bridge).generation,
       action,
       page,
-      backendKey: bridge.backendKey,
+      backendKey: /** @type {any} */ (bridge).backendKey,
       stamp: contextStamp,
       target: C.snapshot(action.startsWith('agent:') ? k.target : target),
       armedAt: contextState.armedAt,
@@ -236,7 +270,7 @@ function createController(scope) {
     for (const [ctx, k] of keys) {
       const action = mapping(k);
       let icon =
-        {
+        /** @type {Record<string, any>} */ ({
           effortIncrease: 'blank',
           effortDecrease: 'blank',
           plan: 'blank',
@@ -258,7 +292,7 @@ function createController(scope) {
           claudeInfo: 'claude-code',
           claudeModeInfo: 'blank',
           claudeToggle: 'permissions',
-        }[action] || action;
+        })[action] || action;
       let lines = [],
         color = '#233a50',
         p = 0,
@@ -396,7 +430,9 @@ function createController(scope) {
                 ]
               : [bridge.selectionNotice ? 'Reselect' : 'Select', 'agent'],
           };
-        lines = names[action] || [action.toUpperCase()];
+        lines = /** @type {Record<string, any>} */ (names)[action] || [
+          action.toUpperCase(),
+        ];
         if (
           (action === 'collapse' && (offline || !gaps)) ||
           (action === 'interrupt' && mode !== 'working') ||
@@ -492,6 +528,7 @@ function createController(scope) {
       }
     }
   }
+  /** @param {any} [force] */
   async function refreshMetadata(force = false) {
     if (metadataBusy) {
       metadataAgain = metadataAgain || force;
@@ -512,7 +549,7 @@ function createController(scope) {
           (config.backend !== 'herdr' ||
             (live.chatId === agent.chatId &&
               live.nativeIdentity === agent.nativeIdentity)) &&
-          !(live.metadataAt > agent.metadataAt)
+          !(live.metadataAt > /** @type {number} */ (agent.metadataAt))
         )
           for (const field of [
             'chatId',
@@ -549,7 +586,7 @@ function createController(scope) {
               ].includes(field) ||
                 live.statusAt === agent.statusAt)
             )
-              live[field] = agent[field];
+              live[field] = /** @type {Record<string, any>} */ (agent)[field];
       }
       render();
     } finally {
@@ -560,6 +597,7 @@ function createController(scope) {
       }
     }
   }
+  /** @param {any} [forceMetadata] */
   async function refresh(forceMetadata = false) {
     if (busy || actionBusy) return;
     busy = true;
@@ -578,6 +616,8 @@ function createController(scope) {
       render();
     }
   }
+  /** @param {any} a
+   * @param {any} display */
   async function perform(a, display) {
     if (a === 'more') page = (page + 1) % 3;
     else if (a === 'questions') page = 1;
@@ -618,12 +658,12 @@ function createController(scope) {
     else if (a === 'send') await bridge.send();
     else if (a.startsWith('approval'))
       await bridge.approvalKey(
-        {
+        /** @type {Record<string, any>} */ ({
           approvalUp: 'up',
           approvalDown: 'down',
           approvalConfirm: 'enter',
           approvalEscape: 'escape',
-        }[a],
+        })[a],
       );
     else if (
       [
@@ -638,14 +678,16 @@ function createController(scope) {
       ].includes(a)
     )
       await bridge.questionKey(
-        {
+        /** @type {Record<string, any>} */ ({
           questionPrev: 'shift+tab',
           questionNext: 'tab',
           answer: display.target?.claudeCheckboxList ? 'tab' : 'enter',
-        }[a] || a,
+        })[a] || a,
       );
     else await bridge.stage(a);
   }
+  /** @param {any} ctx
+   * @param {any} display */
   async function press(ctx, display) {
     const k = keys.get(ctx);
     if (!k) return;
@@ -666,10 +708,10 @@ function createController(scope) {
         display.scope !== scope ||
         display.appearance !== k.appearance ||
         display.visibility !== visibility ||
-        display.generation !== bridge.generation
+        display.generation !== /** @type {any} */ (bridge).generation
       )
         throw Error('Profile changed; press again');
-      if (display.backendKey !== bridge.backendKey)
+      if (display.backendKey !== /** @type {any} */ (bridge).backendKey)
         throw Error('Controller changed; press again');
       if (display.setupBusy) throw Error('Setup finished; press again');
       if (C.needsContext(a)) {
@@ -696,11 +738,13 @@ function createController(scope) {
       k.notice = null;
       k.feedback = {
         until: Date.now() + 10000,
-        message: clean(error.message),
+        message: clean(/** @type {Error & {code?: string}} */ (error).message),
         action: a,
         stamp: display.stamp,
       };
-      inspectorMessage = String(error.message)
+      inspectorMessage = String(
+        /** @type {Error & {code?: string}} */ (error).message,
+      )
         .replace(/[\x00-\x1f\x7f]/g, '')
         .slice(0, 160);
       render();
@@ -744,13 +788,13 @@ function createController(scope) {
       try {
         const live = await source.agent(display.target);
         if (source === bridge) {
-          const index = source.agents.findIndex((item) =>
+          const index = /** @type {any[]} */ (source.agents).findIndex((item) =>
             sameTarget(item, display.target),
           );
           if (index >= 0) {
             if (live && sameTarget(live, display.target))
-              source.agents[index] = live;
-            else source.agents.splice(index, 1);
+              /** @type {any[]} */ (source.agents)[index] = live;
+            else /** @type {any[]} */ (source.agents).splice(index, 1);
           }
         }
       } catch {
@@ -774,6 +818,8 @@ function createController(scope) {
     }
     render();
   }
+  /** @param {any} context
+   * @param {string} [message] */
   function inspectorStatus(context, message) {
     if (message !== undefined) inspectorMessage = message;
     const a = selected(),
@@ -816,6 +862,7 @@ function createController(scope) {
       message: inspectorMessage || settingsError || storeError,
     });
   }
+  /** @param {any} e */
   async function inspectorRequest(e) {
     if (!keys.has(e.context)) return;
     if (e.payload?.kind === 'preferences') {
@@ -825,7 +872,10 @@ function createController(scope) {
         applyAllSettings();
         inspectorStatus(e.context, 'Preferences saved');
       } catch (error) {
-        inspectorStatus(e.context, error.message);
+        inspectorStatus(
+          e.context,
+          /** @type {Error & {code?: string}} */ (error).message,
+        );
       }
       return;
     }
@@ -860,7 +910,7 @@ function createController(scope) {
     } catch (error) {
       inspectorStatus(
         e.context,
-        String(error.message)
+        String(/** @type {Error & {code?: string}} */ (error).message)
           .replace(/[\x00-\x1f\x7f]/g, '')
           .slice(0, 160),
       );
@@ -886,6 +936,7 @@ function createController(scope) {
       queue = queue.then(initialize).catch(() => {});
     render();
   }
+  /** @param {any} context */
   function detach(context) {
     keys.delete(context);
     if (!keys.size) {
@@ -896,6 +947,8 @@ function createController(scope) {
       completion.update(bridge.agents || [], null, Date.now());
     }
   }
+  /** @param {any} context
+   * @param {any} payload */
   function attach(context, payload) {
     const first = !keys.size;
     if (first) visibility++;
@@ -933,7 +986,7 @@ function createController(scope) {
     ready: settled,
     getPage: () => page,
     getBank: () => bank,
-    setBank: (value) => (bank = value),
+    setBank: /** @param {any} value */ (value) => (bank = value),
   };
 }
 ws.on('open', () => {
@@ -947,94 +1000,97 @@ ws.on('open', () => {
     if (runtime.keys.size)
       queue = queue.then(runtime.initialize).catch(() => {});
 });
-ws.on('message', (raw) => {
-  try {
-    const e = JSON.parse(raw);
-    if (e.event === 'didReceiveGlobalSettings') {
-      try {
-        const input = e.payload?.settings || {};
-        if (input.version !== 2 && loadedV2) return;
-        const incoming = preferences.store(input);
-        if (input.version === 2 && incoming.revision < saved.revision) return;
-        saved = incoming;
-        storeError = '';
-        if (input.version === 2) loadedV2 = true;
-        else persist();
-        applyAllSettings();
-      } catch {
-        storeError =
-          'Saved profile preferences invalid; keeping the last valid settings';
-        for (const runtime of controllers.values()) runtime.render();
-      }
-      return;
-    }
-    if (e.event === 'willAppear' || e.event === 'didReceiveSettings') {
-      if (e.event === 'didReceiveSettings' && !owners.has(e.context)) return;
-      const scope = preferences.scopeOf(e.payload?.settings),
-        prior = owners.get(e.context);
-      if (prior && prior !== scope) getController(prior).detach(e.context);
-      if (!scope) {
-        owners.delete(e.context);
-        emit('setImage', e.context, {
-          image:
-            'data:image/svg+xml;base64,' +
-            Buffer.from(
-              svg({
-                icon: 'blank',
-                lines: ['Profile', 'setup error'],
-                color: '#893748',
-              }),
-            ).toString('base64'),
-          target: 0,
-        });
-        emit('setTitle', e.context, { title: '', target: 0 });
+ws.on(
+  'message',
+  /** @param {any} raw */ (raw) => {
+    try {
+      const e = JSON.parse(raw);
+      if (e.event === 'didReceiveGlobalSettings') {
+        try {
+          const input = e.payload?.settings || {};
+          if (input.version !== 2 && loadedV2) return;
+          const incoming = preferences.store(input);
+          if (input.version === 2 && incoming.revision < saved.revision) return;
+          saved = incoming;
+          storeError = '';
+          if (input.version === 2) loadedV2 = true;
+          else persist();
+          applyAllSettings();
+        } catch {
+          storeError =
+            'Saved profile preferences invalid; keeping the last valid settings';
+          for (const runtime of controllers.values()) runtime.render();
+        }
         return;
       }
+      if (e.event === 'willAppear' || e.event === 'didReceiveSettings') {
+        if (e.event === 'didReceiveSettings' && !owners.has(e.context)) return;
+        const scope = preferences.scopeOf(e.payload?.settings),
+          prior = owners.get(e.context);
+        if (prior && prior !== scope) getController(prior).detach(e.context);
+        if (!scope) {
+          owners.delete(e.context);
+          emit('setImage', e.context, {
+            image:
+              'data:image/svg+xml;base64,' +
+              Buffer.from(
+                svg({
+                  icon: 'blank',
+                  lines: ['Profile', 'setup error'],
+                  color: '#893748',
+                }),
+              ).toString('base64'),
+            target: 0,
+          });
+          emit('setTitle', e.context, { title: '', target: 0 });
+          return;
+        }
+        const runtime = getController(scope);
+        owners.set(e.context, scope);
+        if (e.event === 'didReceiveSettings' && prior === scope) {
+          const k = runtime.keys.get(e.context);
+          if (k) k.settings = e.payload.settings || {};
+          runtime.render();
+        } else runtime.attach(e.context, e.payload);
+        return;
+      }
+      const scope = owners.get(e.context);
+      if (!scope) return;
       const runtime = getController(scope);
-      owners.set(e.context, scope);
-      if (e.event === 'didReceiveSettings' && prior === scope) {
-        const k = runtime.keys.get(e.context);
-        if (k) k.settings = e.payload.settings || {};
-        runtime.render();
-      } else runtime.attach(e.context, e.payload);
-      return;
-    }
-    const scope = owners.get(e.context);
-    if (!scope) return;
-    const runtime = getController(scope);
-    if (e.event === 'willDisappear') {
-      runtime.detach(e.context);
-      owners.delete(e.context);
-      return;
-    }
-    if (e.event === 'sendToPlugin') {
-      const appearance = runtime.keys.get(e.context)?.appearance;
-      queue = queue
-        .then(() =>
-          owners.get(e.context) === scope &&
-          runtime.keys.get(e.context)?.appearance === appearance
-            ? runtime.inspectorRequest(e)
-            : undefined,
-        )
-        .catch(() => {});
-      return;
-    }
-    if (e.event === 'keyDown') {
-      const k = runtime.keys.get(e.context),
-        shown = k?.presented,
-        display = shown
-          ? { ...shown, pressedAt: Date.now(), setupBusy: runtime.setupBusy }
-          : undefined;
-      queue = queue
-        .then(() =>
-          owners.get(e.context) === scope
-            ? runtime.press(e.context, display)
-            : undefined,
-        )
-        .catch(() => {});
-    }
-  } catch {}
-});
+      if (e.event === 'willDisappear') {
+        runtime.detach(e.context);
+        owners.delete(e.context);
+        return;
+      }
+      if (e.event === 'sendToPlugin') {
+        const appearance = runtime.keys.get(e.context)?.appearance;
+        queue = queue
+          .then(() =>
+            owners.get(e.context) === scope &&
+            runtime.keys.get(e.context)?.appearance === appearance
+              ? runtime.inspectorRequest(e)
+              : undefined,
+          )
+          .catch(() => {});
+        return;
+      }
+      if (e.event === 'keyDown') {
+        const k = runtime.keys.get(e.context),
+          shown = k?.presented,
+          display = shown
+            ? { ...shown, pressedAt: Date.now(), setupBusy: runtime.setupBusy }
+            : undefined;
+        queue = queue
+          .then(() =>
+            owners.get(e.context) === scope
+              ? runtime.press(e.context, display)
+              : undefined,
+          )
+          .catch(() => {});
+      }
+    } catch {}
+  },
+);
 ws.on('close', () => process.exit(0));
 ws.on('error', () => process.exit(1));
 setInterval(() => {

@@ -1,22 +1,31 @@
+// @ts-check
+/** @typedef {import("../src/domain/types").AgentSnapshot} AgentSnapshot */
+/** @typedef {import("../src/domain/types").Config} Config */
+/** @typedef {import("../src/domain/types").PressContext} PressContext */
 'use strict';
-const esc = (s) =>
-  String(s || '')
-    .replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g, '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+const esc =
+  /** @param {any} s */
+  (s) =>
+    String(s || '')
+      .replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g, '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
 const codexIcon = require('node:fs')
   .readFileSync(require('node:path').join(__dirname, 'assets/codex-app.png'))
   .toString('base64');
 const codexMark = require('node:fs')
   .readFileSync(require('node:path').join(__dirname, 'assets/codex-mark.png'))
   .toString('base64');
-const claudeMark = require('node:fs')
-  .readFileSync(
-    require('node:path').join(__dirname, 'assets/claude-mark.svg'),
-    'utf8',
-  )
-  .match(/<svg[^>]*>([\s\S]*?)<\/svg>/)[1];
+const claudeMark = /** @type {RegExpMatchArray} */ (
+  require('node:fs')
+    .readFileSync(
+      require('node:path').join(__dirname, 'assets/claude-mark.svg'),
+      'utf8',
+    )
+    .match(/<svg[^>]*>([\s\S]*?)<\/svg>/)
+)[1];
+/** @type {Record<string, string>} */
 const paths = {
   blank: '',
   codex: `<image x="12" y="0" width="80" height="80" xlink:href="data:image/png;base64,${codexIcon}"/>`,
@@ -58,6 +67,7 @@ const paths = {
   bankprev: '<path d="m50 17-23 23 23 23m28-46L55 40l23 23"/>',
   banknext: '<path d="m26 17 23 23-23 23m28-46 23 23-23 23"/>',
 };
+/** @param {Record<string, any>} options */
 function svg({
   icon = 'more',
   lines = [],
@@ -84,16 +94,20 @@ function svg({
       claudeMark,
       legacyPaths: paths,
     });
-  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144" height="144" viewBox="0 0 144 144"><rect x="2" y="2" width="140" height="140" rx="17" fill="${color}"/><rect x="2" y="2" width="140" height="140" rx="17" fill="white" opacity="${Math.max(0, Math.min(0.22, pulse))}"/><rect x="3" y="3" width="138" height="138" rx="16" fill="none" stroke="#ffffff" stroke-opacity=".22" stroke-width="2"/><g transform="${agent ? 'translate(32 -1) scale(.78)' : 'translate(20 0)'}" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">${textOnly ? '' : (paths[icon] ?? paths.more)}</g>${lines
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144" height="144" viewBox="0 0 144 144"><rect x="2" y="2" width="140" height="140" rx="17" fill="${color}"/><rect x="2" y="2" width="140" height="140" rx="17" fill="white" opacity="${Math.max(0, Math.min(0.22, pulse))}"/><rect x="3" y="3" width="138" height="138" rx="16" fill="none" stroke="#ffffff" stroke-opacity=".22" stroke-width="2"/><g transform="${agent ? 'translate(32 -1) scale(.78)' : 'translate(20 0)'}" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">${textOnly ? '' : /** @type {Record<string, any>} */ (/** @type {Record<string, any>} */ (paths)[icon] ?? paths.more)}</g>${lines
     .slice(0, 3)
     .map(
-      (s, i) =>
+      /** @param {any} s
+       * @param {any} i */ (s, i) =>
         `<text x="72" y="${textOnly ? 82 : agent ? [79, 103, 130][i] : 94 + i * 19}" fill="white" text-anchor="middle" font-family="Arial" font-size="${textOnly ? 26 : agent ? [18, 16, 16][i] : i === 0 ? 17 : 15}" font-weight="${i === 0 || (agent && i === 2) ? 'bold' : 'normal'}">${esc(s).slice(0, 140)}</text>`,
     )
     .join(
       '',
     )}${badge === 'selected' ? `<g id="selected-agent"><circle cx="123" cy="19" r="6" fill="white"/></g>` : badge ? `<circle cx="125" cy="17" r="7" fill="#ffd66c"/>` : ''}</svg>`;
 }
+/** @param {any} state
+ * @param {number} elapsed
+ * @param {Record<string, any>} config */
 function pulse(state, elapsed, config) {
   if (!config?.enabled) return 0;
   if (state === 'working')
