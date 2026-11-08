@@ -68,14 +68,47 @@ export const settingsV2 = z
 export const settingsV3 = settingsV2.extend({
   version: z.literal(3),
   profiles: settingsV2.shape.profiles.extend({
-    'herdr-app': z.object({}).strict(),
+    'herdr-app': z
+      .object({
+        herdrAppHome: z
+          .string()
+          .max(1024)
+          .regex(/^(?:\/[^\x00-\x1f\x7f]*)?$/)
+          .optional(),
+        herdrAppCoreSocketPath: z
+          .string()
+          .max(1024)
+          .regex(/^(?:\/[^\x00-\x1f\x7f]*)?$/)
+          .optional(),
+        herdrAppReadbackEnabled: bool,
+        herdrAppInputEnabled: bool,
+        claudeEnabled: bool,
+      })
+      .strict(),
   }),
   experimental: z.object({ herdrApp: z.boolean() }).strict(),
 });
 export const globalSettings = z.union([settingsV3, settingsV2, settingsV1]);
+const herdrAppProfile = settingsV3.shape.profiles.shape['herdr-app'];
+const herdrAppPreferencePatch = herdrAppProfile
+  .extend({
+    backend: z.literal('herdr-app').optional(),
+    animationEnabled: bool,
+    prompts: preferencePatch.shape.prompts,
+  })
+  .strict();
 export const config = z
   .object({
-    backend: z.enum(['rex', 'herdr']).optional(),
+    backend: z.enum(['rex', 'herdr', 'herdr-app']).optional(),
+    herdrApp: z
+      .object({
+        home: herdrAppProfile.shape.herdrAppHome,
+        coreSocketPath: herdrAppProfile.shape.herdrAppCoreSocketPath,
+        readbackEnabled: bool,
+        inputEnabled: bool,
+      })
+      .strict()
+      .optional(),
     allowClipboardFocus: bool,
     bringToFront: bool,
     herdr: z
@@ -233,6 +266,8 @@ export const hostEvent = z
   .passthrough();
 export const schemas = {
   ...herdrAppSchemas,
+  herdrAppProfile,
+  herdrAppPreferencePatch,
   config,
   globalSettings,
   rexResponse,

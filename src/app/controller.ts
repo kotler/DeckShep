@@ -30,10 +30,9 @@ const {
 const { assertVerifiedControl } = require('../guards/verified-control');
 const { controlAccent } = require('../render/signal');
 const { CompletionDisplay } = require('../render/completion');
-const {
-  preferenceCodec,
-  experimentalScope,
-} = require('./experimental-preferences');
+const { preferenceCodec } = require('./experimental-preferences');
+const { HerdrAppPreview } = require('./herdr-app-preview');
+const { GuardedBackend } = require('../terminals/contract/backend');
 const {
   IntegrationSetup,
   diagnostics,
@@ -115,7 +114,10 @@ function createApplication(dependencies: Record<string, any>) {
     emit('setGlobalSettings', arg('-pluginUUID'), preferences.serialize(saved));
   }
   function getController(scope: any) {
-    if (!['rex', 'herdr'].includes(scope))
+    if (
+      !['rex', 'herdr'].includes(scope) &&
+      !(scope === 'herdr-app' && dependencies.experimentalHerdrApp === true)
+    )
       throw Error('Unknown controller profile');
     if (!controllers.has(scope))
       controllers.set(scope, new Controller(scope, createRuntime(scope)));
@@ -139,9 +141,18 @@ function createApplication(dependencies: Record<string, any>) {
       '|claude:' +
       String(c.claude?.enabled === true) +
       '|' +
-      (c.backend === 'herdr'
-        ? [c.herdr?.socketPath || '', c.herdr?.titleIdentity === true].join('|')
-        : c.rexPath || '');
+      (c.backend === 'herdr-app'
+        ? [
+            c.herdrApp?.home || '',
+            c.herdrApp?.coreSocketPath || '',
+            c.herdrApp?.readbackEnabled === true,
+            c.herdrApp?.inputEnabled === true,
+          ].join('|')
+        : c.backend === 'herdr'
+          ? [c.herdr?.socketPath || '', c.herdr?.titleIdentity === true].join(
+              '|',
+            )
+          : c.rexPath || '');
     const guards: GuardPipeline = new GuardPipeline(
       () => ({
         scope,
@@ -158,7 +169,8 @@ function createApplication(dependencies: Record<string, any>) {
       () => clock(),
     );
     function makeBridge(c: any) {
-      const b: any = backendFactory(c);
+      const b: any =
+        c.backend === 'herdr-app' ? new HerdrAppPreview(c) : backendFactory(c);
       (b as any).backendKey = backendKey(c);
       (b as any).generation = ++sequence;
       b.attachDelivery(
@@ -166,12 +178,36 @@ function createApplication(dependencies: Record<string, any>) {
           b as any,
           guards,
           () => activePress?.display || null,
+          c.backend === 'herdr-app'
+            ? (driver: any, authority: any) => {
+                const backend = new GuardedBackend(
+                  'herdr-app',
+                  new Set(),
+                  driver,
+                  authority,
+                  'unverified',
+                );
+                void backend.connect(new AbortController().signal);
+                backend.generation = b.generation;
+                return backend;
+              }
+            : undefined,
         ),
       );
       return b;
     }
+    function makeMetadata(b: any) {
+      return b.config.backend === 'herdr-app'
+        ? {
+            hydrate() {},
+            async refresh(agents: any[]) {
+              return agents;
+            },
+          }
+        : metadataFactory(b);
+    }
     let bridge: any = makeBridge(config),
-      metadata: any = metadataFactory(bridge);
+      metadata: any = makeMetadata(bridge);
     const completion: CompletionDisplay = new CompletionDisplay(),
       keys: Map<any, any> = new Map(),
       transitions: Map<any, any> = new Map();
@@ -203,7 +239,7 @@ function createApplication(dependencies: Record<string, any>) {
       if (backendKey(next) !== (bridge as any).backendKey) {
         if (actionBusy || setupBusy) return;
         bridge = makeBridge(next);
-        metadata = metadataFactory(bridge);
+        metadata = makeMetadata(bridge);
         if (metadataBusy) metadataAgain = true;
         startupSelectionRead = false;
         bank = 0;
@@ -224,8 +260,8 @@ function createApplication(dependencies: Record<string, any>) {
       config = next;
       bridge.config = config;
     }
-    const backendName: () => 'Herdr' | 'Rex' = () =>
-      scope === 'herdr' ? 'Herdr' : 'Rex';
+    const backendName: () => string = () =>
+      scope === 'herdr-app' ? 'Herdr App' : scope === 'herdr' ? 'Herdr' : 'Rex';
     const clean: (s: any) => string = (s: any) =>
       String(s || '')
         .replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g, '')
@@ -316,6 +352,28 @@ function createApplication(dependencies: Record<string, any>) {
       };
     }
     function render() {
+      if (
+        scope === 'herdr-app' &&
+        !bridge.delivery.backend.capabilities.has('discover')
+      ) {
+        const image =
+          'data:image/svg+xml;base64,' +
+          Buffer.from(
+            svg({
+              icon: 'blank',
+              lines: ['Herdr App', 'Preview only'],
+              color: '#38414b',
+            }),
+          ).toString('base64');
+        for (const [context, key] of keys) {
+          key.presented = capture(key);
+          if (key.lastImage === image) continue;
+          key.lastImage = image;
+          emit('setImage', context, { image, target: 0 });
+          emit('setTitle', context, { title: '', target: 0 });
+        }
+        return;
+      }
       metadata.hydrate(bridge.agents || []);
       const now: any = clock(),
         target: any = selected(),
@@ -716,7 +774,9 @@ function createApplication(dependencies: Record<string, any>) {
       try {
         loadConfig();
         await bridge.discover();
-        offline = false;
+        offline =
+          scope === 'herdr-app' &&
+          !bridge.delivery.backend.capabilities.has('discover');
         void refreshMetadata(forceMetadata);
       } catch {
         offline = true;
@@ -817,6 +877,11 @@ function createApplication(dependencies: Record<string, any>) {
     async function press(ctx: any, display: any) {
       const k: any = keys.get(ctx);
       if (!k) return;
+      if (
+        scope === 'herdr-app' &&
+        !bridge.delivery.backend.capabilities.has('discover')
+      )
+        return;
       display = display || k.presented || capture(k);
       const a: any = display.action;
       if (
@@ -955,7 +1020,7 @@ function createApplication(dependencies: Record<string, any>) {
       emit('sendToPropertyInspector', context, {
         kind: 'status',
         profileScope: scope,
-        profileName: scope === 'herdr' ? 'Herdr' : 'Rex',
+        profileName: backendName(),
         backend: config.backend || 'rex',
         preferences: preferences.view(config),
         offline,
@@ -994,6 +1059,16 @@ function createApplication(dependencies: Record<string, any>) {
     }
     async function inspectorRequest(e: any) {
       if (!keys.has(e.context)) return;
+      if (
+        scope === 'herdr-app' &&
+        !['status', 'preferences'].includes(e.payload?.kind)
+      ) {
+        inspectorStatus(
+          e.context,
+          'Herdr App preview; native setup unavailable',
+        );
+        return;
+      }
       if (e.payload?.kind === 'doctor') {
         const checks = await (dependencies.diagnostics || diagnostics)({
           selected: selected(),
@@ -1256,35 +1331,6 @@ function createApplication(dependencies: Record<string, any>) {
       }
       if (e.event === 'willAppear' || e.event === 'didReceiveSettings') {
         if (e.event === 'didReceiveSettings' && !owners.has(e.context)) return;
-        if (
-          experimentalScope(
-            e.payload?.settings,
-            dependencies.experimentalHerdrApp === true,
-          )
-        ) {
-          // A reused key context must lose its old controller before rendering
-          // a preview. Otherwise a preview press could reach the old backend.
-          const prior = owners.get(e.context);
-          if (prior) getController(prior).detach(e.context);
-          owners.delete(e.context);
-          emit('setImage', e.context, {
-            image:
-              'data:image/svg+xml;base64,' +
-              Buffer.from(
-                svg({
-                  icon: 'blank',
-                  lines: ['Herdr App', 'Preview only'],
-                  color: '#38414b',
-                }),
-              ).toString('base64'),
-            target: 0,
-          });
-          emit('setTitle', e.context, {
-            title: '',
-            target: 0,
-          });
-          return;
-        }
         const scope: any = preferences.scopeOf(e.payload?.settings),
           prior: any = owners.get(e.context);
         if (prior && prior !== scope) getController(prior).detach(e.context);

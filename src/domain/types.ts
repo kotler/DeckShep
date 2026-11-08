@@ -157,8 +157,21 @@ export interface Preferences {
     >;
   };
 }
+export interface HerdrAppPreferences {
+  herdrAppHome?: string;
+  herdrAppCoreSocketPath?: string;
+  herdrAppReadbackEnabled?: boolean;
+  herdrAppInputEnabled?: boolean;
+  claudeEnabled?: boolean;
+}
 export interface Config {
-  backend: 'rex' | 'herdr';
+  backend: 'rex' | 'herdr' | 'herdr-app';
+  herdrApp?: {
+    home: string;
+    coreSocketPath: string;
+    readbackEnabled: boolean;
+    inputEnabled: boolean;
+  };
   herdr: { socketPath: string; titleIdentity: boolean };
   clientLabel: string;
   statusMaxAgeMs: number;

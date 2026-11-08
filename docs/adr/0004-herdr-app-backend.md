@@ -9,6 +9,12 @@ In particular, `terminal.peek` opens an overlay; the richer mod focus/zoom
 snapshot is not exposed by the ordinary control socket. Production
 capabilities remain empty pending the planned review and native evidence.
 
+Phases 1–1b now provide unwired read-only transports, per-control gates, and
+independent App settings/routing under the existing experimental flag. The
+preview remains inactive and default builds retain v2. See the current
+[implementation checkpoint](../plans/HERDR-APP-PLAN.md); no native capability
+claim supersedes the limits recorded here and in ADR 0007.
+
 Sources inspected on 2026-11-07:
 
 - [herdr-app 7fe7ac3](https://github.com/herdrdev/herdr-app/tree/7fe7ac34fef8a3ee76cb5d2f17bc8d6331e50bd8), Cargo version 0.1.13.

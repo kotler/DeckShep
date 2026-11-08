@@ -63,7 +63,10 @@ async function fixture(controls = ['questionPrev', 'questionNext']) {
   };
   const session = {
     generation: 1,
-    config: { backend: 'herdr-app' },
+    config: {
+      backend: 'herdr-app',
+      herdrApp: { readbackEnabled: true, inputEnabled: true },
+    },
     agents: [target],
     lastTarget: target,
     discover: async () => [target],

@@ -7,10 +7,11 @@ supported as beta; Herdr TUI stays as is.
 
 Implementation checkpoint, 2026-11-08: the owner authorized continuation after
 Phase 0's [source review](../adr/0007-herdr-app-0.1.14-source-review.md).
-Phase 1's read-only transports, schemas and synthetic fixtures and Phase 1a's
-per-control gates are complete; see the
+Phases 1, 1a and 1b are complete: read-only transports/fixtures, per-control
+gates, and independent App preferences/routing. See the
 [transport validation](../validation/2026-11-08-herdr-app-transport.md) and
-[control-gate validation](../validation/2026-11-08-herdr-app-controls.md).
+[control-gate validation](../validation/2026-11-08-herdr-app-controls.md), plus
+[preferences validation](../validation/2026-11-08-herdr-app-preferences.md).
 They are not wired into production. No native run or production capability
 has been enabled.
 The exact running core build remains unestablished; the App does not bundle

@@ -134,6 +134,11 @@ exact record key captured by the press. Keep the checks in mapping, provider
 dispatch, the delivery kernel, permit consumption and the backend. Local deck
 navigation never grants native authority. Existing Rex/Herdr TUI engines retain
 their native guards and exact golden behavior.
+With the experimental flag on, v3 has an independent App home/core socket,
+read-back consent, input consent and Claude-control opt-in. Migration grants
+none of these App consents, and rollback drops only the App profile. The App
+scope now owns an inactive preview controller; it must not inherit Rex/TUI
+discovery, metadata readers or integration setup. Default builds still use v2.
 
 ## DeckShep maintenance
 

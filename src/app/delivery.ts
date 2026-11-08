@@ -22,6 +22,7 @@ interface SessionPort {
     allowClipboardFocus?: boolean;
     claude?: { enabled?: boolean };
     herdr?: { titleIdentity?: boolean };
+    herdrApp?: { readbackEnabled?: boolean; inputEnabled?: boolean };
   };
   agents?: AgentSnapshot[];
   lastTarget?: TargetRef | null;
@@ -128,6 +129,7 @@ export class DeliveryKernel {
   ): Promise<unknown> {
     const context = this.context();
     assertVerifiedControl(this.backend, context);
+    this.assertAppConsent(input);
     if (this.backend.id === 'herdr-app')
       input = {
         ...input,
@@ -137,6 +139,7 @@ export class DeliveryKernel {
     const permit = this.guards.issue(context, target, this.backend.generation);
     const beforeIO = () => {
       assertVerifiedControl(this.backend, context);
+      this.assertAppConsent(input);
       this.guards.preflight(context, false);
       if (this.backend.generation !== context.generation)
         throw Error('Controller changed; no input sent');
@@ -168,6 +171,16 @@ export class DeliveryKernel {
     } finally {
       this.#operations.delete(input);
     }
+  }
+  private assertAppConsent(input: InputAction): void {
+    if (this.session.config.backend !== 'herdr-app') return;
+    if (this.session.config.herdrApp?.readbackEnabled !== true)
+      throw Error('Enable App read-back first');
+    if (
+      ['keys', 'paste', 'providerMutation'].includes(input.kind) &&
+      this.session.config.herdrApp?.inputEnabled !== true
+    )
+      throw Error('Enable App input first');
   }
   async run(
     args: string[],
