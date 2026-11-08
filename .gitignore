@@ -19,3 +19,7 @@ com.kotl3r.deckshep.sdPlugin/claude-hook.js
 com.kotl3r.deckshep.sdPlugin/configure-claude.js
 com.kotl3r.deckshep.sdPlugin/inspector.js
 com.kotl3r.deckshep.sdPlugin/preferences.js
+
+# Local browser reports; baselines remain tracked under tests/e2e.
+playwright-report/
+test-results/

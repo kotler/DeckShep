@@ -54,7 +54,7 @@ export function scenario(input: ScenarioName | Scenario): Scenario {
   if (!scenarioNames.includes(input)) throw Error('Unknown fixture scenario');
   const agents = ['a', 'b'].map(agent);
   if (input === 'working-rex' || input === 'herdr-tui')
-    agents[0].state = 'working';
+    Object.assign(agents[0], { state: 'working', runId: 'turn-1' });
   if (input === 'question' || input === 'approval')
     Object.assign(agents[0], {
       state: 'blocked',

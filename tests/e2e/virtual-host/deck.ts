@@ -8,6 +8,7 @@ export class VirtualDeck {
   private name = 'idle-two-codex';
   private time = 10000;
   private paused = false;
+  private pauseFrom = 0;
   private readonly hidden = new Set<number>();
   private readonly settings = new Map<number, Record<string, unknown>>();
   async reset(): Promise<void> {
@@ -99,6 +100,7 @@ export class VirtualDeck {
       this.hidden.add(i);
       await this.settle();
     } else if (method === 'pauseFocus') {
+      this.pauseFrom = this.host.input.length;
       await this.host.command('pauseFocus');
       this.paused = true;
     } else if (method === 'down' || method === 'up' || method === 'press') {
@@ -107,7 +109,9 @@ export class VirtualDeck {
       if (method !== 'down') this.send('keyUp', i);
       if (this.paused && method === 'down')
         await this.host.until(() =>
-          this.host!.input.some((m) => m.kind === 'fixturePaused'),
+          this.host!.input.slice(this.pauseFrom).some(
+            (m) => m.kind === 'fixturePaused',
+          ),
         );
       else {
         if (this.paused) {
@@ -163,6 +167,26 @@ export class VirtualDeck {
         host?.input
           .filter((m) => m.kind === 'fixtureInput')
           .map((m) => m.args) ?? [],
+      refusals: (host?.frames ?? [])
+        .filter(
+          (frame) =>
+            frame.event === 'setImage' &&
+            String(frame.payload?.image).startsWith(
+              'data:image/svg+xml;base64,',
+            ),
+        )
+        .flatMap((frame) => {
+          const svg = Buffer.from(
+            String(frame.payload!.image).split(',')[1],
+            'base64',
+          ).toString();
+          const labels = [...svg.matchAll(/<text\b[^>]*>([^<]*)<\/text>/g)].map(
+            (m) => m[1],
+          );
+          return labels[0] === 'Unavailable'
+            ? [{ context: frame.context, message: labels[1] }]
+            : [];
+        }),
       alerts:
         host?.frames
           .filter((f) => f.event === 'showAlert')

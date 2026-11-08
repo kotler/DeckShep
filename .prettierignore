@@ -8,3 +8,6 @@ tests/fixtures/golden/*.json
 
 vendor/
 com.kotl3r.deckshep.sdPlugin/*js
+
+playwright-report/
+test-results/
