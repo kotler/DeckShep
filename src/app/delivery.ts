@@ -82,6 +82,9 @@ export class DeliveryKernel {
     if (method === 'pane.zoom') return this.deliver(target, { kind: 'zoom' }, operation);
     return Promise.reject(Error('Unsupported terminal request'));
   }
+  activation(target: TargetRef, operation: () => Promise<unknown>): Promise<unknown> {
+    return this.deliver(target, { kind: 'focus' }, operation);
+  }
   mutation(target: TargetRef, method: string, operation: () => Promise<unknown>): Promise<unknown> {
     return this.deliver(target, { kind: 'providerMutation', method }, operation);
   }

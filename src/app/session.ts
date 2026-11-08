@@ -88,7 +88,16 @@ class Bridge {
         this.#transport = run || ((args: string[], input: any) => native.command(args, input));
         this.run = this.run.bind(this);
         this.#fixture = typeof run === 'function';
-        this.activate = activate || (() => native.activate());
+        const activation = activate || (() => native.activate());
+        this.activate = () => {
+            if (this.#delivery) {
+                const target = this.lastTarget || this.actionContext?.target;
+                if (!target) throw Error('Input target changed');
+                return this.#delivery.activation(target, activation);
+            }
+            this.requireGuardedMutation();
+            return activation();
+        };
         this.readVisible = readVisible || ((client: any) => native.visible(client));
         this.slots = [];
         this.draft = null;
