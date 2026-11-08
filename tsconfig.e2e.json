@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "checkJs": false },
+  "include": ["tests/e2e/**/*.ts", "playwright.config.ts"]
+}

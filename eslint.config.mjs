@@ -42,6 +42,21 @@ export default [
     },
   },
   {
+    files: ['tests/e2e/**/*.ts', 'playwright.config.ts'],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: { project: './tsconfig.e2e.json' },
+      globals: { ...globals.node, ...globals.browser },
+    },
+    plugins: { '@typescript-eslint': tseslint.plugin },
+    rules: {
+      'no-undef': 'off',
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/switch-exhaustiveness-check': 'error',
+    },
+  },
+  {
     files: ['**/*.js', '**/*.cjs', '**/*.mjs'],
     languageOptions: { globals: globals.node },
     rules: { 'no-control-regex': 'off' },
