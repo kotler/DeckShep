@@ -45,12 +45,13 @@ function render(next) {
     button.dataset.labels = JSON.stringify(key.labels);
     button.dataset.selected = String(key.selected);
     button.dataset.visible = String(key.visible);
+    button.disabled = !key.visible;
     button.setAttribute('aria-label', key.labels.join(' · ') || 'Empty key');
   }
   document.getElementById('profile').value = state.profile;
   document.getElementById('scenario').value = state.scenario;
   document.getElementById('trace').textContent = JSON.stringify(
-    { input: state.trace, alerts: state.alerts },
+    { input: state.trace, alerts: state.alerts, refusals: state.refusals },
     null,
     2,
   );
@@ -109,10 +110,12 @@ document.getElementById('advance').onclick = () => {
   void invoke('advance', 500).catch(showError);
 };
 document.getElementById('consent').onclick = () => {
-  void invoke('setPreferences', {
-    allowClipboardFocus: true,
-    herdrTitleIdentity: true,
-  }).catch(showError);
+  void invoke(
+    'setPreferences',
+    state.profile === 'rex'
+      ? { allowClipboardFocus: true }
+      : { herdrTitleIdentity: true },
+  ).catch(showError);
 };
 document.getElementById('claude').onclick = () => {
   void invoke('setPreferences', { claudeEnabled: true }).catch(showError);
@@ -133,6 +136,7 @@ window.deck = Object.fromEntries(
     'reset',
     'hide',
     'pauseFocus',
+    'snapshot',
   ].map((method) => [method, (...args) => invoke(method, ...args)]),
 );
 window.deck.ready = ready;

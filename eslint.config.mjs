@@ -12,6 +12,8 @@ export default [
       'dist/**',
       'backups/**',
       'coverage/**',
+      'playwright-report/**',
+      'test-results/**',
       'vendor/**',
       'com.kotl3r.deckshep.sdPlugin/bin/**',
       'com.kotl3r.deckshep.sdPlugin/*js',

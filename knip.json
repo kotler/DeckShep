@@ -17,6 +17,8 @@
         "tests/integration/host/dependencies.ts",
         "tests/e2e/virtual-host/scenario-dependencies.ts",
         "tests/e2e/virtual-deck/app.js",
+        "tests/e2e/*.spec.ts",
+        "playwright.config.ts",
         "src/plugin/host-socket.mts"
       ],
       "project": [
@@ -30,8 +32,8 @@
       "project": []
     },
     "tools": {
-      "entry": [],
-      "project": []
+      "entry": ["e2e.ts"],
+      "project": ["*.ts"]
     }
   },
   "ignore": ["src/terminals/herdr-app/**", "src/terminals/contract/fixture.ts"],
