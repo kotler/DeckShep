@@ -1,0 +1,192 @@
+{
+  "schema": 1,
+  "date": "2026-11-08",
+  "scope": "authorized-isolated-source-calibration",
+  "outcome": "blocked-before-focus",
+  "productionApproved": false,
+  "verifiedFocus": false,
+  "appFocusRequests": 0,
+  "testSpacesCreated": 0,
+  "manifestSha256": "d8ef3f9d48d9c560da494489a13d225d46017c451325ef032fa1728dfb0cb8e2",
+  "runs": [
+    {
+      "attempt": 1,
+      "report": {
+        "schema": 1,
+        "outcome": "failed",
+        "productionApproved": false,
+        "verifiedFocus": false,
+        "buildMode": "source-no-updater",
+        "failures": ["core-ownership"],
+        "cleanup": true,
+        "settingsUnchanged": true,
+        "limits": {
+          "armingMs": 350,
+          "deliveryMs": 1000,
+          "setupExchangeMs": 3000,
+          "readinessMs": 10000
+        },
+        "builds": {
+          "appSource": "2405bf388c568c3ed479f05b8e405ccfa44b3f2c",
+          "coreSource": "3965a46caae095a3ead01de237fa13955e52b8c6",
+          "app": {
+            "contract": 1,
+            "bundleId": "dev.herdr.app",
+            "executable": "Herdr",
+            "version": "0.1.14",
+            "build": "0.1.14",
+            "executableSha256": "688c1e71e608460444b878f3f522142a33cdcb781871d73241b5481e65c59291",
+            "plistSha256": "903c6a4376d630305c8abb034d1bd0faba21bbca1a94734a36db071fccbbde12",
+            "cdHash": "0517bb788442f175a5acadde93d79bbf5df04a66"
+          },
+          "appTreeSha256": "a862459a6cd2a090775294fc2baff4c3528d59368959866bbb155a4893d14cd0",
+          "core": {
+            "version": "0.1.18",
+            "sha256": "7628db954a649595f77fa04cb1a1a4b84367c5c105d9671ab749db93d91732ca",
+            "cdHash": "c23a0ae60491364fd65dccc78618e6986baaf78b"
+          },
+          "helperSha256": "0ef0c7692e2fa85237ba89983249fcdf086dc4553ad7bc63fa1f950f549ccb44"
+        }
+      }
+    },
+    {
+      "attempt": 2,
+      "report": {
+        "schema": 1,
+        "outcome": "failed",
+        "productionApproved": false,
+        "verifiedFocus": false,
+        "buildMode": "source-no-updater",
+        "failures": ["core-ownership"],
+        "cleanup": true,
+        "settingsUnchanged": true,
+        "limits": {
+          "armingMs": 350,
+          "deliveryMs": 1000,
+          "setupExchangeMs": 3000,
+          "readinessMs": 10000
+        },
+        "builds": {
+          "appSource": "2405bf388c568c3ed479f05b8e405ccfa44b3f2c",
+          "coreSource": "3965a46caae095a3ead01de237fa13955e52b8c6",
+          "app": {
+            "contract": 1,
+            "bundleId": "dev.herdr.app",
+            "executable": "Herdr",
+            "version": "0.1.14",
+            "build": "0.1.14",
+            "executableSha256": "688c1e71e608460444b878f3f522142a33cdcb781871d73241b5481e65c59291",
+            "plistSha256": "903c6a4376d630305c8abb034d1bd0faba21bbca1a94734a36db071fccbbde12",
+            "cdHash": "0517bb788442f175a5acadde93d79bbf5df04a66"
+          },
+          "appTreeSha256": "a862459a6cd2a090775294fc2baff4c3528d59368959866bbb155a4893d14cd0",
+          "core": {
+            "version": "0.1.18",
+            "sha256": "7628db954a649595f77fa04cb1a1a4b84367c5c105d9671ab749db93d91732ca",
+            "cdHash": "c23a0ae60491364fd65dccc78618e6986baaf78b"
+          },
+          "helperSha256": "0ef0c7692e2fa85237ba89983249fcdf086dc4553ad7bc63fa1f950f549ccb44"
+        },
+        "failedCheck": "core.reply.0"
+      }
+    },
+    {
+      "attempt": 3,
+      "report": {
+        "schema": 1,
+        "outcome": "failed",
+        "productionApproved": false,
+        "verifiedFocus": false,
+        "buildMode": "source-no-updater",
+        "failures": ["core-ownership"],
+        "cleanup": true,
+        "settingsUnchanged": true,
+        "limits": {
+          "armingMs": 350,
+          "deliveryMs": 1000,
+          "setupExchangeMs": 3000,
+          "readinessMs": 10000
+        },
+        "builds": {
+          "appSource": "2405bf388c568c3ed479f05b8e405ccfa44b3f2c",
+          "coreSource": "3965a46caae095a3ead01de237fa13955e52b8c6",
+          "app": {
+            "contract": 1,
+            "bundleId": "dev.herdr.app",
+            "executable": "Herdr",
+            "version": "0.1.14",
+            "build": "0.1.14",
+            "executableSha256": "688c1e71e608460444b878f3f522142a33cdcb781871d73241b5481e65c59291",
+            "plistSha256": "903c6a4376d630305c8abb034d1bd0faba21bbca1a94734a36db071fccbbde12",
+            "cdHash": "0517bb788442f175a5acadde93d79bbf5df04a66"
+          },
+          "appTreeSha256": "a862459a6cd2a090775294fc2baff4c3528d59368959866bbb155a4893d14cd0",
+          "core": {
+            "version": "0.1.18",
+            "sha256": "7628db954a649595f77fa04cb1a1a4b84367c5c105d9671ab749db93d91732ca",
+            "cdHash": "c23a0ae60491364fd65dccc78618e6986baaf78b"
+          },
+          "helperSha256": "0ef0c7692e2fa85237ba89983249fcdf086dc4553ad7bc63fa1f950f549ccb44"
+        },
+        "failedCheck": "core.reply.0",
+        "exchangeMetrics": {
+          "receivedBytes": 0,
+          "writtenBytes": 83,
+          "writeDrained": true,
+          "connectedMs": 0,
+          "peerVerifiedMs": 114,
+          "writeQueuedMs": 117
+        }
+      }
+    },
+    {
+      "attempt": 4,
+      "report": {
+        "schema": 1,
+        "outcome": "failed",
+        "productionApproved": false,
+        "verifiedFocus": false,
+        "buildMode": "source-no-updater",
+        "failures": ["app-ownership"],
+        "cleanup": true,
+        "settingsUnchanged": true,
+        "limits": {
+          "armingMs": 350,
+          "deliveryMs": 1000,
+          "setupExchangeMs": 3000,
+          "readinessMs": 10000
+        },
+        "builds": {
+          "appSource": "2405bf388c568c3ed479f05b8e405ccfa44b3f2c",
+          "coreSource": "3965a46caae095a3ead01de237fa13955e52b8c6",
+          "app": {
+            "contract": 1,
+            "bundleId": "dev.herdr.app",
+            "executable": "Herdr",
+            "version": "0.1.14",
+            "build": "0.1.14",
+            "executableSha256": "688c1e71e608460444b878f3f522142a33cdcb781871d73241b5481e65c59291",
+            "plistSha256": "903c6a4376d630305c8abb034d1bd0faba21bbca1a94734a36db071fccbbde12",
+            "cdHash": "0517bb788442f175a5acadde93d79bbf5df04a66"
+          },
+          "appTreeSha256": "a862459a6cd2a090775294fc2baff4c3528d59368959866bbb155a4893d14cd0",
+          "core": {
+            "version": "0.1.18",
+            "sha256": "7628db954a649595f77fa04cb1a1a4b84367c5c105d9671ab749db93d91732ca",
+            "cdHash": "c23a0ae60491364fd65dccc78618e6986baaf78b"
+          },
+          "helperSha256": "0ef0c7692e2fa85237ba89983249fcdf086dc4553ad7bc63fa1f950f549ccb44"
+        },
+        "failedCheck": "app.peer-after.0",
+        "exchangeMetrics": {
+          "receivedBytes": 176,
+          "writtenBytes": 16,
+          "writeDrained": true,
+          "connectedMs": 0,
+          "peerVerifiedMs": 31,
+          "writeQueuedMs": 38
+        }
+      }
+    }
+  ]
+}

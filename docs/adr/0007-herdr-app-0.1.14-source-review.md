@@ -247,7 +247,14 @@ separate request consent and passive App-only setup/doctor reporting; see
 This establishes no App/core binding,
 OS foreground identity, native focus completion or live isolation evidence.
 
-## Isolation recipe derived from source; not executed
+## Isolation recipe and first native attempt
+
+The first owner-authorized source-build attempt on 2026-11-08 reached core
+peer/protocol validation and a private App status reply, then refused the App's
+post-reply peer proof after its one-shot server socket closed. Cleanup and
+tracked settings checks passed; no test pane or focus request was created.
+See [native calibration findings](../validation/2026-11-08-herdr-app-native-calibration.md).
+This is not a completed calibration or a production record.
 
 Source supports separate App and core namespaces. `HERDR_APP_HOME` alone does
 not isolate core. `HERDR_CORE_DIRS` restricts **binary search**, not endpoint
@@ -309,11 +316,12 @@ credentials require a connection, so distinguish path/ownership checks
 **before connect** from peer verification **before the first request**. A
 macOS peer-PID adapter now exists, as does the test-only calibration harness in
 `tests/live/app-calibration/`, with synthetic ownership/lifecycle tests. Native
-App/core calibration has not run. Abort
+App/core calibration has been attempted and remains blocked as noted above. Abort
 before a request on ambiguous or non-owned peers; no production fallback.
 Observe and retain start identities for owned descendants before cleanup,
 and check settings hashes in a failure-safe finally path. No live recipe was
-attempted in Phase 0; its process and socket assumptions still need proof.
+attempted in Phase 0; the later native findings qualify its process/socket
+assumptions and leave post-close peer proof unresolved.
 
 ## Phase 0 hand-back and decisions required
 

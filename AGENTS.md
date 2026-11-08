@@ -160,6 +160,12 @@ It launches/connects to nothing and sends no socket bytes. It is packaged at
 the fixed plugin-owned `bin/herdr-app-peer` path, with both architectures checked
 for universal packages. Preferences cannot select a different helper. Contract tests may compile/sign a temporary
 fixture that inspects only itself; this grants no live App/core authorization.
+Passing a socket to the peer helper as stdio pauses Node's reader. Restore a
+previously flowing reader after the helper finishes, preserving explicit pause.
+The first native source calibration is blocked by unavailable post-reply peer
+credentials after the App closes its one-shot socket. Do not remove that guard
+or claim success; review peer-proof lifetime separately. See the 2026-11-08
+native calibration record in `docs/validation/`.
 The test-only App calibration harness is under `tests/live/app-calibration/`.
 It additionally requires `ASW_LIVE_HERDR_APP=1` and separately authorized source
 artifacts; invoke only `tests/live/herdr-app.test.js` for that calibration.

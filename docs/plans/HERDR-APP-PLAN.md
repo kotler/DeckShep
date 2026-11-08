@@ -30,18 +30,26 @@ Production records/capabilities remain empty, live groups disabled, and default
 builds still use v2 with the existing Rex/Herdr profiles.
 Checkpoint 2d adds a [test-only calibration harness](../../tests/live/APP-CALIBRATION.md)
 for a separately authorized source-build run. Fixture validation exercises its
-launch/ownership/refusal/cleanup lifecycle with synthetic effects; no native
-App/core calibration has run and no production record is approved. This initial
+launch/ownership/refusal/cleanup lifecycle with synthetic effects; native work
+was still pending at checkpoint 2d and no production record was approved. This initial
 harness covers two local spaces and request-only semantics. Native window/screen,
 release-build/update and hardware validation remain separate gates.
 See [harness fixture validation](../validation/2026-11-08-herdr-app-calibration-harness.md).
 Checkpoint 2e prepares the exact source-build artifacts and populated test-only
 manifest, with successful compilation, ad-hoc signing and static harness staging
 checks. See [source artifact evidence](../validation/2026-11-08-herdr-app-source-artifacts.md).
-Neither App nor core was executed. Native calibration remains separately gated,
+Neither App nor core was executed at checkpoint 2e. Native calibration remains separately gated,
 and production records/capabilities remain empty.
-The exact running core build remains unestablished; the App does not bundle
-core. The ordinary control socket does not expose the full focus/Zoom
+Checkpoint 2f attempted the explicitly authorized isolated source calibration.
+The native run is [blocked before focus](../validation/2026-11-08-herdr-app-native-calibration.md):
+after a socket-reader fix, core preflight passed and the App returned status,
+but fresh peer proof was unavailable after the App closed its one-shot reply
+connection. Cleanup and tracked settings checks passed on all four attempts.
+No test space or focus request was created. Review a post-close proof lifetime
+design before continuing; production records/capabilities remain empty.
+The developer's installed/running core build remains unestablished; the native
+attempt identified only its own private core. The App does not bundle core.
+The ordinary control socket does not expose the full focus/Zoom
 read-back required by the original verified Milestone 1. `terminal.peek` opens an overlay, so it
 cannot be used as a passive read. Those source findings qualify the proposed
 API steps below; see the ADR's hand-back and native questions.

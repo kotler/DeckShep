@@ -1,7 +1,9 @@
 # Herdr App source-build calibration
 
-The harness is implemented and tested with fixtures. **No native App/core run has
-been performed.** Building this harness grants no permission to run it. Production
+The harness is implemented and tested with fixtures. The first authorized native
+attempt is [blocked before focus](../../docs/validation/2026-11-08-herdr-app-native-calibration.md):
+App peer proof is unavailable after its one-shot reply connection closes.
+Building this harness grants no permission to run it. Production
 `APP_FOCUS_RECORDS` and App capabilities remain empty. The runner never changes them.
 
 ## What this run can establish
@@ -130,7 +132,8 @@ bounded cleanup, but a forced kill or host shutdown cannot guarantee it complete
 
 The TAP diagnostic contains a structured report with build/helper hashes, source
 pins, hashed core method/feature inventories, request timings/model-selection
-booleans, fixed failure phases and cleanup/settings results. It omits local paths,
+booleans, fixed failure phases/check labels, elapsed times, byte counts and
+cleanup/settings results. It omits local paths,
 PIDs, core IDs, pane IDs, names, terminal output and raw exceptions. No report is
 automatically written to the repository or promoted to production evidence.
 

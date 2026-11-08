@@ -1,8 +1,11 @@
 # Disposable native calibration
 
 The separate [Herdr App calibration harness](APP-CALIBRATION.md) is source-only,
-uses no providers or credentials, requires its own opt-in and has not run natively.
+uses no providers or credentials and requires its own opt-in. Its first native
+attempt is blocked by post-reply peer proof; see the linked guide and findings.
 Its exact-file invocation avoids starting the provider suites described below.
+
+## TUI/provider calibration
 
 Run only with current explicit authorization for new disposable agents and model
 usage. Never reuse a historical scratch session. Ordinary `npm test` skips this
