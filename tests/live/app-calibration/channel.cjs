@@ -24,6 +24,13 @@ class CalibrationChannel {
     this.validateRequests(kind, payloads);
     const endpoint = this.gate.check(kind);
     this.gate.checkBoth();
+    this.gate.progress = kind + '.connect';
+    const started = performance.now();
+    const metrics = (this.gate.exchangeMetrics = {
+      receivedBytes: 0,
+      writtenBytes: 0,
+      writeDrained: false,
+    });
     const signal = AbortSignal.any([
         AbortSignal.timeout(this.timeoutMs),
         ...(this.gate.signal ? [this.gate.signal] : []),
@@ -48,6 +55,7 @@ class CalibrationChannel {
       if (pending) fail();
     });
     socket.on('data', (bytes) => {
+      metrics.receivedBytes += bytes.length;
       if (!pending || buffer.length + bytes.length > 1000000) return fail();
       buffer = Buffer.concat([buffer, bytes]);
       const end = buffer.indexOf(10);
@@ -73,19 +81,26 @@ class CalibrationChannel {
           resolve();
         });
       });
+      this.gate.progress = kind + '.peer-before';
+      metrics.connectedMs = Math.round(performance.now() - started);
       const before = await this.gate.peer(kind, socket, signal),
         results = [];
+      metrics.peerVerifiedMs = Math.round(performance.now() - started);
       for (let index = 0; index < payloads.length; index++) {
         if (failed || signal.aborted) throw Error();
+        this.gate.progress = kind + '.reply.' + index;
         const response = new Promise((resolve, reject) => {
           pending = { resolve, reject };
         });
         // No await between the last ownership/path checks and this write.
         try {
           this.gate.checkBoth();
+          metrics.writeQueuedMs = Math.round(performance.now() - started);
           socket.write(JSON.stringify(payloads[index]) + '\n', (error) => {
             if (error) fail();
+            else metrics.writeDrained = true;
           });
+          metrics.writtenBytes = socket.bytesWritten;
         } catch {
           fail();
         }
@@ -94,6 +109,7 @@ class CalibrationChannel {
             schemas[index] === 'spaceCreated'
               ? spaceCreated.parse(JSON.parse(line))
               : parse(schemas[index], line);
+        this.gate.progress = kind + '.peer-after.' + index;
         const after = await this.gate.peer(kind, socket, signal);
         if (signal.aborted || JSON.stringify(before) !== JSON.stringify(after))
           throw Error();

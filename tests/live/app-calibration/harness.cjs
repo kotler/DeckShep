@@ -209,6 +209,9 @@ async function runCalibration(
     // Native/process/fs messages can contain paths or terminal output. Retain
     // only this fixed phase identifier, never the caught exception or payloads.
     run.report.failures.push(run.phase);
+    if (run.gate?.progress) run.report.failedCheck = run.gate.progress;
+    if (run.gate?.exchangeMetrics)
+      run.report.exchangeMetrics = run.gate.exchangeMetrics;
   } finally {
     await cleanup(run);
   }

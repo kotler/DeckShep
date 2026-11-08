@@ -10,7 +10,8 @@ export function nativeAppPeerProbe(helper: string) {
   return (socket: Socket, signal?: AbortSignal): Promise<unknown> => {
     if (process.platform !== 'darwin' || signal?.aborted)
       return Promise.reject(Error('Peer unverified'));
-    return new Promise((resolve, reject) => {
+    const wasFlowing = socket.readableFlowing === true;
+    return new Promise<unknown>((resolve, reject) => {
       const child = spawn(helper, [], {
         stdio: ['ignore', 'pipe', 'ignore', socket],
         env: { PATH: '/usr/bin:/bin', LANG: 'C', LC_ALL: 'C' },
@@ -40,6 +41,11 @@ export function nativeAppPeerProbe(helper: string) {
           reject(Error('Peer unverified'));
         }
       });
+    }).finally(() => {
+      // Node stops reads when a socket is inherited as stdio. The read-only
+      // descriptor helper has exited; restore an active reader before callers
+      // await replies, while preserving an explicitly paused caller's state.
+      if (wasFlowing && !socket.destroyed) socket.resume();
     });
   };
 }

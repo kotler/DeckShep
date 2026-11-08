@@ -80,6 +80,7 @@ test('unowned App/core peers receive no request bytes and every failure cleans u
     assert.equal(report.outcome, 'failed');
     assert(report.failures.includes(kind + '-ownership'));
     assert.equal(fixture.calls.filter((call) => call.kind === kind).length, 0);
+    assert.equal(report.failedCheck, kind + '.peer-before');
     assert.equal(report.cleanup, true);
     assert.equal(report.settingsUnchanged, true);
     assert.equal(fixture.shutdowns(), 1);
@@ -265,6 +266,10 @@ test('bounded setup timeout makes no retry and never logs the partial response',
     report = await runCalibration(fixture.runOptions, fixture.effects);
   assert.equal(report.outcome, 'failed');
   assert(report.failures.includes('app-ownership'));
+  assert.equal(report.failedCheck, 'app.reply.0');
+  assert.equal(report.exchangeMetrics.writeDrained, true);
+  assert(report.exchangeMetrics.receivedBytes > 0);
+  assert(report.exchangeMetrics.writtenBytes > 0);
   assert.equal(fixture.calls.filter((call) => call.kind === 'app').length, 1);
   assert.equal(report.cleanup, true);
   assert(performance.now() - started < 6000);

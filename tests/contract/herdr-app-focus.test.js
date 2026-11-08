@@ -269,6 +269,38 @@ test('refusal, malformed replies and timeout after dispatch are uncertain and ca
     assert.equal(x.focusCalls().length, 1);
   }
 });
+test('unavailable post-reply peer proof refuses reads and leaves a dispatched focus uncertain', async (t) => {
+  for (const action of ['read', 'focus']) {
+    let baseline = Infinity;
+    const fixture = await senderFixture(t, {
+      probe: ({ peer }) => {
+        const afterReply =
+          action === 'focus'
+            ? peer.calls.some((call) => call.do)
+            : peer.calls.length > baseline;
+        if (afterReply) throw Error('Peer unavailable after reply');
+      },
+    });
+    baseline = fixture.peer.calls.length;
+    if (action === 'read') {
+      await assert.rejects(fixture.sender.status(), /App unavailable/);
+      assert.equal(fixture.focusCalls().length, 0);
+    } else {
+      const permit = fixture.permit();
+      await assert.rejects(
+        fixture.sender.deliver({ kind: 'requestFocus' }, permit),
+        /Focus uncertain/,
+      );
+      assert.equal(fixture.focusCalls().length, 1);
+      await assert.rejects(
+        fixture.sender.deliver({ kind: 'requestFocus' }, permit),
+        /expired/,
+      );
+      assert.equal(fixture.focusCalls().length, 1);
+    }
+  }
+});
+
 test('post-dispatch identity/context changes do not report success and never produce another action', async (t) => {
   for (const change of ['context', 'peer']) {
     let x;

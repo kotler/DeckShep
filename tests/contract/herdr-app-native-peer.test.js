@@ -8,6 +8,61 @@ const { createConnection } = require('node:net');
 const { nativeAppPeerProbe } = require('../../src/platform/app-peer');
 const { validate } = require('../../src/schemas');
 const { fakeServer } = require('../helpers/herdr-app-server');
+
+test(
+  'descriptor probing restores a flowing socket and preserves an explicitly paused reader',
+  { skip: process.platform !== 'darwin' },
+  async (t) => {
+    const directory = temporary(t),
+      helper = path.join(directory, 'probe-helper');
+    const peer = await fakeServer(t, (socket) => socket.end('{"ok":true}\n'));
+    for (const valid of [true, false]) {
+      fs.writeFileSync(
+        helper,
+        '#!' +
+          process.execPath +
+          '\nprocess.stdout.write(' +
+          JSON.stringify(valid ? '{}' : 'invalid') +
+          ')',
+        { mode: 0o700 },
+      );
+      for (const paused of [false, true]) {
+        const socket = createConnection(peer.file);
+        t.after(() => socket.destroy());
+        let response = '';
+        socket.on('data', (bytes) => {
+          response += bytes.toString();
+        });
+        await new Promise((resolve, reject) => {
+          socket.once('connect', resolve);
+          socket.once('error', reject);
+        });
+        if (paused) socket.pause();
+        if (valid) await nativeAppPeerProbe(helper)(socket);
+        else
+          await assert.rejects(
+            nativeAppPeerProbe(helper)(socket),
+            /Peer unverified/,
+          );
+        assert.equal(socket.readableFlowing, !paused);
+        socket.resume();
+        const ended = new Promise((resolve, reject) => {
+          const timer = setTimeout(
+            () => reject(Error('Fixture reply timed out')),
+            1000,
+          );
+          socket.once('end', () => {
+            clearTimeout(timer);
+            resolve();
+          });
+        });
+        socket.write('{"status":true}\n');
+        await ended;
+        assert.equal(response, '{"ok":true}\n');
+      }
+    }
+  },
+);
 function run(binary, args, options) {
   try {
     return execFileSync(binary, args, options);
@@ -64,6 +119,16 @@ test(
     assert(evidence.pid > 0);
     assert.equal(evidence.uid, process.getuid());
     assert.match(evidence.cdHash, /^[a-f0-9]{40,64}$/);
+    const closed = JSON.parse(
+      run(output, [directory, 'closed-peer'], {
+        timeout: 3000,
+        maxBuffer: 8192,
+        encoding: 'utf8',
+      }),
+    );
+    assert(['unavailable', 'retained'].includes(closed.proof));
+    assert.equal(closed.samePeer, closed.proof === 'retained');
+    t.diagnostic('Own peer proof after server close/EOF: ' + closed.proof);
     // The real CLI also compiles for both supported macOS architectures.
     for (const architecture of ['arm64', 'x86_64'])
       run(

@@ -24,13 +24,26 @@ struct PeerFixture {
             $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { connect(client, $0, length) }
         }
         guard connected == 0 else { throw AppPeerError.unavailable }
-        let server = accept(listener, nil, nil)
+        var server = accept(listener, nil, nil)
         guard server >= 0 else { throw AppPeerError.unavailable }
-        defer { close(server) }
+        defer { if server >= 0 { close(server) } }
         // The peer is this fixture itself, never an existing app or agent.
         let result = try inspectAppPeer(client)
         guard result["pid"] as? Int32 == getpid(), result["uid"] as? UInt32 == getuid(),
               (try? inspectAppPeer(-1)) == nil else { throw AppPeerError.unavailable }
+        if CommandLine.arguments.dropFirst(2).first == "closed-peer" {
+            close(server)
+            server = -1
+            var byte: UInt8 = 0
+            guard read(client, &byte, 1) == 0 else { throw AppPeerError.unavailable }
+            let after = try? inspectAppPeer(client)
+            let samePeer = after.map { NSDictionary(dictionary: $0).isEqual(to: result) } ?? false
+            // Kernel credential retention after peer close varies by OS. Never infer
+            // identity from the old request if a fresh descriptor query fails.
+            let observation: [String: Any] = ["proof": after == nil ? "unavailable" : "retained", "samePeer": samePeer]
+            FileHandle.standardOutput.write(try JSONSerialization.data(withJSONObject: observation, options: [.sortedKeys]))
+            return
+        }
         let bytes = try JSONSerialization.data(withJSONObject: result, options: [.sortedKeys])
         FileHandle.standardOutput.write(bytes)
     }
