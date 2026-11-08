@@ -134,6 +134,13 @@ exact record key captured by the press. Keep the checks in mapping, provider
 dispatch, the delivery kernel, permit consumption and the backend. Local deck
 navigation never grants native authority. Existing Rex/Herdr TUI engines retain
 their native guards and exact golden behavior.
+The owner amended Herdr App's first release on 2026-11-08 to discovery/status
+and plain focus requests (including Next), with local banks/Collapse. No Zoom,
+contextual input or mod installation. Implement a separate request-only control;
+do not weaken the verified-focus/input path or invent process identity from App
+pane records. Exact App build/action, endpoint/target identity, consent and stale
+press guards still apply. This scope approval grants no native-test permission
+or production capability; see H1/H4 in docs/plans/HERDR-APP-PLAN.md.
 With the experimental flag on, v3 has an independent App home/core socket,
 read-back consent, input consent and Claude-control opt-in. Migration grants
 none of these App consents, and rollback drops only the App profile. The App

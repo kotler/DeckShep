@@ -61,6 +61,10 @@ preferences use v3; v1/v2 migrate without changing consent, v3 round-trips, and
 `rollbackV2` provides an explicit projection. With the flag off, the original v2
 codec and wire shape remain in use.
 
-A future feature PR may start with discovery/status and verified focus/Zoom.
+The owner amended the first release on 2026-11-08 to discovery/status and plain
+focus requests, without a verified-focus claim, Zoom, contextual input or mod
+installation. A separate request-only control must preserve existing verified
+focus/input guards; see H1/H4 and Phase 2 of the current plan. Production
+capabilities above remain empty until implementation and validation pass.
 Input remains a separate milestone. Revisit this ADR against each exact native
 version, and validate only disposable processes with current authorization.

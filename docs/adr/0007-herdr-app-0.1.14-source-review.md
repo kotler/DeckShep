@@ -79,7 +79,7 @@ The saved `view.json` is persistence, not a fresh, atomic focus receipt.
 
 Consequently the unmodified socket alone does not provide the plan's full
 window/screen/pane read-back, pane zoom state or proof that other screens were
-unchanged. Milestone 1's focus/Zoom gate remains closed. A separately reviewed
+unchanged. The original Milestone 1's verified-focus/Zoom gate remains closed. A separately reviewed
 read-back bridge/mod or an upstream surface must resolve this; do not silently
 substitute core state, a success reply, UI-scale `zoom` or persisted files.
 This is an owner-review question, not permission to contact maintainers.
@@ -134,8 +134,10 @@ rule is another unresolved constraint; no sender has been implemented.
 
 The [revised proposal](../plans/HERDR-APP-READBACK-DESIGN.md) puts these checks
 first, defers mod implementation and compares a focus-only scope amendment
-with waiting for verified Milestone 1. H1/H4 remain unchanged pending owner
-direction. Zoom and contextual input remain disabled. No native test or
+with waiting for verified Milestone 1. The owner subsequently approved the
+focus-only scope on 2026-11-08; H1/H4 now permit a separately guarded plain
+request path, without granting verified focus. Zoom, contextual input and mod
+installation remain outside the first release. No native test or
 upstream contact was performed for this review.
 
 ## Core protocol: bounded clients and identity

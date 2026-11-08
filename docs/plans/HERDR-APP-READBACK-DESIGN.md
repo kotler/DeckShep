@@ -10,9 +10,12 @@ not evidence that Milestone 1 can already be enabled.
 Defer the mod. Evaluate the ordinary socket for focus feedback first; keep
 Zoom and contextual input disabled. The current source does not supply the
 App-to-core identity binding needed to promote either route to verified focus.
-The owner must choose whether Milestone 1 waits for verification or changes
-scope to plain focus requests. The existing H1/H4 gates remain in force until
-that decision; this document does not authorize an implementation exception.
+The owner approved the focus-only amendment on 2026-11-08: discovery/status
+and plain focus requests, no verified-focus claim, Zoom, contextual input or mod
+installation. H1/H4 and the implementation boundary are updated in the
+[main plan](HERDR-APP-PLAN.md#21-verification-records-h4). Existing verified-focus
+and input guards remain intact; a separate request-only control must implement
+this scope. No production capability or native validation is implied.
 
 The source exposes `focused()`, `panes()`, `spaces()`, `layout()` and `window()`
 inside a mod. Ordinary socket replies do not contain the same facts, and core
@@ -92,7 +95,7 @@ multiple matches, conflicting shown/model terminals, or an endpoint/epoch
 change means refusal and invalidation. Do not pick the first match. A protocol
 field supplied by the requester or the mod's static props cannot fill this gap.
 
-## Lighter focus route and owner decision
+## Lighter focus route and approved owner decision
 
 `{status:true}` already returns `space`, `tab`, `focused_pane` and `agent`.
 `{ls:true}` maps space/tab/pane to terminal and reports active space/tab flags.
@@ -116,12 +119,13 @@ even selection read-back. [Synchronization and keyboard ownership][window]
 | First-release choice                                             | Behavior and cost                                                                                                                                                                                                                                                                                                                                                                                          |
 | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Wait for verified Milestone 1                                    | Keep H1/H4 unchanged. Focus and Zoom remain disabled until independent binding, required view read-back and isolated calibration pass. No mod installation now.                                                                                                                                                                                                                                            |
-| Focus-only scope amendment (recommended for owner consideration) | Discovery/status plus explicit plain focus requests, described as requested rather than verified. No `verifiedFocus`, contextual input or Zoom. Avoid mod/layout installation in the first release. Retain target/endpoint/version/stale-press guards and no retries; separately review the narrow request path and consent. Requires an explicit H1/H4 amendment and selection-only capability semantics. |
+| Focus-only scope amendment (owner approved 2026-11-08) | Discovery/status plus explicit plain focus requests, described as requested rather than verified. No `verifiedFocus`, contextual input or Zoom. Avoid mod/layout installation in the first release. Retain target/endpoint/version/stale-press guards and no retries; separately review the narrow request path and consent. H1/H4 amendment approved; requires separate selection-only capability semantics. |
 
-Milestone 1 sends no text: a misplaced focus request can still switch the
+The owner selected the focus-only alternative on 2026-11-08; the table records
+the alternatives considered. Milestone 1 sends no text: a misplaced focus request can still switch the
 wrong view, but cannot authorize Milestone 2 input. A dispatch acknowledgement
-must never be promoted to proof. The recommendation changes proposed release
-scope, not existing runtime guards. `status.zoom` is UI scale, so Zoom remains
+must never be promoted to proof. The decision changes release scope, not
+existing runtime guards. `status.zoom` is UI scale, so Zoom remains
 disabled under the lighter route. Upstream read-back could replace the mod.
 
 ## Conditional mod flow (blocked by Step 0)
@@ -292,8 +296,9 @@ current authorization under the standing instructions.
   prove the required unaffected-screen invariants. If those facts cannot be
   observed, Zoom stays disabled.
 
-Only after those gates pass can Milestone 1 records advertise validated focus
-and Zoom. This proposal does not expand Milestone 2 or enable a release.
+Only after those gates pass can future records advertise validated focus
+and Zoom. They are outside the approved focus-only first-release scope.
+This proposal does not expand Milestone 2 or enable a release.
 
 ## Review disposition and upstream alternative
 

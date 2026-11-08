@@ -22,10 +22,9 @@ API steps below; see the ADR's hand-back and native questions.
 The optional read-only mod is [on hold after source review](HERDR-APP-READBACK-DESIGN.md):
 the public surface lacks independent App/core binding and a fresh native
 observation barrier. Evaluate ordinary `status.focused_pane` plus `ls` as
-selection feedback first. The owner must choose whether to retain verified
-Milestone 1 or amend H1/H4 to plain focus requests with no verified-focus claim,
-Zoom or contextual input. No scope amendment is assumed. No mod has been
-implemented, installed or treated as native evidence.
+selection feedback first. The owner approved amending H1/H4 to plain focus
+requests with no verified-focus claim, Zoom or contextual input on 2026-11-08.
+No mod has been implemented, installed or treated as native evidence.
 
 Read `AGENTS.md` and [ADR 0004](../adr/0004-herdr-app-backend.md) first. Every
 safety rule applies. In particular: never connect to, focus, zoom, read from or
@@ -66,20 +65,41 @@ key ActionIDs or consent defaults.
 
 ## 2. Owner decisions (confirmed 2026-11-08)
 
-All six are confirmed as written. H3 is the owner's approval of the
+All six are confirmed, with the owner's 2026-11-08 focus-only amendment to
+H1/H4 below. H3 is the owner's approval of the
 "Herdr App" display name. H6 is an owner action that has not happened yet;
 do not contact anyone, and do not wait on it.
 
 | # | Decision | Confirmed |
 | --- | --- | --- |
-| H1 | First-release scope | **Release gate = Milestone 1** (discovery, status, verified selection, Zoom, banks/Next/Collapse). **Milestone 2** (native keys for questions, approvals, Interrupt, Model/Effort) ships only if its validation passes in time; otherwise it follows in 1.x. Staged Send/Steer/Queue stay unavailable unless the App exposes a verified composer cursor |
+| H1 | First-release scope | **Release gate = focus-only Milestone 1**: discovery, status, plain focus requests (including Next) and local banks/Collapse. Focus is requested, never advertised as verified. No Zoom, contextual input or mod installation. **Milestone 2** follows separately after identity/read-back/input validation. Staged Send/Steer/Queue require a verified composer cursor |
 | H2 | Default profile | Herdr App becomes the first and recommended profile for new installs. Existing Rex/Herdr profiles stay, with the same IDs |
 | H3 | Profile label | "Herdr App" (already reserved). Keep "Herdr" for the TUI |
-| H4 | Version policy | Read-only capabilities (discovery/status) accept versions that pass the hello/feature check and strict schema validation on **both** the App and core. Focus, Zoom and input require an exact match against a **verification record** (section 2.1) |
+| H4 | Version policy | Read-only App discovery/status require validated schemas, command vocabulary and endpoint identity; any separate core reads additionally require its hello/features/schema checks. Plain focus requests require an exact reviewed App build/action contract and endpoint/target/stale-press guards, not a verified-focus record. Zoom and input still require an exact App/core/read-back **verification record** (section 2.1) and remain disabled |
 | H5 | Preferences | Graduate v3 out of the experimental flag in this release, with v1/v2 → v3 migration and the v2 rollback kept tested |
 | H6 | Upstream contact | Ask Herdr maintainers for a stable focus/identity and composer API, or for guidance on a Herdr mod. Owner only |
 
 ### 2.1 Verification records (H4)
+
+The approved plain focus request is a separate control/capability, provisionally
+`requestFocus`; it must not grant `focus`, `verifiedFocus`, `paneIdentity` or
+input controls. Keep the Phase 1a verified-control guards intact. Its reviewed
+record identifies the exact App build and narrow action contract, not a claim
+of completed focus. Match targets in the selected App's own `ls` topology
+(space/tab/pane/local terminal tuple). Do not route a separately discovered
+core `tN` into an App action until independent cross-axis binding exists. A
+provider label may be displayed as App-reported status, never as verified
+process/chat identity. Do not invent a PID to fit an `AgentSnapshot`.
+
+Plain focus still needs explicit consent, captured profile/endpoint/target
+identity, generation/visibility/stale-press checks, one single-use delivery
+permit, a narrowly validated `pane.focus` request, and no retries. Native
+calibration of that request path remains a release gate; this amendment is
+not a verified-build record or live-test authorization. `{ok:true}` means
+requested/acknowledged, not completed. Selection feedback from `status`/`ls`
+must be labeled separately and cannot arm contextual input.
+
+For future Zoom/input and verified-focus controls:
 
 The backend combines App actions with a separately versioned core protocol, so
 an App version alone cannot be the allowlist key. Each record, stored as data
@@ -184,26 +204,34 @@ without changing Rex or Herdr TUI behavior:
 5. Phase 4's graduation then only changes defaults; it does not introduce the
    settings model.
 
-### Phase 2: Milestone 1 (discovery, status, selection, Zoom)
+### Phase 2: Focus-only Milestone 1 (owner amendment, 2026-11-08)
 
-1. Map core terminals to `AgentSnapshot`: local machine only; provider from
-   foreground process (Codex, Claude Code), project from cwd basename; status
-   from agent status/labels, cross-checked with the providers' own state
-   (Codex daemon, Claude hooks) where available.
+1. Discover local App panes from `ls`; show App-reported provider/status with
+   clear provenance. Capture the selected App's endpoint epoch and
+   space/tab/pane/terminal tuple. Keep this selection model distinct from a
+   provider-bound `AgentSnapshot`; no synthetic PID or inferred core binding.
+   Separate core discovery/status is optional and cannot authorize an App target
+   merely because a local address matches. Cross-axis provider binding follows
+   only after its independent identity gate is resolved.
 2. Subscribe to events instead of polling where the API allows. Any reconnect,
    generation change or version change bumps the backend generation and
    invalidates captured presses (existing guard rules).
-3. **Focus** through the App action, followed by a read-back of the App's
-   focused view. A press that cannot be proven to have focused the right
-   terminal reports a refusal and is never retried.
-   The ordinary socket exposes model/presentation selection through
-   `status.focused_pane` and `ls` active flags; evaluate that cheaper feedback
-   path before requiring a mod. It does not prove keyboard ownership or the
-   App/core binding. See the design's source-only Step 0 and owner scope choice.
-   H1/H4 still require verified selection until explicitly amended; neither
-   `{ok:true}` nor saved view files replace proof. Zoom needs separate read-back.
-4. **Zoom is verified separately from focus**, because focus can stay correct
-   while Zoom does nothing or changes a different screen:
+3. **Plain focus request**, through a separate `requestFocus` control and
+   single-use guarded delivery. Re-read the App topology before dispatch;
+   require one unchanged local target, the captured endpoint/peer epoch,
+   exact reviewed App build/action vocabulary and explicit request consent.
+   Allow only `pane.focus` with that pane ID; no generic `do`, window raise,
+   terminal-address fallback, Zoom, read/input or provider mutation. Report
+   “Focus requested” on acknowledgement; timeout means uncertain completion,
+   never retry or compensate. Bracket `ls` with `status` for optional selection
+   feedback, require unique consistent active-space/tab/pane mapping, and
+   refuse conflicting or unsupported contexts. Neither feedback nor success
+   grants `verifiedFocus` or arms contextual controls. Keep the existing 350 ms
+   context arming and all legacy/verified-control refusals intact. No mod is
+   required or installed for this milestone.
+4. **Zoom is deferred beyond the first release and verified separately**,
+   because focus can stay correct while Zoom does nothing or changes a
+   different screen:
    - before mutation: resolve the target's window, screen and pane from the App;
      require that screen's focused pane to be the target, and record that
      screen's current layout and zoom state
@@ -221,7 +249,7 @@ without changing Rex or Herdr TUI behavior:
    legacy argv), and capability-gated layouts, so unsupported controls render
    as inactive.
 6. Setup panel: detect the App and its socket, show version and verification
-   status, and require explicit consent where focus checks need it. Fresh-install
+   status, and require explicit plain-focus-request consent. Fresh-install
    defaults stay off.
 7. Tests: unit and contract tests, golden layouts for a new Herdr App profile
    (new golden entries need justification; existing golden JSON unchanged),
@@ -274,23 +302,24 @@ authorization, using Phase 0's isolation recipe (separate App socket and core,
 endpoint ownership checked as in Phase 3) and a physical MK.2:
 
 - discovery, status changes, banks and Collapse with Codex and Claude agents
-- focus and Zoom proof across multiple windows/screens, minimized, hidden and
-  full-screen windows, and App restart/reconnect
-- Milestone 2 controls (if in scope), including refusals after a dialog changes
+- plain focus requests across supported windows/screens, minimized, hidden and
+  full-screen states, dialogs, App restart/reconnect, stale/remote/duplicate
+  targets and timeout; never assert verified keyboard ownership
 - App update while the plugin runs (version-change refusal)
 - fresh install on a clean Mac, defaults off, upgrade from the previous build
 
 ## 4. Out of scope for the first release
 
-Remote machines, composer-dependent controls without a verified cursor,
+Zoom, contextual/native input, mod installation, remote machines,
+composer-dependent controls without a verified cursor,
 automatic acceptance of approvals or permission-mode changes, and any change to
 Rex or Herdr TUI behavior beyond shared code moved by this work.
 
 ## 5. Risks and open questions
 
 - **Version churn.** Herdr App is pre-1.0 and auto-updates (0.1.13 → 0.1.14
-  already). H4 keeps read-only features working across updates; focus and input
-  will turn off after each update until re-verified. Plan a re-verification
+  already). H4 keeps schema-compatible read-only features working across updates;
+  focus requests turn off when the exact reviewed App build changes. Plan a re-verification
   routine per App release.
 - **Two focus authorities.** App window focus and core terminal state are
   separate; screens have independent focus and zoom. Proof of focus must come
