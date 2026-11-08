@@ -115,10 +115,11 @@ function identity(files) {
 }
 function stopped(processStatus) {
   requireStopped(
-    processStatus ??
-      spawnSync('pgrep', ['-f', 'Stream Deck.app/Contents/MacOS'], {
-        stdio: 'ignore',
-      }).status,
+    processStatus !== undefined
+      ? processStatus
+      : spawnSync('pgrep', ['-f', 'Stream Deck.app/Contents/MacOS'], {
+          stdio: 'ignore',
+        }).status,
   );
 }
 export function backupUpgrade({ home = os.homedir(), processStatus } = {}) {

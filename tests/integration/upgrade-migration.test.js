@@ -121,7 +121,7 @@ test('migration rejects tampering, other installations, symlinks, changed integr
   const f = await fixture(t),
     backup = f.backupUpgrade(f.options).backup;
   f.upgrade();
-  for (const processStatus of [0, 2, null])
+  for (const processStatus of [0, 2, null, false, NaN])
     assert.throws(() =>
       f.restoreUpgrade({ ...f.options, backup, processStatus, apply: true }),
     );
