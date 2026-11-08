@@ -159,6 +159,7 @@ test(
     for (const marker of [
       'fixtureInput',
       'fixtureAck',
+      'fixture-post-close-peer-lease',
       ...scenarioNames.filter(
         (name) => name.includes('-') && name !== 'herdr-tui',
       ),

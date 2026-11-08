@@ -80,6 +80,12 @@ it never executes the source copy or an inferred binary from PATH.
 
 ## Native invocation: separate authorization required
 
+Current checkpoint: App calibration remains blocked before focus. The
+[post-close session design](../../docs/plans/HERDR-APP-POST-CLOSE-PEER-DESIGN.md)
+and its fixtures do not change the packaged helper or enable this runner. A
+reviewed production implementation, rebuilt helper/test manifest and separate
+current authorization are required before another App/core run.
+
 After current explicit permission for the reviewed artifacts and the disposable
 GUI run, use only this test file. These flags acknowledge permission obtained
 outside the runner; setting them does not grant permission to a coding agent.

@@ -323,6 +323,11 @@ and check settings hashes in a failure-safe finally path. No live recipe was
 attempted in Phase 0; the later native findings qualify its process/socket
 assumptions and leave post-close peer proof unresolved.
 
+The later [post-close session design](../plans/HERDR-APP-POST-CLOSE-PEER-DESIGN.md)
+has fixture-only evidence for retaining the original kernel token and freshly
+revalidating its process image. The packaged verifier is unchanged; this does
+not resolve the App calibration gate or authorize another native App/core run.
+
 ## Phase 0 hand-back and decisions required
 
 Production capabilities remain empty. No change to identities, profiles,

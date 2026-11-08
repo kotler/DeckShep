@@ -47,6 +47,12 @@ but fresh peer proof was unavailable after the App closed its one-shot reply
 connection. Cleanup and tracked settings checks passed on all four attempts.
 No test space or focus request was created. Review a post-close proof lifetime
 design before continuing; production records/capabilities remain empty.
+Checkpoint 2g specifies a [post-close peer session](HERDR-APP-POST-CLOSE-PEER-DESIGN.md)
+and tests its lifecycle model, retained-token native primitive and reader-ready
+timing with fixtures only. See [fixture evidence](../validation/2026-11-08-herdr-app-post-close-design.md).
+The packaged protocol-1 verifier and its post-close refusal are unchanged.
+Production integration and fresh authorized calibration remain pending; no live
+App/core run or production record is enabled by this checkpoint.
 The developer's installed/running core build remains unestablished; the native
 attempt identified only its own private core. The App does not bundle core.
 The ordinary control socket does not expose the full focus/Zoom

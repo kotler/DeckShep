@@ -73,6 +73,7 @@ const fixtureMarkers = [
   'claude-mixed',
   'herdr-app-panes',
   'virtual-app-peer-',
+  'fixture-post-close-peer-lease',
 ];
 export function assertProductionBundle(bytes) {
   // Generic state names (question/approval/offline) and backend ID herdr-tui
