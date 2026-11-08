@@ -15,6 +15,7 @@ const { DeliveryKernel } = require('./delivery.ts');
 const { controlAccent } = require('../render/signal');
 const { CompletionDisplay } = require('../render/completion');
 const preferences = require('./preferences');
+const { IntegrationSetup, diagnostics, herdrSessions } = require('./setup');
 const { Controller } = require('./profile-controller');
 const { CodexProvider } = require('../agents/codex/provider.ts');
 const { ClaudeProvider } = require('../agents/claude/provider.ts');
@@ -27,6 +28,7 @@ function createApplication(dependencies: Record<string, any>) {
     const backendFactory: any = dependencies.backendFactory || ((c: import("../domain/types").Config) => c.backend === 'herdr' ? new (require('./herdr-session').HerdrBridge)(c) : new Bridge(c));
     const metadataFactory: any = dependencies.metadataFactory || ((b: any) => new AgentMetadata(b));
     const schedule: any = dependencies.setInterval || setInterval;
+    const integrationSetup = dependencies.integrationSetup || new IntegrationSetup();
     const providers: any = dependencies.providers || [new CodexProvider(), new ClaudeProvider()];
     const emit: (event: any, context: any, payload: any) => void = (event: any, context: any, payload: any) => {
         if (ws.readyState === 1)
@@ -801,6 +803,21 @@ function createApplication(dependencies: Record<string, any>) {
         async function inspectorRequest(e: any) {
             if (!keys.has(e.context))
                 return;
+            if (e.payload?.kind === 'doctor') {
+                emit('sendToPropertyInspector', e.context, { kind: 'doctor', checks: await (dependencies.diagnostics || diagnostics)({ selected: selected(), online: !offline, model: e.payload.model }), sessions: (dependencies.herdrSessions || herdrSessions)() });
+                return;
+            }
+            if (['claudePreview', 'claudeApply', 'claudeUndo', 'removeIntegrations'].includes(e.payload?.kind)) {
+                try {
+                    if (e.payload.kind === 'claudePreview' || e.payload.kind === 'removeIntegrations') {
+                        const diff = integrationSetup.preview(e.payload.kind === 'removeIntegrations', e.payload.statusline === true);
+                        emit('sendToPropertyInspector', e.context, { kind: 'claudePreview', ...diff });
+                    } else if (e.payload.kind === 'claudeApply') integrationSetup.apply();
+                    else integrationSetup.undo();
+                    inspectorStatus(e.context, e.payload.kind === 'claudePreview' || e.payload.kind === 'removeIntegrations' ? 'Review the exact changes below, then click Apply' : 'Integration updated; no agents restarted');
+                } catch { inspectorStatus(e.context, 'Integration settings changed or unavailable; preview again. See docs/CLAUDE.md for recovery.'); }
+                return;
+            }
             if (e.payload?.kind === 'preferences') {
                 try {
                     saved = preferences.update(saved, scope, e.payload.preferences);
@@ -827,7 +844,9 @@ function createApplication(dependencies: Record<string, any>) {
             }
             const a: any = selected();
             setupBusy = true;
-            activePress = { ctx: e.context, display: capture(keys.get(e.context)) };
+            // The explicit setup owns this busy interval; captured ordinary key presses
+            // still carry setupBusy=true and refuse after the interval ends.
+            activePress = { ctx: e.context, display: { ...capture(keys.get(e.context)), setupBusy: false } };
             inspectorStatus(e.context, 'Configuring the selected agent in Rex…');
             try {
                 if (config.backend === 'herdr')
@@ -842,7 +861,7 @@ function createApplication(dependencies: Record<string, any>) {
                     } | null;
                     verifyChat: boolean;
                 } = { target: C.snapshot(a), verifyChat: false };
-                await bridge.withContext(display, () => require('../agents/codex/setup-daemon').configure(bridge, a, pluginDirectory));
+                await bridge.withContext(display, () => (dependencies.setupCodex || require('../agents/codex/setup-daemon').configure)(bridge, a, pluginDirectory));
                 await refresh(true);
                 inspectorStatus(e.context, 'Status line configured; no prompt submitted');
             }

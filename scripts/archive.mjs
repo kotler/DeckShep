@@ -35,8 +35,29 @@ export function unzip(data) {
   if (count === 65535 || directoryEnd !== end) throw Error('Unsupported ZIP directory');
   for (let i = 0; i < count; i++) {
     if (cursor + 46 > end || bytes.readUInt32LE(cursor) !== 0x02014b50) throw Error('Invalid ZIP entry');
-    const flags = bytes.readUInt16LE(cursor + 8), method = bytes.readUInt16LE(cursor + 10), crc = bytes.readUInt32LE(cursor + 16), packed = bytes.readUInt32LE(cursor + 20), size = bytes.readUInt32LE(cursor + 24);
+    const flags = bytes.readUInt16LE(cursor + 8), method = bytes.readUInt16LE(cursor + 10), crc = bytes.readUInt32LE(cursor + 16);
+    let packed = bytes.readUInt32LE(cursor + 20), size = bytes.readUInt32LE(cursor + 24);
     const length = bytes.readUInt16LE(cursor + 28), extra = bytes.readUInt16LE(cursor + 30), comment = bytes.readUInt16LE(cursor + 32), mode = bytes.readUInt32LE(cursor + 38) >>> 16, start = bytes.readUInt32LE(cursor + 42);
+    // Elgato's streaming ZIP writer uses ZIP64 entry sizes even for small
+    // files. Decode only the declared fields, then apply the same size caps.
+    if (size === 0xffffffff || packed === 0xffffffff) {
+      let field = cursor + 46 + length, found = false;
+      const limit = field + extra;
+      if (limit > end) throw Error('Invalid ZIP64 field');
+      while (field + 4 <= limit) {
+        const kind = bytes.readUInt16LE(field), span = bytes.readUInt16LE(field + 2); field += 4;
+        if (field + span > limit) throw Error('Invalid ZIP64 field');
+        if (kind === 1) {
+          let next = field;
+          const value = () => { if (next + 8 > field + span) throw Error('Truncated ZIP64 size'); const result = bytes.readBigUInt64LE(next); next += 8; if (result > BigInt(Number.MAX_SAFE_INTEGER)) throw Error('Oversized ZIP64 entry'); return Number(result); };
+          if (size === 0xffffffff) size = value();
+          if (packed === 0xffffffff) packed = value();
+          found = true; break;
+        }
+        field += span;
+      }
+      if (!found) throw Error('Missing ZIP64 sizes');
+    }
     const nameBytes = bytes.subarray(cursor + 46, cursor + 46 + length), name = nameBytes.toString('utf8');
     safeName(name);
     if (files.has(name) || mode && (mode & 0o170000) === 0o120000 || flags & 1 || ![0, 8].includes(method) || size > 128e6 || (total += size) > 512e6 || cursor + 46 + length + extra + comment > end) throw Error('Unsafe or duplicate ZIP entry');

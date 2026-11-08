@@ -311,7 +311,7 @@ async function invalidate({ dir = directory(), inspect = processInfo, parent = p
     privateDirectory(dir, true);
     markInvalid(p, dir);
 }
-async function record(data: any, { dir = directory(), inspect = processInfo, parent = process.ppid, now = Date.now(), statusline = false, lockTimeoutMs = 1000, }: Record<string, any> | undefined = {}) {
+async function record(data: any, { dir = directory(), inspect = processInfo, parent = process.ppid, now = Date.now(), statusline = false, lockTimeoutMs = 1000, beforeCommit, }: Record<string, any> | undefined = {}) {
     const p: any = await ancestor(parent, inspect);
     privateDirectory(dir, true);
     const lock: string = path.join(dir, String(p.pid) + '.lock'), invalid: string = path.join(dir, String(p.pid) + '.invalid');
@@ -375,6 +375,7 @@ async function record(data: any, { dir = directory(), inspect = processInfo, par
             throw Error('Claude process replaced');
         const file: string = path.join(dir, String(p.pid) + '.json'), tmp: string = file + '.' + crypto.randomUUID() + '.tmp';
         try {
+            beforeCommit?.();
             fs.writeFileSync(tmp, JSON.stringify(next) + '\n', {
                 mode: 0o600,
                 flag: 'wx',

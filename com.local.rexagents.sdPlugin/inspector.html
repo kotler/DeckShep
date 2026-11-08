@@ -107,10 +107,7 @@
     placeholder="~/.config/herdr/herdr.sock"
 /></label>
 <div id="herdrHelp">
-  <label
-    ><sdpi-checkbox id="herdrTitleIdentity" disabled></sdpi-checkbox>Match Codex
-    thread-ID titles (experimental)</label
-  >
+  <sdpi-checkbox id="herdrTitleIdentity" disabled label="Match Codex thread-ID titles (experimental)"></sdpi-checkbox>
   <p class="note">
     In each Codex pane, run <code>/title thread-id</code> with an empty
     composer, then select that agent on the deck. Use only the thread-ID title
@@ -130,10 +127,7 @@
   and prompt text are shared. Changes save automatically.
 </p>
 <div id="rexSetup">
-  <label
-    ><sdpi-checkbox id="allowClipboardFocus" disabled></sdpi-checkbox>Enable
-    visible-pane checks</label
-  >
+  <sdpi-checkbox id="allowClipboardFocus" disabled label="Enable visible-pane checks"></sdpi-checkbox>
   <p class="note">
     Required for controls. Rex temporarily copies its pane ID; the helper
     restores your clipboard formats. Rex may show a copy notification.
@@ -149,16 +143,10 @@
     process and unsent input stay in place. Leave Rex alone until setup
     finishes.
   </p>
-  <label
-    ><sdpi-checkbox id="bringToFront" disabled></sdpi-checkbox>Bring Rex forward when
-    selecting an agent</label
-  >
+  <sdpi-checkbox id="bringToFront" disabled label="Bring Rex forward when selecting an agent"></sdpi-checkbox>
 </div>
 <h2>Claude Code (experimental)</h2>
-<label
-  ><sdpi-checkbox id="claudeEnabled" disabled></sdpi-checkbox>Enable Claude native
-  controls after hook setup</label
->
+<sdpi-checkbox id="claudeEnabled" disabled label="Enable Claude native controls after hook setup"></sdpi-checkbox>
 <p class="note">
   Native Claude 2.1.319 only; live validation is pending. Install the optional
   metadata hooks with <code>configure-claude.js</code> as described in
@@ -167,16 +155,13 @@
   settings for this session; Mode uses the Claude keyboard. Herdr submissions
   remain unavailable.
 </p>
-<sdpi-checkbox id="chainStatus">Chain the existing Claude status line (optional)</sdpi-checkbox>
+<sdpi-checkbox id="chainStatus" label="Chain the existing Claude status line (optional)"></sdpi-checkbox>
 <sdpi-button id="claudePreview">Preview changes</sdpi-button>
 <sdpi-button id="claudeApply" disabled>Apply with backup</sdpi-button>
 <sdpi-button id="claudeUndo">Undo last change</sdpi-button>
 <sdpi-button id="removeIntegrations">Preview removal of integrations</sdpi-button>
 <pre id="claudeDiff" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>
-<label
-  ><sdpi-checkbox id="animationEnabled" disabled></sdpi-checkbox>Animate working and
-  waiting status</label
->
+<sdpi-checkbox id="animationEnabled" disabled label="Animate working and waiting status"></sdpi-checkbox>
 <details>
   <summary>Prompt shortcuts</summary>
   <p>
