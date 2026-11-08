@@ -12,7 +12,7 @@ The 1.4.0 development build includes experimental Claude Code support and mixed 
 
 DeckShep is being prepared for a free, open-source release under Apache-2.0. Source is maintained in [kotler/DeckShep](https://github.com/kotler/DeckShep); the first release remains pending owner review. Once available, use the versioned macOS ZIP attached to a GitHub Release and follow [Installation and upgrades](docs/INSTALL.md). GitHub's automatically generated source archive is not an installer.
 
-The single plugin installer includes the **Rex** and **Herdr** profiles; the ZIP also includes setup guides, build information and checksums. The existing Rex profile identity and `com.local.rexagents` identifier are retained so upgrades keep working with your keys.
+The single plugin installer includes the **Rex** and **Herdr** profiles; the ZIP also includes setup guides, build information and checksums. The plugin ID is `com.kotl3r.deckshep`. Older private previews need the new profiles and explicit integration setup; see the [prelaunch identity reset](docs/IDENTITY.md).
 
 - [Release readiness](docs/RELEASE-READINESS.md) · [Marketplace draft](docs/MARKETPLACE.md)
 - [Switching profiles](docs/PROFILES.md)
@@ -105,7 +105,7 @@ This builds a universal helper, validates and packs with the pinned official Elg
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, safety rules and version verification; `AGENTS.md` contains the full standing instructions. `npm run build`
 creates a portable local build without installing it. `npm run clean` removes only
 `dist/` and `coverage/`; it preserves private backups. Installer recovery copies
-now live under `~/Library/Application Support/AgentSwitchboard/backups/`; older
+now live under `~/Library/Application Support/DeckShep/backups/`; older
 checkout-local backups remain yours to retain or remove.
 
 ## Project status and attribution

@@ -14,7 +14,7 @@ test(
         await import('../../scripts/profiles.mjs');
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'asw-built-upgrade-')),
       home = path.join(root, 'home'),
-      name = 'com.local.rexagents.sdPlugin',
+      name = 'com.kotl3r.deckshep.sdPlugin',
       source = path.join(root, 'dist', name),
       base = path.join(
         home,
@@ -25,7 +25,7 @@ test(
     fs.mkdirSync(path.join(source, 'bin'), { recursive: true });
     for (const file of ['manifest.json', 'config.json'])
       fs.copyFileSync(
-        path.join('com.local.rexagents.sdPlugin', file),
+        path.join('com.kotl3r.deckshep.sdPlugin', file),
         path.join(source, file),
       );
     fs.writeFileSync(

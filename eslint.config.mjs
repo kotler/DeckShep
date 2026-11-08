@@ -13,8 +13,8 @@ export default [
       'backups/**',
       'coverage/**',
       'vendor/**',
-      'com.local.rexagents.sdPlugin/bin/**',
-      'com.local.rexagents.sdPlugin/*js',
+      'com.kotl3r.deckshep.sdPlugin/bin/**',
+      'com.kotl3r.deckshep.sdPlugin/*js',
     ],
   },
   js.configs.recommended,
@@ -51,14 +51,14 @@ export default [
     languageOptions: { sourceType: 'commonjs' },
   },
   {
-    files: ['com.local.rexagents.sdPlugin/inspector.js'],
+    files: ['com.kotl3r.deckshep.sdPlugin/inspector.js'],
     languageOptions: {
       sourceType: 'script',
       globals: { ...globals.browser, RexPreferences: 'readonly' },
     },
   },
   {
-    files: ['com.local.rexagents.sdPlugin/*.js', 'tests/**/*.js'],
+    files: ['com.kotl3r.deckshep.sdPlugin/*.js', 'tests/**/*.js'],
     rules: {
       // These patterns deliberately reject controls or parse native ANSI views.
       'no-control-regex': 'off',

@@ -1,3 +1,15 @@
+## DeckShep identity reset — development update
+
+- Uses `com.kotl3r.deckshep` and `com.kotl3r.deckshep.key`, with new DeckShep
+  profile/page/key UUIDs and a matching source folder/installer.
+- Older preview profiles must be recreated. Remove Claude hooks through the old
+  plugin's original registration before setting up the new plugin. See
+  [IDENTITY.md](IDENTITY.md). No consent or setup records transfer implicitly.
+- Same-identity backup/restore remains available. Shared cross-version mutexes
+  retain their filenames to prevent concurrent settings/clipboard writes.
+
+Earlier preview notes below describe the identities in use at those checkpoints.
+
 ## LobeHub agent artwork — development update
 
 - Uses pinned LobeHub static SVGs for the active Codex and Claude providers in both key styles. Removes the copied Codex app PNGs; no runtime icon download or React dependency is added.

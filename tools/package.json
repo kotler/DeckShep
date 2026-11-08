@@ -1,5 +1,5 @@
 {
-  "name": "agent-switchboard-build-tools",
+  "name": "deckshep-build-tools",
   "private": true,
   "devDependencies": {
     "@elgato/cli": "1.10.4",

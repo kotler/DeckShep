@@ -11,8 +11,8 @@ import {
   actionId,
 } from './profiles.mjs';
 export const root = fileURLToPath(new URL('..', import.meta.url));
-export const PLUGIN = 'com.local.rexagents.sdPlugin',
-  INSTALLER = 'com.local.rexagents.streamDeckPlugin';
+export const PLUGIN = 'com.kotl3r.deckshep.sdPlugin',
+  INSTALLER = 'com.kotl3r.deckshep.streamDeckPlugin';
 export const PROFILES = ['Rex.streamDeckProfile', 'Herdr.streamDeckProfile'];
 export const DOCS = [
   'LICENSE',
@@ -35,6 +35,7 @@ export const DOCS = [
   'docs/adr/0006-external-boundary-validation.md',
   'README.md',
   'docs/INSTALL.md',
+  'docs/IDENTITY.md',
   'docs/RELEASING.md',
   'docs/UNINSTALL.md',
   'docs/CLAUDE.md',
@@ -104,7 +105,7 @@ export function auditInstaller(data) {
   if (
     pkg.license !== 'Apache-2.0' ||
     lock.packages?.['']?.license !== 'Apache-2.0' ||
-    manifest.UUID !== 'com.local.rexagents' ||
+    manifest.UUID !== 'com.kotl3r.deckshep' ||
     manifest.Version !== pkg.version + '.0' ||
     lock.version !== pkg.version ||
     lock.packages?.['']?.version !== pkg.version ||
@@ -145,7 +146,7 @@ export function auditInstaller(data) {
     throw Error('Fresh package must contain only the existing profiles');
   if (
     manifest.Actions?.length !== 1 ||
-    manifest.Actions[0].UUID !== 'com.local.rexagents.key'
+    manifest.Actions[0].UUID !== 'com.kotl3r.deckshep.key'
   )
     throw Error('Action identity mismatch');
   for (const [index, backend] of ['rex', 'herdr'].entries()) {
@@ -187,9 +188,9 @@ export function auditProfile(data, version, backend = 'rex') {
     const action = actions[`${i % 5},${Math.floor(i / 5)}`];
     if (
       !action ||
-      action.Plugin.UUID !== 'com.local.rexagents' ||
+      action.Plugin.UUID !== 'com.kotl3r.deckshep' ||
       action.Plugin.Version !== version ||
-      action.UUID !== 'com.local.rexagents.key' ||
+      action.UUID !== 'com.kotl3r.deckshep.key' ||
       JSON.stringify(action.Settings) !==
         JSON.stringify({ profileScope: backend }) ||
       action.ActionID !== actionId(i, backend)

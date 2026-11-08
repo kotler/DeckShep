@@ -6,7 +6,9 @@ removes only this integration's exact Claude hooks and restores its chained
 status line when still owned. Private Claude lifecycle records are removed after hooks are disabled. Unrelated hooks, permissions and settings remain.
 **Undo last change** is available unless those files changed afterward.
 
-Then remove DeckShep (previously Rex Agents) from Stream Deck and delete its profiles if wanted.
+Then remove DeckShep from Stream Deck and delete its profiles if wanted.
+For an older preview with another plugin ID, use that preview's original removal
+helper before deleting it; see [IDENTITY.md](IDENTITY.md).
 Existing Rex, Herdr and agent processes are left alone. Keep external recovery
 backups until satisfied; build/clean never deletes them.
 

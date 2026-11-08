@@ -1,3 +1,7 @@
+> Historical foundation plan. The owner approved a prelaunch identity reset on
+> 2026-11-08. Its old UUID/path freeze is superseded by [the current DeckShep
+> identity contract](../IDENTITY.md); all safety and consent rules still apply.
+
 # Agent Switchboard refactor plan (v2 foundation)
 
 **Audience:** the implementing agent (Codex) and the human reviewer.

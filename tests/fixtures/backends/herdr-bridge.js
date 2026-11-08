@@ -3,7 +3,7 @@ const assert = require('node:assert/strict'),
   { HerdrBridge } = require('../../../src/app/herdr-session'),
   D = require('../../../src/agents/codex/daemon'),
   C = require('../../../src/guards/context');
-const defaults = require('../../../com.local.rexagents.sdPlugin/config.json'),
+const defaults = require('../../../com.kotl3r.deckshep.sdPlugin/config.json'),
   id = '01a1ae31-d050-7503-afec-fd2b40d2bc26';
 function fixture() {
   const infos = [1, 2].map((i) => ({

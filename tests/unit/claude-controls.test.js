@@ -9,7 +9,7 @@ const { Bridge } = require('../../src/app/session'),
     composer,
     dialog,
   } = require('../../src/agents/claude/controls'),
-  defaults = require('../../com.local.rexagents.sdPlugin/config.json');
+  defaults = require('../../com.kotl3r.deckshep.sdPlugin/config.json');
 const hash = (s) => crypto.createHash('sha256').update(s).digest('hex');
 function fixture() {
   const raw = {

@@ -8,6 +8,7 @@ let argv=CommandLine.arguments
 if argv.count != 3 { fail("Expected Rex executable and client ID") }
 let rex=argv[1], client=argv[2]
 if !client.hasPrefix("client:") { fail("Invalid Rex client") }
+// Keep this shared mutex compatible with older preview helpers.
 let lockPath=NSTemporaryDirectory()+"agent-switchboard-clipboard-\(getuid()).lock"
 let lockFD=open(lockPath,O_CREAT|O_RDWR|O_NOFOLLOW,mode_t(0o600))
 if lockFD < 0 || flock(lockFD,LOCK_EX|LOCK_NB) != 0 { fail("Focus query already running") }

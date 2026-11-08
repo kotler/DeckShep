@@ -8,7 +8,7 @@ const { Bridge } = require('../../src/app/session'),
   P = require('../../src/agents/claude/cycle'),
   C = require('../../src/guards/context'),
   { validate } = require('../../src/terminals/herdr-tui/rpc'),
-  defaults = require('../../com.local.rexagents.sdPlugin/config.json');
+  defaults = require('../../com.kotl3r.deckshep.sdPlugin/config.json');
 const hash = (s) => crypto.createHash('sha256').update(s).digest('hex');
 function fixture(backend = 'rex') {
   let now = 10000;

@@ -8,7 +8,7 @@ import { tree } from './archive.mjs';
 import { bundle } from './bundle.mjs';
 import { profileArchive, PROFILE_NAMES } from './profiles.mjs';
 export const root = fileURLToPath(new URL('..', import.meta.url));
-export const pluginName = 'com.local.rexagents.sdPlugin';
+export const pluginName = 'com.kotl3r.deckshep.sdPlugin';
 export function run(binary, args, options = {}) {
   const result = spawnSync(binary, args, {
     stdio: 'inherit',

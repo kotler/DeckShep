@@ -4,8 +4,8 @@ const assert = require('node:assert/strict'),
   fs = require('node:fs'),
   path = require('node:path'),
   { EventEmitter } = require('node:events');
-const directory = path.join(__dirname, '../../com.local.rexagents.sdPlugin');
-const defaults = require('../../com.local.rexagents.sdPlugin/config.json');
+const directory = path.join(__dirname, '../../com.kotl3r.deckshep.sdPlugin');
+const defaults = require('../../com.kotl3r.deckshep.sdPlugin/config.json');
 function fixture(allowed = true, fail = false) {
   let socket,
     reads = 0;

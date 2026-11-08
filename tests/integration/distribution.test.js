@@ -27,7 +27,7 @@ async function installerFiles(t) {
     version = '1.3.4',
     prefix = A.PLUGIN + '/';
   const manifest = {
-    ...require('../../com.local.rexagents.sdPlugin/manifest.json'),
+    ...require('../../com.kotl3r.deckshep.sdPlugin/manifest.json'),
     Version: version + '.0',
     CodePath: 'bin/plugin.js',
     Profiles: ['rex', 'herdr'].map((backend) => ({
@@ -154,12 +154,12 @@ test('installer requires safe defaults, exact entry points, profiles and consist
   changed.delete(prefix + 'claude-hook.js');
   assert.throws(() => A.auditInstaller(Z.zip(changed)));
 });
-test('generic profiles preserve legacy IDs, all UUID5 ActionIDs, version, scope and device binding', async (t) => {
+test('DeckShep profiles preserve their new IDs, UUID5 ActionIDs, version, scope and device binding', async (t) => {
   const [Z, A, P] = await api(),
     root = temporary(t),
     ids = [];
-  // Values captured from Python uuid.uuid5(NAMESPACE_URL, ...) at the baseline.
-  assert.equal(P.actionId(0, 'rex'), 'cf7a6a4f-daeb-5c7f-bd30-2113bb13ffaf');
+  // Independently calculated with Python uuid.uuid5(NAMESPACE_URL, ...).
+  assert.equal(P.actionId(0, 'rex'), 'c74c571c-67a2-59ae-a0cb-d3425b4ec652');
   for (const backend of ['rex', 'herdr']) {
     const directory = P.profile(root, P.deviceTemplate, backend, '1.3.4.0'),
       data = () => Z.zip(Z.tree(directory, path.basename(directory) + '/'));

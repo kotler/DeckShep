@@ -351,7 +351,7 @@ class DaemonRpc {
     await this.opened;
     const initialized: any = await this.request('initialize', {
       clientInfo: {
-        name: 'agent_switchboard',
+        name: 'deckshep',
         title: 'DeckShep',
         version: '1.4.0',
       },

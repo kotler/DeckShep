@@ -17,7 +17,7 @@ if (
   Number(port) < 1 ||
   Number(port) > 65535 ||
   !args.includes('-pluginUUID') ||
-  args[args.indexOf('-pluginUUID') + 1] !== 'com.local.rexagents'
+  args[args.indexOf('-pluginUUID') + 1] !== 'com.kotl3r.deckshep'
 )
   throw Error('Use the real development plugin launch arguments');
 const known = new Set([
@@ -104,9 +104,9 @@ server.on('connection', (local) => {
 args[index + 1] = String(server.address().port);
 const child = spawn(
   process.execPath,
-  [path.resolve('dist/com.local.rexagents.sdPlugin/bin/plugin.js'), ...args],
+  [path.resolve('dist/com.kotl3r.deckshep.sdPlugin/bin/plugin.js'), ...args],
   {
-    cwd: path.resolve('dist/com.local.rexagents.sdPlugin'),
+    cwd: path.resolve('dist/com.kotl3r.deckshep.sdPlugin'),
     stdio: 'ignore',
     env: process.env,
   },

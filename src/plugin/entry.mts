@@ -41,7 +41,7 @@ class HostPort extends EventEmitter {
 const host = new HostPort();
 const app = createApplication({ ...applicationDependencies(), socket: host });
 class AgentKey extends SingletonAction {
-  override readonly manifestId = 'com.local.rexagents.key';
+  override readonly manifestId = 'com.kotl3r.deckshep.key';
   override onWillAppear(event: WillAppearEvent): void {
     if (!event.action.isKey()) return;
     host.keys.set(event.action.id, event.action);

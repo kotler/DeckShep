@@ -44,7 +44,7 @@ if (option('--verify')) {
     throw Error('Commit or remove source changes before a release build');
   const { build, run } = await import('./build.mjs');
   const plugin = args.includes('--skip-build')
-    ? path.join(root, 'dist/com.local.rexagents.sdPlugin')
+    ? path.join(root, 'dist/com.kotl3r.deckshep.sdPlugin')
     : await build({ universal: true });
   tree(plugin);
   run(process.execPath, [

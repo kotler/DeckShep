@@ -47,7 +47,7 @@ function reviewed(directory, item) {
 }
 function providerProvenanceValid(directory, record) {
   try {
-    const name = 'com.local.rexagents.sdPlugin/assets/lobehub-PROVENANCE.json';
+    const name = 'com.kotl3r.deckshep.sdPlugin/assets/lobehub-PROVENANCE.json';
     if (
       hash(directory, name) !== record?.provenanceSha256 ||
       record?.trademarkPermission !== 'pending'
@@ -65,7 +65,7 @@ function providerProvenanceValid(directory, record) {
         return (
           item?.sourcePath === sourcePath &&
           item?.sha256 ===
-            hash(directory, 'com.local.rexagents.sdPlugin/assets/' + file)
+            hash(directory, 'com.kotl3r.deckshep.sdPlugin/assets/' + file)
         );
       })
     );

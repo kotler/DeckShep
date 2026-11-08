@@ -6,7 +6,7 @@ test('inspector', () => {
     path = require('node:path'),
     assert = require('node:assert/strict');
   const P = require('../../src/app/preferences'),
-    defaults = require('../../com.local.rexagents.sdPlugin/config.json');
+    defaults = require('../../com.kotl3r.deckshep.sdPlugin/config.json');
   const nodes = new Map(),
     frames = [];
   let receive;

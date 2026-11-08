@@ -99,8 +99,8 @@ export function installLocal({
   )
     throw Error('Unsafe Stream Deck profiles directory');
   const device = selectDevice(devices, deviceUuid),
-    source = path.join(root, 'dist/com.local.rexagents.sdPlugin'),
-    dest = path.join(base, 'Plugins/com.local.rexagents.sdPlugin');
+    source = path.join(root, 'dist/com.kotl3r.deckshep.sdPlugin'),
+    dest = path.join(base, 'Plugins/com.kotl3r.deckshep.sdPlugin');
   tree(source);
   if (
     fs.existsSync(dest) &&
@@ -124,7 +124,7 @@ export function installLocal({
   );
   const backup = path.join(
     home,
-    'Library/Application Support/AgentSwitchboard/backups',
+    'Library/Application Support/DeckShep/backups',
     String(Date.now()) + '-' + process.pid,
   );
   fs.mkdirSync(backup, { recursive: true, mode: 0o700 });

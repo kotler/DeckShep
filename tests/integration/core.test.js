@@ -2,7 +2,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { Bridge, identify, state } = require('../../src/app/session');
-const defaults = require('../../com.local.rexagents.sdPlugin/config.json');
+const defaults = require('../../com.kotl3r.deckshep.sdPlugin/config.json');
 test('core', async () => {
   const config = { ...defaults, allowClipboardFocus: true };
   const gated = new Bridge(defaults, async () => {

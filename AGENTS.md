@@ -8,7 +8,7 @@ The baseline is plugin 1.3.4 at `0262267`, tagged `v1.3.4-pre-refactor`.
 Use Node 22.13+ (`.nvmrc` selects 22) and macOS Command Line Tools.
 The installed plugin retains its existing Stream Deck Node runtime.
 
-- `npm ci`: install the locked root workspace (`com.local.rexagents.sdPlugin`, `tools`).
+- `npm ci`: install the locked root workspace (`com.kotl3r.deckshep.sdPlugin`, `tools`).
 - `npm test`: run every isolated `node:test` group, including the ported Node distribution checks.
 - `npm run test:golden`: baseline layouts, routing, native transport traces and refusals.
 - `npm run test:coverage`: c8 reports in ignored `coverage/`; baseline in `docs/plans/coverage-baseline.json`.
@@ -31,12 +31,15 @@ stale-press refusal, focus check, digest/cursor check, generation/visibility gat
 opt-in and privacy rule. Add a test before questioning a guard; do not delete it.
 Golden snapshot changes require a written justification.
 
-Never change plugin UUID `com.local.rexagents`, action UUID
-`com.local.rexagents.key`, `PROFILE_IDS`/`PAGE_IDS`, per-key UUID5 ActionIDs,
+Never change plugin UUID `com.kotl3r.deckshep`, action UUID
+`com.kotl3r.deckshep.key`, `PROFILE_IDS`/`PAGE_IDS`, per-key UUID5 ActionIDs,
 `profileScope`, global-settings v2/v1 migration, or config-key semantics as a
-routine refactor. Existing keys, profiles and settings must upgrade in place.
+routine refactor. The owner explicitly approved the prelaunch identity reset on
+2026-11-08; the new DeckShep identities are now fixed. Older previews require
+fresh profiles and explicit removal/reapplication of integrations, not silent
+conversion. See docs/IDENTITY.md. Same-identity upgrades preserve settings.
 The owner approved profile labels Rex / Herdr. Keep their existing UUIDs and key
-identities; product branding is DeckShep. The owner selected Apache-2.0 with
+identities after this reset; product branding is DeckShep. The owner selected Apache-2.0 with
 NOTICE for the software. The DeckShep name and original key-and-crook branding
 are reserved and forks must rename; see TRADEMARKS.md. Pinned LobeHub provider
 SVGs retain their MIT code license. OpenAI/Anthropic trademark permission remains
@@ -105,7 +108,8 @@ covers the adapter independently. Do not lower thresholds to hide a regression.
 Knip's explicit entries include dynamic Rollup hook/SDK-log/fixture substitutions.
 
 `node scripts/migrate-upgrade.mjs backup` and `restore <backup> [--apply]` provide
-the one-time external backup/native-installer migration path. Restore previews by
+the same-identity external backup/native-installer migration path. They do not
+convert old preview identities or integration paths. Restore previews by
 default and keeps a pre-restore recovery backup. Never run them against real HOME
 as verification. `node scripts/install.mjs` retains the stopped-Stream-Deck
 backup/config merge as an upgrade fallback. Do not run it as verification. Native installer preservation

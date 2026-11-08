@@ -7,7 +7,7 @@ const assert = require('node:assert/strict'),
     candidate,
     sameForeground,
   } = require('../../src/platform/rex-process'),
-  defaults = require('../../com.local.rexagents.sdPlugin/config.json');
+  defaults = require('../../com.kotl3r.deckshep.sdPlugin/config.json');
 test('rex process', async () => {
   const pid = 42,
     file = '/opt/homebrew/Caskroom/codex/0.166.0.upgrading/bin/codex',

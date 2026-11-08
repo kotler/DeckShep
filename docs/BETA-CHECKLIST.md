@@ -42,5 +42,6 @@ Public support channels, exact-version launch validation, snapshot review,
 private vulnerability reporting, signing/notarization and publication timing
 remain pending. Provider trademark permission stays pending; LobeHub provenance
 is not clearance. Marketplace AI disclosure and eligibility require owner review.
-See [release readiness](RELEASE-READINESS.md). Preserve UUIDs, profile IDs,
-consent defaults and settings compatibility.
+See [release readiness](RELEASE-READINESS.md) and [the identity reset](IDENTITY.md).
+Preserve the new UUIDs/profile IDs, consent defaults and same-identity settings
+compatibility; old preview profiles require recreation.

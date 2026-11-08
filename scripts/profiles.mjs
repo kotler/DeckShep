@@ -3,14 +3,14 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { tree, zip } from './archive.mjs';
 export const PROFILE_IDS = {
-  rex: 'DCA673F9-ADDB-49C8-99BB-78B1D0BF20F2',
-  herdr: '7150E562-B6DD-5FDC-B913-325149798069',
-  'herdr-app': '6D19AEC8-CECA-53BD-A80B-82AE3A99B8FA',
+  rex: '9B48E1EC-B8FD-5A1A-AE1B-9C87F57F3F3F',
+  herdr: 'AB25F8CF-5D02-51A5-8904-F666E35A500A',
+  'herdr-app': '7297382B-CCCB-5C50-92B2-67B250A22A6B',
 };
 export const PAGE_IDS = {
-  rex: 'E8BFFB55-B717-4984-B8B1-CBC9BB7E5877',
-  herdr: 'D571A142-0914-5750-8651-C825171B0630',
-  'herdr-app': 'E7746240-85AC-5602-A4DC-769EC6F3E868',
+  rex: '285BDB27-37E3-5BAA-907E-7258EF20FE77',
+  herdr: 'A48A51FD-49CC-5DB3-96B0-39FD61DC6F1B',
+  'herdr-app': 'F504DF11-D009-53EF-A108-44FDC8AD4C07',
 };
 export const PROFILE_NAMES = {
   rex: 'Rex',
@@ -19,10 +19,7 @@ export const PROFILE_NAMES = {
 };
 export const deviceTemplate = { Model: '20GBL9901', UUID: '@(0)[]' };
 export function actionId(index, backend) {
-  const name =
-    backend === 'rex'
-      ? `agent-switchboard/key/${index}`
-      : `agent-switchboard/${backend}/key/${index}`;
+  const name = `com.kotl3r.deckshep/${backend}/key/${index}`;
   const bytes = createHash('sha1')
     .update(Buffer.from('6ba7b8119dad11d180b400c04fd430c8', 'hex'))
     .update(name)
@@ -61,7 +58,7 @@ export function profile(destination, device, backend, version) {
       Name: 'DeckShep Key',
       Plugin: {
         Name: 'DeckShep',
-        UUID: 'com.local.rexagents',
+        UUID: 'com.kotl3r.deckshep',
         Version: version,
       },
       Settings: { profileScope: backend },
@@ -75,7 +72,7 @@ export function profile(destination, device, backend, version) {
           TitleColor: '#ffffff',
         },
       ],
-      UUID: 'com.local.rexagents.key',
+      UUID: 'com.kotl3r.deckshep.key',
     };
   write(path.join(pageDir, 'manifest.json'), {
     Controllers: [{ Type: 'Keypad', Actions: actions }],

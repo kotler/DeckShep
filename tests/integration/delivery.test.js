@@ -313,7 +313,7 @@ test('delivery adapter exposes only enumerated reads and preserves target/capabi
 test('a standalone production session cannot treat an unknown block method as a read', () => {
   const { Bridge } = require('../../src/app/session');
   const session = new Bridge(
-    require('../../com.local.rexagents.sdPlugin/config.json'),
+    require('../../com.kotl3r.deckshep.sdPlugin/config.json'),
   );
   for (const args of [
     ['block', 'call', '-s', 's', '-b', 'b', 'new-native-input'],

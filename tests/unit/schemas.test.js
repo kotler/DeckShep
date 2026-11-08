@@ -115,7 +115,7 @@ test('boundary tree caps reject excessive width, depth, keys and private IDs wit
   );
 });
 test('config validates every known field without rejecting an empty override or empty alias', () => {
-  const defaults = require('../../com.local.rexagents.sdPlugin/config.json');
+  const defaults = require('../../com.kotl3r.deckshep.sdPlugin/config.json');
   assert.deepEqual(S.validate('config', defaults), defaults);
   assert.equal(
     S.validate('config', { rexPath: '', aliases: { fixture: '' } }).rexPath,

@@ -5,7 +5,7 @@ const fs = require('node:fs'),
 const { Bridge } = require('../../src/app/session'),
   C = require('../../src/guards/context');
 function harness(dependencies = {}) {
-  const directory = path.join(__dirname, '../../com.local.rexagents.sdPlugin');
+  const directory = path.join(__dirname, '../../com.kotl3r.deckshep.sdPlugin');
   let clock = 10000,
     socket;
   const native = { rex: 'a', herdr: 'a' };

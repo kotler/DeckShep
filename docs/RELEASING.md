@@ -2,7 +2,9 @@
 
 Root `package.json` is the version authority. `npm run version:sync -- X.Y.Z`
 updates manifest/plugin/lockfile versions; `npm run version:check` checks identity.
-Existing plugin, action, profile and key UUIDs and stable helper paths stay fixed.
+The new DeckShep plugin, action, profile and key UUIDs stay fixed after the
+prelaunch reset. See [IDENTITY.md](IDENTITY.md) for older-preview transition and
+exact hook removal; never import old setup records into the new folder.
 
 ## Local beta verification
 

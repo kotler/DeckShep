@@ -24,7 +24,7 @@ async function rebuild() {
       'scripts/tool.mjs',
       '@elgato/cli',
       'restart',
-      'com.local.rexagents',
+      'com.kotl3r.deckshep',
       '--no-update-check',
     ]);
   } catch {
@@ -39,7 +39,7 @@ async function rebuild() {
 }
 await rebuild();
 let timer;
-for (const name of ['src', 'native', 'com.local.rexagents.sdPlugin'])
+for (const name of ['src', 'native', 'com.kotl3r.deckshep.sdPlugin'])
   fs.watch(path.join(root, name), { recursive: true }, (_event, filename) => {
     if (
       !filename ||

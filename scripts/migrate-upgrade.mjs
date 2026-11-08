@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { requireStopped, mergedConfig } from './install.mjs';
 
-const plugin = 'com.local.rexagents.sdPlugin';
+const plugin = 'com.kotl3r.deckshep.sdPlugin';
 const lifecycle = (name) => /^state\/claude\/\d+\.(?:json|invalid)$/.test(name);
 const ephemeralLock = (name) =>
   name.startsWith('state/claude/') && /(?:\.lock|\.tmp)$/.test(name);
@@ -43,10 +43,7 @@ function paths(home) {
   return {
     installed: path.join(base, 'Plugins', plugin),
     profiles: path.join(base, 'ProfilesV3'),
-    backups: path.join(
-      home,
-      'Library/Application Support/AgentSwitchboard/backups',
-    ),
+    backups: path.join(home, 'Library/Application Support/DeckShep/backups'),
   };
 }
 function snapshot(dir) {
@@ -107,7 +104,7 @@ function writeTree(dir, files) {
 function identity(files) {
   const manifest = JSON.parse(files.get('manifest.json'));
   if (
-    manifest.UUID !== 'com.local.rexagents' ||
+    manifest.UUID !== 'com.kotl3r.deckshep' ||
     typeof manifest.Version !== 'string'
   )
     throw Error('Wrong installed plugin identity');
@@ -145,7 +142,7 @@ export function backupUpgrade({ home = os.homedir(), processStatus } = {}) {
     path.join(backup, 'backup.json'),
     JSON.stringify({
       schema: 1,
-      plugin: 'com.local.rexagents',
+      plugin: 'com.kotl3r.deckshep',
       version,
       destination: digest(Buffer.from(fs.realpathSync(locations.installed))),
       installed: hashes(installed),
@@ -180,7 +177,7 @@ export function restoreUpgrade({
     oldProfiles = snapshot(path.join(backup, 'ProfilesV3'));
   if (
     record.schema !== 1 ||
-    record.plugin !== 'com.local.rexagents' ||
+    record.plugin !== 'com.kotl3r.deckshep' ||
     record.destination !==
       digest(Buffer.from(fs.realpathSync(locations.installed))) ||
     JSON.stringify(record.installed) !== JSON.stringify(hashes(old)) ||

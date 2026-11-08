@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { Bridge } = require('../../src/app/session');
 const { svg, pulse } = require('../../src/render/visuals');
-const c = require('../../com.local.rexagents.sdPlugin/config.json');
+const c = require('../../com.kotl3r.deckshep.sdPlugin/config.json');
 test('controls', async () => {
   const a = {
     session: 's',

@@ -4,14 +4,16 @@ Status: implemented and exercised by an isolated fake host.
 
 The plugin uses `@elgato/streamdeck` 3.0.4, retaining SDKVersion 2 / Node 20 support
 rather than requiring a new installed runtime. One `SingletonAction` preserves
-`com.local.rexagents.key`. Only the plugin layer imports the SDK. It translates
+`com.kotl3r.deckshep.key`. Only the plugin layer imports the SDK. It translates
 action events, settings, images, titles and alerts into the application's local
 port. Coordinates, profileScope and v2 settings remain unchanged. SDK 3 uses
 `useLegacySettingsBehavior` before connecting to preserve the existing Stream
 Deck 6.6+ settings protocol; the fake host exercises the older host behavior.
 
 Rollup emits `bin/plugin.js`; hook/configuration entry points stay at the plugin
-root so existing absolute Claude commands continue resolving. The inspector uses
+root. The prelaunch folder/UUID reset requires removing older preview hooks
+through their original registration before setting up the new location. The new
+location stays fixed afterward; see [IDENTITY.md](../IDENTITY.md). The inspector uses
 a vendored sdpi-components v4 file and a single library-managed socket. Consent
 fields go through the existing scoped preference codec, never automatic flat
 sdpi global-settings persistence.

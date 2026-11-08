@@ -3,7 +3,7 @@
   "version": "1.4.0",
   "private": true,
   "workspaces": [
-    "com.local.rexagents.sdPlugin",
+    "com.kotl3r.deckshep.sdPlugin",
     "tools"
   ],
   "engines": {

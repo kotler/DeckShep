@@ -3,7 +3,7 @@ test('profile preferences', () => {
   'use strict';
   const assert = require('node:assert/strict'),
     P = require('../../src/app/preferences'),
-    defaults = require('../../com.local.rexagents.sdPlugin/config.json');
+    defaults = require('../../com.kotl3r.deckshep.sdPlugin/config.json');
   const legacy = {
     version: 1,
     preferences: {

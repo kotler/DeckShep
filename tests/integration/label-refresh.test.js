@@ -7,7 +7,7 @@ const assert = require('node:assert/strict'),
 const { Bridge } = require('../../src/app/session'),
   { AgentMetadata } = require('../../src/agents/codex/metadata');
 test('label refresh', async () => {
-  const directory = path.join(__dirname, '../../com.local.rexagents.sdPlugin');
+  const directory = path.join(__dirname, '../../com.kotl3r.deckshep.sdPlugin');
   const baseline = {
     session: 's',
     block: 'b',

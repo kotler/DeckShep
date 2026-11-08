@@ -11,7 +11,7 @@ const { svg } = require('../src/render/visuals.ts');
 const out = path.join(root, 'dist/marketplace');
 fs.mkdirSync(out, { recursive: true });
 const logo = fs.readFileSync(
-  path.join(root, 'com.local.rexagents.sdPlugin/assets/plugin-icon-source.svg'),
+  path.join(root, 'com.kotl3r.deckshep.sdPlugin/assets/plugin-icon-source.svg'),
   'utf8',
 );
 const escape = (text) => text.replaceAll('&', '&amp;').replaceAll('<', '&lt;');
@@ -142,7 +142,7 @@ for (const [name, scene] of Object.entries(scenes)) {
   );
 }
 fs.copyFileSync(
-  path.join(root, 'com.local.rexagents.sdPlugin/icon@2x.png'),
+  path.join(root, 'com.kotl3r.deckshep.sdPlugin/icon@2x.png'),
   path.join(out, 'app-icon.png'),
 );
 const names = [
