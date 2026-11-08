@@ -309,12 +309,14 @@ consents, preferences, golden JSON or release evidence is justified here.
 | Version refresh        | App release pinned; core release and prior development pin distinguished; exact running pair unknown            |
 | Transport shapes       | Documented above; synthetic read-only fixtures can be authored after owner review                               |
 | Isolation              | Separate namespaces and a candidate owned-process launch derived from source; native calibration still required |
-| Milestone 1 focus/Zoom | Blocked on an approved fresh read-back surface; ordinary App socket lacks the required proof                    |
-| Milestone 2            | Remains optional and disabled; chat binding, passive native-view checks and delayed-write semantics unresolved  |
+| Original verified focus/Zoom | Still blocked on fresh independent binding/read-back; plain focus-only scope approved separately |
+| Milestone 1 requests | Read-only selection feedback fixtures implemented; guarded sender and peer-bound exact App build identity pending |
+| Milestone 2            | Deferred and disabled; chat binding, passive native-view checks and delayed-write semantics unresolved  |
 | Composer               | No verified cursor/edit-mode snapshot; staged Send/Steer/Queue stay unavailable                                 |
 
-Owner review must resolve the focus/Zoom read-back approach before that part
-of Phase 2. A bridge/mod would need its own reviewed installation, consent,
+The owner approved plain focus requests for Phase 2 without a verified-focus
+claim. Any future verified focus/Zoom still needs independent read-back.
+A bridge/mod would need its own reviewed installation, consent,
 instance binding and removal/migration path; this ADR does not install or
 select one. Continue only independently safe fixture work after Phase 0 is
 accepted, and request separate current authorization before any native run.

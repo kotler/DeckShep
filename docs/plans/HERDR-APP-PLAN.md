@@ -14,9 +14,12 @@ gates, and independent App preferences/routing. See the
 [preferences validation](../validation/2026-11-08-herdr-app-preferences.md).
 They are not wired into production. No native run or production capability
 has been enabled.
+Phase 2a now adds an unwired App selection model and `status`/`ls` feedback
+reader, without fabricated process/provider identity or a focus mutation path.
+See [selection validation](../validation/2026-11-08-herdr-app-selection.md).
 The exact running core build remains unestablished; the App does not bundle
 core. The ordinary control socket does not expose the full focus/Zoom
-read-back required by Milestone 1. `terminal.peek` opens an overlay, so it
+read-back required by the original verified Milestone 1. `terminal.peek` opens an overlay, so it
 cannot be used as a passive read. Those source findings qualify the proposed
 API steps below; see the ADR's hand-back and native questions.
 The optional read-only mod is [on hold after source review](HERDR-APP-READBACK-DESIGN.md):
@@ -205,6 +208,14 @@ without changing Rex or Herdr TUI behavior:
    settings model.
 
 ### Phase 2: Focus-only Milestone 1 (owner amendment, 2026-11-08)
+
+Checkpoint 2a is complete for the read-only selection model/feedback reader
+only. It uses a 1,000 ms total monotonic read budget, rejects overlapping reads,
+and refuses changed/ambiguous topology, unsupported views and endpoint epochs.
+It returns App-model provenance and `verifiedFocus:false`, never a delivery
+permit or provider identity. It remains unwired. A plain focus sender, request
+consent, guarded controller integration and peer-bound exact App build
+verification remain to implement and calibrate before production promotion.
 
 1. Discover local App panes from `ls`; show App-reported provider/status with
    clear provenance. Capture the selected App's endpoint epoch and

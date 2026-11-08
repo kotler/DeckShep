@@ -141,6 +141,10 @@ do not weaken the verified-focus/input path or invent process identity from App
 pane records. Exact App build/action, endpoint/target identity, consent and stale
 press guards still apply. This scope approval grants no native-test permission
 or production capability; see H1/H4 in docs/plans/HERDR-APP-PLAN.md.
+The unwired `AppSelectionReader` brackets `ls` with `status` reads and returns
+App-model selection only (`verifiedFocus:false`), with a 1,000 ms total budget.
+Its pane references contain no fabricated PID/chat/core identity and grant no
+delivery authority. Keep selection feedback distinct from native focus proof.
 With the experimental flag on, v3 has an independent App home/core socket,
 read-back consent, input consent and Claude-control opt-in. Migration grants
 none of these App consents, and rollback drops only the App profile. The App
