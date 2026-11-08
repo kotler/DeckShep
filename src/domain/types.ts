@@ -1,6 +1,6 @@
 /** Runtime-neutral contracts. Domain code has no platform imports. */
 export type BackendId = 'rex' | 'herdr-tui' | 'herdr-app';
-export type ProfileScope = 'rex' | 'herdr';
+export type ProfileScope = 'rex' | 'herdr' | 'herdr-app';
 export type ProviderId = 'codex' | 'claude-code';
 export type BackendCapability =
   | 'discover'
@@ -189,6 +189,7 @@ export interface Config {
   appearance: { style: string };
   claude: { enabled: boolean };
   rexPath?: string;
+  experimental?: { herdrApp: boolean };
 }
 export interface ComposerSnapshot {
   chatId: string;

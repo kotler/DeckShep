@@ -28,3 +28,11 @@ test('identity formats, versions, opt-ins and global preference versions fail cl
   let deep = {}; for (let i = 0; i < 45; i++) deep = { child: deep };
   assert.throws(() => S.validate('registry', deep));
 });
+test('boundary tree caps reject excessive width, depth, keys and private IDs without reflecting data', () => {
+  const record = Object.fromEntries(Array.from({ length: 100001 }, (_, i) => ['key' + i, 0])); assert.throws(() => S.validate('registry', record), /Invalid registry/);
+  for (const value of [{ constructor: {} }, { prototype: {} }, { ['bad\x7fkey']: true }]) assert.throws(() => S.validate('registry', value));
+  for (const input of [{ session_id: 'bad id' }, { cwd: 'bad\x00path' }, { hook_event_name: 'bad\nname' }]) assert.throws(() => S.validate('claudePayload', input));
+  for (const patch of [{ prompts: { review: 'valid single line' } }, { allowClipboardFocus: true }, { herdrSocketPath: '/tmp/fixture.sock' }]) assert(S.preferencePatch.safeParse(patch).success);
+  assert(S.settingsV1.safeParse({ version: 1, preferences: { claudeEnabled: false } }).success);
+  assert(S.settingsV3.safeParse({ version: 3, revision: 0, profiles: { 'herdr-app': {} }, experimental: { herdrApp: false } }).success);
+});

@@ -63,18 +63,31 @@
         "label": "Luna"
       }
     ],
-    "efforts": ["low", "medium", "high", "xhigh"],
+    "efforts": [
+      "low",
+      "medium",
+      "high",
+      "xhigh"
+    ],
     "autoSetupNewSessions": true
   },
   "modelDiscovery": {
     "enabled": true,
     "include": [],
-    "effortLevels": ["low", "medium", "high", "xhigh"]
+    "effortLevels": [
+      "low",
+      "medium",
+      "high",
+      "xhigh"
+    ]
   },
   "appearance": {
     "style": "signal"
   },
   "claude": {
     "enabled": false
+  },
+  "experimental": {
+    "herdrApp": false
   }
 }

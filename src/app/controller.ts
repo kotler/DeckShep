@@ -14,12 +14,13 @@ const { GuardPipeline } = require('../guards/pipeline.ts');
 const { DeliveryKernel } = require('./delivery.ts');
 const { controlAccent } = require('../render/signal');
 const { CompletionDisplay } = require('../render/completion');
-const preferences = require('./preferences');
+const { preferenceCodec, experimentalScope } = require('./experimental-preferences');
 const { IntegrationSetup, diagnostics, herdrSessions } = require('./setup');
 const { Controller } = require('./profile-controller');
 const { CodexProvider } = require('../agents/codex/provider.ts');
 const { ClaudeProvider } = require('../agents/claude/provider.ts');
 function createApplication(dependencies: Record<string, any>) {
+    const preferences = preferenceCodec(dependencies.experimentalHerdrApp === true);
     const ws: any = dependencies.socket;
     const arg: (key: string) => any = (key: string) => dependencies.args?.[key];
     const fs: any = dependencies.fs || defaultFs;
@@ -958,7 +959,7 @@ function createApplication(dependencies: Record<string, any>) {
             if (e.event === 'didReceiveGlobalSettings') {
                 try {
                     const input: any = boundary.validate('globalSettings', e.payload?.settings || {});
-                    if (input.version !== 2 && loadedV2)
+                    if (![2, 3].includes(input.version) && loadedV2)
                         return;
                     const incoming: {
                         version: number;
@@ -976,11 +977,11 @@ function createApplication(dependencies: Record<string, any>) {
                             [k: string]: {};
                         };
                     } = preferences.store(input);
-                    if (input.version === 2 && incoming.revision < saved.revision)
+                    if ([2, 3].includes(input.version) && incoming.revision < saved.revision)
                         return;
                     saved = incoming;
                     storeError = '';
-                    if (input.version === 2)
+                    if ([2, 3].includes(input.version))
                         loadedV2 = true;
                     else
                         persist();
@@ -997,6 +998,10 @@ function createApplication(dependencies: Record<string, any>) {
             if (e.event === 'willAppear' || e.event === 'didReceiveSettings') {
                 if (e.event === 'didReceiveSettings' && !owners.has(e.context))
                     return;
+                if (experimentalScope(e.payload?.settings, dependencies.experimentalHerdrApp === true)) {
+                    emit('setTitle', e.context, { title: 'Herdr App\nPreview only', target: 0 });
+                    return;
+                }
                 const scope: any = preferences.scopeOf(e.payload?.settings), prior: any = owners.get(e.context);
                 if (prior && prior !== scope)
                     getController(prior).detach(e.context);

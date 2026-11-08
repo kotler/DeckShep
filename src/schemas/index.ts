@@ -20,11 +20,13 @@ export const settingsV2 = z.object({
   version: z.literal(2), revision: z.number().int().nonnegative().safe(),
   shared: preferencePatch.optional(), profiles: z.object({ rex: preferencePatch.optional(), herdr: preferencePatch.optional() }).strict(),
 }).passthrough();
-export const globalSettings = z.union([settingsV2, settingsV1]);
+export const settingsV3 = settingsV2.extend({ version: z.literal(3), profiles: settingsV2.shape.profiles.extend({ 'herdr-app': z.object({}).strict() }), experimental: z.object({ herdrApp: z.boolean() }).strict() });
+export const globalSettings = z.union([settingsV3, settingsV2, settingsV1]);
 export const config = z.object({
   backend: z.enum(['rex', 'herdr']).optional(), allowClipboardFocus: bool, bringToFront: bool,
   herdr: z.object({ socketPath: z.string().max(1024).regex(/^[^\x00-\x1f\x7f]*$/).optional(), titleIdentity: bool }).passthrough().optional(),
   claude: z.object({ enabled: bool }).passthrough().optional(), rexPath: identifier.optional(),
+  experimental: z.object({ herdrApp: bool }).strict().optional(),
   prompts: z.record(z.string(), prompt).optional(), aliases: z.record(z.string(), identifier).optional(),
 }).passthrough();
 export const rexResponse = z.union([object, z.array(object), z.null(), z.boolean(), z.string()]);
