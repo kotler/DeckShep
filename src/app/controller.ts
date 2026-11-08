@@ -1057,4 +1057,4 @@ function createApplication(dependencies: Record<string, any>) {
 }
 module.exports = { createApplication };
 
-export {};
+export { createApplication };

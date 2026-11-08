@@ -3,6 +3,7 @@ type AgentSnapshot = import("../domain/types").AgentSnapshot;
 type Config = import("../domain/types").Config;
 type PressContext = import("../domain/types").PressContext;
 'use strict';
+let filling = false;
 let socket: any, registration: any, actionContext: any, keySettings: {} = {}, shared: any = null, lastStatus: any;
 const byId: (id: any) => HTMLElement & {
     value: string;
@@ -86,6 +87,7 @@ function query() {
     send('sendToPlugin', { kind: 'status' }, actionContext);
 }
 function fill(status: any) {
+    filling = true;
     lastStatus = status;
     shared = status.preferences;
     const herdr: boolean = status.backend === 'herdr';
@@ -116,7 +118,8 @@ function fill(status: any) {
     for (const key of booleans) {
         byId(key).disabled = status.setupBusy;
         if (document.activeElement !== byId(key))
-            byId(key).checked = !!shared[key];
+            if (byId(key).tagName === 'SDPI-CHECKBOX') (byId(key) as any).value = !!shared[key];
+            else byId(key).checked = !!shared[key];
     }
     for (const name of promptNames) {
         byId(name).disabled = status.setupBusy;
@@ -133,20 +136,14 @@ function fill(status: any) {
             !shared.allowClipboardFocus ||
             status.selected?.app !== 'codex' ||
             !['idle', 'done'].includes(status.selected?.state);
+    filling = false;
 }
 function save(key: string) {
-    if (!shared)
+    if (!shared || filling)
         return;
-    const value: {
-        prompts: {
-            [x: string]: string;
-        };
-    } | {
-        [x: string]: string | boolean;
-        prompts?: undefined;
-    } = promptNames.includes(key)
+    const value: Record<string,any> = promptNames.includes(key)
         ? { prompts: { [key]: byId(key).value } }
-        : { [key]: booleans.includes(key) ? byId(key).checked : byId(key).value };
+        : { [key]: booleans.includes(key) ? (byId(key).tagName === 'SDPI-CHECKBOX' ? (byId(key) as any).value : byId(key).checked) : byId(key).value };
     try {
         const patch: Record<string, unknown> = RexPreferences.normalize(value);
         send('sendToPlugin', { kind: 'preferences', preferences: patch }, actionContext);
@@ -159,45 +156,56 @@ function save(key: string) {
     }
 }
 for (const key of [...booleans, ...promptNames, ...connectionFields])
-    byId(key).addEventListener('change', () => save(key));
-byId('refresh').addEventListener('click', query);
+    byId(key).addEventListener(booleans.includes(key) && byId(key).tagName === 'SDPI-CHECKBOX' ? 'valuechange' : 'change', () => save(key));
+byId('refresh').addEventListener('click', () => { query(); send('sendToPlugin', { kind: 'doctor' }, actionContext); });
+for (const kind of ['claudePreview', 'claudeApply', 'claudeUndo', 'removeIntegrations']) byId(kind).addEventListener('click', () => {
+    send('sendToPlugin', { kind, statusline: (byId('chainStatus') as any).value === true }, actionContext);
+    if (kind === 'claudeApply') { byId(kind).disabled = true; byId('claudeDiff').textContent = ''; }
+});
+byId('useSession').addEventListener('click', () => { byId('herdrSocketPath').value = byId('sessions').value; save('herdrSocketPath'); });
 byId('setup').addEventListener('click', () => {
     byId('setup').disabled = true;
     send('sendToPlugin', { kind: 'setupFooter' }, actionContext);
 });
 byId('action').addEventListener('change', () => send('setSettings', { ...keySettings, action: byId('action').value }, actionContext));
+// sdpi-components chains this callback and opens the single inspector socket.
 ((window) as any).connectElgatoStreamDeckSocket =
-    (port: any, uuid: any, event: any, info: any, actionInfo: any) => {
+    (_port: string, uuid: string, _event: string, info: string, actionInfo: string) => {
         registration = uuid;
         const initial: any = boundary.parse('registry', actionInfo);
         actionContext = uuid;
         keySettings = initial.payload.settings || {};
-        byId('action').value = ((keySettings) as any).action || '';
-        socket = new WebSocket('ws://127.0.0.1:' + port);
-        socket.onopen = () => {
-            socket.send(JSON.stringify({ event, uuid }));
-            query();
-        };
-        socket.onmessage =
-            (raw: any) => {
-                try {
-                    const message: any = boundary.parse('hostEvent', raw.data);
-                    if (message.event === 'sendToPropertyInspector' &&
-                        message.payload?.kind === 'status')
-                        fill(message.payload);
-                    if (message.event === 'didReceiveGlobalSettings')
-                        query();
+        byId('action').value = (keySettings as any).action || '';
+        const client = (window as any).SDPIComponents?.streamDeckClient;
+        if (!client) { byId('message').textContent = 'Inspector library unavailable'; return; }
+        socket = { readyState: 1, send: (raw: string) => {
+            const frame = boundary.parse('hostEvent', raw);
+            void client.send(frame.event, frame.payload).catch(() => {});
+        } };
+        client.message.subscribe((input: unknown) => {
+            try {
+                const message: any = boundary.validate('hostEvent', input);
+                if (message.event === 'sendToPropertyInspector') {
+                    const payload = message.payload;
+                    if (payload?.kind === 'status') fill(payload);
+                    if (payload?.kind === 'doctor') {
+                        byId('checklist').textContent = payload.checks.map((c: any) => `${c.ok ? '✓' : '⚠'} ${c.reason}`).join('\n');
+                        const list = byId('sessions') as any;
+                        list.textContent = '';
+                        for (const session of payload.sessions) list.add(new Option(session.label, session.path));
+                    }
+                    if (payload?.kind === 'claudePreview') {
+                        byId('claudeDiff').textContent = 'Before\n' + payload.before + '\nAfter\n' + payload.after;
+                        byId('claudeApply').disabled = false;
+                    }
                 }
-                catch {
-                    byId('message').textContent = 'Could not read plugin status';
-                }
-            };
-        socket.onclose = () => {
-            byId('connection').textContent = 'Plugin disconnected';
-            byId('setup').disabled = true;
-            for (const key of [...booleans, ...promptNames, ...connectionFields])
-                byId(key).disabled = true;
-        };
+                if (message.event === 'didReceiveGlobalSettings') query();
+            } catch { byId('message').textContent = 'Could not read plugin status'; }
+        });
+        query();
+        const connection: any = boundary.parse('registry', info);
+        const model = connection.devices?.find((device: any) => device.id === initial.device)?.type;
+        send('sendToPlugin', { kind: 'doctor', model }, actionContext);
     };
 setInterval(query, 3000);
 

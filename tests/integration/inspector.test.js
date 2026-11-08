@@ -9,7 +9,9 @@ test('inspector', () => {
     defaults = require('../../com.local.rexagents.sdPlugin/config.json');
   const nodes = new Map(),
     frames = [];
-  let socket;
+  let receive;
+  const socket = { onopen() {}, onmessage(raw) { receive(JSON.parse(raw.data)); } };
+  const client = { message: { subscribe(callback) { receive = callback; } }, send(event, payload) { frames.push({ event, payload, context: 'runtime-action-context' }); return Promise.resolve(); } };
   function node(id) {
     if (!nodes.has(id))
       nodes.set(id, {
@@ -27,20 +29,11 @@ test('inspector', () => {
       });
     return nodes.get(id);
   }
-  class Socket {
-    constructor() {
-      socket = this;
-      this.readyState = 1;
-    }
-    send(raw) {
-      frames.push(JSON.parse(raw));
-    }
-  }
   const context = {
     require: () => require('../../src/schemas'),
-    window: {},
+    window: { SDPIComponents: { streamDeckClient: client } },
     document: { getElementById: node, activeElement: null },
-    WebSocket: Socket,
+
     Option: class {
       constructor(label, value) {
         this.label = label;
@@ -52,12 +45,14 @@ test('inspector', () => {
   };
   vm.createContext(context);
   vm.runInContext(
-    require('typescript').transpileModule(fs.readFileSync(path.join(__dirname, '../../src/inspector/index.ts'), 'utf8').replace(/export \{\};?/, ''), { compilerOptions: { target: 9, module: 0 } }).outputText,
+    require('typescript').transpileModule(fs.readFileSync(
+      path.join(__dirname, '../../src/inspector/index.ts'), 'utf8'
+    ).replace(/export \{\};?/, ''), { compilerOptions: { target: 9, module: 0 } }).outputText,
     context,
     {
       filename: path.join(
         __dirname,
-        '../../src/inspector/index.js',
+        '../../src/inspector/index.ts',
       ),
     },
   );

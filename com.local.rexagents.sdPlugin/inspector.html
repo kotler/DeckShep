@@ -88,6 +88,10 @@
 <p id="selection"></p>
 <p id="message" role="status" aria-live="polite"></p>
 <button id="refresh" type="button">Refresh status</button>
+<h2>Setup checklist</h2>
+<pre id="checklist" role="status">Checking local setup…</pre>
+<sdpi-item label="Herdr sessions"><select id="sessions"></select></sdpi-item>
+<sdpi-button id="useSession">Use this session</sdpi-button>
 <h2>Setup and preferences</h2>
 <label
   >Controller for this profile<select id="backend" disabled>
@@ -104,7 +108,7 @@
 /></label>
 <div id="herdrHelp">
   <label
-    ><input id="herdrTitleIdentity" type="checkbox" disabled />Match Codex
+    ><sdpi-checkbox id="herdrTitleIdentity" disabled></sdpi-checkbox>Match Codex
     thread-ID titles (experimental)</label
   >
   <p class="note">
@@ -127,7 +131,7 @@
 </p>
 <div id="rexSetup">
   <label
-    ><input id="allowClipboardFocus" type="checkbox" disabled />Enable
+    ><sdpi-checkbox id="allowClipboardFocus" disabled></sdpi-checkbox>Enable
     visible-pane checks</label
   >
   <p class="note">
@@ -146,13 +150,13 @@
     finishes.
   </p>
   <label
-    ><input id="bringToFront" type="checkbox" disabled />Bring Rex forward when
+    ><sdpi-checkbox id="bringToFront" disabled></sdpi-checkbox>Bring Rex forward when
     selecting an agent</label
   >
 </div>
 <h2>Claude Code (experimental)</h2>
 <label
-  ><input id="claudeEnabled" type="checkbox" disabled />Enable Claude native
+  ><sdpi-checkbox id="claudeEnabled" disabled></sdpi-checkbox>Enable Claude native
   controls after hook setup</label
 >
 <p class="note">
@@ -163,8 +167,14 @@
   settings for this session; Mode uses the Claude keyboard. Herdr submissions
   remain unavailable.
 </p>
+<sdpi-checkbox id="chainStatus">Chain the existing Claude status line (optional)</sdpi-checkbox>
+<sdpi-button id="claudePreview">Preview changes</sdpi-button>
+<sdpi-button id="claudeApply" disabled>Apply with backup</sdpi-button>
+<sdpi-button id="claudeUndo">Undo last change</sdpi-button>
+<sdpi-button id="removeIntegrations">Preview removal of integrations</sdpi-button>
+<pre id="claudeDiff" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>
 <label
-  ><input id="animationEnabled" type="checkbox" disabled />Animate working and
+  ><sdpi-checkbox id="animationEnabled" disabled></sdpi-checkbox>Animate working and
   waiting status</label
 >
 <details>
@@ -210,3 +220,4 @@
 </p>
 <script src="preferences.js"></script>
 <script src="inspector.js"></script>
+<script src="sdpi-components.js"></script>

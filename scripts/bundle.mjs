@@ -15,7 +15,7 @@ export async function bundle(input, file, options = {}) {
     plugins: [
       { name: 'composition-and-privacy',
         resolveId(source, importer) {
-          if (options.fixture && /(?:^|\/)dependencies$/.test(source) && importer?.endsWith('/src/plugin/entry.mts')) return path.resolve(options.fixture);
+          if (options.fixture && /(?:^|\/)dependencies(?:\.ts)?$/.test(source) && importer?.endsWith('/src/plugin/entry.mts')) return path.resolve(options.fixture);
           if (source.endsWith('logging/index.js') && importer?.includes('@elgato/streamdeck/')) return path.resolve('src/plugin/private-logger.ts');
           return null;
         },

@@ -5,3 +5,6 @@ node_modules/
 **/bin/
 # Golden files have deterministic JSON.stringify formatting and stay byte-stable.
 tests/fixtures/golden/*.json
+
+vendor/
+com.local.rexagents.sdPlugin/*js

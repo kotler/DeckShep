@@ -4,10 +4,6 @@
   "private": true,
   "description": "Guarded local Stream Deck controls for terminal coding agents",
   "scripts": {
-    "test": "node --test ../tests/unit/*.test.js ../tests/integration/*.test.js"
-  },
-  "dependencies": {
-    "@iarna/toml": "2.2.5",
-    "ws": "8.22.1"
+    "test": "npm test --prefix .."
   }
 }

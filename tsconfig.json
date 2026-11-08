@@ -22,16 +22,11 @@
       "DOM",
       "ES2022.Intl"
     ],
-    "paths": {
-      "ws": [
-        "./tools/node_modules/@types/ws/index.d.ts",
-        "./node_modules/@types/ws/index.d.ts"
-      ]
-    },
     "allowImportingTsExtensions": true
   },
   "include": [
-    "src/**/*.ts", "src/**/*.mts",
+    "src/**/*.ts",
+    "src/**/*.mts",
     "src/**/*.js"
   ]
 }
