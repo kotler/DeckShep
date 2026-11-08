@@ -287,7 +287,7 @@ class DaemonRpc {
             /^[^\s/]+\/(\d+\.\d+\.\d+)(?:\s|$)/.exec(initialized?.userAgent || '')?.[1] || null;
         this.ws.send(JSON.stringify({ method: 'initialized', params: {} }));
     }
-    request(method: string, params: any) {
+    request(method: string, params: any, beforeWrite?: () => void) {
         if (![
             'initialize',
             'thread/loaded/list',
@@ -360,6 +360,7 @@ class DaemonRpc {
             }, 4000);
             this.pending.set(id, { resolve, reject, timer, method });
             try {
+                beforeWrite?.();
                 this.ws.send(JSON.stringify({ id, method, params }));
             }
             catch {
@@ -590,10 +591,10 @@ class DaemonControls {
             if (!isDeepStrictEqual(await readPermissionSettings(rpc, id), current))
                 throw Error('Chat settings changed; press again');
             const sequence: any = rpc.settingsSequence;
-            await this.b.deliverMutation(agent, 'thread/settings/update', () => rpc.request('thread/settings/update', {
+            await this.b.deliverMutation(agent, 'thread/settings/update', (beforeWrite: () => void) => rpc.request('thread/settings/update', {
                 threadId: id,
                 effort: target,
-            }));
+            }, beforeWrite));
             let confirmed: any;
             for (let i: number = 0; i < 15; i++) {
                 const event: any = rpc.latestSettings(id);
@@ -650,10 +651,10 @@ class DaemonControls {
             } = await loadedThread(rpc, id);
             if (JSON.stringify(latest) !== JSON.stringify(current))
                 throw Error('Chat settings changed; press again');
-            await this.b.deliverMutation(agent, 'thread/settings/update', () => rpc.request('thread/settings/update', {
+            await this.b.deliverMutation(agent, 'thread/settings/update', (beforeWrite: () => void) => rpc.request('thread/settings/update', {
                 threadId: id,
                 model: chosen.id,
-            }));
+            }, beforeWrite));
             for (let i: number = 0; i < 10; i++) {
                 const confirmed: {
                     id: any;
@@ -703,10 +704,10 @@ class DaemonControls {
             if (!isDeepStrictEqual(await readPermissionSettings(rpc, id), current))
                 throw Error('Chat settings changed; press again');
             const sequence: any = rpc.settingsSequence;
-            await this.b.deliverMutation(agent, 'thread/settings/update', () => rpc.request('thread/settings/update', {
+            await this.b.deliverMutation(agent, 'thread/settings/update', (beforeWrite: () => void) => rpc.request('thread/settings/update', {
                 threadId: id,
                 approvalsReviewer: target,
-            }));
+            }, beforeWrite));
             let confirmed: any;
             for (let i: number = 0; i < 15; i++) {
                 const event: any = rpc.latestSettings(id);

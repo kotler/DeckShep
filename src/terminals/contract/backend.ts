@@ -1,11 +1,12 @@
 import type { AgentSnapshot, BackendCapability, BackendId, TargetRef } from '../../domain/types';
-import type { BackendInfo, DeliveryPermit, InputAction, TerminalBackend } from '../../domain/backend';
+import type { BackendInfo, DeliveryPermit, InputAction, TerminalBackend, PaneView } from '../../domain/backend';
 export interface BackendDriver {
   discover(): Promise<AgentSnapshot[]>;
   focused(): Promise<AgentSnapshot>;
   focus(target: TargetRef): Promise<void>;
   execute(target: TargetRef, input: InputAction): Promise<unknown>;
   dispose?(): Promise<void>;
+  readPane?(target: TargetRef): Promise<PaneView>;
 }
 export interface DeliveryAuthority {
   consume(permit: DeliveryPermit, target: TargetRef, generation: number, input: InputAction): void;
@@ -25,6 +26,14 @@ export class GuardedBackend implements TerminalBackend {
   }
   async discover(): Promise<AgentSnapshot[]> { this.assertConnected(); return this.driver.discover(); }
   async focused(): Promise<AgentSnapshot> { this.assertConnected(); return this.driver.focused(); }
+  async readPane(target: TargetRef): Promise<PaneView> {
+    this.assertConnected();
+    if (!this.capabilities.has('readPane') || !this.driver.readPane) throw Error('Pane reads unavailable');
+    const generation = this.generation, result = await this.driver.readPane(target);
+    this.assertConnected();
+    if (generation !== this.generation) throw Error('Backend changed while reading');
+    return result;
+  }
   async focus(target: TargetRef): Promise<void> { await this.deliver(target, { kind: 'focus' }, this.authority.issue(target)); }
   async zoom(target: TargetRef): Promise<void> { await this.deliver(target, { kind: 'zoom' }, this.authority.issue(target)); }
   async deliver(target: TargetRef, input: InputAction, token: DeliveryPermit): Promise<unknown> {

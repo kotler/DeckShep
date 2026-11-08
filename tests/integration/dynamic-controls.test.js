@@ -3,7 +3,8 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { harness } = require('../helpers/plugin-harness');
 test('dynamic controls', async () => {
-  const h = harness();
+  // Explicit consent for this synthetic native-control scenario.
+  const h = harness({ fixtureConsent: true });
   await h.ready();
   assert.equal(h.action(1, 4), 'more');
   assert.equal(h.action(2, 4), 'interrupt');

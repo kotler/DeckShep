@@ -138,7 +138,7 @@ class HerdrRpc {
             throw error;
         }
     }
-    request(method: string, params: any) {
+    request(method: string, params: any, beforeWrite?: () => void) {
         try {
             validate(method, params);
             if (!this.verified || this.closed)
@@ -147,9 +147,9 @@ class HerdrRpc {
         catch (error: unknown) {
             return Promise.reject(error);
         }
-        return this.exchange(method, params);
+        return this.exchange(method, params, beforeWrite);
     }
-    exchange(method: string, params: any) {
+    exchange(method: string, params: any, beforeWrite?: () => void) {
         const id: string = 'switchboard-' + ++this.nextId;
         return new Promise((resolve: (value: any) => void, reject: (reason?: any) => void) => {
             let socket: any, done: boolean = false, buffer: string = '';
@@ -179,6 +179,7 @@ class HerdrRpc {
                     try {
                         if (this.resolve(this.socketPath).identity !== this.endpoint.identity)
                             throw Error('Herdr session changed while connecting');
+                        beforeWrite?.();
                         socket.write(JSON.stringify({ id, method, params }) + '\n', (error: any) => {
                             if (error)
                                 finish(Error('Herdr write failed; verify any requested change'));

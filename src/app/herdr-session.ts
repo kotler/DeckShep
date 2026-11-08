@@ -138,7 +138,7 @@ class HerdrBridge extends Bridge {
             close: () => source.close(),
             request: (method: string, params: any) => {
                 if (this.delivery)
-                    return this.delivery.rpc(method, params, () => source.request(method, params));
+                    return this.delivery.rpc(method, params, (beforeIO: () => void) => source.request(method, params, beforeIO));
                 if (['agent.focus', 'agent.send_keys', 'pane.zoom'].includes(method))
                     this.requireGuardedMutation();
                 return source.request(method, params);
@@ -522,6 +522,13 @@ class HerdrBridge extends Bridge {
             throw changed();
         this.assertBinding(t, a);
         return a.chatId;
+    }
+    async readPane(target: import('../domain/types').TargetRef) {
+        return this.use(async (rpc: any) => {
+            const agent = await this.readAgent(rpc, target.block);
+            if (!agent || C.actor(agent) !== C.actor(target)) throw changed();
+            return { text: await this.readView(rpc, agent, 'text') };
+        });
     }
     async readView(rpc: Record<string, any>, a: any, format: any = 'ansi') {
         const result: any = await rpc.request('agent.read', {

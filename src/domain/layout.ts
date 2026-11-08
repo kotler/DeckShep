@@ -70,6 +70,7 @@ function homeRow(agent: import("./types").AgentSnapshot | null | undefined, capa
                 'approvalEscape',
                 'interrupt',
             ];
+        case 'unknown':
         default:
             return ['status', 'none', 'zoom', 'none', 'interrupt'];
     }

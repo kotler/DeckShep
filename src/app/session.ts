@@ -60,7 +60,7 @@ class Bridge {
     declare actionContext: any;
     declare actionPreflight: any;
     declare lastModeRequest: any;
-    #transport: (args: string[], input?: any) => Promise<any>;
+    #transport: (args: string[], input?: any, beforeIO?: () => void) => Promise<any>;
     #delivery: import("./delivery").DeliveryKernel | null = null;
     #fixture: boolean = false;
     attachDelivery(kernel: import("./delivery").DeliveryKernel) { this.#delivery = kernel; }
@@ -71,24 +71,24 @@ class Bridge {
         throw Error('No guarded press; no input sent'); }
     run(args: string[], input?: any, target?: any) {
         if (this.#delivery)
-            return this.#delivery.run(args, input, () => this.#transport(args, input), target);
+            return this.#delivery.run(args, input, (beforeIO: () => void) => this.#transport(args, input, beforeIO), target);
         if (!this.#fixture && !['client', 'ls', 'session', 'block'].includes(args[0]))
             this.requireGuardedMutation();
         return this.#transport(args, input);
     }
-    deliverMutation(target: any, method: string, operation: () => Promise<any>) {
+    deliverMutation(target: any, method: string, operation: (beforeIO: () => void) => Promise<any>) {
         if (this.#delivery)
             return this.#delivery.mutation(target, method, operation);
         this.requireGuardedMutation();
-        return operation();
+        return operation(() => {});
     }
     constructor(config: import("../domain/types").Config, run?: any, activate?: any, readVisible?: any) {
         this.config = config;
         const native: RexTransport = new RexTransport(() => this.config);
-        this.#transport = run || ((args: string[], input: any) => native.command(args, input));
+        this.#transport = run ? (args, input, beforeIO) => { beforeIO?.(); return run(args, input); } : ((args: string[], input: any, beforeIO?: () => void) => native.command(args, input, beforeIO));
         this.run = this.run.bind(this);
         this.#fixture = typeof run === 'function';
-        const activation = activate || (() => native.activate());
+        const activation = activate ? (beforeIO: () => void) => { beforeIO(); return activate(); } : ((beforeIO: () => void) => native.activate(beforeIO));
         this.activate = () => {
             if (this.#delivery) {
                 const target = this.lastTarget || this.actionContext?.target;
@@ -96,7 +96,7 @@ class Bridge {
                 return this.#delivery.activation(target, activation);
             }
             this.requireGuardedMutation();
-            return activation();
+            return activation(() => {});
         };
         this.readVisible = readVisible || ((client: any) => native.visible(client));
         this.slots = [];
@@ -388,6 +388,11 @@ class Bridge {
         }) as import("../domain/types").TargetRef);
         if (this.config.bringToFront !== false)
             await this.activate();
+    }
+    async readPane(target: import('../domain/types').TargetRef) {
+        const agent = await this.agent(target);
+        if (!agent || token(agent) !== token(target) || agent.pid !== target.pid) throw Error('Agent process changed');
+        return { text: await new (require('../agents/codex/setup-presets').Setup)(this).screen(agent) };
     }
     async navigate(delta: number) {
         await this.discover();

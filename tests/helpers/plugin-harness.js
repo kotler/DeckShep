@@ -4,7 +4,7 @@ const fs = require('node:fs'),
   { EventEmitter } = require('node:events');
 const { Bridge } = require('../../src/app/session'),
   C = require('../../src/guards/context');
-function harness() {
+function harness(dependencies = {}) {
   const directory = path.join(__dirname, '../../com.local.rexagents.sdPlugin');
   let clock = 10000,
     socket;
@@ -128,11 +128,13 @@ function harness() {
       return clock;
     }
   }
-  const { createApplication } = require('../../src/app/controller');
+  const { createApplication } = require(process.env.ASW_CONTROLLER_BUNDLE || '../../src/app/controller');
   const app = createApplication({
+    fs: dependencies.fixtureConsent ? { readFileSync: file => JSON.stringify({ ...JSON.parse(fs.readFileSync(file, 'utf8')), allowClipboardFocus: true }) } : fs,
     socket: new Socket(), clock: () => clock, setInterval: () => {},
     backendFactory: config => new FixtureBridge(config),
     metadataFactory: () => ({hydrate(){},async refresh(agents){return agents;}}),
+    ...dependencies,
   });
   const context = {api:app.getController('rex'),controllers:app.controllers,profileController:app.getController};
   const api = context.api;

@@ -9,7 +9,8 @@ const {
   AgentMetadata,
 } = require('../../src/agents/codex/metadata');
 test('mode controls', async () => {
-  const h = harness();
+  // Explicit consent for this synthetic native-control scenario.
+  const h = harness({ fixtureConsent: true });
   h.change('a', {
     collaborationMode: 'default',
     reviewer: 'auto_review',

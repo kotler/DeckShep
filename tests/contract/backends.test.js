@@ -63,3 +63,23 @@ for (const Backend of [RexBackend, HerdrTuiBackend, FixtureBackend]) {
     await assert.rejects(() => backend.discover(), /disconnected/);
   });
 }
+test('backend read lifecycle, missing focus, postflight, reconnect and unknown input variants fail closed', async () => {
+  const target = { session: 'fixture', block: 'a', pid: 42, app: 'codex', name: 'codex', state: 'idle' };
+  const current = { scope: 'rex', appearance: 1, visibility: 1, generation: 1, backendKey: 'fixture', page: 0, stamp: 'same', visible: true };
+  const context = { ...current, action: 'model', target, armedAt: 900, pressedAt: 1000, setupBusy: false, verifyChat: false };
+  const guards = new GuardPipeline(() => current, () => 1000);
+  let backend, writes = 0, reconnect = false;
+  const authority = { issue: target => guards.issue(context, target, backend.generation), consume: (...args) => guards.consume(...args) };
+  const driver = { discover: async () => [target], focused: async () => target, focus: async () => {}, execute: async () => { writes++; }, readPane: async () => { if (reconnect) await backend.connect(new AbortController().signal); return { text: 'native view' }; } };
+  backend = new RexBackend(driver, authority); await backend.connect(new AbortController().signal);
+  assert.deepEqual(await backend.readPane(target), { text: 'native view' });
+  await backend.focus(target); await backend.zoom(target); assert.equal(writes, 2);
+  const unknown = authority.issue(target); await assert.rejects(backend.deliver(target, { kind: 'new-path' }, unknown), /Unsupported/); assert.equal(writes, 2);
+  guards.preflight(context, true); guards.postflight(context);
+  for (const patch of [{ backendKey: 'other' }, { setupBusy: true }, { page: 1 }, { stamp: 'changed' }, { target: null }, { pressedAt: 899 }]) assert.throws(() => guards.preflight({ ...context, ...patch }, true));
+  current.visible = false; assert.throws(() => guards.postflight(context)); current.visible = true;
+  reconnect = true; await assert.rejects(backend.readPane(target), /changed/);
+  const noRead = new RexBackend({ ...driver, readPane: undefined }, authority); await noRead.connect(new AbortController().signal); await assert.rejects(noRead.readPane(target), /unavailable/);
+  const aborted = new AbortController(); aborted.abort(); await assert.rejects(noRead.connect(aborted.signal));
+  const fixture = new FixtureBackend({ agents: [], focused: 'missing', calls: [] }, authority); await fixture.connect(new AbortController().signal); await assert.rejects(fixture.focused(), /unavailable/);
+});

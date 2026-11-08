@@ -75,13 +75,18 @@ async function composerView(bridge: Record<string, any>, agent: import("../../do
         throw Error('Composer changed while reading');
     return composerSnapshot(view, { row: Number(cursor[1]), column: Number(cursor[2]) }, chatId, options);
 }
-async function readIdleComposer(bridge: Record<string, any>, agent: import("../../domain/types").AgentSnapshot, options: Record<string, any> | undefined = {}) {
+interface NativeInputPorts {
+    footer(bridge: Record<string, any>, agent: AgentSnapshot): Promise<string>;
+    endpoint(pid: number): Promise<{ socket: string }>;
+    open(socket: string): { connect(): Promise<unknown>; request(method: string, params: Record<string, unknown>): Promise<any>; close(): void };
+}
+const inputPorts: NativeInputPorts = { footer: readFooter, endpoint: socketFor, open: socket => new DaemonRpc(socket) };
+async function readIdleComposer(bridge: Record<string, any>, agent: import("../../domain/types").AgentSnapshot, options: Record<string, any> | undefined = {}, ports: NativeInputPorts = inputPorts) {
     if (agent.app !== 'codex')
         throw Error('Draft verification supports Codex only');
-    const chatId: any = await readFooter(bridge, agent), endpoint: {
-        pid: number;
+    const chatId: any = await ports.footer(bridge, agent), endpoint: {
         socket: string;
-    } = await socketFor(agent.pid), rpc: DaemonRpc = new DaemonRpc(endpoint.socket);
+    } = await ports.endpoint(agent.pid), rpc = ports.open(endpoint.socket);
     let turnStamp: any;
     try {
         await rpc.connect();
@@ -130,7 +135,7 @@ async function readIdleComposer(bridge: Record<string, any>, agent: import("../.
         };
         empty: boolean;
     } = await composerView(bridge, agent, chatId, options);
-    if ((await readFooter(bridge, agent)) !== chatId)
+    if ((await ports.footer(bridge, agent)) !== chatId)
         throw Error('Chat changed while reading');
     return { ...snapshot, turnStamp };
 }
@@ -139,12 +144,11 @@ const sameComposer: (a: any, b: any) => boolean = (a: any, b: any) => a?.chatId 
     a?.turnStamp === b?.turnStamp &&
     a?.cursor?.row === b?.cursor?.row &&
     a?.cursor?.column === b?.cursor?.column;
-async function readComposer(bridge: Record<string, any>, agent: import("../../domain/types").AgentSnapshot) {
-    const chatId: any = await readFooter(bridge, agent);
+async function readComposer(bridge: Record<string, any>, agent: import("../../domain/types").AgentSnapshot, ports: NativeInputPorts = inputPorts) {
+    const chatId: any = await ports.footer(bridge, agent);
     const endpoint: {
-        pid: number;
         socket: string;
-    } = await socketFor(agent.pid), rpc: DaemonRpc = new DaemonRpc(endpoint.socket);
+    } = await ports.endpoint(agent.pid), rpc = ports.open(endpoint.socket);
     let runId: any;
     try {
         await rpc.connect();

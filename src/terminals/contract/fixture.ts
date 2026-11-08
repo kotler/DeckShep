@@ -12,6 +12,7 @@ export class FixtureBackend extends GuardedBackend {
         if (!agent) throw Error('Native focus unavailable');
         return { ...agent };
       },
+      readPane: async () => ({ text: 'fixture viewport' }),
       focus: async target => { scene.focused = target.block; },
       execute: async (target: TargetRef, input: InputAction) => {
         scene.calls.push(input);

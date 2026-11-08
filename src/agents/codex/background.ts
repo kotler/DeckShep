@@ -184,7 +184,7 @@ class BackgroundControls {
             const remaining: string[] = [...expected];
             for (const processId of expected) {
                 await verify(remaining);
-                const result: any = await this.b.deliverMutation(agent, 'thread/backgroundTerminals/terminate', () => rpc.request('thread/backgroundTerminals/terminate', { threadId: id, processId }));
+                const result: any = await this.b.deliverMutation(agent, 'thread/backgroundTerminals/terminate', (beforeWrite: () => void) => rpc.request('thread/backgroundTerminals/terminate', { threadId: id, processId }, beforeWrite));
                 if (result?.terminated !== true)
                     throw Error('Terminal stop unconfirmed; check Rex');
                 remaining.splice(remaining.indexOf(processId), 1);

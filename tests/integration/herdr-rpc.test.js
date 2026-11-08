@@ -146,3 +146,13 @@ test('herdr rpc', async () => {
     'PASS Herdr secure explicit endpoint, protocol handshake, fragmented Unicode JSON, strict request scope, no composer submissions, disconnect/timeout handling and no mutation retries',
   );
 });
+test('Herdr socket connect cannot bypass a late delivery preflight', async () => {
+  const { EventEmitter } = require('node:events');
+  let writes = 0, latest;
+  const rpc = new HerdrRpc('/fixture.sock', { endpoint: () => ({ file: '/fixture.sock', identity: 'fixture' }), connect: () => {
+    latest = new EventEmitter(); latest.write = () => { writes++; }; latest.destroy = () => {}; return latest;
+  } });
+  rpc.endpoint = { file: '/fixture.sock', identity: 'fixture' }; rpc.verified = true;
+  const pending = rpc.request('agent.send_keys', { target: 'w1:p1', keys: ['up'] }, () => { throw Error('Profile changed'); });
+  latest.emit('connect'); await assert.rejects(pending, /Profile changed/); assert.equal(writes, 0); assert.equal(rpc.pending.size, 0);
+});
