@@ -3,7 +3,6 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   fs = require('node:fs'),
   path = require('node:path'),
-  vm = require('node:vm'),
   { EventEmitter } = require('node:events');
 const directory = path.join(__dirname, '../../com.local.rexagents.sdPlugin');
 const defaults = require('../../com.local.rexagents.sdPlugin/config.json');
@@ -28,6 +27,7 @@ function fixture(allowed = true, fail = false) {
     send() {}
   }
   class FixtureBridge {
+    attachDelivery(kernel) { this.delivery = kernel; }
     constructor(config) {
       this.run = async () => {
         throw Error('No terminal operations expected');
@@ -59,38 +59,9 @@ function fixture(allowed = true, fail = false) {
     readFileSync: () =>
       JSON.stringify({ ...defaults, allowClipboardFocus: allowed }),
   };
-  const context = {
-    Buffer,
-    process: { argv: ['node', 'plugin', '-port', '0'] },
-    __dirname: directory,
-    setInterval: (fn, ms) => timers.push({ fn, ms }),
-    require: (name) =>
-      name === 'fs'
-        ? mockedFs
-        : name === 'ws'
-          ? BoundSocket
-          : name === './session'
-            ? { Bridge: FixtureBridge }
-            : name === '../agents/codex/metadata'
-              ? {
-                  AgentMetadata: class {
-                    hydrate() {}
-                    async refresh(a) {
-                      return a;
-                    }
-                  },
-                }
-              : name.startsWith('.')
-                ? require(path.resolve(path.resolve(__dirname, '../../src/app'), name))
-                : require(name),
-  };
-  vm.createContext(context);
-  vm.runInContext(
-    fs.readFileSync(path.resolve(__dirname, '../../src/app/controller.js'), 'utf8') +
-      '\nglobalThis.api=getController("rex");',
-    context,
-    { filename: path.resolve(__dirname, '../../src/app/controller.js') },
-  );
+  const { createApplication } = require('../../src/app/controller');
+  const app = createApplication({socket:new BoundSocket(),fs:mockedFs,setInterval:(fn,ms)=>timers.push({fn,ms}),backendFactory:config=>new FixtureBridge(config),metadataFactory:()=>({hydrate(){},async refresh(agents){return agents;}})});
+  const context = {api:app.getController('rex')};
   const api = context.api;
   for (let column = 0; column < 2; column++)
     api.keys.set(String(column), {

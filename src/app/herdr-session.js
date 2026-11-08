@@ -121,6 +121,7 @@ function validateInfo(info) {
   return info;
 }
 class HerdrBridge extends Bridge {
+  /** @type {() => Promise<any>} */ #rpcFactory;
   /** @param {Config} config
    * @param {Record<string, any>} [deps] */
   constructor(config, deps = {}) {
@@ -129,18 +130,30 @@ class HerdrBridge extends Bridge {
     this.composerSupported = false;
     this.titleBindings = new Map();
     this.identitySequence = 0;
-    this.connect =
+    this.#rpcFactory =
       deps.connect ||
       (() => new HerdrRpc(this.config.herdr?.socketPath || '').connect());
     this.owner = deps.owner || ownProcess;
     this.identity = deps.identity || new TitleIdentity();
-    this.run = this.translate.bind(this);
+    this.setTransport(this.translate.bind(this), !!deps.connect);
     this.readRequest =
       /** @param {any} _bridge
        * @param {any} a */
       async (_bridge, a) => this.requestHash(a);
   }
-  /** @param {any} callback */
+  async connect() {
+    const source = await this.#rpcFactory();
+    return {
+      endpoint: source.endpoint,
+      close: () => source.close(),
+      request: (/** @type {string} */ method, /** @type {any} */ params) => {
+        if (this.delivery) return this.delivery.rpc(method, params, () => source.request(method, params));
+        if (['agent.focus', 'agent.send_keys', 'pane.zoom'].includes(method)) this.requireGuardedMutation();
+        return source.request(method, params);
+      },
+    };
+  }
+  /** @param {(rpc: any) => Promise<any>} callback */
   async use(callback) {
     const rpc = await this.connect();
     try {
@@ -405,6 +418,7 @@ class HerdrBridge extends Bridge {
     return agents;
   }
   async focused() {
+    this.assertDeliveryVisible();
     return this.use(
       /** @param {any} rpc */ async (rpc) => {
         const s = await this.snapshot(rpc);

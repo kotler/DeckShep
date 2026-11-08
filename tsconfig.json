@@ -9,12 +9,29 @@
     "moduleResolution": "Node16",
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "typeRoots": ["./tools/node_modules/@types"],
-    "types": ["node", "ws"],
-    "lib": ["ES2023", "DOM", "ES2022.Intl"],
+    "typeRoots": [
+      "./tools/node_modules/@types",
+      "./node_modules/@types"
+    ],
+    "types": [
+      "node",
+      "ws"
+    ],
+    "lib": [
+      "ES2023",
+      "DOM",
+      "ES2022.Intl"
+    ],
     "paths": {
-      "ws": ["./tools/node_modules/@types/ws/index.d.ts"]
-    }
+      "ws": [
+        "./tools/node_modules/@types/ws/index.d.ts",
+        "./node_modules/@types/ws/index.d.ts"
+      ]
+    },
+    "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*.ts", "com.local.rexagents.sdPlugin/*.js"]
+  "include": [
+    "src/**/*.ts", "src/**/*.mts",
+    "src/**/*.js"
+  ]
 }

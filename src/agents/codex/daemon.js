@@ -652,10 +652,10 @@ class DaemonControls {
         throw Error('Chat settings changed; press again');
       const sequence = rpc.settingsSequence;
       // One effort-only write, never retried after an uncertain result.
-      await rpc.request('thread/settings/update', {
+      await this.b.deliverMutation(agent, 'thread/settings/update', () => rpc.request('thread/settings/update', {
         threadId: id,
         effort: target,
-      });
+      }));
       let confirmed;
       for (let i = 0; i < 15; i++) {
         const event = rpc.latestSettings(id);
@@ -711,10 +711,10 @@ class DaemonControls {
       if (JSON.stringify(latest) !== JSON.stringify(current))
         throw Error('Chat settings changed; press again');
       // Only the model field changes. Never retry a mutation after an uncertain outcome.
-      await rpc.request('thread/settings/update', {
+      await this.b.deliverMutation(agent, 'thread/settings/update', () => rpc.request('thread/settings/update', {
         threadId: id,
         model: chosen.id,
-      });
+      }));
       for (let i = 0; i < 10; i++) {
         const confirmed = await loadedThread(rpc, id);
         if (
@@ -767,10 +767,10 @@ class DaemonControls {
         throw Error('Chat settings changed; press again');
       const sequence = rpc.settingsSequence;
       // Exactly one reviewer field; never write sandbox/policy, and never retry a mutation.
-      await rpc.request('thread/settings/update', {
+      await this.b.deliverMutation(agent, 'thread/settings/update', () => rpc.request('thread/settings/update', {
         threadId: id,
         approvalsReviewer: target,
-      });
+      }));
       let confirmed;
       for (let i = 0; i < 15; i++) {
         const event = rpc.latestSettings(id);

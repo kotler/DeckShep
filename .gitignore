@@ -13,3 +13,9 @@ config.local.json
 com.local.rexagents.sdPlugin/bin/
 
 com.local.rexagents.sdPlugin/state/
+
+# Generated entries; source lives under src/.
+com.local.rexagents.sdPlugin/claude-hook.js
+com.local.rexagents.sdPlugin/configure-claude.js
+com.local.rexagents.sdPlugin/inspector.js
+com.local.rexagents.sdPlugin/preferences.js

@@ -1,11 +1,12 @@
 const { test } = require('node:test');
+function execFileSync(file,args,options){return require('node:child_process').execFileSync(file,['--require',require.resolve('tsx/cjs'),...args],options);}
 test('claude setup', () => {
   'use strict';
   const assert = require('node:assert/strict'),
     fs = require('node:fs'),
     path = require('node:path'),
     os = require('node:os'),
-    { execFileSync } = require('node:child_process');
+    { execFileSync: nativeExecFileSync } = require('node:child_process');
   const {
     plan,
     commands,

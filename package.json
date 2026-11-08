@@ -10,16 +10,35 @@
     "node": "^22.13.0 || >=24.0.0"
   },
   "scripts": {
-    "test": "node --test",
-    "test:golden": "node --test tests/integration/golden.test.js",
+    "test": "node --require tsx/cjs --test",
+    "test:golden": "node --require tsx/cjs --test tests/integration/golden.test.js",
     "test:distribution": "python3 -m unittest discover -s tests -v",
-    "test:coverage": "node tools/node_modules/c8/bin/c8.js node --test",
-    "lint": "node tools/node_modules/eslint/bin/eslint.js .",
-    "format": "node tools/node_modules/prettier/bin/prettier.cjs --write \"**/*.{js,cjs,mjs,ts,html,json,yml,yaml}\"",
-    "format:check": "node tools/node_modules/prettier/bin/prettier.cjs --check \"**/*.{js,cjs,mjs,ts,html,json,yml,yaml}\"",
-    "build": "python3 build.py",
+    "test:coverage": "node scripts/tool.mjs c8 node --require tsx/cjs --test",
+    "lint": "node scripts/tool.mjs eslint .",
+    "format": "node scripts/tool.mjs prettier --write \"**/*.{js,cjs,mjs,ts,html,json,yml,yaml}\"",
+    "format:check": "node scripts/tool.mjs prettier --check \"**/*.{js,cjs,mjs,ts,html,json,yml,yaml}\"",
+    "build": "node scripts/build.mjs",
     "clean": "node scripts/clean.mjs",
-    "knip": "node tools/node_modules/knip/bin/knip.js --include files,dependencies,unlisted,binaries --no-config-hints",
-    "typecheck": "node tools/node_modules/typescript/bin/tsc --pretty false"
+    "knip": "node scripts/tool.mjs knip --include files,dependencies,unlisted,binaries --no-config-hints",
+    "typecheck": "node scripts/tool.mjs typescript --pretty false"
+  },
+  "devDependencies": {
+    "@elgato/streamdeck": "2.1.2",
+    "@iarna/toml": "2.2.5",
+    "@rollup/plugin-commonjs": "29.0.3",
+    "@rollup/plugin-json": "6.1.0",
+    "@rollup/plugin-node-resolve": "16.0.3",
+    "@rollup/plugin-typescript": "12.3.1",
+    "@types/node": "20.19.43",
+    "@types/ws": "8.18.2",
+    "dependency-cruiser": "18.7.2",
+    "rollup": "4.68.0",
+    "sdpi-components": "0.0.1",
+    "tslib": "2.9.1",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "ws": "8.22.1",
+    "zod": "4.6.7"
   }
 }

@@ -1,7 +1,6 @@
 'use strict';
 const fs = require('node:fs'),
   path = require('node:path'),
-  vm = require('node:vm'),
   { EventEmitter } = require('node:events');
 const { Bridge } = require('../../src/app/session'),
   C = require('../../src/guards/context');
@@ -129,39 +128,13 @@ function harness() {
       return clock;
     }
   }
-  const context = {
-    Buffer,
-    Date: TestDate,
-    process: { argv: ['node', 'plugin', '-port', '0'] },
-    __dirname: directory,
-    setInterval: () => {},
-    require: (name) =>
-      name === 'ws'
-        ? Socket
-        : name === './session'
-          ? { Bridge: FixtureBridge }
-          : name === './herdr-session'
-            ? { HerdrBridge: FixtureBridge }
-            : name === '../agents/codex/metadata'
-              ? {
-                  AgentMetadata: class {
-                    hydrate() {}
-                    async refresh(a) {
-                      return a;
-                    }
-                  },
-                }
-              : name.startsWith('.')
-                ? require(path.resolve(path.resolve(__dirname, '../../src/app'), name))
-                : require(name),
-  };
-  vm.createContext(context);
-  vm.runInContext(
-    fs.readFileSync(path.resolve(__dirname, '../../src/app/controller.js'), 'utf8') +
-      '\nglobalThis.api=getController("rex");globalThis.controllers=controllers;globalThis.profileController=getController;',
-    context,
-    { filename: path.resolve(__dirname, '../../src/app/controller.js') },
-  );
+  const { createApplication } = require('../../src/app/controller');
+  const app = createApplication({
+    socket: new Socket(), clock: () => clock, setInterval: () => {},
+    backendFactory: config => new FixtureBridge(config),
+    metadataFactory: () => ({hydrate(){},async refresh(agents){return agents;}}),
+  });
+  const context = {api:app.getController('rex'),controllers:app.controllers,profileController:app.getController};
   const api = context.api;
   for (let row = 0; row < 3; row++)
     for (let column = 0; column < 5; column++)

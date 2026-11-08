@@ -5,37 +5,16 @@
 'use strict';
 // Rex can omit path for a still-running binary removed/replaced by an upgrade.
 // Resolve only the exact foreground PID; never infer an agent from ancestors.
-const { execFile } = require('node:child_process'),
-  path = require('node:path');
-const run =
-  /** @param {string} file
-   * @param {string[]} args */
-  (file, args) =>
-    new Promise((resolve, reject) =>
-      execFile(
-        file,
-        args,
-        {
-          timeout: 1800,
-          maxBuffer: 32768,
-          env: { ...process.env, LC_ALL: 'C' },
-        },
-        (error, out) => (error ? reject(error) : resolve(out)),
-      ),
-    );
+const path = require('node:path');
+const {exec} = require('./exec.ts');
+const {parseOwnedProcess} = require('./process.ts');
+/** @param {string} file @param {string[]} args */
+const run = (file,args) => exec(file,args,{env:{LC_ALL:'C'}});
 /** @param {string} out */
 function processState(out) {
-  const m =
-    /^\s*(\d+)\s+([A-Z][a-z]{2}\s+[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+\d{4})\s+(.+?)\s*$/.exec(
-      out || '',
-    );
-  if (
-    !m ||
-    Number(m[1]) !== /** @type {() => number} */ (process.getuid)() ||
-    path.basename(m[3]) !== 'codex'
-  )
-    throw Error('Codex process identity unavailable');
-  return [m[1], m[2].replace(/\s+/g, ' '), m[3]].join('|');
+ const value = parseOwnedProcess(out,false,'Codex process identity unavailable');
+ if(path.basename(value.executable)!=='codex')throw Error('Codex process identity unavailable');
+ return [value.ownerText,value.startedAt,value.executable].join('|');
 }
 /** @param {number} pid
  * @param {any} [execute] */

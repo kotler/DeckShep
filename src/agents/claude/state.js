@@ -8,8 +8,9 @@ const { pluginDirectory } = require("../../platform/paths.ts");
 // Metadata only: no transcripts, prompts, tool inputs/outputs or credentials on disk.
 const fs = require('node:fs'),
   path = require('node:path'),
-  crypto = require('node:crypto'),
-  { execFile } = require('node:child_process');
+  crypto = require('node:crypto');
+const {exec} = require('../../platform/exec.ts');
+const {parseOwnedProcess} = require('../../platform/process.ts');
 const directory = () => path.join(pluginDirectory, 'state', 'claude');
 const hash =
   /** @param {any} value */
@@ -39,38 +40,12 @@ function nativeVersion(file) {
   const resolved = fs.realpathSync(file);
   return /\/claude\/versions\/(\d+\.\d+\.\d+)$/.exec(resolved)?.[1] || null;
 }
-const processRead =
-  /** @param {string} file
-   * @param {string[]} args */
-  (file, args) =>
-    new Promise((resolve, reject) =>
-      execFile(
-        file,
-        args,
-        {
-          timeout: 1800,
-          maxBuffer: 32768,
-          env: { ...process.env, LC_ALL: 'C' },
-        },
-        (error, out) => (error ? reject(error) : resolve(out)),
-      ),
-    );
-/** @param {string} out
- * @param {number} pid */
-function parseProcess(out, pid) {
-  const m =
-    /^\s*(\d+)\s+(\d+)\s+([A-Z][a-z]{2}\s+[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+\d{4})\s+(.+?)\s*$/.exec(
-      out || '',
-    );
-  if (!m || Number(m[1]) !== /** @type {() => number} */ (process.getuid)())
-    throw Error('Claude process owner unavailable');
-  return {
-    pid,
-    ppid: Number(m[2]),
-    startedAt: m[3].replace(/\s+/g, ' '),
-    executable: m[4],
-    version: /** @type {string | null} */ (null),
-  };
+/** @param {string} file @param {string[]} args */
+const processRead = (file,args) => exec(file,args,{env:{LC_ALL:'C'}});
+/** @param {string} out @param {number} pid */
+function parseProcess(out,pid) {
+ const value = parseOwnedProcess(out,true,'Claude process owner unavailable');
+ return {pid,ppid:value.parent,startedAt:value.startedAt,executable:value.executable,version:/** @type {string | null} */(null)};
 }
 /** @param {number} pid
  * @param {any} [execute] */

@@ -3,7 +3,6 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   fs = require('node:fs'),
   path = require('node:path'),
-  vm = require('node:vm'),
   { EventEmitter } = require('node:events');
 const { Bridge } = require('../../src/app/session'),
   {
@@ -43,29 +42,9 @@ test('label refresh', async () => {
       };
     }
   }
-  const context = {
-    Buffer,
-    process: { argv: ['node', 'plugin', '-port', '0'] },
-    __dirname: directory,
-    setInterval: () => {},
-    require: (name) =>
-      name === 'ws'
-        ? Socket
-        : name === './session'
-          ? { Bridge: FixtureBridge }
-          : name === '../agents/codex/metadata'
-            ? { AgentMetadata: FixtureMetadata }
-            : name.startsWith('.')
-              ? require(path.resolve(path.resolve(__dirname, '../../src/app'), name))
-              : require(name),
-  };
-  vm.createContext(context);
-  vm.runInContext(
-    fs.readFileSync(path.resolve(__dirname, '../../src/app/controller.js'), 'utf8') +
-      '\nglobalThis.api=getController("rex");',
-    context,
-    { filename: path.resolve(__dirname, '../../src/app/controller.js') },
-  );
+  const { createApplication } = require('../../src/app/controller');
+  const app = createApplication({socket:new Socket(),setInterval:()=>{},backendFactory:config=>new FixtureBridge(config),metadataFactory:bridge=>new FixtureMetadata(bridge)});
+  const context = {api:app.getController('rex')};
   const api = context.api;
   api.bridge.slots = [{ session: baseline.session, block: baseline.block }];
   api.keys.set('agent', { settings: {}, coordinates: { column: 0, row: 0 } });

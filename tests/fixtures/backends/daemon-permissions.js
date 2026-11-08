@@ -81,6 +81,7 @@ function fixture() {
       throw Error('Unexpected method');
     },
   };
+  b.deliverMutation = async (_target, _method, operation) => operation();
   const deps = {
     socketFor: async () => endpoint,
     footer: async () => id,

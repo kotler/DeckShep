@@ -47,7 +47,7 @@ function ellipsize(text, width = 126, fontSize = 18) {
 /** @param {AgentSnapshot} agent
  * @param {any} [aliases] */
 function agentLines(agent, aliases = {}) {
-  const status = require('../guards/context').isBackground(agent)
+  const status = require('./layout').isBackground(agent)
     ? 'BACKGROUND'
     : {
         idle: 'READY',

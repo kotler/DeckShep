@@ -3,74 +3,12 @@
 /** @typedef {import("../domain/types").Config} Config */
 /** @typedef {import("../domain/types").PressContext} PressContext */
 'use strict';
+const {state,token} = require('../domain/identity');
 const { pluginDirectory } = require("../platform/paths.ts");
 
-const { execFile } = require('node:child_process');
 const path = require('node:path');
 const P = require('../agents/codex/presets');
-const REX =
-  '/Applications/Rex Beta.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex';
-/** @param {string[]} args
- * @param {any} input */
-function cli(args, input) {
-  return new Promise((resolve, reject) => {
-    const p = execFile(
-      REX,
-      ['--autostart=false', '--timeout', '2s', ...args],
-      {
-        timeout: 3500,
-        maxBuffer: 2e6,
-        env: { ...process.env, REX_SESSION: '', REX_BLOCK: '', REX_CLIENT: '' },
-      },
-      (e, out) => {
-        if (e) return reject(new Error('Rex command failed'));
-        try {
-          resolve(out.trim() ? JSON.parse(out) : null);
-        } catch {
-          resolve(out.trim());
-        }
-      },
-    );
-    if (input !== undefined) /** @type {any} */ (p.stdin).end(input);
-  });
-}
-/** @returns {Promise<void>} */
-function activateRex() {
-  return new Promise((resolve, reject) => {
-    execFile(
-      '/usr/bin/open',
-      ['-a', '/Applications/Rex Beta.app'],
-      { timeout: 5000 },
-      (e) =>
-        e ? reject(new Error('Could not bring Rex to front')) : resolve(),
-    );
-  });
-}
-/** @param {string} clientId */
-function visiblePane(clientId) {
-  return new Promise((resolve, reject) => {
-    execFile(
-      path.join(pluginDirectory, 'bin', 'visible-pane'),
-      [REX, clientId],
-      { timeout: 4500, maxBuffer: 2048 },
-      (e, out) => {
-        if (e)
-          return reject(new Error('Visible pane query failed; no input sent'));
-        try {
-          const r = JSON.parse(out);
-          if (
-            !/^block:[0-9a-f-]{36}$/i.test(r.block_id) ||
-            r.clipboard_restored !== true
-          )
-            throw Error();
-          resolve(r.block_id);
-        } catch {
-          reject(new Error('Invalid visible pane result'));
-        }
-      },
-    );
-  });
-}
+const {RexTransport} = require('../terminals/rex/transport.ts');
 /** @param {any} p */
 function identify(p) {
   const f = p.foreground;
@@ -100,48 +38,54 @@ function identify(p) {
     };
   return null; // Never infer input safety from an ancestor or a status record.
 }
-/** @param {any[]} records
- * @param {Pick<AgentSnapshot, "app" | "pid" | "name">} agent
- * @param {number} [now]
- * @param {number} [maxAge] */
-function state(records, agent, now = Date.now(), maxAge = 86400000) {
-  const valid = records.filter(
-    (r) =>
-      (r.effective_app || r.app) === agent.app &&
-      r.owner?.pid === agent.pid &&
-      r.owner?.name === agent.name &&
-      Number.isFinite(Date.parse(r.updated_at)) &&
-      now - Date.parse(r.updated_at) <= maxAge &&
-      Date.parse(r.updated_at) <= now + 60000,
-  );
-  const priority = ['blocked', 'error', 'working', 'done', 'idle'];
-  for (const s of priority) {
-    const r = valid.find((r) => r.state === s);
-    if (r) return { state: s, kind: r.kind, statusAt: r.updated_at };
-  }
-  return { state: 'unknown' };
-}
+
 const focusError =
   /** @param {string} message */
   (message) => Object.assign(Error(message), { code: 'SELECTION_CHANGED' });
-const token =
-  /** @param {any} t */
-  (t) => [t.session, t.block, t.app, t.pid, t.name].join('|');
+
 class Bridge {
+  /** @type {(args: string[], input?: any) => Promise<any>} */
+  #transport;
+  /** @type {import('./delivery').DeliveryKernel | null} */
+  #delivery = null;
+  #fixture = false;
+  /** @param {import('./delivery').DeliveryKernel} kernel */
+  attachDelivery(kernel) { this.#delivery = kernel; }
+  get delivery() { return this.#delivery; }
+  /** @param {any} transport @param {boolean} [fixture] */
+  setTransport(transport, fixture = false) { this.#transport = transport; this.#fixture = fixture; }
+  assertDeliveryVisible() { this.#delivery?.assertVisible(); }
+  requireGuardedMutation() { if (!this.#delivery && !this.#fixture) throw Error('No guarded press; no input sent'); }
+  /** @param {string[]} args @param {any} [input] @param {any} [target] */
+  run(args, input, target) {
+    if (this.#delivery) return this.#delivery.run(args, input, () => this.#transport(args, input), target);
+    if (!this.#fixture && !['client', 'ls', 'session', 'block'].includes(args[0])) this.requireGuardedMutation();
+    return this.#transport(args, input);
+  }
+  /** @param {any} target @param {string} method @param {() => Promise<any>} operation */
+  deliverMutation(target, method, operation) {
+    if (this.#delivery) return this.#delivery.mutation(target, method, operation);
+    this.requireGuardedMutation();
+    return operation();
+  }
+
   /** @param {Config} config
    * @param {any} [run]
    * @param {any} [activate]
    * @param {any} [readVisible] */
   constructor(
     config,
-    run = cli,
-    activate = activateRex,
-    readVisible = visiblePane,
+    run,
+    activate,
+    readVisible,
   ) {
     this.config = config;
-    this.run = run;
-    this.activate = activate;
-    this.readVisible = readVisible;
+    const native = new RexTransport(() => this.config);
+    this.#transport = run || ((args, input) => native.command(args, input));
+    this.run = this.run.bind(this);
+    this.#fixture = typeof run === 'function';
+    this.activate = activate || (() => native.activate());
+    this.readVisible = readVisible || (/** @param {any} client */ (client) => native.visible(client));
     /** @type {{session: string, block: string}[]} */
     this.slots = [];
     this.draft = null;
@@ -293,6 +237,7 @@ class Bridge {
     };
   }
   async focused() {
+    this.assertDeliveryVisible();
     if (!this.config.allowClipboardFocus)
       throw new Error('Clipboard focus query not authorized; input disabled');
     const c = await this.client();
@@ -353,6 +298,7 @@ class Bridge {
           }
         : {}),
     });
+    this.assertDeliveryVisible();
     return a;
   }
   async contextPreflight() {
@@ -421,8 +367,8 @@ class Bridge {
       'session.select',
       `session_id=${t.session}`,
       `window_id=${t.window}`,
-    ]);
-    await this.run(['focus', '-s', t.session, t.block]);
+    ], undefined, a);
+    await this.run(['focus', '-s', t.session, t.block], undefined, a);
     this.draft = null;
     this.picker = null;
     this.selectionNotice = false;
@@ -913,4 +859,4 @@ class Bridge {
     await this.run(['zoom', '-s', a.session, a.block]);
   }
 }
-module.exports = { Bridge, identify, state, token, cli };
+module.exports = { Bridge, identify, state, token };

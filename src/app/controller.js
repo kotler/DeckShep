@@ -5,11 +5,11 @@
 'use strict';
 const { pluginDirectory } = require("../platform/paths.ts");
 
-const fs = require('fs'),
+const defaultFs = require('fs'),
   path = require('path'),
-  WebSocket = require('ws');
+  unused = null;
 const { Bridge } = require('./session'),
-  { svg, pulse } = require('../render/visuals');
+  { svg: defaultSvg, pulse: defaultPulse } = require('../render/visuals');
 const {
     agentLines,
     modelLines,
@@ -20,12 +20,25 @@ const {
   } = require('../domain/labels'),
   { AgentMetadata } = require('../agents/codex/metadata');
 const C = require('../guards/context');
+const { GuardPipeline } = require('../guards/pipeline.ts');
+const { DeliveryKernel } = require('./delivery.ts');
 const { controlAccent } = require('../render/signal');
 const { CompletionDisplay } = require('../render/completion');
 const preferences = require('./preferences');
-const args = process.argv.slice(2),
-  arg = /** @param {any} k */ (k) => args[args.indexOf(k) + 1],
-  ws = new WebSocket('ws://127.0.0.1:' + arg('-port'));
+const { Controller } = require('./profile-controller');
+const { CodexProvider } = require('../agents/codex/provider.ts');
+const { ClaudeProvider } = require('../agents/claude/provider.ts');
+/** @param {Record<string, any>} dependencies */
+function createApplication(dependencies) {
+const ws = dependencies.socket;
+const arg = (/** @type {string} */ key) => dependencies.args?.[key];
+const fs = dependencies.fs || defaultFs;
+const clock = dependencies.clock || (() => Date.now());
+const {svg, pulse} = dependencies.renderer || {svg: defaultSvg, pulse: defaultPulse};
+const backendFactory = dependencies.backendFactory || ((/** @type {Config} */ c) => c.backend === 'herdr' ? new (require('./herdr-session').HerdrBridge)(c) : new Bridge(c));
+const metadataFactory = dependencies.metadataFactory || ((/** @type {any} */ b) => new AgentMetadata(b));
+const schedule = dependencies.setInterval || setInterval;
+const providers = dependencies.providers || [new CodexProvider(),new ClaudeProvider()];
 const emit =
   /** @param {any} event
    * @param {any} context
@@ -57,14 +70,14 @@ function persist() {
 function getController(scope) {
   if (!['rex', 'herdr'].includes(scope))
     throw Error('Unknown controller profile');
-  if (!controllers.has(scope)) controllers.set(scope, createController(scope));
+  if (!controllers.has(scope)) controllers.set(scope, new Controller(scope, createRuntime(scope)));
   return controllers.get(scope);
 }
 function applyAllSettings() {
   for (const runtime of controllers.values()) runtime.applySettings();
 }
 /** @param {any} scope */
-function createController(scope) {
+function createRuntime(scope) {
   const configPath = path.join(pluginDirectory, 'config.json');
   let diskConfig = JSON.parse(/** @type {any} */ (fs.readFileSync(configPath))),
     config = preferences.profileConfig(diskConfig, saved, scope);
@@ -83,69 +96,23 @@ function createController(scope) {
       '|' +
       (c.backend === 'herdr'
         ? [c.herdr?.socketPath || '', c.herdr?.titleIdentity === true].join('|')
-        : '');
-  function assertVisible() {
-    if (!activePress) return;
-    const { ctx, display } = activePress,
-      k = keys.get(ctx);
-    if (
-      !k ||
-      display.appearance !== k.appearance ||
-      display.visibility !== visibility
-    )
-      throw Error('Profile changed; no further input sent');
-  }
+        : c.rexPath || '');
+  const guards = new GuardPipeline(() => ({
+    scope, visible: !!activePress && keys.has(activePress.ctx), appearance: activePress ? keys.get(activePress.ctx)?.appearance : undefined,
+    visibility, generation: /** @type {any} */ (bridge).generation,
+    backendKey: /** @type {any} */ (bridge).backendKey, page,
+    stamp: C.stamp(selected(), page),
+  }), () => clock());
   /** @param {any} c */
   function makeBridge(c) {
-    const b =
-      c.backend === 'herdr'
-        ? new (require('./herdr-session').HerdrBridge)(c)
-        : new Bridge(c);
+    const b = backendFactory(c);
     /** @type {any} */ (b).backendKey = backendKey(c);
     /** @type {any} */ (b).generation = ++sequence;
-    const focused = b.focused.bind(b);
-    b.focused =
-      /** @param {...any} args */
-      async (...args) => {
-        assertVisible();
-        const result = await /** @type {(...args: any[]) => Promise<any>} */ (
-          focused
-        )(...args);
-        assertVisible();
-        return result;
-      };
-    const run = b.run.bind(b);
-    b.run =
-      /** @param {string[]} args
-       * @param {...any} rest */
-      (args, ...rest) => {
-        if (['send', 'send-key', 'focus', 'zoom', '-C'].includes(args[0]))
-          assertVisible();
-        return run(args, ...rest);
-      };
-    if (c.backend === 'herdr') {
-      const connect = /** @type {any} */ (b).connect?.bind(b);
-      if (connect)
-        /** @type {any} */ (b).connect = async () => {
-          const rpc = await connect(),
-            request = rpc.request.bind(rpc);
-          rpc.request =
-            /** @param {string} method
-             * @param {any} params */
-            (method, params) => {
-              if (
-                ['agent.focus', 'agent.send_keys', 'pane.zoom'].includes(method)
-              )
-                assertVisible();
-              return request(method, params);
-            };
-          return rpc;
-        };
-    }
+    b.attachDelivery(new DeliveryKernel(/** @type {any} */ (b), guards, () => activePress?.display || null));
     return b;
   }
   let bridge = makeBridge(config),
-    metadata = new AgentMetadata(bridge);
+    metadata = metadataFactory(bridge);
   const completion = new CompletionDisplay(),
     keys = new Map(),
     transitions = new Map();
@@ -171,7 +138,7 @@ function createController(scope) {
     if (backendKey(next) !== /** @type {any} */ (bridge).backendKey) {
       if (actionBusy || setupBusy) return;
       bridge = makeBridge(next);
-      metadata = new AgentMetadata(bridge);
+      metadata = metadataFactory(bridge);
       if (metadataBusy) metadataAgain = true;
       startupSelectionRead = false;
       bank = 0;
@@ -197,7 +164,7 @@ function createController(scope) {
         .replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g, '')
         .slice(0, 15);
   function selected() {
-    return bridge.agents?.find((a) => sameTarget(bridge.lastTarget, a));
+    return bridge.agents?.find(/** @param {any} a */ (a) => sameTarget(bridge.lastTarget, a));
   }
   /** @param {any} k */
   function mapping(k) {
@@ -217,15 +184,15 @@ function createController(scope) {
       return override;
     }
     const { column: c, row: r } = k.coordinates;
-    return r === 0 ? 'agent:' + c : C.layout(page, selected())[(r - 1) * 5 + c];
+    return r === 0 ? 'agent:' + c : C.layout(page, selected(), bridge.delivery?.backend.capabilities)[(r - 1) * 5 + c];
   }
   function bankLines() {
     if (offline) return ['Agents ▶', backendName() + ' offline'];
     const visible = bridge.slots
       .slice(bank * 5, bank * 5 + 5)
-      .filter((s) =>
+      .filter(/** @param {any} s */ (s) =>
         bridge.agents?.some(
-          (a) => a.session === s.session && a.block === s.block,
+          /** @param {any} a */ (a) => a.session === s.session && a.block === s.block,
         ),
       ).length;
     const total = Math.max(1, Math.ceil(bridge.slots.length / 5)),
@@ -262,7 +229,7 @@ function createController(scope) {
   }
   function render() {
     metadata.hydrate(bridge.agents || []);
-    const now = Date.now(),
+    const now = clock(),
       target = selected(),
       mode = C.modeOf(target),
       contextStamp = C.stamp(target, page);
@@ -302,7 +269,7 @@ function createController(scope) {
       if (action.startsWith('agent:')) {
         const slot = bridge.slots[bank * 5 + Number(action.split(':')[1])],
           a = bridge.agents?.find(
-            (a) => a.block === slot?.block && a.session === slot?.session,
+            /** @param {any} a */ (a) => a.block === slot?.block && a.session === slot?.session,
           );
         k.target = a;
         if (a) {
@@ -544,7 +511,7 @@ function createController(scope) {
       if (source !== bridge) return;
       for (const agent of agents) {
         if (agent.app !== 'codex') continue;
-        const live = bridge.agents?.find((a) => sameTarget(a, agent));
+        const live = bridge.agents?.find(/** @param {any} a */ (a) => sameTarget(a, agent));
         if (
           live &&
           live.cwd === agent.cwd &&
@@ -620,7 +587,7 @@ function createController(scope) {
   }
   /** @param {any} a
    * @param {any} display */
-  async function perform(a, display) {
+  async function performLegacy(a, display) {
     if (a === 'more') page = (page + 1) % 3;
     else if (a === 'questions') page = 1;
     else if (a === 'prompts') page = 2;
@@ -640,7 +607,7 @@ function createController(scope) {
     } else if (a === 'next') {
       await bridge.navigate(1);
       const index = bridge.slots.findIndex(
-        (s) =>
+        /** @param {any} s */ (s) =>
           s.session === bridge.lastTarget?.session &&
           s.block === bridge.lastTarget?.block,
       );
@@ -688,6 +655,14 @@ function createController(scope) {
       );
     else await bridge.stage(a);
   }
+  /** @param {string} action @param {any} display */
+  async function perform(action, display) {
+    const provider = providers.find((/** @type {import('../domain/backend').AgentProvider} */ provider) => provider.matches(display.target || {}));
+    if (C.needsContext(action) && provider && bridge.delivery) {
+      return provider.perform(action, {press:display,backend:bridge.delivery.backend,operations:{execute:performLegacy}});
+    }
+    return performLegacy(action, display);
+  }
   /** @param {any} ctx
    * @param {any} display */
   async function press(ctx, display) {
@@ -706,32 +681,16 @@ function createController(scope) {
     activePress = { ctx, display };
     try {
       let result;
-      if (
-        display.scope !== scope ||
-        display.appearance !== k.appearance ||
-        display.visibility !== visibility ||
-        display.generation !== /** @type {any} */ (bridge).generation
-      )
-        throw Error('Profile changed; press again');
-      if (display.backendKey !== /** @type {any} */ (bridge).backendKey)
-        throw Error('Controller changed; press again');
-      if (display.setupBusy) throw Error('Setup finished; press again');
+      guards.preflight(display, C.needsContext(a));
       if (C.needsContext(a)) {
-        if (
-          display.page !== page ||
-          display.stamp !== C.stamp(selected(), page)
-        )
-          throw Error('Controls changed; press again');
-        if ((display.pressedAt ?? Date.now()) < display.armedAt)
-          throw Error('Controls updating; press again');
-        if (!display.target) throw Error('Select an agent first');
         result = await bridge.withContext(display, () => perform(a, display));
       } else result = await perform(a, display);
+      guards.postflight(display);
       completed = true;
       k.feedback = null;
       if (result)
         k.notice = {
-          until: Date.now() + 2500,
+          until: clock() + 2500,
           label: result.label,
           action: a,
           stamp: display.stamp,
@@ -739,7 +698,7 @@ function createController(scope) {
     } catch (error) {
       k.notice = null;
       k.feedback = {
-        until: Date.now() + 10000,
+        until: clock() + 10000,
         message: clean(/** @type {Error & {code?: string}} */ (error).message),
         action: a,
         stamp: display.stamp,
@@ -834,12 +793,12 @@ function createController(scope) {
       preferences: preferences.view(config),
       offline,
       agents: agents.length,
-      codex: agents.filter((a) => a.app === 'codex').length,
-      claude: agents.filter((a) => a.app === 'claude-code').length,
+      codex: agents.filter(/** @param {any} a */ (a) => a.app === 'codex').length,
+      claude: agents.filter(/** @param {any} a */ (a) => a.app === 'claude-code').length,
       claudeIdentified: agents.filter(
-        (a) => a.app === 'claude-code' && a.nativeVerified,
+        /** @param {any} a */ (a) => a.app === 'claude-code' && a.nativeVerified,
       ).length,
-      metadata: agents.filter((a) => a.app === 'codex' && a.chatId).length,
+      metadata: agents.filter(/** @param {any} a */ (a) => a.app === 'codex' && a.chatId).length,
       selected: a
         ? {
             app: a.app,
@@ -946,7 +905,7 @@ function createController(scope) {
       bridge.draft = null;
       bridge.picker = null;
       if (bridge.claude) bridge.claude.picker = null;
-      completion.update(bridge.agents || [], null, Date.now());
+      completion.update(bridge.agents || [], null, clock());
     }
   }
   /** @param {any} context
@@ -1080,7 +1039,7 @@ ws.on(
         const k = runtime.keys.get(e.context),
           shown = k?.presented,
           display = shown
-            ? { ...shown, pressedAt: Date.now(), setupBusy: runtime.setupBusy }
+            ? { ...shown, pressedAt: clock(), setupBusy: runtime.setupBusy }
             : undefined;
         queue = queue
           .then(() =>
@@ -1093,13 +1052,19 @@ ws.on(
     } catch {}
   },
 );
-ws.on('close', () => process.exit(0));
-ws.on('error', () => process.exit(1));
-setInterval(() => {
+ws.on('close', () => dependencies.onClose?.());
+ws.on('error', () => dependencies.onError?.());
+schedule(() => {
   for (const runtime of controllers.values())
     if (runtime.keys.size) void runtime.refresh();
 }, 2000);
-setInterval(() => {
+schedule(() => {
   for (const runtime of controllers.values())
     if (runtime.keys.size) runtime.render();
 }, 250);
+
+return { controllers, getController, settled,
+  receive: (/** @type {any} */ event) => ws.emit('message', JSON.stringify(event)),
+};
+}
+module.exports = { createApplication };

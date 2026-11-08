@@ -7,7 +7,7 @@ const { pluginDirectory } = require("../../platform/paths.ts");
 
 const fs = require('node:fs'),
   path = require('node:path');
-const { Bridge, token } = require('../../app/session'),
+const { token } = require('../../domain/identity'),
   { Setup } = require('./setup-presets'),
   P = require('./presets');
 const {
@@ -105,26 +105,3 @@ async function configure(bridge, agent, directory) {
   }
 }
 module.exports = { configure, statusLineWithId };
-if (require.main === module) {
-  (async () => {
-    const directory = process.argv[2] || pluginDirectory,
-      config = JSON.parse(
-        /** @type {any} */ (
-          fs.readFileSync(path.join(directory, 'config.json'))
-        ),
-      ),
-      bridge = new Bridge(config),
-      original = await bridge.focused();
-    try {
-      for (const agent of (await bridge.discover()).filter(
-        (a) => a.app === 'codex' && ['idle', 'done'].includes(a.state),
-      ))
-        console.log(JSON.stringify(await configure(bridge, agent, directory)));
-    } finally {
-      await bridge.focus(original);
-    }
-  })().catch((e) => {
-    console.error(e.message);
-    process.exitCode = 1;
-  });
-}
