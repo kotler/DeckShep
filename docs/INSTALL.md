@@ -4,9 +4,10 @@ Use the audited macOS beta ZIP supplied by the maintainer. It targets a 15-key
 Stream Deck MK.2. Independent fresh-account installation and Intel execution
 still need release validation.
 
-1. Extract the ZIP and open `com.local.rexagents.streamDeckPlugin`.
-2. Accept the bundled **Rex** and **Herdr** profiles. Existing fixed
-   profile IDs and key ActionIDs are reused. Choose Rex on the deck.
+1. Extract the ZIP and open `com.kotl3r.deckshep.streamDeckPlugin`.
+2. Accept the bundled **Rex** and **Herdr** profiles, which use the new DeckShep
+   identity. Choose Rex on the deck. Older preview profiles are not converted;
+   follow [the identity-reset instructions](IDENTITY.md) first.
 3. Select a key in Stream Deck to open its setup panel. Open Rex and enable
    Remote Control there if it is not already enabled.
 4. Click **Enable visible-pane checks** explicitly. The helper temporarily copies
@@ -29,7 +30,11 @@ chaining is a separate choice. Enable Claude native controls only after hook
 setup; both are off initially. The stable `configure-claude.js` CLI remains
 available; see [Claude](CLAUDE.md).
 
-## Upgrading a customized 1.3.4 installation
+## Upgrading a customized DeckShep installation
+
+This procedure applies only to installations already using `com.kotl3r.deckshep`.
+For the older `com.local.rexagents` private preview, use [IDENTITY.md](IDENTITY.md)
+to recreate profiles and remove/reapply integrations explicitly.
 
 Use the one-time backup/migration helper included in the beta ZIP. It requires
 Node 22.13+ and keeps private backups outside the checkout and plugin directory.
@@ -39,7 +44,7 @@ Fresh installs still use one plugin file.
 2. From the extracted ZIP directory, run `node scripts/migrate-upgrade.mjs backup`.
    Keep the printed backup directory. The helper checks ownership, rejects links
    and refuses an incomplete or changing snapshot.
-3. Open `com.local.rexagents.streamDeckPlugin` to upgrade. Quit Stream Deck again
+3. Open `com.kotl3r.deckshep.streamDeckPlugin` to upgrade. Quit Stream Deck again
    before restoring customizations.
 4. Run `node scripts/migrate-upgrade.mjs restore "<backup-directory>"` to preview,
    then repeat with `--apply`. Expand the printed `~/` to your home directory when

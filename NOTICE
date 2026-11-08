@@ -6,7 +6,7 @@ The DeckShep name and key-and-crook branding are reserved; see TRADEMARKS.md.
 
 This distribution includes Lobe Icons static SVG artwork.
 Copyright (c) 2023 LobeHub. Licensed under the MIT License.
-The complete notice is in com.local.rexagents.sdPlugin/assets/lobehub-LICENSE.txt
+The complete notice is in com.kotl3r.deckshep.sdPlugin/assets/lobehub-LICENSE.txt
 (or assets/lobehub-LICENSE.txt inside the installed plugin).
 Codex/OpenAI and Claude/Anthropic marks belong to their respective owners.
 LobeHub's MIT code license does not grant rights to those trademarks.

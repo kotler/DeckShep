@@ -36,6 +36,8 @@ the affected control. Mutating requests must never retry after uncertainty.
 Do not change plugin/action UUIDs, profile/page/key identities, settings v2/v1
 migration, config semantics or stable Claude helper paths as routine cleanup.
 Fresh clipboard checks, Herdr title identity and Claude hooks/controls stay off.
+The owner-approved prelaunch IDs are documented in [IDENTITY.md](docs/IDENTITY.md);
+old preview profiles require recreation and exact hook removal before new setup.
 Herdr App remains a disabled fixture foundation with no production capabilities.
 
 Default tests use temporary homes, sockets and test-owned processes only. Never

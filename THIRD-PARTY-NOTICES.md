@@ -6,7 +6,7 @@ reserved separately in TRADEMARKS.md. Third-party licenses remain in force.
 Provider artwork is retained with trademark permission stated as pending; this
 checkpoint does not establish permission or endorsement.
 
-- **Lucide 0.468.0:** control glyphs use Lucide. The DeckShep plugin/action brand artwork is original and does not use Lucide. The unmodified source SVGs and ISC/Feather MIT notices are in `com.local.rexagents.sdPlugin/assets/lucide/`. Source: https://lucide.dev/ and https://unpkg.com/lucide-static@0.468.0/.
+- **Lucide 0.468.0:** control glyphs use Lucide. The DeckShep plugin/action brand artwork is original and does not use Lucide. The unmodified source SVGs and ISC/Feather MIT notices are in `com.kotl3r.deckshep.sdPlugin/assets/lucide/`. Source: https://lucide.dev/ and https://unpkg.com/lucide-static@0.468.0/.
 - **LobeHub / Lobe Icons:** `assets/codex-mark.svg` and `assets/claude-mark.svg` are unmodified static SVGs from [lobehub/lobe-icons](https://github.com/lobehub/lobe-icons), revision `ea434b96e75813517b377825e01c0df61dee8836`. Copyright (c) 2023 LobeHub; MIT license retained in `assets/lobehub-LICENSE.txt`, with source paths/hashes in `assets/lobehub-PROVENANCE.json`. The renderer supplies size, white color and opacity. Codex/OpenAI and Claude/Anthropic marks remain their owners' property; the code license does not establish trademark permission or endorsement. Provider trademark permission remains pending. The former installed-app Codex PNGs are no longer distributed.
 - **ws 8.22.1:** MIT. Bundled; license in the plugin’s `assets/licenses/ws.txt`.
 - **@iarna/toml 2.2.5:** ISC. Bundled; license in `assets/licenses/iarna-toml.txt`.

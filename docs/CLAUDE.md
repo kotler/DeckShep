@@ -34,7 +34,7 @@ Prerequisites: local macOS, **native Claude Code 2.1.319**, Node 20+ for the met
 After intentionally installing the preview and leaving agents running, preview setup from Terminal:
 
 ```sh
-plugin_dir="$HOME/Library/Application Support/com.elgato.StreamDeck/Plugins/com.local.rexagents.sdPlugin"
+plugin_dir="$HOME/Library/Application Support/com.elgato.StreamDeck/Plugins/com.kotl3r.deckshep.sdPlugin"
 node "$plugin_dir/configure-claude.js" --statusline
 ```
 
@@ -44,7 +44,7 @@ To apply that setup with a backup:
 node "$plugin_dir/configure-claude.js" --statusline --apply
 ```
 
-This explicitly adds only this integration's command hooks to Claude settings. It chains an existing status-line command, retains its padding/options, and records the original for removal. The wrapper forwards the original JSON to that existing command and keeps its output. With no previous command, it displays a simple Claude/model/effort line. The wrapper refreshes every two seconds; it adds local process work but no model requests. It never modifies authentication, permission rules, sandbox settings or existing unrelated hooks. Settings backups use a `settings.json.switchboard-backup-…` suffix and private permissions.
+This explicitly adds only this integration's command hooks to Claude settings. It chains an existing status-line command, retains its padding/options, and records the original for removal. The wrapper forwards the original JSON to that existing command and keeps its output. With no previous command, it displays a simple Claude/model/effort line. The wrapper refreshes every two seconds; it adds local process work but no model requests. It never modifies authentication, permission rules, sandbox settings or existing unrelated hooks. Settings backups use a `settings.json.deckshep-backup-…` suffix and private permissions.
 
 The default target is `~/.claude/settings.json`, honoring `CLAUDE_CONFIG_DIR`; use `--settings /absolute/settings.json` for a different settings file. To run the script from the checkout while targeting an installed copy, also pass `--plugin-dir "$plugin_dir"`. Hooks reference that absolute installation and Node executable; remove the previous setup before moving either.
 

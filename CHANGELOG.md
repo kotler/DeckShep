@@ -7,6 +7,9 @@ preview artifacts use `-beta.N` release tags.
 
 ### Changed
 
+- Reset prelaunch plugin/action IDs to `com.kotl3r.deckshep` / `.key`, with a
+  matching plugin folder/installer and fresh profile/page/key UUIDs. Older preview
+  profiles require recreation and exact Claude-hook removal before new setup.
 - Adopt Apache-2.0 with NOTICE; reserve the DeckShep name and key-and-crook branding.
 - Vendor pinned LobeHub Codex/Claude SVGs with MIT attribution and provenance;
   provider trademark permission remains pending. Provider watermarks use the
@@ -28,8 +31,9 @@ preview artifacts use `-beta.N` release tags.
 
 ### Compatibility
 
-- UUIDs, existing profile/key IDs, consent defaults and ordinary v2 settings stay
-  unchanged. Fresh-account/native installer upgrade validation remains pending.
+- New DeckShep identities are fixed after the prelaunch reset. Consent defaults
+  and v2/v1 preference semantics stay unchanged. Cross-identity preview upgrades
+  are explicit fresh setups; independent installer validation remains pending.
 
 ## [1.3.4] - 2026-11-07
 
