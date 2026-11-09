@@ -266,3 +266,6 @@ stamp, exact hashes/signatures, original peer token and all press/consent checks
 This does not permit other shared-writable ancestors or weaken endpoint privacy.
 The owner's App home/socket were explicitly tightened to 0700 for the private
 walkthrough; a future socket recreated with broader mode must still refuse.
+herdr-core creates its socket 0755 inside an owner-only folder. The owner
+approved on 2026-11-08 that, for the core socket only, an owned 0700 parent
+suffices (group/world-writable sockets still refuse). App sockets stay strict.

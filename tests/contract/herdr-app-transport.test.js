@@ -163,9 +163,16 @@ test('endpoint checks reject public permissions, regular files, wrong owner and 
   assert(inspectSocket(peer.file).identity);
   fs.chmodSync(peer.file, 0o666);
   assert.throws(() => inspectSocket(peer.file), /Unsafe/);
+  fs.chmodSync(peer.file, 0o755);
+  assert.throws(() => inspectSocket(peer.file), /Unsafe/, 'App stays strict');
+  const core = { ownerOnlyParentSuffices: true };
+  assert(inspectSocket(peer.file, core).identity, 'core: 0755 in 0700 folder');
+  fs.chmodSync(peer.file, 0o777);
+  assert.throws(() => inspectSocket(peer.file, core), /Unsafe/);
   fs.chmodSync(peer.file, 0o600);
   fs.chmodSync(peer.directory, 0o755);
   assert.throws(() => inspectSocket(peer.file), /Unsafe/);
+  assert.throws(() => inspectSocket(peer.file, core), /Unsafe/);
   fs.chmodSync(peer.directory, 0o700);
   fs.symlinkSync(peer.file, path.join(peer.directory, 'alias.sock'));
   assert.throws(
