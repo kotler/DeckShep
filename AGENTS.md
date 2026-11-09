@@ -138,6 +138,18 @@ exact record key captured by the press. Keep the checks in mapping, provider
 dispatch, the delivery kernel, permit consumption and the backend. Local deck
 navigation never grants native authority. Existing Rex/Herdr TUI engines retain
 their native guards and exact golden behavior.
+The owner amended this on 2026-11-08 for **daemon-only Codex controls** and
+**read-only discovery**. Without an approved App record, `AppSelectionReader`
+may list App panes and agent/Next keys select locally only. Model, Effort and
+Reviewer (`src/app/herdr-app-codex.ts`) need App input consent, read-back
+consent, an explicit core socket, `daemonControls`, and a deck/App-selected
+pane both App and core report as a ready Codex pane. They bind through core
+`foreground` facts plus the existing title-identity recipe, re-bind at every
+DaemonControls check, and make exactly one `thread/settings/update` per press
+after a fresh stale-press/consent guard. They never send keys. Blocked panes
+show "Answer in Herdr". Interrupt, approvals, questions, Zoom and any
+`terminal.keys`/`terminal.interrupt` use stay unavailable; this amendment does
+not cover them or relax the focus-request record requirement.
 The owner amended Herdr App's first release on 2026-11-08 to discovery/status
 and plain focus requests (including Next), with local banks/Collapse. No Zoom,
 contextual input or mod installation. Implement a separate request-only control;

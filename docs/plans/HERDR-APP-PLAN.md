@@ -405,7 +405,7 @@ endpoint ownership checked as in Phase 3) and a physical MK.2:
 - App update while the plugin runs (version-change refusal)
 - fresh install on a clean Mac, defaults off, upgrade from the previous build
 
-### Agent-key parity (proposed 2026-11-08, not implemented)
+### Agent-key parity (owner-amended and implemented 2026-11-08)
 
 Stages 1 and 2 are on `codex/herdr-app-agent-parity`: App pane keys use the
 shared status palette and provider watermark, and an opt-in read-only
@@ -439,10 +439,15 @@ delayed-write hazard cannot be fixed client-side with the current core API.
    `PermissionRequest` hook (request-bound, so late presses find no waiting
    hook), but that changes hook behavior and needs its own migration review.
 
-Blocker: `AGENTS.md` requires a verified control ID and exact record key for
-App provider-input paths, so steps 2–3 stay inactive in production until
-either an authorized calibration produces a record or the owner amends that
-rule, as was done for plain focus requests.
+The owner amended the record rule for daemon-only controls and removed the
+"Preview only" tile on 2026-11-08 (see `AGENTS.md`). Implemented: read-only
+discovery without records, local deck selection, step 1 and step 2 for
+Model/Effort/Reviewer, and step 4's "Answer in Herdr" label. Not implemented:
+step 3 (the turn-scoped interrupt is unverified against pinned Codex) and step
+5. herdr-core's own documentation names "a Stream Deck" as an intended client;
+that is an API invitation, not trademark permission. Native behavior
+(foreground PID being the daemon-connected Codex process, title identity under
+the App) has not been observed and fails closed when it does not hold.
 
 ## 4. Out of scope for the first release
 
