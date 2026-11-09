@@ -187,4 +187,5 @@ module.exports = {
   treeFiles,
   hash,
   privateDirectory,
+  readArtifact,
 };

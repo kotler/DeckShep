@@ -231,3 +231,22 @@ See tests/e2e/README.md for control API, clock, baseline policy and native/hardw
 limits. CI uses a macOS 15 browser job, version/OS/architecture-specific caching
 and failure reports. An Ubuntu 24.04 trial passed both browser runs, but all six
 PNG baselines differed, so macOS remains the CI platform. See the validation record.
+
+The separate signed-release calibration runner additionally requires
+`ASW_LIVE_HERDR_APP_RELEASE=1` and current authorization for its exact artifacts.
+It validates whole signed bundles, synthetic Seatbelt containment and a bounded
+current-version-only feed before launching owned copies. Its cat-only shell shim
+interprets no shell text. See tests/live/APP-CALIBRATION.md and the signed release
+validation record. The private release preview is a separate owner-approved,
+test factory without a calendar cutoff carrying the distribution-denied hardware marker; normal
+records stay empty. Historical live-session exceptions are narrow and do not
+amend the standing no-attach rule or authorize future runs.
+
+The owner separately approved the macOS `/Applications` container exception on
+2026-11-08: canonical path only, root UID 0/admin GID 80, mode 0775, no positive
+ACL grants (only no ACL or standard everyone-deny-delete). Bundle/file guards
+stay strict. Preserve GID and the exceptional container's ACL-sensitive metadata
+stamp, exact hashes/signatures, original peer token and all press/consent checks.
+This does not permit other shared-writable ancestors or weaken endpoint privacy.
+The owner's App home/socket were explicitly tightened to 0700 for the private
+walkthrough; a future socket recreated with broader mode must still refuse.

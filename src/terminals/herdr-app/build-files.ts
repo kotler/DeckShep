@@ -2,6 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { createHash } from 'node:crypto';
 import { exec } from '../../platform/exec';
+import { trustedApplicationsAncestor } from '../../platform/applications-ancestor';
 
 export type PlistDecoder = (bytes: Buffer) => Promise<unknown>;
 async function decodePlist(bytes: Buffer): Promise<unknown> {
@@ -20,6 +21,7 @@ function stamp(stat: fs.BigIntStats): string {
     stat.ino,
     stat.uid,
     stat.mode,
+    stat.gid,
     stat.nlink,
     stat.size,
     stat.mtimeNs,
@@ -38,7 +40,8 @@ function track(file: string, files: Map<string, string>): void {
     .some((component) => component.endsWith('.app'));
   if (
     stat.mode & 0o022n &&
-    !(stat.isDirectory() && stat.mode & 0o1000n && !inBundle)
+    !(stat.isDirectory() && stat.mode & 0o1000n && !inBundle) &&
+    !trustedApplicationsAncestor(file, stat)
   )
     throw Error();
   files.set(file, stamp(stat));
@@ -102,10 +105,12 @@ function unchanged(files: Map<string, string>): void {
       const stat = fs.lstatSync(file, { bigint: true });
       const actual = stamp(stat);
       // Directory contents may change, but replacing an ancestor is refused.
-      const stable = (value: string) => value.split(':').slice(0, 4).join(':');
+      const stable = (value: string) => value.split(':').slice(0, 5).join(':');
       if (
         stat.isSymbolicLink() ||
-        (stat.isDirectory()
+        // The exception's ACL is checked at capture. Its ctime must remain
+        // stable too, so ACL edits or container replacement invalidate a press.
+        (stat.isDirectory() && file !== '/Applications'
           ? stable(actual) !== stable(expected)
           : actual !== expected)
       )

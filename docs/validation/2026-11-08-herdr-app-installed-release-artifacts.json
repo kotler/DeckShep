@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "date": "2026-11-08",
+  "scope": "installed-release-static-preparation",
+  "buildMode": "installed-release-candidate",
+  "candidateOnly": true,
+  "nativeExecution": false,
+  "approvedForLiveRun": false,
+  "productionApproved": false,
+  "verifiedFocus": false,
+  "runningPairEstablished": false,
+  "sourceAndCopiesStable": true,
+  "app": {
+    "bundleId": "dev.herdr.app",
+    "version": "0.1.14",
+    "build": "0.1.14",
+    "executableSha256": "000b5610f11b80faf4690d13d218cc4d04828e15a933af2db9eb9107a8700664",
+    "plistSha256": "0f14f843b2106d3e23a9c47213d8175d018ffcd112c0e235319c6bfe94d9c07f",
+    "treeSha256": "f5695ee239dd8ad0d2925556aaae4b856bd2619181d9fe6df41a7115516ca84f",
+    "files": 6,
+    "signature": {
+      "valid": true,
+      "cdHash": "f22abb5ca0b6f7bd2f1af1b7936e43bf3accb638",
+      "teamIdentifier": "2W9652Q7QR",
+      "publisherRequirementVerified": true
+    }
+  },
+  "core": {
+    "bundleId": "dev.herdr.core",
+    "version": "0.1.19",
+    "build": "0.1.19",
+    "executableSha256": "98b0653b40f22028eea6020b6bf3e39ff77e6012286437ca9f8efd24b7ecd758",
+    "plistSha256": "6067071d0de6481b6f21a88ec0548858323b213698c63616d62d7bc223f1942d",
+    "treeSha256": "a7027d84ca51d32ab2d00ac0644e8681f44412c6a90595cd195abc955ad39a6b",
+    "files": 4,
+    "signature": {
+      "valid": true,
+      "cdHash": "9d9035a259e71307574780f56fde37c616b075ce",
+      "teamIdentifier": "2W9652Q7QR",
+      "publisherRequirementVerified": true
+    }
+  },
+  "helper": {
+    "protocol": 2,
+    "sha256": "358e58767c775833ee27af88e33485f7a3a06bac8c9b5b2801228f80e0058be5"
+  },
+  "gates": [
+    "updater-containment",
+    "separate-live-authorization",
+    "native-release-calibration"
+  ],
+  "sourceReview": {
+    "app": "2405bf388c568c3ed479f05b8e405ccfa44b3f2c",
+    "core": "06793ede1bedb1fed8d22d3cae476d3eb239edf0",
+    "binaryReproducibilityEstablished": false
+  },
+  "candidateReportSha256": "2859c442efc4692f98a904588291188484d6f78af1e0d5d7e4516f0217a75696"
+}

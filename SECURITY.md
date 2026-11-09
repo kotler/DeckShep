@@ -32,3 +32,12 @@ Herdr App has no production transport or input capabilities. Source-level input
 APIs do not satisfy native identity/focus requirements. Fresh-account installs,
 Intel execution and optional Developer ID/notarization remain separate release
 evidence, never inferred from fixture tests.
+
+The private Herdr App request preview retains exact App executable/plist hashes,
+dynamic signing evidence, original per-connection audit identity and single-use
+consent/press guards. The owner approved one macOS container exception: canonical
+`/Applications`, root/admin ownership, exact 0775 mode, and no positive ACL grants.
+All bundle files/directories and other ancestors keep their shared-write refusal.
+GID and the exceptional container's full metadata stamp are retained to invalidate
+ACL/group/container changes. App home/socket remain owner-only. This exception
+grants no production App record, terminal read, verified keyboard focus or input.

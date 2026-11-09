@@ -1,5 +1,12 @@
 # Herdr App (desktop) as the primary first-release backend
 
+Current checkpoint (2026-11-08): signed release calibration and the private live
+Stream Deck focus walkthrough passed. The owner also confirmed revoked-consent
+refusal. See the [release validation record](../validation/2026-11-08-herdr-app-release-calibration.md)
+and [private preview guide](../HERDR-APP-LIVE-PREVIEW.md). Production records remain
+empty; this is a request-only private preview without a calendar cutoff. Earlier checkpoints below retain
+their historical scope and blockers.
+
 Status: approved hand-off, 2026-11-08. The owner accepted every recommended
 decision in section 2 on 2026-11-08. Owner direction: Herdr App, the desktop
 app, is the main use case for DeckShep's first public release. Rex stays
@@ -64,6 +71,11 @@ owner reported that the physical Terminal/Next pane walkthrough worked. See the
 [user-reported hardware result](../validation/2026-11-08-herdr-app-inspector-refresh.md#owner-reported-hardware-result).
 The remaining hardware/release matrix is not established by this smoke test.
 Production records/capabilities stay empty. No plugin was installed/restarted.
+Checkpoint 2i stages inspection-only copies of installed App 0.1.14/core 0.1.19
+and reviews [release updater isolation](HERDR-APP-RELEASE-ISOLATION-DESIGN.md).
+Strict publisher verification passes on the originals and copies outside the
+sandbox. This executes no Herdr binary, establishes no running pair and enables
+no live manifest or production record. See [static release evidence](../validation/2026-11-08-herdr-app-installed-release-artifacts.md).
 The developer's installed/running core build remains unestablished; the native
 attempt identified only its own private core. The App does not bundle core.
 The ordinary control socket does not expose the full focus/Zoom
@@ -420,3 +432,17 @@ One phase per PR on `codex/herdr-app-<topic>` branches. Stop after Phase 0 for
 owner review of the refreshed API findings, and again before any live run.
 Report commits, check results, new tests and golden entries, and every native
 question still open.
+
+### Signed release calibration checkpoint (2026-11-08)
+
+The [contained signed release matrix](../validation/2026-11-08-herdr-app-release-calibration.md)
+passed with App 0.1.14/core 0.1.19: status, two plain focus requests, refusal
+cases, reconnect, minimize acknowledgement and an owned App restart. A private
+private preview without a calendar cutoff is prepared and installed. Production records/capabilities remain
+empty. The real App's signing hash matches. The owner approved the narrow root/admin
+Applications exception and private endpoint permissions, then reported that both
+pane selections and Next worked on the physical deck. With consent revoked,
+Next did nothing and the UI showed Consent off. The limited existing-App
+exception covered peer/build, status/topology and plain focus only; no terminal
+reads, agent commands, input or Herdr/core restart occurred. Production records
+remain empty; this is a private preview without a calendar cutoff, not public release approval.

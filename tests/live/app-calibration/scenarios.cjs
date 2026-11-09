@@ -134,6 +134,7 @@ async function calibrate(
       throw Error('Calibration topology mismatch');
     // Each request gets its own 350 ms arming interval and one-use permit.
     for (const pane of snapshot.panes) {
+      gate.progress = 'scenarios.focus.arm.' + (requests.length + 1);
       capture(state, sender, pane.target, now);
       const captured = { ...structuredClone(state), pressedAt: now() + 10000 };
       let refused = false;
@@ -151,6 +152,7 @@ async function calibrate(
         }),
         started = now();
       gate.checkBoth();
+      gate.progress = 'scenarios.focus.deliver.' + (requests.length + 1);
       let reply, failure;
       try {
         reply = await sender.deliver(
@@ -179,6 +181,7 @@ async function calibrate(
       recordRequest(requests.at(-1));
       // Model feedback is recorded separately; an ack never establishes focus.
       gate.checkBoth();
+      gate.progress = 'scenarios.focus.feedback.' + requests.length;
       const after = await sender.observe(gate.signal);
       requests.at(-1).modelSelectedTarget =
         after.selected?.pane === pane.target.pane;
@@ -188,6 +191,7 @@ async function calibrate(
       );
     }
     capture(state, sender, snapshot.panes[0].target, now);
+    gate.progress = 'scenarios.stale-generation';
     await delay(350);
     const stale = authority.issue({
       ...structuredClone(state),
@@ -199,6 +203,7 @@ async function calibrate(
       gate,
     );
     capture(state, sender, snapshot.panes[0].target, now);
+    gate.progress = 'scenarios.revoked-consent';
     await delay(350);
     const revoked = authority.issue({
       ...structuredClone(state),

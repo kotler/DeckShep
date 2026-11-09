@@ -57,14 +57,18 @@ async function prepare(run, artifactDirectory) {
       fs.mkdtempSync(path.join(fs.realpathSync('/tmp'), 'dsh-cal-')),
     );
   fs.chmodSync(run.root, 0o700);
-  run.artifacts = await stageArtifacts(
+  run.artifacts = await (run.effects.stageArtifacts ?? stageArtifacts)(
     artifactDirectory,
     path.join(run.root, 'bin'),
     run.effects.decoder,
   );
   const artifacts = run.artifacts,
     manifest = artifacts.manifest;
-  run.env = appEnvironment(run.root, artifacts.core);
+  run.env = (run.effects.environment ?? appEnvironment)(
+    run.root,
+    artifacts.core,
+  );
+  if (run.effects.buildMode) run.report.buildMode = run.effects.buildMode;
   run.children = {};
   run.gate = new OwnedEndpoints(
     run.root,
@@ -97,7 +101,9 @@ function launch(run, file, args, options) {
   run.artifacts.assertUnchanged();
   run.launchAttempted = true;
   try {
-    return run.owned.spawn(file, args, options);
+    return run.effects.launch
+      ? run.effects.launch(run, file, args, options)
+      : run.owned.spawn(file, args, options);
   } catch {
     run.unprovenLaunch = true;
     throw Error('Calibration launch failed');
@@ -221,6 +227,7 @@ async function runCalibration(
   try {
     await prepare(run, artifactDirectory);
     await exercise(run);
+    if (effects.afterScenarios) await effects.afterScenarios(run);
     if (effects.hold) {
       run.phase = 'hardware-hold';
       await effects.hold(run);
@@ -241,6 +248,9 @@ async function runCalibration(
         'Calibration command mismatch',
         'Calibration App home not fresh',
         'Calibration focus request failed',
+        'Calibration refusal failed',
+        'Calibration arming failed',
+        'Request expired',
       ].includes(reason)
     )
       run.report.failureReason = reason;
