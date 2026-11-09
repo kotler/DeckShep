@@ -124,7 +124,11 @@ Herdr App's production capabilities remain empty. Experimental v3 preferences
 and its preview profile require the explicitly enabled config flag; default
 builds retain v2 and both existing profiles. Read ADR 0004 before changing this.
 The read-only App/core clients in `src/terminals/herdr-app/transport.ts` are not
-wired into production discovery. They use plain JSON lines, enumerate reads,
+wired into production discovery. The one exception is `AppCoreStatusReader`
+(`core-status.ts`): with the separate read-back consent and an explicit core
+socket, its bracketed `terminal.list` supplies display-only key labels. A label
+applies only to one live local address whose App/core status and app words
+agree; it never becomes a target, permit, PID or provider identity. They use plain JSON lines, enumerate reads,
 and forbid history reads, attachments and mutations. Their tests create only
 private temporary fake sockets. See ADR 0007 for the unresolved focus/Zoom
 read-back and native isolation requirements; a passing transport fixture does
@@ -134,6 +138,18 @@ exact record key captured by the press. Keep the checks in mapping, provider
 dispatch, the delivery kernel, permit consumption and the backend. Local deck
 navigation never grants native authority. Existing Rex/Herdr TUI engines retain
 their native guards and exact golden behavior.
+The owner amended this on 2026-11-08 for **daemon-only Codex controls** and
+**read-only discovery**. Without an approved App record, `AppSelectionReader`
+may list App panes and agent/Next keys select locally only. Model, Effort and
+Reviewer (`src/app/herdr-app-codex.ts`) need App input consent, read-back
+consent, an explicit core socket, `daemonControls`, and a deck/App-selected
+pane both App and core report as a ready Codex pane. They bind through core
+`foreground` facts plus the existing title-identity recipe, re-bind at every
+DaemonControls check, and make exactly one `thread/settings/update` per press
+after a fresh stale-press/consent guard. They never send keys. Blocked panes
+show "Answer in Herdr". Interrupt, approvals, questions, Zoom and any
+`terminal.keys`/`terminal.interrupt` use stay unavailable; this amendment does
+not cover them or relax the focus-request record requirement.
 The owner amended Herdr App's first release on 2026-11-08 to discovery/status
 and plain focus requests (including Next), with local banks/Collapse. No Zoom,
 contextual input or mod installation. Implement a separate request-only control;
@@ -250,3 +266,6 @@ stamp, exact hashes/signatures, original peer token and all press/consent checks
 This does not permit other shared-writable ancestors or weaken endpoint privacy.
 The owner's App home/socket were explicitly tightened to 0700 for the private
 walkthrough; a future socket recreated with broader mode must still refuse.
+herdr-core creates its socket 0755 inside an owner-only folder. The owner
+approved on 2026-11-08 that, for the core socket only, an owned 0700 parent
+suffices (group/world-writable sockets still refuse). App sockets stay strict.

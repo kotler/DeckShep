@@ -26,7 +26,11 @@ const byId: (id: any) => HTMLElement & {
   add: HTMLSelectElement['add'];
   options: HTMLSelectElement['options'];
 } => document.getElementById(id) as any;
-const connectionFields: string[] = ['herdrSocketPath', 'herdrAppHome'];
+const connectionFields: string[] = [
+  'herdrSocketPath',
+  'herdrAppHome',
+  'herdrAppCoreSocketPath',
+];
 const booleans: string[] = [
     'allowClipboardFocus',
     'bringToFront',
@@ -34,6 +38,8 @@ const booleans: string[] = [
     'herdrTitleIdentity',
     'claudeEnabled',
     'herdrAppFocusRequestEnabled',
+    'herdrAppReadbackEnabled',
+    'herdrAppInputEnabled',
   ],
   promptNames: string[] = ['review', 'tests', 'continue'];
 for (const action of [
@@ -130,17 +136,15 @@ function fill(status: any) {
   }
   byId('connection').textContent = app
     ? status.offline
-      ? status.previewOnly
-        ? 'Herdr App preview — no approved App build'
-        : 'Herdr App unavailable — check the selected instance'
-      : `${status.agents} pane(s) · App-reported status`
+      ? 'Herdr App unavailable — check the selected instance'
+      : `${status.agents} pane(s) · App-reported status${status.previewOnly ? ' · deck selection only' : ''}`
     : status.offline
       ? herdr
         ? 'Herdr unavailable — choose its running session socket'
         : 'Rex unavailable — open Rex and enable Remote Control'
       : `${status.agents} agent${status.agents === 1 ? '' : 's'} · ${status.metadata}/${status.codex} Codex${status.claude ? ' · ' + status.claudeIdentified + '/' + status.claude + ' Claude' : ''} chats identified`;
   byId('selection').textContent = app
-    ? 'Focus requests do not verify keyboard focus. Input remains disabled.'
+    ? 'Focus requests do not verify keyboard focus. Codex controls use its daemon; no keystrokes are sent.'
     : status.selectionNotice
       ? 'Selection changed. Select an agent on the deck.'
       : status.selected
@@ -166,6 +170,9 @@ function fill(status: any) {
   byId('claudeEnabled').disabled = app || status.setupBusy;
   byId('herdrAppHome').disabled = !app || status.setupBusy;
   byId('herdrAppFocusRequestEnabled').disabled = !app || status.setupBusy;
+  byId('herdrAppCoreSocketPath').disabled = !app || status.setupBusy;
+  byId('herdrAppReadbackEnabled').disabled = !app || status.setupBusy;
+  byId('herdrAppInputEnabled').disabled = !app || status.setupBusy;
   for (const option of Array.from(byId('action').options))
     option.disabled =
       app &&

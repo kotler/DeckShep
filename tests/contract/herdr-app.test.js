@@ -158,9 +158,9 @@ test('experimental preview detaches a reused Rex context and grants no input aut
       (frame) => frame.event === 'setImage' && frame.context === 'rex:0,0',
     )
     .at(-1).payload.image;
-  assert(
-    Buffer.from(image.split(',')[1], 'base64')
-      .toString()
-      .includes('Preview only'),
-  );
+  const shown = Buffer.from(image.split(',')[1], 'base64').toString();
+  // Owner amendment 2026-11-08 removed the preview tile; with no App home
+  // the key reports Unavailable and still grants nothing.
+  assert(!shown.includes('Preview only'));
+  assert(shown.includes('Unavailable'));
 });

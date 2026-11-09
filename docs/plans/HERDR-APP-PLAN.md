@@ -405,6 +405,50 @@ endpoint ownership checked as in Phase 3) and a physical MK.2:
 - App update while the plugin runs (version-change refusal)
 - fresh install on a clean Mac, defaults off, upgrade from the previous build
 
+### Agent-key parity (owner-amended and implemented 2026-11-08)
+
+Stages 1 and 2 are on `codex/herdr-app-agent-parity`: App pane keys use the
+shared status palette and provider watermark, and an opt-in read-only
+herdr-core listing supplies display labels when App and core agree. Neither
+grants a target, permit or identity.
+
+Stage 3 (Rex-style contextual controls) is designed to avoid keystrokes, since
+`terminal.keys`/`terminal.interrupt` queue behind a quiet period, take no
+expected-state token and outlive client timeouts (ADR 0007). That
+delayed-write hazard cannot be fixed client-side with the current core API.
+
+1. **Binding.** Reuse the Herdr TUI title-identity recipe
+   (`src/agents/codex/title-identity.ts`): core `foreground.pid` and `cwd` for a
+   live local address, a fresh `socketFor(pid)` OS/socket check, the core
+   `title` thread prefix matching exactly one loaded root chat with the same
+   cwd, then a re-read showing the same title, PID and daemon identity. PID
+   alone is insufficient. Requires App read-back and input consent plus the
+   existing pinned Codex versions.
+2. **Model/Effort/Mode/Reviewer** through existing `DaemonControls`
+   (`thread/settings/update` by thread ID), with `footer` and `checked`
+   supplied by a re-resolution of step 1. No keystrokes.
+3. **Interrupt** through a turn-scoped daemon interrupt (thread and turn IDs),
+   so a late arrival cannot stop a different turn. The method must first be
+   verified against the pinned Codex protocol; it is not used anywhere yet.
+4. **Codex approvals/questions** have no keystroke-free path; those keys issue
+   the existing plain focus request and show "Answer in Herdr". A
+   precondition parameter on `terminal.keys` (expected `turn`/`status_ms`, or
+   cancellable queued keys) would be an upstream request needing owner
+   direction.
+5. **Claude** approvals could later answer through the opt-in
+   `PermissionRequest` hook (request-bound, so late presses find no waiting
+   hook), but that changes hook behavior and needs its own migration review.
+
+The owner amended the record rule for daemon-only controls and removed the
+"Preview only" tile on 2026-11-08 (see `AGENTS.md`). Implemented: read-only
+discovery without records, local deck selection, step 1 and step 2 for
+Model/Effort/Reviewer, and step 4's "Answer in Herdr" label. Not implemented:
+step 3 (the turn-scoped interrupt is unverified against pinned Codex) and step
+5. herdr-core's own documentation names "a Stream Deck" as an intended client;
+that is an API invitation, not trademark permission. Native behavior
+(foreground PID being the daemon-connected Codex process, title identity under
+the App) has not been observed and fails closed when it does not hold.
+
 ## 4. Out of scope for the first release
 
 Zoom, contextual/native input, mod installation, remote machines,

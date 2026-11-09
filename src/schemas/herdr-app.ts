@@ -17,7 +17,18 @@ const uniqueWords = z
 const localTerminal = id.regex(/^t[1-9][0-9]*$/);
 const address = id.regex(/^(?:[A-Za-z0-9._-]+\/)*t[1-9][0-9]*$/);
 const coreInfo = z.object({ id, name: id }).passthrough();
-const status = z.object({ state: id }).passthrough();
+// OSC 7501 words are the program's own; kind stays free text so a new upstream
+// word degrades to a neutral label instead of rejecting the whole listing.
+const status = z
+  .object({
+    state: id,
+    app: text.optional(),
+    title: text.optional(),
+    msg: text.optional(),
+    kind: text.nullable().optional(),
+    progress: integer.max(100).nullable().optional(),
+  })
+  .passthrough();
 const foreground = z
   .object({
     pid: z.number().int().positive().safe(),

@@ -40,7 +40,8 @@ export function appInspectorRequest(
       metadata: 0,
       selected: null,
       verifiedFocus: false,
-      focusRequestAvailable: state.connected && state.focusRequestEnabled,
+      focusRequestAvailable:
+        state.connected && state.focusRequestEnabled && state.recordCount > 0,
       setupBusy: state.setupBusy,
       message: (message ?? state.message).slice(0, 160),
     });

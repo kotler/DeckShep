@@ -1,13 +1,22 @@
 import { createHash } from 'node:crypto';
 import type { Config } from '../domain/types';
 import type { AppFocusPort, AppFocusState } from '../domain/app-focus-request';
-import type { AppPaneRef, AppSelectionSnapshot } from '../domain/app-selection';
+import type {
+  AppCoreSnapshot,
+  AppPaneRef,
+  AppSelectionSnapshot,
+} from '../domain/app-selection';
+import type { AppCoreStatusPort } from '../terminals/herdr-app/core-status';
 import { AppFocusAuthority } from '../guards/app-focus-request';
 import type { AppFocusBackendFactory } from './herdr-app-backend';
 import { appInspectorRequest } from './herdr-app-inspector';
+import { AppCodexControls, type AppControlKind } from './herdr-app-codex';
 import {
+  APP_CONTROLS,
   appAction,
+  appProvider,
   appTile,
+  coreFacts,
   paneKey,
   type AppKey,
   type AppPresentation,
@@ -24,6 +33,15 @@ interface Options {
   enqueue(work: () => Promise<void>): void;
   settled(): Promise<void>;
   backend: AppFocusBackendFactory;
+  /** Read-only App selection used when no approved focus build exists. */
+  reader?: (config: Config) => AppSelectionObserver;
+  codex?: AppCodexControls;
+  /** Optional read-only core labels; null when no socket is configured. */
+  core?: (config: Config) => AppCoreStatusPort | null;
+}
+export interface AppSelectionObserver {
+  observe(): Promise<AppSelectionSnapshot>;
+  dispose(): void;
 }
 function digest(value: unknown): string {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -38,7 +56,11 @@ export class HerdrAppController {
   #visibility = 0;
   #appearance = 0;
   #port: AppFocusPort | null = null;
+  #observer: AppSelectionObserver | null = null;
   #snapshot: AppSelectionSnapshot | null = null;
+  #coreReader: AppCoreStatusPort | null = null;
+  readonly #codex: AppCodexControls;
+  #core: AppCoreSnapshot | null = null;
   #slots: AppPaneRef[] = [];
   #selection: AppPaneRef | null = null;
   #bank = 0;
@@ -53,6 +75,8 @@ export class HerdrAppController {
     this.#generation = options.nextGeneration();
     this.#backendKey = digest(this.#config.herdrApp);
     this.#authority = new AppFocusAuthority(() => this.#state(), options.clock);
+    this.#codex =
+      options.codex ?? new AppCodexControls({ config: () => this.#config });
   }
   get bridge() {
     return this;
@@ -90,6 +114,12 @@ export class HerdrAppController {
   #banks() {
     return Math.max(1, Math.ceil(this.#slots.length / 5));
   }
+  #focusCapable() {
+    return (
+      this.options.backend.recordCount > 0 &&
+      this.options.backend.helperAvailable()
+    );
+  }
   #online() {
     return (
       !!this.#snapshot &&
@@ -110,12 +140,39 @@ export class HerdrAppController {
       this.#slots,
     ]);
   }
-  mapping(key: AppKey) {
-    const action = appAction(
-      key,
-      this.#online() && this.#config.herdrApp?.focusRequestEnabled === true,
-      this.options.backend.recordCount > 0,
+  #focusConsented() {
+    return (
+      this.#online() && this.#config.herdrApp?.focusRequestEnabled === true
     );
+  }
+  /** Daemon controls need input consent, core labels, daemon config and one
+   * deck/App-selected Codex pane that both App and core report as ready. */
+  #controls(config = this.#config): { allowed: Set<string>; reason: string } {
+    const none = (reason: string) => ({ allowed: new Set<string>(), reason });
+    if (config.herdrApp?.inputEnabled !== true) return none('Consent off');
+    if (!this.#coreAllowed(config) || !this.#coreReader?.terminal)
+      return none('Core off');
+    if (!config.daemonControls?.enabled) return none('Daemon off');
+    const selected = this.selected(),
+      pane = this.#snapshot?.panes.find(
+        (pane) => paneKey(pane.target) === paneKey(selected),
+      ),
+      facts = coreFacts(pane, this.#core);
+    if (!pane || !facts) return none('Select Codex');
+    if (appProvider(pane.reportedApp || facts.app) !== 'codex')
+      return none('Codex only');
+    const state = String(facts.state || pane.reportedStatus).toLowerCase();
+    if (state === 'blocked') return none('Answer in Herdr');
+    if (!['idle', 'done'].includes(state)) return none('Wait for ready');
+    const allowed = new Set<string>(['model', 'effort']);
+    if (config.daemonControls.permissionsEnabled) allowed.add('permissions');
+    return { allowed, reason: 'Reviewer off' };
+  }
+  mapping(key: AppKey) {
+    const action = appAction(key, {
+      select: !!this.#snapshot,
+      controls: this.#controls().allowed,
+    });
     return (action === 'next' || action.startsWith('agent:')) &&
       !this.#target(action)
       ? 'none'
@@ -198,12 +255,15 @@ export class HerdrAppController {
               slot,
               selected: this.selected(),
               deckSelected: this.#selection,
-              preview: this.options.backend.recordCount === 0,
-              online: this.#online(),
-              consent: this.#config.herdrApp?.focusRequestEnabled === true,
+              online: !!this.#snapshot,
+              consent: this.#focusConsented(),
+              mapped: key.presented.action,
+              reason: this.#controls().reason,
               bank: this.#bank,
               banks: this.#banks(),
               now: this.options.clock(),
+              palette: this.#config.palette as Record<string, string>,
+              core: this.#coreAllowed() ? coreFacts(pane, this.#core) : null,
             }),
           ),
         ).toString('base64');
@@ -216,7 +276,12 @@ export class HerdrAppController {
   #stop(clearSlots = false) {
     this.#port?.dispose();
     this.#port = null;
+    this.#observer?.dispose();
+    this.#observer = null;
     this.#snapshot = null;
+    this.#coreReader?.close();
+    this.#coreReader = null;
+    this.#core = null;
     this.#selection = null;
     this.#generation = this.options.nextGeneration();
     if (clearSlots) {
@@ -252,23 +317,28 @@ export class HerdrAppController {
       this.#settingsError
     )
       return;
-    if (
-      !this.options.backend.recordCount ||
-      !this.#config.herdrApp?.home ||
-      !this.options.backend.helperAvailable()
-    ) {
+    if (!this.#config.herdrApp?.home) {
       this.render();
       return;
     }
     this.#refreshing = true;
     const generation = this.#generation;
     try {
-      this.#port ??= this.options.backend.create(this.#config, this.#authority);
-      const port = this.#port,
-        snapshot = await port.observe();
+      // Owner amendment 2026-11-08: read-only discovery/status no longer needs
+      // an approved build. Focus requests still need the peer-verified port.
+      const source = this.#focusCapable()
+        ? (this.#port ??= this.options.backend.create(
+            this.#config,
+            this.#authority,
+          ))
+        : this.options.reader
+          ? (this.#observer ??= this.options.reader(this.#config))
+          : null;
+      if (!source) return;
+      const snapshot = await source.observe();
       if (
         generation !== this.#generation ||
-        port !== this.#port ||
+        (source !== this.#port && source !== this.#observer) ||
         !this.keys.size
       )
         return;
@@ -288,11 +358,94 @@ export class HerdrAppController {
       )
         this.#selection = null;
       this.setBank(this.#bank);
+      await this.#refreshCore(generation);
     } catch {
       if (generation === this.#generation) this.#stop();
     } finally {
       this.#refreshing = false;
       this.render();
+    }
+  }
+  /** Local deck selection only: no App request, focus claim or authority. */
+  #select(display: AppPresentation) {
+    if (!display.target) throw Error('Request stale');
+    this.#selection = structuredClone(display.target);
+    this.#bank = Math.max(
+      0,
+      Math.floor(
+        this.#slots.findIndex(
+          (slot) => paneKey(slot) === paneKey(display.target),
+        ) / 5,
+      ),
+    );
+    this.#message = 'Deck selected; App focus unchanged';
+  }
+  /** One daemon settings write per press. The guard re-runs every stale-press
+   * check and re-reads consent immediately before the write, so a revoked
+   * consent or changed deck refuses without waiting behind the event queue. */
+  async #control(context: string, key: AppKey, display: AppPresentation) {
+    const reader = this.#coreReader;
+    const target = this.selected();
+    if (
+      !reader?.terminal ||
+      !target ||
+      display.pressedAt === undefined ||
+      display.pressedAt < display.armedAt
+    )
+      throw Error('Request stale');
+    const port = { terminal: (address: string) => reader.terminal!(address) };
+    const guard = () => {
+      this.#assertShown(context, display);
+      if (!this.#controls(this.options.config()).allowed.has(display.action))
+        throw Error('Request stale');
+    };
+    guard();
+    const result = await this.#codex.run(
+      display.action as AppControlKind,
+      port,
+      target.terminal,
+      guard,
+    );
+    if (this.keys.get(context) === key)
+      key.notice = {
+        until: this.options.clock() + 2500,
+        message: String(result.label).slice(0, 15),
+        detail: 'Codex daemon',
+        error: false,
+        stamp: this.#stamp(),
+      };
+    this.#message = 'Codex setting changed through its daemon';
+  }
+  /** Core labels need the separate read-back consent and a configured socket,
+   * rechecked after the read so a revoked consent never displays its result. */
+  #coreAllowed(config = this.#config) {
+    return (
+      config.herdrApp?.readbackEnabled === true &&
+      !!config.herdrApp.coreSocketPath
+    );
+  }
+  async #refreshCore(generation: number) {
+    if (!this.#coreAllowed() || !this.options.core) {
+      this.#coreReader?.close();
+      this.#coreReader = null;
+      this.#core = null;
+      return;
+    }
+    try {
+      this.#coreReader ??= this.options.core(this.#config);
+      const reader = this.#coreReader,
+        core = reader ? await reader.read() : null;
+      if (
+        generation === this.#generation &&
+        reader === this.#coreReader &&
+        this.#coreAllowed(this.options.config())
+      )
+        this.#core = core;
+    } catch {
+      // A failed core read only drops labels; App selection stays usable.
+      this.#coreReader?.close();
+      this.#coreReader = null;
+      this.#core = null;
     }
   }
   #assertShown(context: string, display: AppPresentation) {
@@ -327,7 +480,10 @@ export class HerdrAppController {
           ),
         );
         this.setBank(this.#bank);
-      } else {
+      } else if ((APP_CONTROLS as readonly string[]).includes(display.action))
+        await this.#control(context, key, display);
+      else if (!this.#focusConsented()) this.#select(display);
+      else {
         if (!display.target || !this.#port || display.pressedAt === undefined)
           throw Error('Focus refused');
         const state = this.#state();
@@ -363,7 +519,9 @@ export class HerdrAppController {
           error.message,
         )
           ? error.message
-          : 'Focus refused';
+          : (APP_CONTROLS as readonly string[]).includes(display.action)
+            ? 'Control refused'
+            : 'Focus refused';
       if (this.keys.get(context) === key) {
         key.notice = {
           until: this.options.clock() + 2500,
@@ -433,7 +591,7 @@ export class HerdrAppController {
         homeConfigured: !!this.#config.herdrApp?.home,
         focusRequestEnabled:
           this.#config.herdrApp?.focusRequestEnabled === true,
-        connected: this.#online(),
+        connected: !!this.#snapshot,
       }),
     });
   }

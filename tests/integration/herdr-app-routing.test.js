@@ -83,11 +83,18 @@ test('App owns routed key contexts and settings without using legacy discovery, 
         (frame) =>
           frame.event === 'setImage' && frame.context.startsWith('herdr-app:'),
       )
-      .every((frame) =>
-        Buffer.from(frame.payload.image.split(',')[1], 'base64')
-          .toString()
-          .includes('Preview only'),
-      ),
+      .every((frame) => {
+        const shown = Buffer.from(
+          frame.payload.image.split(',')[1],
+          'base64',
+        ).toString();
+        // No preview tile any more, but nothing is armed either.
+        return (
+          !shown.includes('Preview only') &&
+          !shown.includes('Codex daemon') &&
+          !shown.includes('Request only')
+        );
+      }),
   );
   for (const method of ['focused', 'focus', 'zoom', 'readPane'])
     assert.equal(app.bridge[method], undefined);

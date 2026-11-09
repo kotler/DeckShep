@@ -37,9 +37,19 @@ export interface SocketEndpoint {
   file: string;
   identity: string;
 }
+export interface SocketPolicy {
+  /** herdr-core creates its socket 0755 inside an owner-only folder. Owner
+   * approval 2026-11-08: for the core only, an owned 0700 parent is enough,
+   * because connecting needs search access to that folder. App sockets stay
+   * strict: a recreated App socket with broader mode must still refuse. */
+  ownerOnlyParentSuffices?: boolean;
+}
 /** Reject links in every component, not just the socket or its immediate parent.
  * Keep filesystem errors private: their messages contain the selected home. */
-export function inspectSocket(value: string): SocketEndpoint {
+export function inspectSocket(
+  value: string,
+  policy: SocketPolicy = {},
+): SocketEndpoint {
   try {
     const file = absolute(value),
       uid = process.getuid?.();
@@ -57,7 +67,9 @@ export function inspectSocket(value: string): SocketEndpoint {
       directory.mode & 0o077 ||
       !socket.isSocket() ||
       socket.uid !== uid ||
-      socket.mode & 0o077
+      (!policy.ownerOnlyParentSuffices && socket.mode & 0o077) ||
+      // Even with an owner-only parent, a group/world-writable socket refuses.
+      socket.mode & 0o022
     )
       throw Error();
     return {

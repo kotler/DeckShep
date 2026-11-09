@@ -36,13 +36,14 @@ export async function prepareReleasePreview(
   });
   const inspectorFile = path.join(plugin, 'inspector.html');
   const inspector = fs.readFileSync(inspectorFile, 'utf8');
-  const unapprovedNote = /No App build is\s+approved in this preview\./;
+  const unapprovedNote =
+    /Plain focus requests\s+also need an approved App build; without one, selection\s+stays on the deck\./;
   if (!unapprovedNote.test(inspector)) throw Error('Preview inspector changed');
   fs.writeFileSync(
     inspectorFile,
     inspector.replace(
       unapprovedNote,
-      'Only the exact reviewed App build is available in this private preview.',
+      'Plain focus requests accept only the exact reviewed App build in this private preview.',
     ),
   );
   const helperSha256 = candidate.helper.sha256;
