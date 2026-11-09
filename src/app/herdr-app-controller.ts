@@ -1,13 +1,19 @@
 import { createHash } from 'node:crypto';
 import type { Config } from '../domain/types';
 import type { AppFocusPort, AppFocusState } from '../domain/app-focus-request';
-import type { AppPaneRef, AppSelectionSnapshot } from '../domain/app-selection';
+import type {
+  AppCoreSnapshot,
+  AppPaneRef,
+  AppSelectionSnapshot,
+} from '../domain/app-selection';
+import type { AppCoreStatusPort } from '../terminals/herdr-app/core-status';
 import { AppFocusAuthority } from '../guards/app-focus-request';
 import type { AppFocusBackendFactory } from './herdr-app-backend';
 import { appInspectorRequest } from './herdr-app-inspector';
 import {
   appAction,
   appTile,
+  coreFacts,
   paneKey,
   type AppKey,
   type AppPresentation,
@@ -24,6 +30,8 @@ interface Options {
   enqueue(work: () => Promise<void>): void;
   settled(): Promise<void>;
   backend: AppFocusBackendFactory;
+  /** Optional read-only core labels; null when no socket is configured. */
+  core?: (config: Config) => AppCoreStatusPort | null;
 }
 function digest(value: unknown): string {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -39,6 +47,8 @@ export class HerdrAppController {
   #appearance = 0;
   #port: AppFocusPort | null = null;
   #snapshot: AppSelectionSnapshot | null = null;
+  #coreReader: AppCoreStatusPort | null = null;
+  #core: AppCoreSnapshot | null = null;
   #slots: AppPaneRef[] = [];
   #selection: AppPaneRef | null = null;
   #bank = 0;
@@ -205,6 +215,7 @@ export class HerdrAppController {
               banks: this.#banks(),
               now: this.options.clock(),
               palette: this.#config.palette as Record<string, string>,
+              core: this.#coreAllowed() ? coreFacts(pane, this.#core) : null,
             }),
           ),
         ).toString('base64');
@@ -218,6 +229,9 @@ export class HerdrAppController {
     this.#port?.dispose();
     this.#port = null;
     this.#snapshot = null;
+    this.#coreReader?.close();
+    this.#coreReader = null;
+    this.#core = null;
     this.#selection = null;
     this.#generation = this.options.nextGeneration();
     if (clearSlots) {
@@ -289,11 +303,44 @@ export class HerdrAppController {
       )
         this.#selection = null;
       this.setBank(this.#bank);
+      await this.#refreshCore(generation);
     } catch {
       if (generation === this.#generation) this.#stop();
     } finally {
       this.#refreshing = false;
       this.render();
+    }
+  }
+  /** Core labels need the separate read-back consent and a configured socket,
+   * rechecked after the read so a revoked consent never displays its result. */
+  #coreAllowed(config = this.#config) {
+    return (
+      config.herdrApp?.readbackEnabled === true &&
+      !!config.herdrApp.coreSocketPath
+    );
+  }
+  async #refreshCore(generation: number) {
+    if (!this.#coreAllowed() || !this.options.core) {
+      this.#coreReader?.close();
+      this.#coreReader = null;
+      this.#core = null;
+      return;
+    }
+    try {
+      this.#coreReader ??= this.options.core(this.#config);
+      const reader = this.#coreReader,
+        core = reader ? await reader.read() : null;
+      if (
+        generation === this.#generation &&
+        reader === this.#coreReader &&
+        this.#coreAllowed(this.options.config())
+      )
+        this.#core = core;
+    } catch {
+      // A failed core read only drops labels; App selection stays usable.
+      this.#coreReader?.close();
+      this.#coreReader = null;
+      this.#core = null;
     }
   }
   #assertShown(context: string, display: AppPresentation) {

@@ -19,3 +19,20 @@ export interface AppSelectionSnapshot {
   /** Even matching status/list/status reads cannot prove keyboard ownership. */
   verifiedFocus: false;
 }
+
+/** Display-only facts a herdr-core listing reported for one local address.
+ * They label a key; they never become a target, permit or provider identity. */
+export interface AppCoreFacts {
+  address: string;
+  name: string | null;
+  title: string | null;
+  state: string | null;
+  app: string | null;
+  statusTitle: string | null;
+  kind: string | null;
+}
+export interface AppCoreSnapshot {
+  provenance: 'core-listing';
+  coreId: string;
+  terminals: AppCoreFacts[];
+}

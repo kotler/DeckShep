@@ -21,9 +21,13 @@ function frame(h, context) {
     'base64',
   ).toString();
 }
-async function fixture(t) {
+async function fixture(t, extra = {}) {
   const peer = await appControllerBackend(t),
-    h = harness({ experimentalHerdrApp: true, appFocusBackend: peer.backend });
+    h = harness({
+      experimentalHerdrApp: true,
+      appFocusBackend: peer.backend,
+      ...extra,
+    });
   await h.appear('herdr-app');
   await preferences(h, { herdrAppHome: peer.home });
   h.tick(350);
@@ -210,4 +214,48 @@ test('inspector Refresh status performs a new read and reports its result withou
   assert.equal(refused.offline, true);
   assert.match(refused.message, /No matched App connection/);
   assert.deepEqual(peer.inputs(), []);
+});
+
+test('core labels need read-back consent and a socket, never change targets and drop on revocation', async (t) => {
+  const reads = [];
+  const facts = {
+    address: 't2',
+    name: null,
+    title: null,
+    state: 'idle',
+    app: 'codex',
+    statusTitle: 'Auth fix',
+    kind: null,
+  };
+  const { h, peer, app } = await fixture(t, {
+    appCoreStatus: (config) => ({
+      async read() {
+        reads.push(config.herdrApp.coreSocketPath);
+        return { provenance: 'core-listing', coreId: 'c', terminals: [facts] };
+      },
+      close() {},
+    }),
+  });
+  await preferences(h, { herdrAppCoreSocketPath: '/private/core.sock' });
+  assert.deepEqual(reads, [], 'socket alone does not consent to reads');
+  assert.doesNotMatch(frame(h, 'herdr-app:0,1'), /Auth fix/);
+  const before = app.keys.get('herdr-app:0,1').presented.target;
+  await preferences(h, { herdrAppReadbackEnabled: true });
+  assert(reads.length > 0);
+  assert.match(frame(h, 'herdr-app:0,1'), /Auth fix/);
+  assert.match(frame(h, 'herdr-app:0,1'), /READY/);
+  assert.deepEqual(app.keys.get('herdr-app:0,1').presented.target, before);
+  facts.state = 'working';
+  await app.refresh();
+  assert.doesNotMatch(
+    frame(h, 'herdr-app:0,1'),
+    /Auth fix/,
+    'App/core disagreement keeps App-only text',
+  );
+  facts.state = 'idle';
+  await app.refresh();
+  await preferences(h, { herdrAppReadbackEnabled: false });
+  assert.doesNotMatch(frame(h, 'herdr-app:0,1'), /Auth fix/);
+  assert.deepEqual(peer.inputs(), []);
+  assert.equal(h.calls.length, 0);
 });

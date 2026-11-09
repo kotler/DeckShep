@@ -1,4 +1,9 @@
-import type { AppPaneRef, AppPaneStatus } from '../domain/app-selection';
+import type {
+  AppCoreFacts,
+  AppCoreSnapshot,
+  AppPaneRef,
+  AppPaneStatus,
+} from '../domain/app-selection';
 export function paneKey(target: AppPaneRef | null): string {
   return target
     ? JSON.stringify([target.space, target.tab, target.pane, target.terminal])
@@ -85,6 +90,46 @@ export function appState(
     color: palette[key] || FALLBACK_COLORS[key],
   };
 }
+const norm = (value: string | null | undefined) =>
+  String(value || '').toLowerCase();
+/** A core address is unique only within its core and the App may mirror a
+ * different one, so facts label a pane only when the address is unique and
+ * every word both sides report agrees. Any disagreement keeps App-only text. */
+export function coreFacts(
+  pane: AppPaneStatus | undefined,
+  core: AppCoreSnapshot | null | undefined,
+): AppCoreFacts | null {
+  if (!pane || !core) return null;
+  const matches = core.terminals.filter(
+    (facts) => facts.address === pane.target.terminal,
+  );
+  if (matches.length !== 1) return null;
+  const [facts] = matches;
+  if (
+    pane.reportedStatus &&
+    facts.state &&
+    norm(pane.reportedStatus) !== norm(facts.state)
+  )
+    return null;
+  if (
+    pane.reportedApp &&
+    facts.app &&
+    norm(pane.reportedApp) !== norm(facts.app)
+  )
+    return null;
+  return facts;
+}
+function stateLabel(state: { label: string }, kind: string | null) {
+  if (state.label !== 'WAIT INPUT') return state.label;
+  return norm(kind) === 'permission' ? 'CHOICE' : state.label;
+}
+const { ellipsize } = require('../domain/labels') as {
+  ellipsize(text: string, width?: number, fontSize?: number): string;
+};
+/** Same width-based ellipsis as Rex names; `ellipsize` strips bidi/controls. */
+function appName(value: string): string {
+  return ellipsize(value, 120, 26);
+}
 function short(value: string): string {
   return value
     .replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g, '')
@@ -103,6 +148,7 @@ export function appTile(input: {
   banks: number;
   now: number;
   palette?: Record<string, string>;
+  core?: AppCoreFacts | null;
 }) {
   const { key, pane, slot } = input;
   if (input.preview)
@@ -133,15 +179,24 @@ export function appTile(input: {
           ? 'banknext'
           : 'none');
   if (key.coordinates.row === 0 || /^agent:[0-4]$/.test(String(action))) {
-    const provider = appProvider(pane?.reportedApp);
-    const state = appState(pane?.reportedStatus, input.palette);
+    const facts = input.core ?? null;
+    const provider = appProvider(pane?.reportedApp || facts?.app);
+    const state = appState(pane?.reportedStatus || facts?.state, input.palette);
     return {
       agent: true,
       icon: pane ? provider || 'blank' : 'empty',
       lines: pane
         ? [
-            short(pane.name || provider || pane.reportedApp || 'Terminal'),
-            state.label,
+            appName(
+              facts?.statusTitle ||
+                facts?.name ||
+                pane.name ||
+                facts?.title ||
+                provider ||
+                pane.reportedApp ||
+                'Terminal',
+            ),
+            stateLabel(state, facts?.kind ?? null),
             paneKey(pane.target) === paneKey(input.deckSelected)
               ? 'Deck selected'
               : 'App reported',

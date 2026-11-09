@@ -26,7 +26,11 @@ const byId: (id: any) => HTMLElement & {
   add: HTMLSelectElement['add'];
   options: HTMLSelectElement['options'];
 } => document.getElementById(id) as any;
-const connectionFields: string[] = ['herdrSocketPath', 'herdrAppHome'];
+const connectionFields: string[] = [
+  'herdrSocketPath',
+  'herdrAppHome',
+  'herdrAppCoreSocketPath',
+];
 const booleans: string[] = [
     'allowClipboardFocus',
     'bringToFront',
@@ -34,6 +38,7 @@ const booleans: string[] = [
     'herdrTitleIdentity',
     'claudeEnabled',
     'herdrAppFocusRequestEnabled',
+    'herdrAppReadbackEnabled',
   ],
   promptNames: string[] = ['review', 'tests', 'continue'];
 for (const action of [
@@ -166,6 +171,8 @@ function fill(status: any) {
   byId('claudeEnabled').disabled = app || status.setupBusy;
   byId('herdrAppHome').disabled = !app || status.setupBusy;
   byId('herdrAppFocusRequestEnabled').disabled = !app || status.setupBusy;
+  byId('herdrAppCoreSocketPath').disabled = !app || status.setupBusy;
+  byId('herdrAppReadbackEnabled').disabled = !app || status.setupBusy;
   for (const option of Array.from(byId('action').options))
     option.disabled =
       app &&

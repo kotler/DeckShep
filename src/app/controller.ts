@@ -33,6 +33,7 @@ const { CompletionDisplay } = require('../render/completion');
 const { preferenceCodec } = require('./experimental-preferences');
 const { HerdrAppPreview } = require('./herdr-app-preview');
 const { HerdrAppController } = require('./herdr-app-controller');
+const { AppCoreStatusReader } = require('../terminals/herdr-app/core-status');
 const { appFocusBackend } = require('./herdr-app-backend');
 const { GuardedBackend } = require('../terminals/contract/backend');
 const {
@@ -155,6 +156,14 @@ function createApplication(dependencies: Record<string, any>) {
                 },
                 settled,
                 backend: dependencies.appFocusBackend || appFocusBackend,
+                core:
+                  dependencies.appCoreStatus ||
+                  ((config: Config) =>
+                    config.herdrApp?.coreSocketPath
+                      ? AppCoreStatusReader.forSocket(
+                          config.herdrApp.coreSocketPath,
+                        )
+                      : null),
               })
             : createRuntime(scope),
         ),

@@ -124,7 +124,11 @@ Herdr App's production capabilities remain empty. Experimental v3 preferences
 and its preview profile require the explicitly enabled config flag; default
 builds retain v2 and both existing profiles. Read ADR 0004 before changing this.
 The read-only App/core clients in `src/terminals/herdr-app/transport.ts` are not
-wired into production discovery. They use plain JSON lines, enumerate reads,
+wired into production discovery. The one exception is `AppCoreStatusReader`
+(`core-status.ts`): with the separate read-back consent and an explicit core
+socket, its bracketed `terminal.list` supplies display-only key labels. A label
+applies only to one live local address whose App/core status and app words
+agree; it never becomes a target, permit, PID or provider identity. They use plain JSON lines, enumerate reads,
 and forbid history reads, attachments and mutations. Their tests create only
 private temporary fake sockets. See ADR 0007 for the unresolved focus/Zoom
 read-back and native isolation requirements; a passing transport fixture does

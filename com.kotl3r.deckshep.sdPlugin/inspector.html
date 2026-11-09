@@ -152,9 +152,22 @@
     disabled
     label="Allow plain focus requests"
   ></sdpi-checkbox>
+  <label
+    >herdr-core socket<input
+      id="herdrAppCoreSocketPath"
+      type="text"
+      maxlength="1024"
+      placeholder="Absolute path to the core's hc socket"
+  /></label>
+  <sdpi-checkbox
+    id="herdrAppReadbackEnabled"
+    disabled
+    label="Show herdr-core names and status"
+  ></sdpi-checkbox>
   <p class="note">
     Selection and Next can request a pane. They do not verify keyboard focus or
-    allow typing. Zoom and terminal input remain unavailable. No App build is
+    allow typing. Core names are read-only labels, shown only when the core and
+    App agree. Zoom and terminal input remain unavailable. No App build is
     approved in this preview.
   </p>
 </div>
