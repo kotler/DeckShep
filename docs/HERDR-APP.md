@@ -56,5 +56,8 @@ node <installed-plugin>/bin/doctor.js --herdr-app --json
 The CLI checks only the plugin's helper and static build records. It does not
 connect to an App and leaves profile-specific home/consent unknown; view those
 in the selected App profile's setup panel. Reports omit local paths and terminal
-content. Actual App validation remains pending and needs separate authorization
-for isolated, test-owned processes; fixture/browser results do not approve a build.
+content. [Isolated source-build calibration](validation/2026-11-08-herdr-app-peer-session.md)
+has passed with the persistent helper. This does not approve production builds
+or establish hardware/keyboard focus. The separate
+[hardware test build](HERDR-APP-HARDWARE-TEST.md) accepts only a launcher-owned
+private App/core session and explicit request consent.

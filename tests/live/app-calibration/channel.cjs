@@ -40,6 +40,7 @@ class CalibrationChannel {
         allowHalfOpen: true,
       });
     let pending = null,
+      peerSession,
       buffer = Buffer.alloc(0),
       failed = false;
     function fail() {
@@ -83,8 +84,19 @@ class CalibrationChannel {
       });
       this.gate.progress = kind + '.peer-before';
       metrics.connectedMs = Math.round(performance.now() - started);
-      const before = await this.gate.peer(kind, socket, signal),
+      peerSession =
+        kind === 'app' && this.gate.sessions
+          ? await this.gate.openAppPeer(socket, signal)
+          : null;
+      const before = peerSession
+          ? peerSession.captured
+          : await this.gate.peer(kind, socket, signal),
         results = [];
+      if (
+        peerSession &&
+        JSON.stringify(before) !== JSON.stringify(await peerSession.check())
+      )
+        throw Error();
       metrics.peerVerifiedMs = Math.round(performance.now() - started);
       for (let index = 0; index < payloads.length; index++) {
         if (failed || signal.aborted) throw Error();
@@ -110,7 +122,9 @@ class CalibrationChannel {
               ? spaceCreated.parse(JSON.parse(line))
               : parse(schemas[index], line);
         this.gate.progress = kind + '.peer-after.' + index;
-        const after = await this.gate.peer(kind, socket, signal);
+        const after = peerSession
+          ? await peerSession.finish()
+          : await this.gate.peer(kind, socket, signal);
         if (signal.aborted || JSON.stringify(before) !== JSON.stringify(after))
           throw Error();
         results.push(message);
@@ -121,6 +135,7 @@ class CalibrationChannel {
     } finally {
       signal.removeEventListener('abort', abort);
       socket.destroy();
+      await peerSession?.dispose();
     }
   }
   validateRequests(kind, payloads) {

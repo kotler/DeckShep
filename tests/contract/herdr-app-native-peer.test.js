@@ -140,6 +140,7 @@ test(
           '-module-cache-path',
           cache,
           'native/herdr-app-peer.swift',
+          'native/herdr-app-session.swift',
           'native/herdr-app-peer-main.swift',
         ],
         { timeout: 60000, stdio: 'pipe' },

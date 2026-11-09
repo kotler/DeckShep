@@ -69,6 +69,33 @@ test('acknowledgement with unchanged App selection remains request-only evidence
   assert.equal(report.scenarios.verifiedFocus, false);
 });
 
+test('disposable setup seeds only the reviewed welcome/version state and preserves the overlay refusal', async (t) => {
+  let seeded = false;
+  const fixture = calibrationFixture(t, {
+    onSpawn: ({ kind, env }) => {
+      if (kind !== 'app') return;
+      const home = env.HERDR_APP_HOME;
+      assert.deepEqual(
+        JSON.parse(fs.readFileSync(path.join(home, 'shared.json'))),
+        { 'frame.welcomed': 'test' },
+      );
+      assert.deepEqual(
+        JSON.parse(fs.readFileSync(path.join(home, 'update-notes.json'))),
+        { last_run: '0.1.14', presented: [] },
+      );
+      assert.equal(
+        fs.statSync(path.join(home, 'shared.json')).mode & 0o777,
+        0o600,
+      );
+      seeded = true;
+    },
+  });
+  const report = await runCalibration(fixture.runOptions, fixture.effects);
+  assert.equal(report.outcome, 'passed');
+  assert(seeded);
+  assert.deepEqual(report.initialView, { overlays: 0, floats: 0, errors: 0 });
+});
+
 test('unowned App/core peers receive no request bytes and every failure cleans up with settings checks', async (t) => {
   for (const kind of ['core', 'app']) {
     const fixture = calibrationFixture(t, {

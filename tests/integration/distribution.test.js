@@ -21,6 +21,51 @@ function temporary(t) {
 function json(data) {
   return Buffer.from(JSON.stringify(data));
 }
+function installerZip(Z, files) {
+  return Z.zip(files, {
+    executableFiles: [...files.keys()].filter((name) =>
+      /^com\.kotl3r\.deckshep\.sdPlugin\/bin\/(visible-pane|herdr-app-peer)$/.test(
+        name,
+      ),
+    ),
+  });
+}
+test('installer repair preserves helper bytes and executable mode through real ZIP extraction', async (t) => {
+  const { files, Z, A, prefix } = await installerFiles(t);
+  const { preserveInstallerHelperModes, verifyInstallerHelperModes } =
+    await import('../../scripts/installer-modes.mjs');
+  const original = Z.zip(files);
+  assert.throws(() => A.auditInstaller(original), /helper must be executable/);
+  const fixed = preserveInstallerHelperModes(original),
+    modes = new Map();
+  verifyInstallerHelperModes(fixed);
+  assert.deepEqual(Z.unzip(fixed, { modes }), files);
+  assert.equal(modes.get(prefix + 'bin/herdr-app-peer'), 0o100755);
+  assert.equal(modes.get(prefix + 'bin/visible-pane'), 0o100755);
+  assert.equal(modes.get(prefix + 'bin/plugin.js'), 0o100644);
+  assert.throws(
+    () => Z.zip(files, { executableFiles: ['missing'] }),
+    /Missing executable/,
+  );
+  assert.throws(
+    () => preserveInstallerHelperModes(Z.zip(new Map([['one', 'bytes']]))),
+    /Missing executable/,
+  );
+  const directory = temporary(t),
+    archive = path.join(directory, 'installer.zip');
+  fs.writeFileSync(archive, fixed);
+  require('node:child_process').execFileSync(
+    '/usr/bin/unzip',
+    ['-q', archive, '-d', path.join(directory, 'unpacked')],
+    { stdio: 'pipe' },
+  );
+  for (const helper of ['herdr-app-peer', 'visible-pane'])
+    assert.equal(
+      fs.statSync(path.join(directory, 'unpacked', prefix, 'bin', helper))
+        .mode & 0o777,
+      0o755,
+    );
+});
 async function installerFiles(t) {
   const [Z, A, P] = await api(),
     directory = temporary(t),
@@ -118,7 +163,7 @@ test('archive rejects private paths, home data, traversal, symlinks, duplicates,
 });
 test('installer requires safe defaults, exact entry points, profiles and consistent versions', async (t) => {
   const { files, Z, A, prefix } = await installerFiles(t);
-  assert.equal(A.auditInstaller(Z.zip(files)).Version, '1.3.4.0');
+  assert.equal(A.auditInstaller(installerZip(Z, files)).Version, '1.3.4.0');
   for (const replacement of [
     { allowClipboardFocus: true },
     { backend: 'herdr' },
@@ -134,7 +179,7 @@ test('installer requires safe defaults, exact entry points, profiles and consist
         ...replacement,
       };
     changed.set(prefix + 'config.json', json(config));
-    assert.throws(() => A.auditInstaller(Z.zip(changed)));
+    assert.throws(() => A.auditInstaller(installerZip(Z, changed)));
   }
   for (const name of [
     'LICENSE',
@@ -145,15 +190,15 @@ test('installer requires safe defaults, exact entry points, profiles and consist
     const missing = new Map(files);
     missing.delete(prefix + name);
     assert.throws(
-      () => A.auditInstaller(Z.zip(missing)),
+      () => A.auditInstaller(installerZip(Z, missing)),
       /Missing plugin entry/,
     );
   }
   const changed = new Map(files);
   changed.set(prefix + 'package.json', json({ version: '1.3.3' }));
-  assert.throws(() => A.auditInstaller(Z.zip(changed)));
+  assert.throws(() => A.auditInstaller(installerZip(Z, changed)));
   changed.delete(prefix + 'claude-hook.js');
-  assert.throws(() => A.auditInstaller(Z.zip(changed)));
+  assert.throws(() => A.auditInstaller(installerZip(Z, changed)));
 });
 test('DeckShep profiles preserve their new IDs, UUID5 ActionIDs, version, scope and device binding', async (t) => {
   const [Z, A, P] = await api(),
@@ -372,7 +417,7 @@ test('complete archives verify stable public-release provenance and reject stabl
   const payload = new Map(
     A.PAYLOAD.map((name) => [name, Buffer.from('fixture')]),
   );
-  payload.set(A.INSTALLER, Z.zip(files));
+  payload.set(A.INSTALLER, installerZip(Z, files));
   for (const [index, backend] of ['rex', 'herdr'].entries())
     payload.set(
       A.PROFILES[index],

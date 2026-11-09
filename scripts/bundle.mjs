@@ -40,6 +40,16 @@ export async function bundle(input, file, options = {}) {
       {
         name: 'typed-source',
         transform(code, id) {
+          // This UMD helper supplies its own browser global. Its type-only
+          // module marker otherwise emits an unbound CommonJS `exports` in
+          // the browser wrapper, stopping the preferences script at startup.
+          if (options.browser && id.endsWith('/src/app/preferences.ts'))
+            code = code.replace(/export \{\};?\s*$/, '');
+          if (
+            id.endsWith('/src/platform/peer-helper-pin.ts') &&
+            options.peerHelperSha256
+          )
+            code = `export const packagedPeerHelperSha256 = ${JSON.stringify(options.peerHelperSha256)};`;
           if (
             id.includes('node_modules') ||
             id.startsWith('\0') ||

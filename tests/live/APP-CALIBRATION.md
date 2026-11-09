@@ -1,8 +1,9 @@
 # Herdr App source-build calibration
 
 The harness is implemented and tested with fixtures. The first authorized native
-attempt is [blocked before focus](../../docs/validation/2026-11-08-herdr-app-native-calibration.md):
-App peer proof is unavailable after its one-shot reply connection closes.
+attempt was [blocked before focus](../../docs/validation/2026-11-08-herdr-app-native-calibration.md).
+The later [protocol-2 calibration passed](../../docs/validation/2026-11-08-herdr-app-peer-session.md)
+using the original retained token for fresh post-close process/code checks.
 Building this harness grants no permission to run it. Production
 `APP_FOCUS_RECORDS` and App capabilities remain empty. The runner never changes them.
 
@@ -80,11 +81,11 @@ it never executes the source copy or an inferred binary from PATH.
 
 ## Native invocation: separate authorization required
 
-Current checkpoint: App calibration remains blocked before focus. The
-[post-close session design](../../docs/plans/HERDR-APP-POST-CLOSE-PEER-DESIGN.md)
-and its fixtures do not change the packaged helper or enable this runner. A
-reviewed production implementation, rebuilt helper/test manifest and separate
-current authorization are required before another App/core run.
+Current checkpoint: the persistent helper is implemented and the owner authorized
+the recorded source calibration and private hardware artifact. A later run still
+needs current authorization; historical permission is not reusable. The
+[hardware guide](../../docs/HERDR-APP-HARDWARE-TEST.md) documents its test-only
+backend/launcher. Nothing here approves production records.
 
 After current explicit permission for the reviewed artifacts and the disposable
 GUI run, use only this test file. These flags acknowledge permission obtained
@@ -110,6 +111,10 @@ Its environment inherits no PATH, routing/auth/hooks, proxies, update overrides,
 session/socket/holder namespace and credentials directories are private. The
 chosen core is pinned in both App settings and `HERDR_CORE_DIRS`; there is no
 production binary-search fallback. Umask is 0077 during the run and restored.
+Only the disposable home is seeded with `shared.json`'s `frame.welcomed:"test"`
+(matching upstream window fixtures) and version 0.1.14 in `update-notes.json`.
+No observed overlay is dismissed; the overlay refusal stays active. This grants
+no DeckShep consent.
 
 Core starts directly with `serve` and `HC_LAUNCHD_DIRECT=<harness PID>` only on
 that launch. Its socket must serve the owned child before App launch. App starts
@@ -118,7 +123,9 @@ CLI. Any preexisting App endpoint aborts before launch/raise handoff.
 
 Socket paths, owner/mode and identities are checked before connecting. Kernel
 peer proof requires a connection: the helper inspects the connected descriptor
-before the first request byte, and again after replies. Serving PIDs must match
+before the first request byte and freshly validates its retained token after
+App replies. Core's persistent socket keeps fresh one-shot probe checks.
+Serving PIDs must match
 the exact children with stable start identity, executable path and CDHash; no
 launchd adoption, status-PID inference or fallback occurs. Both endpoint paths
 and process ownership are rechecked around requests. The production sender also

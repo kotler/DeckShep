@@ -407,6 +407,19 @@ export class HerdrAppController {
     payload?: { kind?: string; preferences?: unknown };
   }) {
     if (!this.keys.has(event.context)) return;
+    if (event.payload?.kind === 'refresh') {
+      const appearance = this.keys.get(event.context)?.appearance;
+      if (this.#refreshing || this.#active)
+        this.#message = 'App status check already running';
+      else {
+        await this.refresh();
+        this.#message = this.#online()
+          ? 'App status refreshed'
+          : 'No matched App connection; check the instance and App home';
+      }
+      // A reply to an old inspector must not describe a reappeared key.
+      if (this.keys.get(event.context)?.appearance !== appearance) return;
+    }
     appInspectorRequest(event, {
       emit: this.options.emit,
       save: this.options.save,

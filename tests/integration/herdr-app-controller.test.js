@@ -164,3 +164,50 @@ test('empty production records block discovery and focus even with configured ho
   assert.match(frame(h, 'herdr-app:0,1'), /Preview only/);
   assert.deepEqual(h.calls, []);
 });
+
+test('inspector Refresh status performs a new read and reports its result without focus or provider calls', async (t) => {
+  const { h, peer } = await fixture(t);
+  const send = async (kind) => {
+    h.socket.emit(
+      'message',
+      JSON.stringify({
+        event: 'sendToPlugin',
+        context: 'herdr-app:0,0',
+        payload: { kind },
+      }),
+    );
+    await h.api.settled();
+  };
+  const before = peer.peer.calls.length;
+  await send('status');
+  assert.equal(peer.peer.calls.length, before, 'periodic status is passive');
+  peer.world.spaces[0].tabs[0].terminals.pop();
+  await send('refresh');
+  assert.equal(
+    peer.peer.calls.length,
+    before + 3,
+    'explicit refresh reads status/ls/status',
+  );
+  const status = h.socket.frames
+    .filter(
+      (f) =>
+        f.event === 'sendToPropertyInspector' && f.payload.kind === 'status',
+    )
+    .at(-1).payload;
+  assert.equal(status.agents, 6);
+  assert.equal(status.offline, false);
+  assert.equal(status.message, 'App status refreshed');
+  assert.deepEqual(peer.inputs(), []);
+  assert.deepEqual(h.calls, []);
+  peer.status.overlays = ['blocked'];
+  await send('refresh');
+  const refused = h.socket.frames
+    .filter(
+      (f) =>
+        f.event === 'sendToPropertyInspector' && f.payload.kind === 'status',
+    )
+    .at(-1).payload;
+  assert.equal(refused.offline, true);
+  assert.match(refused.message, /No matched App connection/);
+  assert.deepEqual(peer.inputs(), []);
+});

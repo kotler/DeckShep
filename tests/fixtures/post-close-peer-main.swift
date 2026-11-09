@@ -8,6 +8,11 @@ struct PostCloseFixture {
             let arguments = CommandLine.arguments
             let result: [String: Any]
             switch arguments.dropFirst().first {
+            case "ipc":
+                let pair = try FixtureSocketPair(arguments[2] + "/ipc.sock")
+                guard dup2(pair.client, 3) == 3 else { throw AppPeerError.unavailable }
+                try withExtendedLifetime(pair) { try runAppPeerSession() }
+                return
             case "after-self-exec": result = try afterExec()
             case "self-exec": try selfExec(arguments[2]); return
             case "close": result = try closedPeer(arguments[2])
@@ -29,10 +34,15 @@ struct PostCloseFixture {
     static func closedPeer(_ directory: String) throws -> [String: Any] {
         let pair = try FixtureSocketPair(directory + "/closed.sock")
         let lease = try FixturePostCloseLease(pair.client, now: { 1 })
+        let production = try AppPeerSession(pair.client)
         try lease.beforeWrite()
+        _ = try production.check()
         try pair.replyAndClose()
         let retainedByKernel = (try? fixtureToken(pair.client)) != nil
         try lease.finish()
+        let (_, productionToken) = try production.finish()
+        guard ["matched", "unavailable"].contains(productionToken),
+              rejected({ _ = try production.finish() }) else { throw AppPeerError.unavailable }
         guard rejected({ try lease.finish() }),
               rejected({ _ = try FixturePostCloseLease(pair.client, now: { 1 }) }) else { throw AppPeerError.unavailable }
         return ["scenario": "close", "kernelRetained": retainedByKernel,

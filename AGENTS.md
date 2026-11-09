@@ -160,12 +160,21 @@ It launches/connects to nothing and sends no socket bytes. It is packaged at
 the fixed plugin-owned `bin/herdr-app-peer` path, with both architectures checked
 for universal packages. Preferences cannot select a different helper. Contract tests may compile/sign a temporary
 fixture that inspects only itself; this grants no live App/core authorization.
-Passing a socket to the peer helper as stdio pauses Node's reader. Restore a
-previously flowing reader after the helper finishes, preserving explicit pause.
-The first native source calibration is blocked by unavailable post-reply peer
-credentials after the App closes its one-shot socket. Do not remove that guard
-or claim success; review peer-proof lifetime separately. See the 2026-11-08
-native calibration record in `docs/validation/`.
+Passing a socket to the peer helper as stdio pauses Node's reader. The one-shot
+probe restores an originally flowing reader after helper exit; protocol-2
+sessions restore at capture-ready while the helper stays alive. Preserve explicit
+pause. A session retains the original kernel token privately, freshly revalidates
+its image after the reply, pins reviewed helper bytes and burns on any failure.
+Never replace these checks with a cached PID/verdict or renew request budgets.
+The original native blocker and the later passing source calibration are recorded
+in `docs/validation/2026-11-08-herdr-app-peer-session.md`. That evidence approves
+no production build or native-focus/input capability.
+The private hardware preparer under `tests/live/app-calibration/` substitutes a
+test-only backend and keeps production records empty. Its runner-owned peer lease
+needs a fresh ownership heartbeat; no normal config/env knob selects it. Package
+audits reject the hardware test marker. Preparation never installs/restarts a
+plugin. See `docs/HERDR-APP-HARDWARE-TEST.md`; native/hardware runs still require
+current explicit authorization and the live flags.
 The test-only App calibration harness is under `tests/live/app-calibration/`.
 It additionally requires `ASW_LIVE_HERDR_APP=1` and separately authorized source
 artifacts; invoke only `tests/live/herdr-app.test.js` for that calibration.

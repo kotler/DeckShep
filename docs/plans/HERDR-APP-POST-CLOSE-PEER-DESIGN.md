@@ -7,6 +7,12 @@ The [native calibration](../validation/2026-11-08-herdr-app-native-calibration.m
 remains blocked before focus. See the
 [fixture validation record](../validation/2026-11-08-herdr-app-post-close-design.md).
 
+Later checkpoint: the owner authorized implementation, isolated App/core
+calibration and preparation of a hardware build. The
+[runtime validation](../validation/2026-11-08-herdr-app-peer-session.md) now records
+a passing source calibration. The design-only status above describes the earlier
+checkpoint; production records/capabilities remain empty.
+
 ## Problem and selected design
 
 The reviewed App serves one request and closes its connection after the reply.
@@ -138,6 +144,12 @@ cache peer data. Introduce an explicit per-connection session/verifier API with
 owned disposal in the request transport.
 
 Use private stdin/stdout JSON-lines with strict keys and integer sequence values:
+
+Implementation: parent commands use only canonical `protocol`, `seq`, `op`
+serialization without whitespace, rejecting duplicate/escaped keys. `finish`
+closes control stdin; the helper refuses trailing bytes before its final frame.
+Helper replies use strict bounded JSON with duplicate-key rejection. Native
+failures use fixed `unavailable`; the watchdog can exit without a frame.
 
 | Direction | Frame |
 | --- | --- |

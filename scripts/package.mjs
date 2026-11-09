@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { releasePolicy } from './release-policy.mjs';
+import { preserveInstallerHelperModes } from './installer-modes.mjs';
 import { zip, tree, readRegular } from './archive.mjs';
 import { releaseReadinessFailures } from './release-readiness.mjs';
 import {
@@ -72,6 +73,11 @@ if (option('--verify')) {
         '-verify_arch',
         architecture,
       ]);
+  const installerFile = path.join(root, 'dist', INSTALLER);
+  fs.writeFileSync(
+    installerFile,
+    preserveInstallerHelperModes(fs.readFileSync(installerFile)),
+  );
   const out = path.join(root, 'dist'),
     info = {
       ...policy,

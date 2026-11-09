@@ -32,6 +32,7 @@ export function appInspectorRequest(
       backend: 'herdr-app',
       preferences: state.preferences,
       offline: !state.connected,
+      previewOnly: state.recordCount === 0,
       agents: state.panes,
       codex: 0,
       claude: 0,
@@ -61,7 +62,7 @@ export function appInspectorRequest(
     });
   } else
     status(
-      event.payload?.kind === 'status'
+      ['status', 'refresh'].includes(event.payload?.kind ?? '')
         ? undefined
         : 'Use Herdr keyboard; native integration setup is unavailable',
     );

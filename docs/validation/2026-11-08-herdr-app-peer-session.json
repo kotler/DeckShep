@@ -1,0 +1,204 @@
+{
+  "schema": 1,
+  "date": "2026-11-08",
+  "productionApproved": false,
+  "attempts": [
+    {
+      "schema": 1,
+      "outcome": "failed",
+      "productionApproved": false,
+      "verifiedFocus": false,
+      "buildMode": "source-no-updater",
+      "failures": ["scenarios"],
+      "cleanup": true,
+      "settingsUnchanged": true,
+      "limits": {
+        "armingMs": 350,
+        "deliveryMs": 1000,
+        "setupExchangeMs": 3000,
+        "readinessMs": 10000
+      },
+      "builds": {
+        "appSource": "2405bf388c568c3ed479f05b8e405ccfa44b3f2c",
+        "coreSource": "3965a46caae095a3ead01de237fa13955e52b8c6",
+        "app": {
+          "contract": 1,
+          "bundleId": "dev.herdr.app",
+          "executable": "Herdr",
+          "version": "0.1.14",
+          "build": "0.1.14",
+          "executableSha256": "688c1e71e608460444b878f3f522142a33cdcb781871d73241b5481e65c59291",
+          "plistSha256": "903c6a4376d630305c8abb034d1bd0faba21bbca1a94734a36db071fccbbde12",
+          "cdHash": "0517bb788442f175a5acadde93d79bbf5df04a66"
+        },
+        "appTreeSha256": "a862459a6cd2a090775294fc2baff4c3528d59368959866bbb155a4893d14cd0",
+        "core": {
+          "version": "0.1.18",
+          "sha256": "7628db954a649595f77fa04cb1a1a4b84367c5c105d9671ab749db93d91732ca",
+          "cdHash": "c23a0ae60491364fd65dccc78618e6986baaf78b"
+        },
+        "helperSha256": "358e58767c775833ee27af88e33485f7a3a06bac8c9b5b2801228f80e0058be5"
+      },
+      "scenarios": {
+        "requests": []
+      },
+      "failedCheck": "app.peer-after.0",
+      "exchangeMetrics": {
+        "receivedBytes": 26,
+        "writtenBytes": 12,
+        "writeDrained": true,
+        "connectedMs": 0,
+        "peerVerifiedMs": 56,
+        "writeQueuedMs": 62
+      }
+    },
+    {
+      "schema": 1,
+      "outcome": "passed",
+      "productionApproved": false,
+      "verifiedFocus": false,
+      "buildMode": "source-no-updater",
+      "failures": [],
+      "cleanup": true,
+      "settingsUnchanged": true,
+      "limits": {
+        "armingMs": 350,
+        "deliveryMs": 1000,
+        "setupExchangeMs": 3000,
+        "readinessMs": 10000
+      },
+      "builds": {
+        "appSource": "2405bf388c568c3ed479f05b8e405ccfa44b3f2c",
+        "coreSource": "3965a46caae095a3ead01de237fa13955e52b8c6",
+        "app": {
+          "contract": 1,
+          "bundleId": "dev.herdr.app",
+          "executable": "Herdr",
+          "version": "0.1.14",
+          "build": "0.1.14",
+          "executableSha256": "688c1e71e608460444b878f3f522142a33cdcb781871d73241b5481e65c59291",
+          "plistSha256": "903c6a4376d630305c8abb034d1bd0faba21bbca1a94734a36db071fccbbde12",
+          "cdHash": "0517bb788442f175a5acadde93d79bbf5df04a66"
+        },
+        "appTreeSha256": "a862459a6cd2a090775294fc2baff4c3528d59368959866bbb155a4893d14cd0",
+        "core": {
+          "version": "0.1.18",
+          "sha256": "7628db954a649595f77fa04cb1a1a4b84367c5c105d9671ab749db93d91732ca",
+          "cdHash": "c23a0ae60491364fd65dccc78618e6986baaf78b"
+        },
+        "helperSha256": "358e58767c775833ee27af88e33485f7a3a06bac8c9b5b2801228f80e0058be5"
+      },
+      "initialView": {
+        "overlays": 0,
+        "floats": 0,
+        "errors": 0
+      },
+      "scenarios": {
+        "core": {
+          "version": "0.1.18",
+          "generation": 1,
+          "methodsCount": 32,
+          "methodsSha256": "193ca745c3262057466386d5a9af2ab499bf6e37903eeaf30620b8b6b876cd8d",
+          "featuresCount": 7,
+          "featuresSha256": "39e6ae30f626aa886480064f555eac8d7dc6af7f6ba69396c1998ab21e2357a2"
+        },
+        "panes": 2,
+        "requests": [
+          {
+            "status": "requested",
+            "elapsedMs": 352.51,
+            "acknowledged": true,
+            "modelSelectedTarget": true
+          },
+          {
+            "status": "requested",
+            "elapsedMs": 339.73,
+            "acknowledged": true,
+            "modelSelectedTarget": true
+          }
+        ],
+        "refusals": [
+          "future-press",
+          "reused-permit",
+          "stale-generation",
+          "revoked-consent"
+        ],
+        "verifiedFocus": false
+      }
+    },
+    {
+      "schema": 1,
+      "outcome": "passed",
+      "productionApproved": false,
+      "verifiedFocus": false,
+      "buildMode": "source-no-updater",
+      "failures": [],
+      "cleanup": true,
+      "settingsUnchanged": true,
+      "limits": {
+        "armingMs": 350,
+        "deliveryMs": 1000,
+        "setupExchangeMs": 3000,
+        "readinessMs": 10000
+      },
+      "builds": {
+        "appSource": "2405bf388c568c3ed479f05b8e405ccfa44b3f2c",
+        "coreSource": "3965a46caae095a3ead01de237fa13955e52b8c6",
+        "app": {
+          "contract": 1,
+          "bundleId": "dev.herdr.app",
+          "executable": "Herdr",
+          "version": "0.1.14",
+          "build": "0.1.14",
+          "executableSha256": "688c1e71e608460444b878f3f522142a33cdcb781871d73241b5481e65c59291",
+          "plistSha256": "903c6a4376d630305c8abb034d1bd0faba21bbca1a94734a36db071fccbbde12",
+          "cdHash": "0517bb788442f175a5acadde93d79bbf5df04a66"
+        },
+        "appTreeSha256": "a862459a6cd2a090775294fc2baff4c3528d59368959866bbb155a4893d14cd0",
+        "core": {
+          "version": "0.1.18",
+          "sha256": "7628db954a649595f77fa04cb1a1a4b84367c5c105d9671ab749db93d91732ca",
+          "cdHash": "c23a0ae60491364fd65dccc78618e6986baaf78b"
+        },
+        "helperSha256": "358e58767c775833ee27af88e33485f7a3a06bac8c9b5b2801228f80e0058be5"
+      },
+      "initialView": {
+        "overlays": 0,
+        "floats": 0,
+        "errors": 0
+      },
+      "scenarios": {
+        "core": {
+          "version": "0.1.18",
+          "generation": 1,
+          "methodsCount": 32,
+          "methodsSha256": "193ca745c3262057466386d5a9af2ab499bf6e37903eeaf30620b8b6b876cd8d",
+          "featuresCount": 7,
+          "featuresSha256": "39e6ae30f626aa886480064f555eac8d7dc6af7f6ba69396c1998ab21e2357a2"
+        },
+        "panes": 2,
+        "requests": [
+          {
+            "status": "requested",
+            "elapsedMs": 379.37,
+            "acknowledged": true,
+            "modelSelectedTarget": true
+          },
+          {
+            "status": "requested",
+            "elapsedMs": 331.54,
+            "acknowledged": true,
+            "modelSelectedTarget": true
+          }
+        ],
+        "refusals": [
+          "future-press",
+          "reused-permit",
+          "stale-generation",
+          "revoked-consent"
+        ],
+        "verifiedFocus": false
+      }
+    }
+  ]
+}

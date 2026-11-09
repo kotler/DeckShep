@@ -10,6 +10,7 @@ let socket: any,
   keySettings: {} = {},
   shared: any = null,
   lastStatus: any;
+let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 const byId: (id: any) => HTMLElement & {
   value: string;
   checked: boolean;
@@ -105,6 +106,7 @@ function query() {
   send('sendToPlugin', { kind: 'status' }, actionContext);
 }
 function fill(status: any) {
+  clearTimeout(refreshTimer);
   filling = true;
   lastStatus = status;
   shared = status.preferences;
@@ -128,7 +130,9 @@ function fill(status: any) {
   }
   byId('connection').textContent = app
     ? status.offline
-      ? 'Herdr App preview — no matched App build'
+      ? status.previewOnly
+        ? 'Herdr App preview — no approved App build'
+        : 'Herdr App unavailable — check the selected instance'
       : `${status.agents} pane(s) · App-reported status`
     : status.offline
       ? herdr
@@ -224,7 +228,17 @@ for (const key of [...booleans, ...promptNames, ...connectionFields])
     () => save(key),
   );
 byId('refresh').addEventListener('click', () => {
-  query();
+  byId('message').textContent = 'Refreshing status…';
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(() => {
+    byId('message').textContent =
+      'No plugin response. Select an active DeckShep key and reopen its setup.';
+  }, 3000);
+  const app =
+    lastStatus?.backend === 'herdr-app' ||
+    (keySettings as Record<string, unknown>).profileScope === 'herdr-app';
+  if (app) send('sendToPlugin', { kind: 'refresh' }, actionContext);
+  else query();
   send('sendToPlugin', { kind: 'doctor' }, actionContext);
 });
 for (const kind of [

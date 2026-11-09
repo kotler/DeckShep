@@ -53,6 +53,17 @@ timing with fixtures only. See [fixture evidence](../validation/2026-11-08-herdr
 The packaged protocol-1 verifier and its post-close refusal are unchanged.
 Production integration and fresh authorized calibration remain pending; no live
 App/core run or production record is enabled by this checkpoint.
+Checkpoint 2h implements the persistent native session and sender bridge, with
+helper hash pinning and protocol/lifecycle fixtures. The owner authorized the
+next isolated calibration and preparation of a hardware test build.
+[Source calibration passed](../validation/2026-11-08-herdr-app-peer-session.md):
+two plain requests were acknowledged, cleanup passed and tracked settings were
+unchanged. The private [hardware build](../HERDR-APP-HARDWARE-TEST.md) and owned
+launcher are prepared. After the inspector/helper-permission corrections, the
+owner reported that the physical Terminal/Next pane walkthrough worked. See the
+[user-reported hardware result](../validation/2026-11-08-herdr-app-inspector-refresh.md#owner-reported-hardware-result).
+The remaining hardware/release matrix is not established by this smoke test.
+Production records/capabilities stay empty. No plugin was installed/restarted.
 The developer's installed/running core build remains unestablished; the native
 attempt identified only its own private core. The App does not bundle core.
 The ordinary control socket does not expose the full focus/Zoom

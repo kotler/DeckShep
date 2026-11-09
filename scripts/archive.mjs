@@ -23,7 +23,10 @@ export function safeName(name) {
   )
     throw Error('Unsafe archive path');
 }
-export function zip(files) {
+export function zip(files, { executableFiles = [] } = {}) {
+  const executable = new Set(executableFiles);
+  for (const name of executable)
+    if (!files.has(name)) throw Error('Missing executable ZIP entry');
   const locals = [],
     entries = [];
   let offset = 0;
@@ -45,7 +48,10 @@ export function zip(files) {
     entry.writeUInt32LE(0x02014b50);
     entry.writeUInt16LE(0x0314, 4);
     local.copy(entry, 6, 4, 30);
-    entry.writeUInt32LE((0o100644 << 16) >>> 0, 38);
+    entry.writeUInt32LE(
+      ((executable.has(name) ? 0o100755 : 0o100644) << 16) >>> 0,
+      38,
+    );
     entry.writeUInt32LE(offset, 42);
     locals.push(local, encoded, compressed);
     entries.push(entry, encoded);
@@ -60,7 +66,7 @@ export function zip(files) {
   end.writeUInt32LE(offset, 16);
   return Buffer.concat([...locals, central, end]);
 }
-export function unzip(data) {
+export function unzip(data, { modes } = {}) {
   const bytes = Buffer.from(data),
     files = new Map();
   let end = bytes.length - 22;
@@ -163,6 +169,7 @@ export function unzip(data) {
     if (output.length !== size || crc32(output) !== crc)
       throw Error('ZIP checksum mismatch');
     files.set(name, output);
+    modes?.set(name, mode);
     cursor += 46 + length + extra + comment;
   }
   if (cursor !== directoryEnd) throw Error('Invalid ZIP directory size');

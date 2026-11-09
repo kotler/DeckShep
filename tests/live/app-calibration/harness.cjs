@@ -4,6 +4,9 @@ const path = require('node:path');
 const { isDeepStrictEqual } = require('node:util');
 const { OwnedProcesses, settingsHashes } = require('../safety.cjs');
 const { nativeAppPeerProbe } = require('../../../src/platform/app-peer');
+const {
+  nativeAppPeerSession,
+} = require('../../../src/platform/app-peer-session');
 const { stageArtifacts } = require('./artifacts.cjs');
 const {
   appAuthorization,
@@ -46,9 +49,13 @@ function createRun(effects) {
 }
 async function prepare(run, artifactDirectory) {
   if (!artifactDirectory) throw Error('Calibration artifacts required');
-  run.root = fs.realpathSync(
-    fs.mkdtempSync(path.join(fs.realpathSync('/tmp'), 'dsh-cal-')),
-  );
+  if (run.effects.runRoot) {
+    fs.mkdirSync(run.effects.runRoot, { mode: 0o700 });
+    run.root = fs.realpathSync(run.effects.runRoot);
+  } else
+    run.root = fs.realpathSync(
+      fs.mkdtempSync(path.join(fs.realpathSync('/tmp'), 'dsh-cal-')),
+    );
   fs.chmodSync(run.root, 0o700);
   run.artifacts = await stageArtifacts(
     artifactDirectory,
@@ -67,6 +74,10 @@ async function prepare(run, artifactDirectory) {
     run.effects.probe ?? nativeAppPeerProbe(artifacts.helper),
     run.children,
     run.signal,
+    run.effects.sessions ??
+      (run.effects.probe
+        ? null
+        : nativeAppPeerSession(artifacts.helper, manifest.helperSha256)),
   );
   run.report.builds = {
     appSource: manifest.appSource,
@@ -126,10 +137,15 @@ async function exercise(run) {
   run.phase = 'app-ownership';
   await awaitSocket(gate, 'app');
   // Both paths and the App peer are checked before the first App request.
-  await new CalibrationChannel(gate).appRead(
+  const initialView = await new CalibrationChannel(gate).appRead(
     { status: true },
     'herdrAppStatus',
   );
+  report.initialView = {
+    overlays: initialView.overlays.length,
+    floats: Object.keys(initialView.floats).length,
+    errors: initialView.errors.length,
+  };
   gate.captureDescendants();
   run.phase = 'scenarios';
   report.scenarios = { requests: [] };
@@ -205,10 +221,29 @@ async function runCalibration(
   try {
     await prepare(run, artifactDirectory);
     await exercise(run);
-  } catch {
+    if (effects.hold) {
+      run.phase = 'hardware-hold';
+      await effects.hold(run);
+    }
+  } catch (error) {
     // Native/process/fs messages can contain paths or terminal output. Retain
     // only this fixed phase identifier, never the caught exception or payloads.
     run.report.failures.push(run.phase);
+    const reason = error?.message;
+    if (
+      [
+        'App view unavailable',
+        'App read expired',
+        'App selection changed',
+        'App endpoint changed',
+        'App selection ambiguous',
+        'App unavailable',
+        'Calibration command mismatch',
+        'Calibration App home not fresh',
+        'Calibration focus request failed',
+      ].includes(reason)
+    )
+      run.report.failureReason = reason;
     if (run.gate?.progress) run.report.failedCheck = run.gate.progress;
     if (run.gate?.exchangeMetrics)
       run.report.exchangeMetrics = run.gate.exchangeMetrics;

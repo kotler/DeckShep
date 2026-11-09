@@ -49,6 +49,10 @@ func inspectAppPeer(_ descriptor: Int32) throws -> [String: Any] {
     var size = socklen_t(MemoryLayout<audit_token_t>.size)
     guard getsockopt(descriptor, SOL_LOCAL, LOCAL_PEERTOKEN, &token, &size) == 0,
           size == MemoryLayout<audit_token_t>.size else { throw AppPeerError.unavailable }
+    return try inspectAppPeerToken(token)
+}
+
+func inspectAppPeerToken(_ token: audit_token_t) throws -> [String: Any] {
     let (before, executable) = try peerProcess(token)
     let hash = try peerCodeHash(token)
     let (after, afterExecutable) = try peerProcess(token)

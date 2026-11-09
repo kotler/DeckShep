@@ -49,12 +49,24 @@ function appEnvironment(root, core) {
     }),
     { flag: 'wx', mode: 0o600 },
   );
+  // Upstream's own window fixtures mark the welcome as handled. Seed only
+  // this fresh disposable home; never dismiss an observed overlay or grant
+  // DeckShep consent. Matching last_run avoids the release-notes popup too.
+  for (const [name, value] of Object.entries({
+    'shared.json': { 'frame.welcomed': 'test' },
+    'update-notes.json': { last_run: '0.1.14', presented: [] },
+  }))
+    fs.writeFileSync(
+      path.join(env.HERDR_APP_HOME, name),
+      JSON.stringify(value),
+      { flag: 'wx', mode: 0o600 },
+    );
   return env;
 }
 /** Paths are checked before connect; kernel peer credentials before any bytes.
  * App/core socket PIDs must be the direct children we launched, never adopted. */
 class OwnedEndpoints {
-  constructor(root, env, artifacts, owned, probe, children, signal) {
+  constructor(root, env, artifacts, owned, probe, children, signal, sessions) {
     Object.assign(this, {
       root,
       env,
@@ -63,6 +75,7 @@ class OwnedEndpoints {
       probe,
       children,
       signal,
+      sessions,
     });
     this.files = {
       app: path.join(env.HERDR_APP_HOME, 'herdr-app.sock'),
@@ -111,12 +124,29 @@ class OwnedEndpoints {
     this.assertChildren();
   }
   async peer(kind, socket, signal) {
-    this.peerChecks++;
     this.checkBoth();
-    const before = validate(
-      'herdrAppPeer',
-      await this.probe(socket, signal, kind),
-    );
+    return this.acceptPeer(kind, await this.probe(socket, signal, kind));
+  }
+  async openAppPeer(socket, signal) {
+    if (!this.sessions) throw Error('Calibration session unavailable');
+    this.checkBoth();
+    const session = await this.sessions(socket, signal);
+    try {
+      const captured = this.acceptPeer('app', session.captured);
+      return {
+        captured,
+        check: async () => this.acceptPeer('app', await session.check()),
+        finish: async () => this.acceptPeer('app', await session.finish()),
+        dispose: () => session.dispose(),
+      };
+    } catch {
+      await session.dispose();
+      throw Error('Calibration peer refused');
+    }
+  }
+  acceptPeer(kind, evidence) {
+    this.peerChecks++;
+    const before = validate('herdrAppPeer', evidence);
     this.checkBoth();
     const executable = this.artifacts[kind],
       child = this.children[kind],

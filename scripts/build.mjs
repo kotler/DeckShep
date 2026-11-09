@@ -4,6 +4,7 @@ import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
+import { createHash } from 'node:crypto';
 import { tree } from './archive.mjs';
 import { bundle } from './bundle.mjs';
 import { profileArchive, PROFILE_NAMES } from './profiles.mjs';
@@ -89,7 +90,11 @@ export async function build({ universal = false } = {}) {
       ['visible-pane', ['visible-pane.swift'], []],
       [
         'herdr-app-peer',
-        ['herdr-app-peer.swift', 'herdr-app-peer-main.swift'],
+        [
+          'herdr-app-peer.swift',
+          'herdr-app-session.swift',
+          'herdr-app-peer-main.swift',
+        ],
         ['-lbsm'],
       ],
     ]) {
@@ -140,11 +145,12 @@ export async function build({ universal = false } = {}) {
   ];
   for (const [entry, output, options] of entries) {
     if (!fs.existsSync(path.join(root, entry))) continue;
-    await bundle(
-      path.join(root, entry),
-      path.join(destination, output),
-      options,
-    );
+    await bundle(path.join(root, entry), path.join(destination, output), {
+      ...options,
+      peerHelperSha256: createHash('sha256')
+        .update(fs.readFileSync(path.join(destination, 'bin/herdr-app-peer')))
+        .digest('hex'),
+    });
     // Stable standalone source-install paths are also generated, never tracked.
     fs.mkdirSync(path.dirname(path.join(source, output)), { recursive: true });
     fs.copyFileSync(path.join(destination, output), path.join(source, output));

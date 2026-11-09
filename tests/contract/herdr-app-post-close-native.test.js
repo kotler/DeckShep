@@ -11,8 +11,17 @@ function command(file, args, options = {}) {
       timeout: 60000,
       ...options,
     });
-  } catch {
-    throw Error('Post-close self-fixture failed');
+  } catch (error) {
+    const diagnostics = String(error.stderr || '')
+      .split('\n')
+      .filter((line) => line.includes('error:'))
+      .map((line) => line.replace(/^.*?error: /, ''))
+      .join(' | ')
+      .slice(0, 1200);
+    const stage = args.includes('-typecheck')
+      ? args[args.indexOf('-target') + 1]
+      : path.basename(file);
+    throw Error('Post-close self-fixture failed: ' + stage + ' ' + diagnostics);
   }
 }
 test(
@@ -28,6 +37,7 @@ test(
     t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
     const sources = [
       'native/herdr-app-peer.swift',
+      'native/herdr-app-session.swift',
       'tests/fixtures/post-close-peer.swift',
       'tests/fixtures/post-close-peer-main.swift',
     ];
@@ -72,5 +82,30 @@ test(
         cache,
         ...sources,
       ]);
+    const check = '{"protocol":2,"seq":1,"op":"check"}\n',
+      finish = '{"protocol":2,"seq":2,"op":"finish"}\n';
+    const frames = command(binary, ['ipc', directory], {
+      input: check + finish,
+      encoding: 'utf8',
+    })
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line));
+    assert.deepEqual(
+      frames.map((frame) => frame.state),
+      ['captured', 'checked', 'finished'],
+    );
+    for (const input of [
+      '',
+      finish,
+      check + check,
+      check + finish + '{}\n',
+      '{"protocol":2,"seq":1,"op":"check","op":"check"}\n',
+      'x'.repeat(257),
+    ])
+      assert.throws(
+        () => command(binary, ['ipc', directory], { input }),
+        /self-fixture failed/,
+      );
   },
 );

@@ -68,6 +68,7 @@ async function calibrate(
     'machine',
   ]);
   const initial = await channel.appRead({ ls: true }, 'herdrAppWorld');
+  gate.progress = 'scenarios.initial-world';
   if (initial.spaces.length) throw Error('Calibration App home not fresh');
   const state = {
       scope: 'herdr-app',
@@ -92,6 +93,9 @@ async function calibrate(
       (socket, signal) => gate.peer('app', socket, signal),
       [gate.artifacts.manifest.appRecord],
       decoder,
+      gate.sessions
+        ? (socket, signal) => gate.openAppPeer(socket, signal)
+        : undefined,
     ),
     sender = new GuardedAppFocusSender(verifier, authority, {
       appHome: gate.env.HERDR_APP_HOME,
@@ -102,10 +106,12 @@ async function calibrate(
     // Fresh disk state alone cannot establish a usable App view. Refuse errors,
     // overlays, conflicting active flags or an unexpected pane before setup.
     gate.checkBoth();
+    gate.progress = 'scenarios.empty-selection';
     const empty = await sender.observe(gate.signal);
     if (empty.panes.length || empty.selected !== null)
       throw Error('Calibration App home not fresh');
     for (let count = 1; count <= 2; count++) {
+      gate.progress = 'scenarios.new-space.' + count;
       await channel.newSpace();
       gate.captureDescendants();
       await waitFor(

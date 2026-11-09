@@ -5,6 +5,7 @@ import type { AppFocusPort } from '../domain/app-focus-request';
 import type { AppFocusAuthority } from '../guards/app-focus-request';
 import { pluginDirectory } from '../platform/paths';
 import { nativeAppPeerProbe } from '../platform/app-peer';
+import { nativeAppPeerSession } from '../platform/app-peer-session';
 import {
   APP_FOCUS_RECORDS,
   AppPeerVerifier,
@@ -46,7 +47,12 @@ export const appFocusBackend: AppFocusBackendFactory = {
       throw Error('App unavailable');
     const helper = path.join(pluginDirectory, 'bin/herdr-app-peer');
     return new GuardedAppFocusSender(
-      new AppPeerVerifier(nativeAppPeerProbe(helper)),
+      new AppPeerVerifier(
+        nativeAppPeerProbe(helper),
+        APP_FOCUS_RECORDS,
+        undefined,
+        nativeAppPeerSession(helper),
+      ),
       authority,
       { appHome: config.herdrApp.home },
     );

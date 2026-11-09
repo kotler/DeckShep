@@ -9,7 +9,11 @@ import type { z } from 'zod';
 import { appSocket, type AppHomeOptions } from './endpoint';
 import { createConnection, type Socket } from 'node:net';
 import { inspectSocket, type SocketEndpoint } from './endpoint';
-import { AppPeerVerifier, type AppPeerBinding } from './peer';
+import {
+  AppPeerVerifier,
+  type AppPeerBinding,
+  type AppPeerConnection,
+} from './peer';
 import { AppSelectionReader } from './selection';
 
 type Data<K extends Boundary> = z.infer<(typeof schemas)[K]>;
@@ -244,13 +248,15 @@ export class GuardedAppFocusSender {
     if (bounded.aborted) throw Error('App unavailable');
     const channel = new AppFocusConnection(this.#file, bounded);
     this.#active.add(channel);
+    let peer: AppPeerConnection | undefined;
     try {
       await channel.open();
-      const binding = await this.#verifier.verify(
+      peer = await this.#verifier.open(
         channel.socket,
         channel.endpoint.identity,
         bounded,
       );
+      const binding = peer.binding;
       channel.assertCurrent();
       this.#adopt(binding);
       binding.assertUnchanged();
@@ -270,22 +276,19 @@ export class GuardedAppFocusSender {
         channel.fail();
       }
       const line = await response;
-      const after = await this.#verifier.verify(
-        channel.socket,
-        channel.endpoint.identity,
-        bounded,
-      );
+      const result = parse(schema, line);
+      await peer.finish();
       channel.assertCurrent();
-      if (bounded.aborted || after.key !== binding.key)
-        throw Error('App changed');
-      after.assertUnchanged();
-      return parse(schema, line);
+      if (bounded.aborted) throw Error('App changed');
+      binding.assertUnchanged();
+      return result;
     } catch {
       this.#binding = null;
       this.#generation++;
       throw Error('App unavailable');
     } finally {
       channel.close();
+      await peer?.dispose();
       this.#active.delete(channel);
     }
   }

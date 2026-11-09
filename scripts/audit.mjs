@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { unzip, safeName } from './archive.mjs';
 import { validProvenanceTag } from './release-policy.mjs';
+import { verifyInstallerHelperModes } from './installer-modes.mjs';
 import {
   PROFILE_IDS,
   PAGE_IDS,
@@ -74,6 +75,7 @@ const fixtureMarkers = [
   'herdr-app-panes',
   'virtual-app-peer-',
   'fixture-post-close-peer-lease',
+  'fixture-app-hardware-test',
 ];
 export function assertProductionBundle(bytes) {
   // Generic state names (question/approval/offline) and backend ID herdr-tui
@@ -172,6 +174,7 @@ export function auditInstaller(data) {
       throw Error('Missing plugin entry point');
   if (manifest.Profiles?.length !== 2)
     throw Error('Fresh package must contain only the existing profiles');
+  verifyInstallerHelperModes(data);
   if (
     manifest.Actions?.length !== 1 ||
     manifest.Actions[0].UUID !== 'com.kotl3r.deckshep.key'

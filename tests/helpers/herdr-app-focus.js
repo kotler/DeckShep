@@ -123,6 +123,7 @@ async function senderFixture(t, options = {}) {
     },
     [build.record],
     build.decoder,
+    options.sessions,
   );
   const authority = new AppFocusAuthority(
     () => state,
@@ -132,6 +133,7 @@ async function senderFixture(t, options = {}) {
     appHome: peer.directory,
   });
   t.after(() => sender.dispose());
+  options.beforeObserve?.(build);
   await sender.observe();
   function permit() {
     state.endpointGeneration = sender.generation;

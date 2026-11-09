@@ -10,6 +10,8 @@ test('inspector', () => {
   const nodes = new Map(),
     frames = [];
   let receive;
+  const timers = new Map();
+  let timerId = 0;
   const socket = {
     onopen() {},
     onmessage(raw) {
@@ -57,6 +59,11 @@ test('inspector', () => {
     },
     RexPreferences: P,
     setInterval: () => {},
+    setTimeout: (callback) => {
+      timers.set(++timerId, callback);
+      return timerId;
+    },
+    clearTimeout: (id) => timers.delete(id),
   };
   vm.createContext(context);
   vm.runInContext(
@@ -211,6 +218,35 @@ test('inspector', () => {
     }),
   });
   assert(node('checklist').textContent.includes('No App build approved'));
+  const sent = frames.length;
+  node('refresh').handlers.click();
+  assert.equal(node('message').textContent, 'Refreshing status…');
+  assert.deepEqual(
+    frames.slice(sent).map((frame) => frame.payload.kind),
+    ['refresh', 'doctor'],
+  );
+  assert.equal(timers.size, 1);
+  [...timers.values()][0]();
+  assert.match(node('message').textContent, /No plugin response/);
+  socket.onmessage({
+    data: JSON.stringify({
+      event: 'sendToPropertyInspector',
+      payload: {
+        kind: 'status',
+        profileScope: 'herdr-app',
+        profileName: 'Herdr App',
+        backend: 'herdr-app',
+        preferences: { ...P.view(defaults), herdrAppHome: '/sample/app' },
+        offline: false,
+        agents: 2,
+        selected: null,
+        setupBusy: false,
+        message: 'App status refreshed',
+      },
+    }),
+  });
+  assert.equal(node('message').textContent, 'App status refreshed');
+  assert.equal(timers.size, 0);
   console.log(
     'PASS inspector registration context, status connection, explicit setup consent, shared preferences and action overrides',
   );
