@@ -150,7 +150,7 @@ test('profile disappearance, new appearance and configuration changes refuse cap
   await press;
   assert.deepEqual(peer.inputs(), []);
 });
-test('empty production records block discovery and focus even with configured home and all opt-ins enabled', async () => {
+test('empty production records block focus (discovery is read-only) even with configured home and all opt-ins enabled', async () => {
   assert.deepEqual(APP_FOCUS_RECORDS, []);
   assert.equal(appFocusBackend.recordCount, 0);
   const h = harness({ experimentalHerdrApp: true });
@@ -165,7 +165,8 @@ test('empty production records block discovery and focus even with configured ho
   h.tick(350);
   await h.profilePress('herdr-app', 0, 1);
   await h.profilePress('herdr-app', 1, 1);
-  assert.match(frame(h, 'herdr-app:0,1'), /Preview only/);
+  assert.doesNotMatch(frame(h, 'herdr-app:0,1'), /Preview only/);
+  assert.match(frame(h, 'herdr-app:0,1'), /Unavailable/);
   assert.deepEqual(h.calls, []);
 });
 

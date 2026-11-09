@@ -1,13 +1,21 @@
 import type { AppCoreFacts, AppCoreSnapshot } from '../../domain/app-selection';
 import { HerdrCoreClient } from './transport';
 
+export interface AppCoreProcess {
+  address: string;
+  pid: number;
+  cwd: string;
+  title: string;
+}
 export interface AppCoreStatusPort {
   read(): Promise<AppCoreSnapshot>;
+  /** Fresh bracketed `terminal.get`; core facts only, never OS-verified. */
+  terminal?(address: string): Promise<AppCoreProcess>;
   close(): void;
 }
 type CoreReads = Pick<
   HerdrCoreClient,
-  'connect' | 'status' | 'list' | 'close'
+  'connect' | 'status' | 'list' | 'get' | 'close'
 > & {
   readonly info: { core: { id: string } } | null;
   readonly generation: number;
@@ -33,7 +41,29 @@ export class AppCoreStatusReader implements AppCoreStatusPort {
       new HerdrCoreClient(socketPath, { timeoutMs: 1000 }),
     );
   }
-  async read(): Promise<AppCoreSnapshot> {
+  read(): Promise<AppCoreSnapshot> {
+    return this.#bounded((signal) => this.#read(signal));
+  }
+  terminal(address: string): Promise<AppCoreProcess> {
+    if (!LOCAL.test(address)) throw Error('Core terminal unavailable');
+    return this.#bounded(async (signal) => {
+      const t = await this.#bracket(signal, () => this.client.get(address));
+      if (
+        t.address !== address ||
+        t.state !== 'live' ||
+        !t.foreground ||
+        !t.title
+      )
+        throw Error('Core terminal unavailable');
+      return {
+        address,
+        pid: t.foreground.pid,
+        cwd: t.foreground.cwd,
+        title: t.title,
+      };
+    });
+  }
+  async #bounded<T>(work: (signal: AbortSignal) => Promise<T>): Promise<T> {
     if (this.#pending) throw Error('Core read pending');
     this.#pending = true;
     const budget = AbortSignal.timeout(this.timeoutMs);
@@ -45,7 +75,7 @@ export class AppCoreStatusReader implements AppCoreStatusPort {
       );
     });
     try {
-      return await Promise.race([this.#read(budget), expired]);
+      return await Promise.race([work(budget), expired]);
     } catch (error) {
       this.client.close();
       throw error;
@@ -54,21 +84,26 @@ export class AppCoreStatusReader implements AppCoreStatusPort {
       this.#pending = false;
     }
   }
-  async #read(signal: AbortSignal): Promise<AppCoreSnapshot> {
+  /** One connection, `server.status` on both sides of the read, same core. */
+  async #bracket<T>(signal: AbortSignal, read: () => Promise<T>): Promise<T> {
     if (!this.client.info) await this.client.connect(signal);
-    const generation = this.client.generation,
-      coreId = this.client.info?.core.id;
+    const generation = this.client.generation;
     const before = await this.client.status(),
-      list = await this.client.list(),
+      result = await read(),
       after = await this.client.status();
     if (
       signal.aborted ||
-      !coreId ||
+      !this.client.info?.core.id ||
       generation !== this.client.generation ||
       before.pid !== after.pid ||
       after.uptime_ms < before.uptime_ms
     )
       throw Error('Core changed during read');
+    return result;
+  }
+  async #read(signal: AbortSignal): Promise<AppCoreSnapshot> {
+    const list = await this.#bracket(signal, () => this.client.list()),
+      coreId = this.client.info?.core.id ?? '';
     const seen = new Set<string>(),
       terminals: AppCoreFacts[] = [];
     for (const terminal of list.terminals) {

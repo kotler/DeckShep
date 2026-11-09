@@ -164,11 +164,18 @@
     disabled
     label="Show herdr-core names and status"
   ></sdpi-checkbox>
+  <sdpi-checkbox
+    id="herdrAppInputEnabled"
+    disabled
+    label="Allow Codex model, effort and reviewer changes"
+  ></sdpi-checkbox>
   <p class="note">
     Selection and Next can request a pane. They do not verify keyboard focus or
     allow typing. Core names are read-only labels, shown only when the core and
-    App agree. Zoom and terminal input remain unavailable. No App build is
-    approved in this preview.
+    App agree. Codex controls change the selected chat through its daemon and
+    never type into the terminal. Zoom and terminal input remain unavailable.
+    Plain focus requests also need an approved App build; without one, selection
+    stays on the deck.
   </p>
 </div>
 <p class="note">

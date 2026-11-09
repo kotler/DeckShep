@@ -34,6 +34,8 @@ const { preferenceCodec } = require('./experimental-preferences');
 const { HerdrAppPreview } = require('./herdr-app-preview');
 const { HerdrAppController } = require('./herdr-app-controller');
 const { AppCoreStatusReader } = require('../terminals/herdr-app/core-status');
+const { HerdrAppClient } = require('../terminals/herdr-app/transport');
+const { AppSelectionReader } = require('../terminals/herdr-app/selection');
 const { appFocusBackend } = require('./herdr-app-backend');
 const { GuardedBackend } = require('../terminals/contract/backend');
 const {
@@ -156,6 +158,19 @@ function createApplication(dependencies: Record<string, any>) {
                 },
                 settled,
                 backend: dependencies.appFocusBackend || appFocusBackend,
+                codex: dependencies.appCodexControls,
+                reader:
+                  dependencies.appSelectionReader ||
+                  ((config: Config) => {
+                    const client = new HerdrAppClient({
+                      appHome: config.herdrApp?.home,
+                    });
+                    const reader = new AppSelectionReader(client);
+                    return {
+                      observe: () => reader.read(),
+                      dispose: () => client.dispose(),
+                    };
+                  }),
                 core:
                   dependencies.appCoreStatus ||
                   ((config: Config) =>
@@ -408,7 +423,7 @@ function createApplication(dependencies: Record<string, any>) {
           Buffer.from(
             svg({
               icon: 'blank',
-              lines: ['Herdr App', 'Preview only'],
+              lines: ['Herdr App', 'Unavailable'],
               color: '#38414b',
             }),
           ).toString('base64');
