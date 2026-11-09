@@ -51,6 +51,40 @@ export function appAction(
     ? String(action)
     : 'none';
 }
+/** App-reported words only pick a colour/label; they never arm a control. */
+const APP_STATES: Record<string, { palette: string; label: string }> = {
+  idle: { palette: 'ready', label: 'READY' },
+  ready: { palette: 'ready', label: 'READY' },
+  working: { palette: 'working', label: 'WORKING' },
+  done: { palette: 'done', label: 'COMPLETE' },
+  blocked: { palette: 'blocked', label: 'WAIT INPUT' },
+  error: { palette: 'error', label: 'ERROR' },
+};
+const FALLBACK_COLORS: Record<string, string> = {
+  ready: '#167348',
+  working: '#145ba0',
+  done: '#1c8b5c',
+  blocked: '#a7660c',
+  error: '#a32f46',
+  unknown: '#42475a',
+};
+export function appProvider(reported: string | null | undefined) {
+  const value = String(reported || '').toLowerCase();
+  if (value === 'codex') return 'codex';
+  if (value === 'claude' || value === 'claude-code') return 'claude-code';
+  return null;
+}
+export function appState(
+  reported: string | null | undefined,
+  palette: Record<string, string> = {},
+) {
+  const state = APP_STATES[String(reported || '').toLowerCase()];
+  const key = state?.palette || 'unknown';
+  return {
+    label: state?.label || 'UNKNOWN',
+    color: palette[key] || FALLBACK_COLORS[key],
+  };
+}
 function short(value: string): string {
   return value
     .replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g, '')
@@ -68,6 +102,7 @@ export function appTile(input: {
   bank: number;
   banks: number;
   now: number;
+  palette?: Record<string, string>;
 }) {
   const { key, pane, slot } = input;
   if (input.preview)
@@ -98,15 +133,15 @@ export function appTile(input: {
           ? 'banknext'
           : 'none');
   if (key.coordinates.row === 0 || /^agent:[0-4]$/.test(String(action))) {
+    const provider = appProvider(pane?.reportedApp);
+    const state = appState(pane?.reportedStatus, input.palette);
     return {
-      icon:
-        pane?.reportedApp === 'codex' || pane?.reportedApp === 'claude-code'
-          ? pane.reportedApp
-          : 'empty',
+      agent: true,
+      icon: pane ? provider || 'blank' : 'empty',
       lines: pane
         ? [
-            short(pane.name || pane.reportedApp || 'Terminal'),
-            short(pane.reportedStatus || 'unknown'),
+            short(pane.name || provider || pane.reportedApp || 'Terminal'),
+            state.label,
             paneKey(pane.target) === paneKey(input.deckSelected)
               ? 'Deck selected'
               : 'App reported',
@@ -114,7 +149,7 @@ export function appTile(input: {
         : slot
           ? ['Closed pane', 'Collapse clears']
           : ['Herdr App', input.online ? 'No pane' : 'Unavailable'],
-      color: '#38414b',
+      color: pane ? state.color : '#38414b',
       badge:
         pane && paneKey(pane.target) === paneKey(input.selected)
           ? 'selected'

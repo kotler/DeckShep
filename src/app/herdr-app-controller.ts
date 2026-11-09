@@ -204,6 +204,7 @@ export class HerdrAppController {
               bank: this.#bank,
               banks: this.#banks(),
               now: this.options.clock(),
+              palette: this.#config.palette as Record<string, string>,
             }),
           ),
         ).toString('base64');
