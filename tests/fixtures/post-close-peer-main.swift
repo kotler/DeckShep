@@ -93,10 +93,18 @@ struct PostCloseFixture {
         close(descriptors[1])
         guard count == MemoryLayout<audit_token_t>.size else { throw AppPeerError.unavailable }
         let executable = CommandLine.arguments[0]
-        let values = [executable, "after-self-exec", directory].map { strdup($0) }
+        // Older SDK importers do not infer String-to-C conversions through map.
+        // Keep both argv storage and the program pointer alive across execv.
+        let arguments: [String] = [executable, "after-self-exec", directory]
+        let values: [UnsafeMutablePointer<CChar>?] = arguments.map { argument in
+            argument.withCString { strdup($0) }
+        }
         defer { for value in values { free(value) } }
+        guard values.allSatisfy({ $0 != nil }) else { throw AppPeerError.unavailable }
         var pointers = values + [nil]
-        _ = pointers.withUnsafeMutableBufferPointer { execv(executable, $0.baseAddress!) }
+        _ = executable.withCString { program in
+            pointers.withUnsafeMutableBufferPointer { execv(program, $0.baseAddress!) }
+        }
         throw AppPeerError.unavailable
     }
 

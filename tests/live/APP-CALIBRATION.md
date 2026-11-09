@@ -87,6 +87,12 @@ needs current authorization; historical permission is not reusable. The
 [hardware guide](../../docs/HERDR-APP-HARDWARE-TEST.md) documents its test-only
 backend/launcher. Nothing here approves production records.
 
+Installed-release preparation is separate: see the
+[release isolation review](../../docs/plans/HERDR-APP-RELEASE-ISOLATION-DESIGN.md).
+Its `release-candidate.json` deliberately has no runnable manifest and is refused
+by this source-only harness. Do not relabel it `source-no-updater`, flatten the
+signed core bundle, or reuse a prior live authorization for these release bytes.
+
 After current explicit permission for the reviewed artifacts and the disposable
 GUI run, use only this test file. These flags acknowledge permission obtained
 outside the runner; setting them does not grant permission to a coding agent.
@@ -157,3 +163,33 @@ sockets. Injected process and peer effects launch/inspect no native App/core and
 read no real HOME. They cover the lifecycle and refusal paths, including changed
 peers/files/endpoints, timeouts, uncertainty, cancellation, privacy and failed
 cleanup. Native helper correctness has its separate self-owned Swift fixture.
+
+## Installed signed release runner
+
+The separate `release-runner.cjs` loader re-attests whole signed bundles against
+`release-candidate.json`. It never treats that inspection report as the source
+runner's `manifest.json`. The owner-authorized release suite additionally requires
+`ASW_LIVE_HERDR_APP_RELEASE=1` and `ASW_HERDR_APP_RELEASE_ARTIFACTS`:
+
+```sh
+ASW_LIVE=1 ASW_LIVE_AUTHORIZATION=test-owned-only \
+ASW_LIVE_HERDR_APP=1 ASW_LIVE_HERDR_APP_RELEASE=1 \
+ASW_HERDR_APP_RELEASE_ARTIFACTS=<private-candidate-folder> \
+node --import tsx --test tests/live/herdr-app-release.test.js
+```
+
+These flags acknowledge authorization; they never grant it. Invoke only this
+single suite, never the full test command with live flags. It compiles synthetic
+boundary/cat-shim fixtures with Command Line Tools, proves its Seatbelt boundary,
+starts only private copies and uses disposable cat terminals. The release feed
+serves no update payload. The owned App may be minimized and restarted; installed
+App/core and existing sessions are never adopted by this runner. Native failures
+are retained as fixed phase labels; paths, terminal contents and raw errors are
+not emitted.
+
+[Signed release calibration and private preview evidence](../../docs/validation/2026-11-08-herdr-app-release-calibration.md)
+records the passing matrix and the separate live-installation permission gate.
+`prepare-release-preview.mjs` additionally needs a passing exact-build report and
+`--owner-approved` to prepare a private package without a calendar cutoff. It installs/restarts
+nothing and changes no production records. Its factory is distribution-denied.
+Normal App focus/input capabilities remain disabled.
