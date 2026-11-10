@@ -1,5 +1,9 @@
 # Herdr backend (experimental)
 
+> **Not in the first release.** DeckShep's first release ships only the Rex
+> profile (owner decision, 2026-11-10). This backend stays in source; build with
+> `experimental.herdr: true` in `config.json` to add its profile for testing.
+
 The experimental backend supports agents running in **Herdr TUI 0.9.5, socket protocol 22**, initially on a local Mac. The 1.2.1 baseline passed local physical Codex checks, with Rex restored afterward. Rex remains the default backend in distributed settings.
 
 The adapter uses Herdr's documented public socket API and the schema bundled with the installed CLI. It connects only to the session socket explicitly selected in preferences. It never starts, stops, upgrades or attaches to a server automatically.

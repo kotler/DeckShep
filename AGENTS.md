@@ -42,7 +42,11 @@ routine refactor. The owner explicitly approved the prelaunch identity reset on
 2026-11-08; the new DeckShep identities are now fixed. Older previews require
 fresh profiles and explicit removal/reapplication of integrations, not silent
 conversion. See docs/IDENTITY.md. Same-identity upgrades preserve settings.
-The owner approved profile labels Rex / Herdr. Keep their existing UUIDs and key
+The owner approved profile labels Rex / Herdr. On 2026-11-10 the owner limited the
+first release to the Rex profile: default/release builds package only
+`RELEASE_BACKENDS` (`scripts/profiles.mjs`), and Herdr TUI/App stay in source
+behind `experimental.herdr` / `experimental.herdrApp` (both default false; package
+audits refuse either). Do not delete Herdr code or tests. Keep their existing UUIDs and key
 identities after this reset; product branding is DeckShep. The owner selected Apache-2.0 with
 NOTICE for the software. The DeckShep name and original key-and-crook branding
 are reserved and forks must rename; see TRADEMARKS.md. Pinned LobeHub provider
@@ -122,7 +126,7 @@ and restarts this plugin UUID only, and is never part of automated verification.
 
 Herdr App's production capabilities remain empty. Experimental v3 preferences
 and its preview profile require the explicitly enabled config flag; default
-builds retain v2 and both existing profiles. Read ADR 0004 before changing this.
+builds retain v2 and the Rex profile. Read ADR 0004 before changing this.
 The read-only App/core clients in `src/terminals/herdr-app/transport.ts` are not
 wired into production discovery. The one exception is `AppCoreStatusReader`
 (`core-status.ts`): with the separate read-back consent and an explicit core
@@ -204,7 +208,7 @@ Rollback drops only the App profile. App consent revocation must bypass the
 ordinary event queue and invalidate pending requests immediately. App-reported
 status and local deck selection never imply keyboard focus. Setup/doctor reporting
 is passive and App-only; it must not inherit Rex/TUI discovery, provider metadata
-readers or integration setup. Default builds still use v2 and both existing profiles.
+readers or integration setup. Default builds still use v2 and only the Rex profile.
 
 ## DeckShep maintenance
 

@@ -32,11 +32,11 @@ Marketplace eligibility is reviewed separately. Provider trademark permission is
 ## Open validation and distribution work
 
 [The beta checklist](BETA-CHECKLIST.md) remains the source for physical and
-independent checks: Claude controls/questions/approvals on hardware, mixed-profile
-navigation, Herdr overflow/reconnect/multiple clients and outer-terminal Zoom,
-hook lifecycle and custom bindings, a clean Mac install and upgrade, Intel
+independent checks: Claude controls/questions/approvals on hardware, mixed-agent
+navigation, hook lifecycle and custom bindings, a clean Mac install and upgrade, Intel
 execution, optional signing/notarization and cleanup fingerprints. Do not claim
-these passed from fixtures or a universal build.
+these passed from fixtures or a universal build. The first release ships only
+the Rex profile; Herdr gates are deferred with it.
 
 Public Issues and email remain unverified. The owner must choose the new public
 repository, enable private vulnerability reporting, review the snapshot audit

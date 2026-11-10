@@ -1,6 +1,12 @@
 # Rex and Herdr profiles
 
-Version 1.3.1 provides two profiles: **Rex** and **Herdr**. Use the profile selector at the top of Stream Deck’s editor to switch. Both use the same 15-key layout. No key is consumed by a backend switch; Page still cycles the interaction pages inside the selected profile.
+> **First release: Rex only.** The owner limited the first release to the **Rex**
+> profile on 2026-11-10. Default and release builds package only Rex. Source
+> builds add **Herdr** with `experimental.herdr: true` in `config.json`; its
+> profile, page and key IDs are unchanged for a later release. The rest of this
+> page describes that preview.
+
+Version 1.3.1 provided two profiles: **Rex** and **Herdr**. Use the profile selector at the top of Stream Deck’s editor to switch. Both use the same 15-key layout. No key is consumed by a backend switch; Page still cycles the interaction pages inside the selected profile.
 
 Each profile pins its controller. The key settings show a read-only **Controller for this profile** field. Configure Rex visible-pane consent and bring-to-front behavior in Rex; configure the explicit Herdr session socket and title matching in Herdr. Claude native-control opt-in is separate for each controller. Animation and Review/Tests/Continue prompt text are shared.
 
@@ -21,7 +27,7 @@ See [uninstall instructions](UNINSTALL.md) to remove either profile or the share
 ## Herdr App preview
 
 The explicitly enabled experimental build can add the already-reserved **Herdr App**
-profile. Default builds still contain only Rex/Herdr. Its home and plain-focus-request
+profile. Default builds contain only Rex. Its home and plain-focus-request
 consent are independent; no migration grants consent. App-reported panes and deck
 selection are separate from provider/chat identity. Production request records
 are empty, so its controls stay inactive. See [App setup](HERDR-APP.md).

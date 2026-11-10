@@ -17,7 +17,11 @@ preview artifacts use `-beta.N` release tags.
 - Prepare free distribution, contributor guidance and a public-release evidence gate.
 - Separate terminal contracts, providers, guarded delivery and injectable app.
 - Strict TypeScript, external schemas, official Stream Deck SDK and offline UI.
-- Bundle both existing profiles and preserve stable Claude helper entry points.
+- Scope the first release to Rex: default and release builds bundle only the
+  Rex profile. Herdr TUI/App stay in source behind `experimental.herdr` /
+  `experimental.herdrApp`, with unchanged profile IDs; the Rex doctor no longer
+  probes Herdr sockets.
+- Preserve stable Claude helper entry points.
 - Node build/package/recovery tools, guided setup/undo and privacy-safe doctor.
 - Automated fixture host, CI audits and draft-only release workflow.
 

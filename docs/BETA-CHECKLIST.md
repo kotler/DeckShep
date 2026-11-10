@@ -18,15 +18,10 @@ is not authorization to reuse a running agent.
 
 ## Remaining physical and independent validation
 
-- [ ] Separately authorize and run the source-only Herdr App calibration harness; review ownership, latency, cleanup and settings fingerprints before considering any build record.
-- [ ] Validate App focus requests across windows/screens, hidden/minimized/full-screen states, dialogs and restart/reconnect; acknowledgements never prove keyboard focus.
-- [ ] Review release-build updater isolation separately; source-build calibration cannot approve the installed release.
 - [ ] Claude physical multi-select Toggle → Review → Submit.
-- [ ] Claude running controls and Zoom in both hosts; Rex Claude questions, approvals and guarded submissions.
+- [ ] Claude running controls and Zoom in Rex; Rex Claude questions, approvals and guarded submissions.
 - [ ] Sign off on Claude approval/navigation responsiveness.
-- [ ] Physical profile switching with native controls and mixed-agent navigation.
-- [ ] Herdr overflow banks, closed-slot Collapse and outer-terminal presentation.
-- [ ] Herdr reconnect and multiple attached clients in an isolated environment.
+- [ ] Physical mixed-agent navigation with native controls in the Rex profile.
 - [ ] Validate optional hook ancestry, status-line chaining, watcher behavior, live renames and removal.
 - [ ] Validate customized/default keybindings and session-only settings preservation.
 - [ ] Install on a Mac without this development checkout and complete setup without assistance.
@@ -34,12 +29,25 @@ is not authorization to reuse a running agent.
 - [ ] Exercise Rex quit/reopen only in a disposable environment.
 - [ ] Finish validation cleanup and compare original settings fingerprints.
 
+## Deferred with Herdr (not in the first release)
+
+The first release ships only the Rex profile (owner decision, 2026-11-10).
+These gates move to the Herdr release:
+
+- [ ] Herdr overflow banks, closed-slot Collapse and outer-terminal presentation.
+- [ ] Herdr reconnect and multiple attached clients in an isolated environment.
+- [ ] Separately authorize and run the source-only Herdr App calibration harness; review ownership, latency, cleanup and settings fingerprints before considering any build record.
+- [ ] Validate App focus requests across windows/screens, hidden/minimized/full-screen states, dialogs and restart/reconnect; acknowledgements never prove keyboard focus.
+- [ ] Review release-build updater isolation separately; source-build calibration cannot approve the installed release.
+- [ ] Physical profile switching between Rex and Herdr.
+
 Live tests require fresh explicit authorization, `ASW_LIVE=1`, isolated sockets and
 only test-owned PIDs. Do not operate existing agents or the user's shared daemon.
 
 ## Owner release decisions
 
-The owner selected DeckShep, profiles Rex / Herdr, Apache-2.0 with NOTICE,
+The owner selected DeckShep, profiles Rex / Herdr (first release: Rex only,
+2026-11-10), Apache-2.0 with NOTICE,
 reserved DeckShep branding, GitHub Releases and a free Marketplace listing.
 Public support channels, exact-version launch validation, snapshot review,
 private vulnerability reporting, signing/notarization and publication timing

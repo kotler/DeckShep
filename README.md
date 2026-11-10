@@ -1,27 +1,27 @@
 # DeckShep
 
-**Your agents. At your fingertips.** A local Stream Deck controller for existing coding agents in **Rex** and **Herdr** on macOS. Select a chat, see its project and status, and use a third row of controls that follows what the agent is doing.
+**Your agents. At your fingertips.** A local Stream Deck controller for existing coding agents in **Rex** on macOS. Select a chat, see its project and status, and use a third row of controls that follows what the agent is doing.
 
-This beta targets **Codex CLI on a 15-key Stream Deck MK.2**. Rex is the default controller; Herdr is experimental and requires explicit setup. Your agents and their existing daemon stay running.
+This beta targets **Codex CLI on a 15-key Stream Deck MK.2**. The first release supports **Rex** only. Herdr support stays in source as an unreleased preview and is not packaged by default. Your agents and their existing daemon stay running.
 
 ## Claude and mixed-agent development preview
 
-The 1.4.0 development build includes experimental Claude Code support and mixed Claude/Codex banks. Claude controls are off by default; isolated native validation passed, with physical validation still in progress. Model and Effort now cycle directly from Home in both profiles, with session-only changes. See [Claude setup, capabilities and limits](docs/CLAUDE.md). The published 1.2.1 beta and its existing hardware results remain the release baseline.
+The 1.4.0 development build includes experimental Claude Code support and mixed Claude/Codex banks. Claude controls are off by default; isolated native validation passed, with physical validation still in progress. Model and Effort now cycle directly from Home, with session-only changes. See [Claude setup, capabilities and limits](docs/CLAUDE.md). The published 1.2.1 beta and its existing hardware results remain the release baseline.
 
 ## Get started
 
 DeckShep is being prepared for a free, open-source release under Apache-2.0. Source is maintained in [kotler/DeckShep](https://github.com/kotler/DeckShep); the first release remains pending owner review. Once available, use the versioned macOS ZIP attached to a GitHub Release and follow [Installation and upgrades](docs/INSTALL.md). GitHub's automatically generated source archive is not an installer.
 
-The single plugin installer includes the **Rex** and **Herdr** profiles; the ZIP also includes setup guides, build information and checksums. The plugin ID is `com.kotl3r.deckshep`. Older private previews need the new profiles and explicit integration setup; see the [prelaunch identity reset](docs/IDENTITY.md).
+The single plugin installer includes the **Rex** profile; the ZIP also includes setup guides, build information and checksums. The plugin ID is `com.kotl3r.deckshep`. Older private previews need the new profiles and explicit integration setup; see the [prelaunch identity reset](docs/IDENTITY.md).
 
 - [Release readiness](docs/RELEASE-READINESS.md) · [Marketplace draft](docs/MARKETPLACE.md)
 - [Switching profiles](docs/PROFILES.md)
 - [Rex setup](docs/INSTALL.md#rex-setup)
-- [Herdr setup](docs/HERDR.md#setup)
+- [Herdr (unreleased preview)](docs/HERDR.md#setup)
 - [Uninstall and optional cleanup](docs/UNINSTALL.md)
 - [Compatibility](docs/COMPATIBILITY.md) · [Release notes](docs/RELEASE-NOTES.md) · [Validation record](docs/BETA-CHECKLIST.md)
 
-Independent installation on another Mac, Intel execution and signing/notarization remain unvalidated. This is a beta checkpoint, not a claim of complete Herdr parity.
+Independent installation on another Mac, Intel execution and signing/notarization remain unvalidated. This is a beta checkpoint.
 
 ## Controls
 
@@ -51,8 +51,8 @@ The white dot marks the selected agent. **Page** cycles Home → Questions → P
 | --- | --- | --- |
 | Codex CLI | 0.166.0 / 0.167.0 for permission controls | Affected controls disabled |
 | Claude Code | 2.1.319 native controls, opt-in preview | Native controls disabled |
-| Herdr TUI | 0.9.5 / protocol 22 | Session refused |
-| Herdr App | Experimental preview | Production build records empty; [preview setup](docs/HERDR-APP.md) |
+| Herdr TUI | Not in the first release; source preview for 0.9.5 / protocol 22 | Session refused |
+| Herdr App | Not in the first release; experimental source preview | Production build records empty; [preview setup](docs/HERDR-APP.md) |
 
 Version checks fail closed by design. Verification of one control does not
 establish full provider parity or hardware support. See the generated
@@ -61,7 +61,7 @@ establish full provider parity or hardware support. See the generated
 
 ## Backend support
 
-| Feature | Rex | Herdr experimental |
+| Feature | Rex | Herdr (unreleased source preview) |
 | --- | --- | --- |
 | Agent selection, cycling banks, Next agent, Collapse | Supported; hardware checked | Supported; core hardware and six-agent API checked |
 | Model, Effort, Reviewer, Plan / Default | Supported | Requires verified thread-ID titles |
@@ -70,7 +70,7 @@ establish full provider parity or hardware support. See the generated
 | Prompt staging, Send, Steer, Queue | Supported with composer checks | Unavailable; use the keyboard |
 | Focus verification | Explicit clipboard opt-in | Herdr session API; no clipboard |
 
-Herdr targets local TUI **0.9.5 / protocol 22**. Its pane-read API does not expose a trustworthy composer cursor/editing mode, so it cannot support the Rex submission checks. Multiple attached clients and reconnect behavior still need validation. See [the Herdr guide](docs/HERDR.md) for identity setup and exact coverage.
+Herdr is not packaged in the first release; source builds add its profile only with `experimental.herdr` set in `config.json`. It targets local TUI **0.9.5 / protocol 22**. Its pane-read API does not expose a trustworthy composer cursor/editing mode, so it cannot support the Rex submission checks. Multiple attached clients and reconnect behavior still need validation. See [the Herdr guide](docs/HERDR.md) for identity setup and exact coverage.
 
 ## Selection and input behavior
 
@@ -84,7 +84,7 @@ Agent keys use full status-color backgrounds, a provider watermark and larger ch
 
 ## Preferences
 
-Select any **DeckShep Key** in Stream Deck's editor. Choose **Rex** or **Herdr** using Stream Deck’s profile selector. Each profile pins its controller and keeps its own connection, consent, selected agent, bank and page. Animation and prompt text are shared. See [profiles and migration](docs/PROFILES.md). New installations keep clipboard checks and Herdr title matching off until explicitly enabled.
+Select any **DeckShep Key** in Stream Deck's editor. The release ships the **Rex** profile; a source preview build can add **Herdr**, chosen with Stream Deck’s profile selector. Each profile pins its controller and keeps its own connection, consent, selected agent, bank and page. Animation and prompt text are shared. See [profiles and migration](docs/PROFILES.md). New installations keep clipboard checks and Herdr title matching off until explicitly enabled.
 
 Advanced aliases, palette, bindings and model filters live in `config.json`. Legacy upgrades use the ZIP’s one-time backup/migration helper to preserve disk customizations; shared UI preferences override their corresponding defaults. The settings panel accepts no sandbox or approval-policy fields. Unknown metadata or unsupported native versions disable the affected action.
 
