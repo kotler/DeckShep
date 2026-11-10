@@ -78,6 +78,23 @@ test('doctor reasons contain no home paths or settings; unsafe session directori
   assert(!JSON.stringify(checks).includes(paths.home));
   assert(!JSON.stringify(checks).includes('private-chat-id'));
   assert.deepEqual(herdrSessions(paths.home), []);
+  // Rex-only release: Herdr is reported only when its profile asks for it.
+  assert.equal(
+    checks.some((c) => c.id === 'herdr'),
+    false,
+  );
+  assert.equal(
+    (
+      await diagnostics({
+        home: paths.home,
+        paths,
+        version: async () => 'fixture version',
+        rex: async () => ({ binary: '/fixture', application: '/fixture' }),
+        herdr: true,
+      })
+    ).find((c) => c.id === 'herdr').ok,
+    false,
+  );
   assert.equal(
     (
       await diagnostics({

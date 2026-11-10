@@ -9,7 +9,9 @@ const result = process.argv.includes('--herdr-app')
       }),
       [],
     ])
-  : Promise.all([diagnostics(), sessionChoices()]);
+  : process.argv.includes('--herdr')
+    ? Promise.all([diagnostics({ herdr: true }), sessionChoices()])
+    : Promise.all([diagnostics(), Promise.resolve([])]);
 void result
   .then(([base, sessions]) => {
     const checks: { id: string; ok: boolean; reason: string }[] = [

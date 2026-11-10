@@ -365,6 +365,7 @@ export async function diagnostics({
   version = rexVersion,
   paths = setupPaths(),
   online = false,
+  herdr = false,
 }: {
   home?: string;
   selected?: Record<string, unknown> | null;
@@ -373,6 +374,8 @@ export async function diagnostics({
   version?: (application: string) => Promise<string>;
   paths?: SetupPaths;
   online?: boolean;
+  /** Herdr is outside the Rex-only release; only its own profile probes it. */
+  herdr?: boolean;
 } = {}): Promise<Check[]> {
   const checks: Check[] = [
     {
@@ -407,14 +410,16 @@ export async function diagnostics({
       ? 'Selected backend reachable'
       : 'Open the terminal and enable its remote control',
   });
-  const sessions = herdrSessions(home);
-  checks.push({
-    id: 'herdr',
-    ok: !!sessions.length,
-    reason: sessions.length
-      ? `${sessions.length} private session socket(s); versions listed below (22 required)`
-      : 'Start Herdr TUI and choose its private session socket',
-  });
+  if (herdr) {
+    const sessions = herdrSessions(home);
+    checks.push({
+      id: 'herdr',
+      ok: !!sessions.length,
+      reason: sessions.length
+        ? `${sessions.length} private session socket(s); versions listed below (22 required)`
+        : 'Start Herdr TUI and choose its private session socket',
+    });
+  }
   checks.push({
     id: 'codex',
     ok: selected?.app === 'codex' && !!selected.chatId,

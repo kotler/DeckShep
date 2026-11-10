@@ -1136,8 +1136,13 @@ function createApplication(dependencies: Record<string, any>) {
           selected: selected(),
           online: !offline,
           model: e.payload.model,
+          herdr: scope === 'herdr',
         });
-        const sessions = await (dependencies.herdrSessions || sessionChoices)();
+        // Only the Herdr profile probes Herdr session sockets.
+        const sessions =
+          scope === 'herdr'
+            ? await (dependencies.herdrSessions || sessionChoices)()
+            : [];
         emit('sendToPropertyInspector', e.context, {
           kind: 'doctor',
           checks: [...checks, ...sessionChecks(sessions)],
