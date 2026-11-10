@@ -75,7 +75,7 @@ async function installerFiles(t) {
     ...require('../../com.kotl3r.deckshep.sdPlugin/manifest.json'),
     Version: version + '.0',
     CodePath: 'bin/plugin.js',
-    Profiles: ['rex', 'herdr'].map((backend) => ({
+    Profiles: P.RELEASE_BACKENDS.map((backend) => ({
       Name: 'profiles/' + P.PROFILE_NAMES[backend],
       DeviceType: 0,
       Readonly: false,
@@ -111,7 +111,7 @@ async function installerFiles(t) {
       'sdpi-components.js': Buffer.from('fixture'),
     }).map(([name, data]) => [prefix + name, data]),
   );
-  for (const backend of ['rex', 'herdr'])
+  for (const backend of P.RELEASE_BACKENDS)
     files.set(
       prefix + 'profiles/' + P.PROFILE_NAMES[backend] + '.streamDeckProfile',
       P.profileArchive(directory, backend, manifest.Version),
@@ -162,13 +162,14 @@ test('archive rejects private paths, home data, traversal, symlinks, duplicates,
   assert.throws(() => Z.unzip(Buffer.from('not zip')));
 });
 test('installer requires safe defaults, exact entry points, profiles and consistent versions', async (t) => {
-  const { files, Z, A, prefix } = await installerFiles(t);
+  const { files, Z, A, P, prefix } = await installerFiles(t);
   assert.equal(A.auditInstaller(installerZip(Z, files)).Version, '1.3.4.0');
   for (const replacement of [
     { allowClipboardFocus: true },
     { backend: 'herdr' },
     { claude: { enabled: true } },
     { herdr: { socketPath: '/tmp/private.sock', titleIdentity: true } },
+    { experimental: { herdr: true } },
     { experimental: { herdrApp: true } },
   ]) {
     const changed = new Map(files),
@@ -194,6 +195,22 @@ test('installer requires safe defaults, exact entry points, profiles and consist
       /Missing plugin entry/,
     );
   }
+  // The first release is Rex-only: a registered Herdr profile is refused.
+  const withHerdr = new Map(files),
+    manifest = JSON.parse(withHerdr.get(prefix + 'manifest.json'));
+  manifest.Profiles.push({
+    ...manifest.Profiles[0],
+    Name: 'profiles/' + P.PROFILE_NAMES.herdr,
+  });
+  withHerdr.set(prefix + 'manifest.json', json(manifest));
+  withHerdr.set(
+    prefix + 'profiles/' + P.PROFILE_NAMES.herdr + '.streamDeckProfile',
+    P.profileArchive(temporary(t), 'herdr', manifest.Version),
+  );
+  assert.throws(
+    () => A.auditInstaller(installerZip(Z, withHerdr)),
+    /only the release profiles/,
+  );
   const changed = new Map(files);
   changed.set(prefix + 'package.json', json({ version: '1.3.3' }));
   assert.throws(() => A.auditInstaller(installerZip(Z, changed)));
@@ -237,7 +254,7 @@ test('DeckShep profiles preserve their new IDs, UUID5 ActionIDs, version, scope 
   }
   assert.equal(new Set(ids).size, 30);
 });
-test('upgrade in temporary HOME adds Herdr and bundled entries without changing customized Rex keys, config or Claude hook records', async (t) => {
+test('upgrade in temporary HOME adds bundled entries without a Herdr profile or changing customized Rex keys, config or Claude hook records', async (t) => {
   const [Z, A, P, I] = await api(),
     root = temporary(t),
     home = path.join(root, 'home'),
@@ -301,7 +318,7 @@ test('upgrade in temporary HOME adds Herdr and bundled entries without changing 
   );
   assert(fs.existsSync(path.join(dest, 'claude-hook.js')));
   assert(
-    fs.existsSync(path.join(profiles, P.PROFILE_IDS.herdr + '.sdProfile')),
+    !fs.existsSync(path.join(profiles, P.PROFILE_IDS.herdr + '.sdProfile')),
   );
   assert(fs.existsSync(result.backup));
   assert(!fs.existsSync(path.join(root, 'checkout/backups')));
@@ -418,7 +435,7 @@ test('complete archives verify stable public-release provenance and reject stabl
     A.PAYLOAD.map((name) => [name, Buffer.from('fixture')]),
   );
   payload.set(A.INSTALLER, installerZip(Z, files));
-  for (const [index, backend] of ['rex', 'herdr'].entries())
+  for (const [index, backend] of P.RELEASE_BACKENDS.entries())
     payload.set(
       A.PROFILES[index],
       P.profileArchive(directory, backend, version + '.0'),
@@ -453,4 +470,25 @@ test('complete archives verify stable public-release provenance and reject stabl
   info.workingTreeDirty = false;
   delete info.distribution;
   assert.equal(A.verifyBundle(archive()).tag, info.tag);
+});
+
+test('release builds ship only the Rex profile unless a preview flag is set', async () => {
+  const [, A, P] = await api();
+  assert.deepEqual([...P.RELEASE_BACKENDS], ['rex']);
+  assert.deepEqual(A.PROFILES, ['Rex.streamDeckProfile']);
+  assert.deepEqual(P.buildBackends(), ['rex']);
+  assert.deepEqual(P.buildBackends({ herdr: false, herdrApp: false }), ['rex']);
+  assert.deepEqual(P.buildBackends({ herdr: true }), ['rex', 'herdr']);
+  assert.deepEqual(P.buildBackends({ herdr: true, herdrApp: true }), [
+    'rex',
+    'herdr',
+    'herdr-app',
+  ]);
+  // Profile identities stay fixed for a later Herdr release.
+  assert.equal(P.PROFILE_IDS.herdr, 'AB25F8CF-5D02-51A5-8904-F666E35A500A');
+  assert.equal(
+    require('../../com.kotl3r.deckshep.sdPlugin/config.json').experimental
+      .herdr,
+    false,
+  );
 });

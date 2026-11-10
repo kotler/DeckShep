@@ -78,6 +78,7 @@
     "enabled": false
   },
   "experimental": {
+    "herdr": false,
     "herdrApp": false
   }
 }

@@ -184,7 +184,7 @@ export const config = z
       .object({ style: identifier.optional() })
       .passthrough()
       .optional(),
-    experimental: z.object({ herdrApp: bool }).strict().optional(),
+    experimental: z.object({ herdr: bool, herdrApp: bool }).strict().optional(),
     prompts: z.record(z.string(), prompt).optional(),
     aliases: z
       .record(

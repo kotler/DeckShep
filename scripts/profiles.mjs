@@ -17,6 +17,20 @@ export const PROFILE_NAMES = {
   herdr: 'Herdr',
   'herdr-app': 'Herdr App',
 };
+/**
+ * Profiles a default (release) build ships. The owner limited the first
+ * release to Rex on 2026-11-10; the Herdr IDs above stay fixed for a later
+ * release, and its code stays in source behind `experimental.herdr`.
+ */
+export const RELEASE_BACKENDS = Object.freeze(['rex']);
+/** Profiles for one build: the release set plus explicitly enabled previews. */
+export function buildBackends(experimental = {}) {
+  return [
+    ...RELEASE_BACKENDS,
+    ...(experimental?.herdr === true ? ['herdr'] : []),
+    ...(experimental?.herdrApp === true ? ['herdr-app'] : []),
+  ];
+}
 export const deviceTemplate = { Model: '20GBL9901', UUID: '@(0)[]' };
 export function actionId(index, backend) {
   const name = `com.kotl3r.deckshep/${backend}/key/${index}`;

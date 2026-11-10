@@ -8,13 +8,16 @@ import {
   PROFILE_IDS,
   PAGE_IDS,
   PROFILE_NAMES,
+  RELEASE_BACKENDS,
   deviceTemplate,
   actionId,
 } from './profiles.mjs';
 export const root = fileURLToPath(new URL('..', import.meta.url));
 export const PLUGIN = 'com.kotl3r.deckshep.sdPlugin',
   INSTALLER = 'com.kotl3r.deckshep.streamDeckPlugin';
-export const PROFILES = ['Rex.streamDeckProfile', 'Herdr.streamDeckProfile'];
+export const PROFILES = RELEASE_BACKENDS.map(
+  (backend) => PROFILE_NAMES[backend] + '.streamDeckProfile',
+);
 export const DOCS = [
   'LICENSE',
   'NOTICE',
@@ -150,6 +153,7 @@ export function auditInstaller(data) {
     Object.keys(config.aliases || {}).length ||
     config.focusRoutingVerified ||
     config.claude?.enabled ||
+    config.experimental?.herdr ||
     config.experimental?.herdrApp
   )
     throw Error(
@@ -172,15 +176,15 @@ export function auditInstaller(data) {
   ])
     if (!files.has(prefix + required))
       throw Error('Missing plugin entry point');
-  if (manifest.Profiles?.length !== 2)
-    throw Error('Fresh package must contain only the existing profiles');
+  if (manifest.Profiles?.length !== RELEASE_BACKENDS.length)
+    throw Error('Fresh package must contain only the release profiles');
   verifyInstallerHelperModes(data);
   if (
     manifest.Actions?.length !== 1 ||
     manifest.Actions[0].UUID !== 'com.kotl3r.deckshep.key'
   )
     throw Error('Action identity mismatch');
-  for (const [index, backend] of ['rex', 'herdr'].entries()) {
+  for (const [index, backend] of RELEASE_BACKENDS.entries()) {
     const profile = manifest.Profiles?.[index];
     if (
       !profile ||
@@ -251,7 +255,7 @@ export function verifyBundle(data) {
   for (const [name, checksum] of checksums)
     if (digest(files.get(name)) !== checksum) throw Error('Checksum mismatch');
   const manifest = auditInstaller(files.get(INSTALLER));
-  for (const [i, backend] of ['rex', 'herdr'].entries())
+  for (const [i, backend] of RELEASE_BACKENDS.entries())
     auditProfile(files.get(PROFILES[i]), manifest.Version, backend);
   const info = read(files, 'BUILD-INFO.json');
   if (

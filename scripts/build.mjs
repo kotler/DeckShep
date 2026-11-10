@@ -7,7 +7,7 @@ import { createRequire } from 'node:module';
 import { createHash } from 'node:crypto';
 import { tree } from './archive.mjs';
 import { bundle } from './bundle.mjs';
-import { profileArchive, PROFILE_NAMES } from './profiles.mjs';
+import { buildBackends, profileArchive, PROFILE_NAMES } from './profiles.mjs';
 export const root = fileURLToPath(new URL('..', import.meta.url));
 export const pluginName = 'com.kotl3r.deckshep.sdPlugin';
 export function run(binary, args, options = {}) {
@@ -209,14 +209,10 @@ export async function build({ universal = false } = {}) {
     fs.readFileSync(path.join(destination, 'manifest.json')),
   );
   manifest.Profiles = [];
-  const experimental =
-    JSON.parse(fs.readFileSync(path.join(destination, 'config.json')))
-      .experimental?.herdrApp === true;
-  for (const backend of [
-    'rex',
-    'herdr',
-    ...(experimental ? ['herdr-app'] : []),
-  ]) {
+  const experimental = JSON.parse(
+    fs.readFileSync(path.join(destination, 'config.json')),
+  ).experimental;
+  for (const backend of buildBackends(experimental)) {
     const data = profileArchive(out, backend, manifest.Version),
       name = PROFILE_NAMES[backend];
     fs.writeFileSync(path.join(out, name + '.streamDeckProfile'), data);

@@ -4,7 +4,7 @@ import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { tree } from './archive.mjs';
-import { profile, PROFILE_IDS } from './profiles.mjs';
+import { profile, PROFILE_IDS, RELEASE_BACKENDS } from './profiles.mjs';
 export function requireStopped(status) {
   if (status === 0)
     throw Error(
@@ -139,7 +139,7 @@ export function installLocal({
     JSON.stringify(config, null, 2) + '\n',
     { mode: 0o600 },
   );
-  for (const backend of ['rex', 'herdr'])
+  for (const backend of RELEASE_BACKENDS)
     if (
       !fs.existsSync(path.join(profiles, PROFILE_IDS[backend] + '.sdProfile'))
     )
