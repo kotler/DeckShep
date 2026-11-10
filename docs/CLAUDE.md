@@ -35,16 +35,16 @@ After intentionally installing the preview and leaving agents running, preview s
 
 ```sh
 plugin_dir="$HOME/Library/Application Support/com.elgato.StreamDeck/Plugins/com.kotl3r.deckshep.sdPlugin"
-node "$plugin_dir/configure-claude.js" --statusline
+node "$plugin_dir/configure-claude.js"
 ```
 
 To apply that setup with a backup:
 
 ```sh
-node "$plugin_dir/configure-claude.js" --statusline --apply
+node "$plugin_dir/configure-claude.js" --apply
 ```
 
-This explicitly adds only this integration's command hooks to Claude settings. It chains an existing status-line command, retains its padding/options, and records the original for removal. The wrapper forwards the original JSON to that existing command and keeps its output. With no previous command, it displays a simple Claude/model/effort line. The wrapper refreshes every two seconds; it adds local process work but no model requests. It never modifies authentication, permission rules, sandbox settings or existing unrelated hooks. Settings backups use a `settings.json.deckshep-backup-…` suffix and private permissions.
+This explicitly adds only this integration's command hooks to Claude settings and leaves your status line alone ([hooks-only mode](#hooks-only-mode)). DeckShep must never change a Claude Code status line; the legacy `--statusline` option below is being removed (NO-STATUS-LINE-PLAN Part B). With `--statusline`, setup also chains an existing status-line command, retains its padding/options, and records the original for removal. The wrapper forwards the original JSON to that existing command and keeps its output. With no previous command, it displays a simple Claude/model/effort line. The wrapper refreshes every two seconds; it adds local process work but no model requests. It never modifies authentication, permission rules, sandbox settings or existing unrelated hooks. Settings backups use a `settings.json.deckshep-backup-…` suffix and private permissions.
 
 The default target is `~/.claude/settings.json`, honoring `CLAUDE_CONFIG_DIR`; use `--settings /absolute/settings.json` for a different settings file. To run the script from the checkout while targeting an installed copy, also pass `--plugin-dir "$plugin_dir"`. Hooks reference that absolute installation and Node executable; remove the previous setup before moving either.
 
@@ -63,6 +63,35 @@ Fresh status-line data supplies the actual model, effort and custom/AI-generated
 In Rex, submissions require a recognized bordered Claude composer, a matching visible cursor, session/lifecycle identity and unchanged input digests. Send consumes its staged token before the write; edited/manual submissions, failed reads and changed sessions invalidate it. Only plain text is accepted. Vim modes other than visibly confirmed INSERT, unfamiliar footers, very narrow/wrapped views and overlays are refused. Custom status lines can prevent verification; a custom keybindings file explicitly disables controls. No uncertain submission is retried.
 
 Questions and approvals require the matching hook request and a recognized native option list. Request bodies and selection styling are rechecked before a single key. Confirm accepts the choice actually shown. A multi-select Toggle appears for a native Space hint or the verified checkbox/header/Submit layout. On Home, Review opens the native answer review without submitting; the button then becomes Submit. A captured Review press cannot become Submit after the transition. The exact recognized question review remains actionable when Herdr reports it as done, while the matching private question is still open. Unrecognized questions, free-text fields and authentication dialogs require the keyboard. An Interrupt is a request, not proof of termination; it requires a visible interrupt hint and is sent once per lifecycle epoch. A transient native redraw disables uncertain dialog input while retaining an independently verified root selection; UI epochs keep old approval presses invalid after the view recovers. Claude can continue queued work or background tasks according to its native behavior.
+
+## Hooks-only mode
+
+Setups without the DeckShep status line (the default above) run in hooks-only mode. There is no two-second heartbeat. Instead, every refresh and press requires all of:
+
+- **Process proof:** the pane's foreground process is the recorded PID, with the same start time, native executable and version 2.1.319.
+- **Lifecycle proof:** the record's root session was established for this process by a SessionStart or UserPromptSubmit hook. There must be no SessionEnd and no lost-event marker since then. `/clear`, `/resume` and restarts start another session or generation, which re-binds the key identity and refuses older presses.
+- **Pane proof:** a fresh read of the native dialog or picker right before input, as for every Claude control.
+
+The existing guards still apply: default keybindings, focus checks, generation/visibility gates, request digests, single-use permits and no retry. An open chat set up before this version shows **Wait for a Claude prompt** until its next prompt or session start. Legacy installs with the DeckShep status line keep the heartbeat check.
+
+Model and Effort read the current setting from the native picker before changing anything. After a session-only change (`s`), the caption comes from the picker state DeckShep verified before pressing `s`, after confirming the session and turn did not change and the draft is intact. Otherwise, captions show the last value a hook reported: SessionStart `model`, PostModelSwitch `to_model`, or the `effort.level` on tool events. A caption older than 30 minutes shows a trailing `?`. Captions are display only and never enable or disable a control. Session names come from `session_title`, which Claude sends only for `--name` or `/rename` titles, so other chats show the short session-ID label.
+
+Setup also registers PostModelSwitch (Claude Code 2.1.251+) to refresh the Model caption. It is optional: the doctor checks only the original lifecycle events, and removal deletes the owned PostModelSwitch entry with the rest.
+
+### Hook fields on the pinned version
+
+Checked on 2026-11-10 against the [hooks reference](https://code.claude.com/docs/en/hooks) and changelog only; nothing was run against a live Claude.
+
+| Event | `model` | `effort.level` | `session_title` | On 2.1.319 |
+| --- | --- | --- | --- | --- |
+| SessionStart | Optional; can be omitted, for example after `/clear` | Not listed | When a custom title is set | Yes |
+| UserPromptSubmit | No | Not listed | When a custom title is set | Yes |
+| PreToolUse / PostToolUse | No | Yes, on models with effort | No | Yes |
+| Stop | No | Yes, on models with effort | No | Yes |
+| Notification | No | Not listed | No | Yes (`idle_prompt` exists; not used) |
+| Pre/PostModelSwitch | `from_model`, `to_model` | No | No | Yes, since 2.1.251 |
+
+There is no effort-change event. The docs give no minimum version for the `effort` or `session_title` fields, and do not say whether PostModelSwitch fires for a session-only `s` change. Those are validation items (plan Part D); until they are confirmed, DeckShep relies only on the picker read.
 
 ## Remove the optional integration first
 

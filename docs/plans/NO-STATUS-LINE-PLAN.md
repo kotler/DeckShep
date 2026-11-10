@@ -49,6 +49,22 @@ Code today:
 
 ## Part A: Claude hooks-only mode
 
+> **Done (2026-11-10, branch `codex/rex-only-release`).** Step 1 found the
+> events on 2.1.319 (Pre/PostModelSwitch since 2.1.251), so this did not stop.
+> `effort.level` (tool events only) and `session_title` (custom names only)
+> have no documented minimum version, and it is unknown whether
+> PostModelSwitch fires for `s`; these are Part D items. The field table is in
+> `docs/CLAUDE.md` ("Hooks-only mode"). `state.setupMode` reads the private
+> setup record; `hooksOnlyProof` needs `establishedBy` SessionStart or
+> UserPromptSubmit on a validated record. In hooks-only mode the Model/Effort
+> cycle takes the current setting from the picker and skips the status-line
+> wait. Captions live in `record.caption` and show `?` after 30 minutes.
+> PostModelSwitch is owned but not a doctor requirement. The native-ended
+> request shortcut still needs a status line, so in hooks-only mode a blocked
+> request clears on the next hook event. Tests:
+> `tests/unit/claude-hooks-only.test.js` and the hooks-only case in
+> `tests/unit/claude-cycle.test.js`.
+
 1. **Confirm the hook fields first (fixtures only).** From the docs and the
    pinned native Claude Code version's documented schema, record in
    `docs/CLAUDE.md` which of `model`, `effort.level` and `session_title` appear
