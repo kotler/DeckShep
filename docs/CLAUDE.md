@@ -29,7 +29,7 @@ The normal Claude Home row keeps Zoom in the middle. The Codex Reviewer key beco
 
 Do not follow these steps just to run the fixture tests. The local physical test installed these hooks with a backup; downloaded builds still leave them opt-in.
 
-Prerequisites: local macOS, **native Claude Code 2.1.319**, Node 20+ for the metadata helper, and a running preview plugin. The reader checks the actual foreground PID, owner, executable version, process start time, session ID and matching directory. The npm/wrapper executable path and other Claude versions are not enabled for native controls yet. A custom `keybindings.json` disables native controls in this preview; its bindings have not been validated. The integration never removes or rewrites that file. Signing in to Claude is needed for live agent work, not for the plugin's automated tests. The plugin has no separate Claude login or API key.
+Prerequisites: local macOS, **native Claude Code** (any release installed under `claude/versions/`; no version is pinned), Node 20+ for the metadata helper, and a running preview plugin. The reader checks the actual foreground PID, owner, executable version, process start time, session ID and matching directory. The npm/wrapper executable path and other Claude versions are not enabled for native controls yet. A custom `keybindings.json` disables native controls in this preview; its bindings have not been validated. The integration never removes or rewrites that file. Signing in to Claude is needed for live agent work, not for the plugin's automated tests. The plugin has no separate Claude login or API key.
 
 After intentionally installing the preview and leaving agents running, preview setup from Terminal:
 
@@ -72,7 +72,7 @@ Questions and approvals require the matching hook request and a recognized nativ
 
 Setups without the DeckShep status line (the default above) run in hooks-only mode. There is no two-second heartbeat. Instead, every refresh and press requires all of:
 
-- **Process proof:** the pane's foreground process is the recorded PID, with the same start time, native executable and version 2.1.319.
+- **Process proof:** the pane's foreground process is the recorded PID, with the same start time, native executable and version it had when the record was written.
 - **Lifecycle proof:** the record's root session was established for this process by a SessionStart or UserPromptSubmit hook. There must be no SessionEnd and no lost-event marker since then. `/clear`, `/resume` and restarts start another session or generation, which re-binds the key identity and refuses older presses.
 - **Pane proof:** a fresh read of the native dialog or picker right before input, as for every Claude control.
 
@@ -84,18 +84,17 @@ Setup also registers PostModelSwitch (Claude Code 2.1.251+) to refresh the Model
 
 ### Hook fields on the pinned version
 
-Checked on 2026-11-10 against the [hooks reference](https://code.claude.com/docs/en/hooks) and changelog only; nothing was run against a live Claude.
+Observed on 2026-11-10 with disposable headless sessions on 2.1.319 and 2.1.322 (the same on both), alongside the [hooks reference](https://code.claude.com/docs/en/hooks):
 
-| Event | `model` | `effort.level` | `session_title` | On 2.1.319 |
-| --- | --- | --- | --- | --- |
-| SessionStart | Optional; can be omitted, for example after `/clear` | Not listed | When a custom title is set | Yes |
-| UserPromptSubmit | No | Not listed | When a custom title is set | Yes |
-| PreToolUse / PostToolUse | No | Yes, on models with effort | No | Yes |
-| Stop | No | Yes, on models with effort | No | Yes |
-| Notification | No | Not listed | No | Yes (`idle_prompt` exists; not used) |
-| Pre/PostModelSwitch | `from_model`, `to_model` | No | No | Yes, since 2.1.251 |
+| Event | `model` | `effort.level` | `session_title` |
+| --- | --- | --- | --- |
+| SessionStart | Not sent | No | When the session has a name (`--name`, `/rename`) |
+| UserPromptSubmit | No | No | When the session has a name |
+| PreToolUse / PostToolUse / PermissionRequest | No | Yes | No |
+| Stop | No | Yes | No |
+| PostModelSwitch | `from_model`, `to_model` | No | No |
 
-There is no effort-change event. The docs give no minimum version for the `effort` or `session_title` fields, and do not say whether PostModelSwitch fires for a session-only `s` change. Those are validation items (plan Part D); until they are confirmed, DeckShep relies only on the picker read.
+So the Model caption stays empty until the first model switch. PostModelSwitch fired for `/model` in a session that kept running; a print-mode session whose only prompt was `/model` ended first (2.1.322 sent only PreModelSwitch). Notification did not fire headless. There is no effort-change event. Whether PostModelSwitch fires for a session-only `s` change in the interactive picker is still a validation item; until then DeckShep relies only on the picker read.
 
 ## Remove the optional integration first
 

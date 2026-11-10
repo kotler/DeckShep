@@ -486,3 +486,49 @@ test('PostModelSwitch is an owned hook but not a doctor requirement', () => {
   assert.equal(S.modelLabel('claude-opus-5-5[1m]'), 'Opus 5.5');
   assert.equal(S.modelLabel('opus'), null);
 });
+
+test('any native Claude Code release is accepted; no version is pinned', async () => {
+  for (const version of ['2.1.319', '2.1.322', '2.2.0', '3.0.0']) {
+    const p = { ...proc, version },
+      f = harness({
+        record: hookRecord({ version }),
+        inspect: async () => ({ ...p }),
+      });
+    const a = await f.enrich();
+    assert.equal(a.claudeControlsEnabled, true, version + ': ' + a.claudeError);
+    const r = S.reduce(
+      null,
+      {
+        hook_event_name: 'SessionStart',
+        session_id: 'hooks-session',
+        cwd: '/project',
+        source: 'startup',
+      },
+      p,
+      NOW,
+    );
+    assert.equal(r?.version, version);
+  }
+  // Non-native executables and malformed versions still never produce records.
+  for (const version of [null, undefined, '', '2.1', '2.1.322-beta', 'latest'])
+    assert.equal(
+      S.reduce(
+        null,
+        {
+          hook_event_name: 'SessionStart',
+          session_id: 'hooks-session',
+          cwd: '/project',
+        },
+        { ...proc, version },
+        NOW,
+      ),
+      null,
+      String(version),
+    );
+  // The version still names the process: an update under a live record refuses.
+  const f = harness({
+    record: hookRecord({ version: '2.1.319' }),
+    inspect: async () => ({ ...proc, version: '2.1.322' }),
+  });
+  assert.equal((await f.enrich()).nativeVerified, false);
+});

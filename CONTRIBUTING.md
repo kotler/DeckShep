@@ -106,8 +106,9 @@ small and include the exact application/provider versions and evidence scope.
    `0.9.5` (including its suffix variants) and protocol `22`. Extending only one
    check does not establish a supported session. No composer cursor means no
    staged Send, Steer or Queue, even after version verification.
-4. Claude native controls currently require `2.1.319` and explicit hook/control
-   opt-ins. Version verification must retain request, process, root identity,
+4. Claude native controls accept any native Claude Code release (owner decision,
+   2026-11-10; no version is pinned in source) and require explicit hook/control
+   opt-ins. A new release must still pass request, process, root identity,
    focus and completion checks; never substitute transcript matching for them.
 5. Run the full commands above. Golden JSON must stay byte-identical unless a
    deliberate behavior change is independently justified in writing. Do not

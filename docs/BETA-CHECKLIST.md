@@ -23,7 +23,7 @@ is not authorization to reuse a running agent.
 - [ ] Sign off on Claude approval/navigation responsiveness.
 - [ ] Physical mixed-agent navigation with native controls in the Rex profile.
 - [ ] Validate optional hook ancestry, watcher behavior, live renames and removal.
-- [ ] Hooks-only Claude (isolated config directory, disposable sessions): record which of `model`, `effort.level` and `session_title` arrive per event on 2.1.319, and whether PostModelSwitch fires for a session-only (`s`) change.
+- [ ] Hooks-only Claude (isolated config directory, disposable sessions): record which of `model`, `effort.level` and `session_title` arrive per event (headless results on 2.1.319 and 2.1.322 are in docs/CLAUDE.md), and in an interactive session whether PostModelSwitch fires for a session-only (`s`) change.
 - [ ] Hooks-only Claude: an idle session keeps controls through press-time proof; `/clear`, `/resume` and restart revoke them; Model/Effort, questions/approvals and Interrupt work in Rex with no status line installed.
 - [ ] Legacy Claude setup with the DeckShep status line: **Restore your original status line** and removal both put the original back.
 - [ ] Validate customized/default keybindings and session-only settings preservation.

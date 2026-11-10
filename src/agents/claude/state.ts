@@ -86,6 +86,12 @@ function setupMode(dir: string = pluginDirectory): string | null {
     return null;
   }
 }
+/** A native Claude Code install runs from `claude/versions/<x.y.z>`. Any such
+ * release is accepted; no version is pinned here. The version still names the
+ * process: records from another executable are refused. */
+function nativeRelease(version: unknown): boolean {
+  return typeof version === 'string' && /^\d+\.\d+\.\d+$/.test(version);
+}
 function nativeVersion(file: string) {
   const resolved: string = fs.realpathSync(file);
   return /\/claude\/versions\/(\d+\.\d+\.\d+)$/.exec(resolved)?.[1] || null;
@@ -241,7 +247,7 @@ function validate(
     agent.pid !== p.pid ||
     record.startedAt !== p.startedAt ||
     record.version !== p.version ||
-    p.version !== '2.1.319' ||
+    !nativeRelease(p.version) ||
     record.cwd !== agent.cwd ||
     !path.isAbsolute(record.cwd) ||
     !session(record.sessionId) ||
@@ -277,7 +283,7 @@ function reduce(
     !session(data.session_id) ||
     !text(data.cwd, 4096) ||
     !path.isAbsolute(data.cwd) ||
-    p.version !== '2.1.319'
+    !nativeRelease(p.version)
   )
     return null;
   const same: boolean =
@@ -605,6 +611,7 @@ module.exports = {
   text,
   session,
   modes,
+  nativeRelease,
   nativeVersion,
   processInfo,
   ancestor,

@@ -434,7 +434,7 @@ export async function diagnostics({
     reason:
       selected?.app === 'claude-code' && selected.nativeVerified === true
         ? 'Claude identity and native version verified'
-        : 'Claude 2.1.319 required; preview the optional hooks below',
+        : 'Native Claude Code required; preview the optional hooks below',
   });
   let hooks = false,
     wrapper = false;
