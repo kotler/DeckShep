@@ -56,6 +56,11 @@ export interface AgentSnapshot extends TargetRef {
   atBottom?: boolean;
   claudeControlsEnabled?: boolean;
   claudeError?: string;
+  /** Hooks-only Claude install (no DeckShep status line). */
+  claudeHooksOnly?: boolean;
+  /** Hook-reported caption older than the documented age; display only. */
+  claudeModelStale?: boolean;
+  claudeEffortStale?: boolean;
   claudeUiEpoch?: number;
   claudeTurnId?: string | null;
   claudeRequestId?: string | null;

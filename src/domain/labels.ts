@@ -134,7 +134,7 @@ function modelLines(bridge: Record<string, any>) {
         : 'Unknown',
       126,
       16,
-    ),
+    ) + (!recent && verified && agent.claudeModelStale ? '?' : ''),
   ];
 }
 function effortLines(bridge: Record<string, any>) {
@@ -144,16 +144,16 @@ function effortLines(bridge: Record<string, any>) {
   if (!agent) return ['Effort', 'Unknown'];
   if (footerMissing(agent)) return ['Effort', NO_FOOTER_ID];
   const recent: any = bridge.lastEffort;
-  const value: any =
-    sameTarget(recent, agent) &&
-    recent.chatId === agent.chatId &&
-    recent.at > (agent.metadataAt || 0)
-      ? recent.effort
-      : agent.effort;
+  const fresh: boolean =
+      sameTarget(recent, agent) &&
+      recent.chatId === agent.chatId &&
+      recent.at > (agent.metadataAt || 0),
+    value: any = fresh ? recent.effort : agent.effort;
   return [
     'Effort',
     value
-      ? clean(value).replace(/^./, (c: string) => c.toUpperCase())
+      ? clean(value).replace(/^./, (c: string) => c.toUpperCase()) +
+        (!fresh && agent.claudeEffortStale ? '?' : '')
       : 'Unknown',
   ];
 }

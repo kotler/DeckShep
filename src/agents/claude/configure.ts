@@ -9,7 +9,8 @@ const fs = require('node:fs'),
   path = require('node:path'),
   crypto = require('node:crypto'),
   os = require('node:os');
-const EVENTS: string[] = [
+/** Lifecycle events every DeckShep Claude install needs (doctor checks these). */
+const REQUIRED_EVENTS: string[] = [
   'SessionStart',
   'SessionEnd',
   'UserPromptSubmit',
@@ -20,6 +21,10 @@ const EVENTS: string[] = [
   'PermissionRequest',
   'Notification',
 ];
+/** Owned hook set. PostModelSwitch (Claude Code 2.1.251+) only refreshes the
+ * Model caption; installs made before it was added keep working without it.
+ * Removal deletes the owned command from every listed event. */
+const EVENTS: string[] = [...REQUIRED_EVENTS, 'PostModelSwitch'];
 const quote: (s: any) => string = (s: any) =>
   "'" + s.replace(/'/g, "'\\''") + "'";
 function commands(dir: string, node: any = process.execPath) {
@@ -320,6 +325,6 @@ if (require.main === module)
     );
     process.exitCode = 1;
   }
-module.exports = { EVENTS, commands, plan, main };
+module.exports = { EVENTS, REQUIRED_EVENTS, commands, plan, main };
 
 export {};

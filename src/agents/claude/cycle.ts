@@ -236,7 +236,10 @@ async function cycle(c: any, kind: string, initial: any) {
     key: string = actorKey(a),
     binding: any = c.bindings.get(key);
   if (c.picker || b.picker) throw Error('Close the Claude picker first');
-  if (!binding?.confirmed || !a.model)
+  // Hooks-only installs have no status-line model; the native picker read
+  // below is the current setting. Legacy installs still cross-check both.
+  const hooksOnly: boolean = a.claudeHooksOnly === true;
+  if (!binding?.confirmed || (!a.model && !hooksOnly))
     throw Error('Wait for verified Claude settings');
   if (a.vimMode && a.vimMode !== 'INSERT')
     throw Error('Claude vim composer must be INSERT');
@@ -487,13 +490,17 @@ async function cycle(c: any, kind: string, initial: any) {
           isDefault: boolean;
           more: boolean;
         }
-      ).model !== a.model
+      ).model !== a.model &&
+      !hooksOnly
     )
       throw Error('Claude current model differs from picker');
-    let expectedModel: any = a.model,
+    const currentModel: any = hooksOnly ? (p.selected as any).model : a.model,
+      currentEffort: any = hooksOnly ? p.effort : a.effort;
+    if (!currentModel) throw Error('Wait for verified Claude settings');
+    let expectedModel: any = currentModel,
       expectedEffort: string | null | undefined = p.effort;
     if (kind === 'model') {
-      const next: any = nextModel(p, a.model);
+      const next: any = nextModel(p, currentModel);
       expectedModel = next.model;
       const distance: number =
         next.number -
@@ -540,11 +547,15 @@ async function cycle(c: any, kind: string, initial: any) {
         ).model !== next.model
       )
         throw Error('Claude selected another model');
-      if (a.effort && p.effort && levels.includes(a.effort))
-        for (let step: number = 0; step < 5 && p.effort !== a.effort; step++) {
+      if (currentEffort && p.effort && levels.includes(currentEffort))
+        for (
+          let step: number = 0;
+          step < 5 && p.effort !== currentEffort;
+          step++
+        ) {
           const previous: any = p.effort,
             direction: 'right' | 'left' =
-              levels.indexOf(p.effort as string) < levels.indexOf(a.effort)
+              levels.indexOf(p.effort as string) < levels.indexOf(currentEffort)
                 ? 'right'
                 : 'left';
           p = await keys(p, [direction]);
@@ -586,7 +597,28 @@ async function cycle(c: any, kind: string, initial: any) {
     const appliedAt: any = c.now();
     await b.run(['send-key', '-s', current.session, '-b', current.block, 's']);
     let result: any;
-    for (let attempt: number = 0; attempt < 20; attempt++) {
+    if (hooksOnly) {
+      // No status line confirms the apply. Require the same root session and
+      // turn, then the closed picker and unchanged draft checked below. The
+      // caption comes from the picker state verified before pressing s.
+      const process: any = await c.inspect(a.pid),
+        record: any = S.validate(await c.read(a.pid), a, process, c.now());
+      const root: string = [
+        process.startedAt,
+        record.sessionId,
+        record.generation,
+        await c.bindingsDefault(record.configDirectory),
+      ].join('|');
+      if (root !== binding.root || record.turnId !== a.claudeTurnId)
+        throw Error('Claude session changed during configuration');
+      result = {
+        model: expectedModel,
+        modelName: (p.selected as any).name,
+        effort: expectedEffort,
+        metadataAt: appliedAt,
+      };
+    }
+    for (let attempt: number = 0; !result && attempt < 20; attempt++) {
       const process: any = await c.inspect(a.pid),
         record: any = S.validate(await c.read(a.pid), a, process, c.now());
       const root: string = [

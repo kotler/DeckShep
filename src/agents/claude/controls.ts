@@ -274,6 +274,38 @@ const same: (a: any, b: any) => boolean = (a: any, b: any) =>
   a.hash === b.hash &&
   a.cursor.row === b.cursor.row &&
   a.cursor.column === b.cursor.column;
+/**
+ * Model/Effort captions. A fresh status line wins (legacy installs). Hooks-only
+ * installs show the last value reported by SessionStart, PostModelSwitch or a
+ * tool event; past CAPTION_STALE_MS it is flagged stale. Captions are display
+ * only: they never enable or disable a control.
+ */
+function captions(r: any, fresh: boolean, hooksOnly: boolean, now: number) {
+  if (fresh || !hooksOnly)
+    return {
+      claudeHooksOnly: hooksOnly,
+      metadataAt: r.metadataAt || 0,
+      model: fresh ? r.model : null,
+      modelName: fresh ? r.modelName : null,
+      effort: fresh ? r.effort : null,
+      claudeModelStale: false,
+      claudeEffortStale: false,
+    };
+  const c: any = r.caption || {},
+    known = (at: any) => Number.isFinite(at) && at > 0 && at <= now + 1000,
+    model: any = known(c.modelAt) ? S.hookModel(c.model) : null,
+    effort: any =
+      known(c.effortAt) && S.levels.includes(c.effort) ? c.effort : null;
+  return {
+    claudeHooksOnly: true,
+    metadataAt: Math.max(model ? c.modelAt : 0, effort ? c.effortAt : 0),
+    model,
+    modelName: S.modelLabel(model),
+    effort,
+    claudeModelStale: !!model && now - c.modelAt > S.CAPTION_STALE_MS,
+    claudeEffortStale: !!effort && now - c.effortAt > S.CAPTION_STALE_MS,
+  };
+}
 class ClaudeControls {
   declare b: Record<string, any>;
   declare read: any;
@@ -285,6 +317,7 @@ class ClaudeControls {
   declare submissions: Map<any, any>;
   declare viewReader: any;
   declare bindingsDefault: any;
+  declare setupMode: () => string | null;
   declare cycleWait: any;
   constructor(
     bridge: Record<string, any>,
@@ -300,6 +333,7 @@ class ClaudeControls {
     this.submissions = new Map();
     this.viewReader = deps.view;
     this.bindingsDefault = deps.bindingsDefault || S.defaultBindings;
+    this.setupMode = deps.setupMode || S.setupMode;
     this.cycleWait = deps.cycleWait;
   }
   prune(agents: import('../../domain/types').AgentSnapshot[]) {
@@ -445,11 +479,27 @@ class ClaudeControls {
         S.text(r.requestId, 128) &&
         this.now() - r.updatedAt >= 0 &&
         this.now() - r.updatedAt < 300000;
+      // Hooks-only installs have no status-line heartbeat. Instead the
+      // record must have been established for this exact process (validate
+      // checked PID, start time, version, folder and that the pane's
+      // foreground process is this PID) by SessionStart/UserPromptSubmit,
+      // with no SessionEnd (validate) or lost-event marker (read). /clear and
+      // /resume start another session, which changes the root and binding.
+      // Every control still reads the native view at press time.
+      const hooksOnly: boolean = this.setupMode() === 'hooks',
+        hooksOnlyProof: boolean =
+          hooksOnly &&
+          S.ESTABLISHING.includes(r.establishedBy) &&
+          Number.isFinite(r.establishedAt) &&
+          r.establishedAt > 0 &&
+          r.establishedAt <= this.now() + 1000;
       const controlsFresh: boolean =
-        metadataFresh || trackedPicker || pausedRequest;
+        hooksOnlyProof || metadataFresh || trackedPicker || pausedRequest;
       if (!controlsFresh) {
         a.claudeControlsEnabled = false;
-        a.claudeError = 'Wait for fresh Claude status line';
+        a.claudeError = hooksOnly
+          ? 'Wait for a Claude prompt'
+          : 'Wait for fresh Claude status line';
       }
       const base: string = [root, controlsFresh].join('|');
       let binding: any = previous;
@@ -457,7 +507,10 @@ class ClaudeControls {
         binding = {
           root,
           base,
-          confirmed: metadataFresh || (sameRoot && previous.confirmed === true),
+          confirmed:
+            metadataFresh ||
+            hooksOnlyProof ||
+            (sameRoot && previous.confirmed === true),
           id: 'claude:' + ++this.sequence + ':' + hash(base),
         };
         this.bindings.set(key, binding);
@@ -471,10 +524,7 @@ class ClaudeControls {
         chatName: r.title || 'Claude ' + r.sessionId.slice(0, 8),
         permissionMode: r.permissionMode || null,
         vimMode: r.vimMode || null,
-        metadataAt: r.metadataAt || 0,
-        model: metadataFresh ? r.model : null,
-        modelName: metadataFresh ? r.modelName : null,
-        effort: metadataFresh ? r.effort : null,
+        ...captions(r, metadataFresh, hooksOnly, this.now()),
         state: r.state,
         kind: r.kind || null,
         claudeRequestId: r.requestId || null,

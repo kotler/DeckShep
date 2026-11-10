@@ -31,6 +31,61 @@ const modes: Set<string> = new Set([
   'auto',
   'dontAsk',
 ]);
+const levels: string[] = ['low', 'medium', 'high', 'xhigh', 'max'];
+/** Captions older than this render as stale ("?"). They never enable or
+ * disable a control: hooks-only availability comes from press-time proof. */
+const CAPTION_STALE_MS: number = 30 * 60 * 1000;
+/** Events that establish a root session for this process (hooks-only proof). */
+const ESTABLISHING: string[] = ['SessionStart', 'UserPromptSubmit'];
+/** SessionStart `model` is documented as an identifier string; accept an
+ * `{ id }` object defensively. Anything else is ignored, never trusted. */
+function hookModel(value: any): string | null {
+  const id: any = typeof value === 'string' ? value : value?.id;
+  return text(id, 128) && /^[a-zA-Z0-9._[\]-]+$/.test(id) ? id : null;
+}
+/** Display name for a native model ID, e.g. claude-opus-5-5 -> Opus 5.5. */
+function modelLabel(id: any): string | null {
+  const m: RegExpExecArray | null =
+    typeof id === 'string'
+      ? /^claude-(opus|sonnet|fable|haiku)-(\d+)-(\d+)(?:-(\d+))?(?:$|\[)/.exec(
+          id,
+        )
+      : null;
+  return m
+    ? m[1][0].toUpperCase() +
+        m[1].slice(1) +
+        ' ' +
+        [m[2], m[3], m[4]].filter(Boolean).join('.')
+    : null;
+}
+/**
+ * Which Claude integration the private setup record describes: 'hooks' when
+ * DeckShep hooks are active without its status line, 'statusline' for legacy
+ * installs that chain one, or null when unknown. Unknown fails closed: the
+ * hooks-only proof is evaluated only for 'hooks'.
+ */
+function setupMode(dir: string = pluginDirectory): string | null {
+  try {
+    const file: string = path.join(dir, 'state', 'claude-setup.json'),
+      s: import('node:fs').Stats = fs.lstatSync(file);
+    if (
+      !s.isFile() ||
+      s.isSymbolicLink() ||
+      s.uid !== (process.getuid as () => number)() ||
+      s.mode & 0o022 ||
+      s.size > 65536
+    )
+      return null;
+    const saved: any = boundary.parse(
+      'setupRecord',
+      fs.readFileSync(file, 'utf8'),
+    );
+    if (saved.active !== true) return null;
+    return saved.statusline === true ? 'statusline' : 'hooks';
+  } catch {
+    return null;
+  }
+}
 function nativeVersion(file: string) {
   const resolved: string = fs.realpathSync(file);
   return /\/claude\/versions\/(\d+\.\d+\.\d+)$/.exec(resolved)?.[1] || null;
@@ -266,6 +321,7 @@ function reduce(
       'PostToolUseFailure',
       'PermissionRequest',
       'Notification',
+      'PostModelSwitch',
     ].includes(event)
   )
     return null;
@@ -300,7 +356,29 @@ function reduce(
     r.effort = null;
     r.metadataAt = null;
     r.title = text(data.session_title, 250) ? data.session_title : null;
+    const model: string | null = hookModel(data.model);
+    r.caption = model
+      ? { model, modelAt: now, effort: null, effortAt: null }
+      : { model: null, modelAt: null, effort: null, effortAt: null };
   }
+  if (ESTABLISHING.includes(event)) {
+    r.establishedBy = event;
+    r.establishedAt = now;
+    if (event === 'UserPromptSubmit' && text(data.session_title, 250))
+      r.title = data.session_title;
+  }
+  if (event === 'PostModelSwitch') {
+    // Captions only; a model switch changes no lifecycle, request or tool state.
+    const model: string | null = hookModel(data.to_model);
+    if (!model) return null;
+    r.caption = { ...(r.caption || {}), model, modelAt: now };
+  }
+  if (levels.includes(data.effort?.level))
+    r.caption = {
+      ...(r.caption || {}),
+      effort: data.effort.level,
+      effortAt: now,
+    };
   if (event === 'UserPromptSubmit') {
     r.turnId = id();
     r.promptId = null;
@@ -363,7 +441,8 @@ function reduce(
     r.toolId = null;
   }
   r.cwd = data.cwd;
-  r.updatedAt = now;
+  // A model switch is not activity: keep request ages (pausedRequest) honest.
+  if (event !== 'PostModelSwitch') r.updatedAt = now;
   r.eventAt = now;
   if (modes.has(data.permission_mode)) r.permissionMode = data.permission_mode;
   return r;
@@ -514,6 +593,12 @@ async function record(
 }
 module.exports = {
   directory,
+  setupMode,
+  hookModel,
+  modelLabel,
+  levels,
+  CAPTION_STALE_MS,
+  ESTABLISHING,
   invalidate,
   defaultBindings,
   hash,

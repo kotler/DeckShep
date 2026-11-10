@@ -442,7 +442,7 @@ export async function diagnostics({
       saved = source.saved;
     hooks =
       saved?.active === true &&
-      configure.EVENTS.every(
+      configure.REQUIRED_EVENTS.every(
         (event: string) =>
           Array.isArray(source.settings.hooks?.[event]) &&
           (source.settings.hooks![event] as any[]).some(

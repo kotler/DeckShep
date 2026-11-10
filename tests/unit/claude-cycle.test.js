@@ -10,7 +10,7 @@ const { Bridge } = require('../../src/app/session'),
   { validate } = require('../../src/terminals/herdr-tui/rpc'),
   defaults = require('../../com.kotl3r.deckshep.sdPlugin/config.json');
 const hash = (s) => crypto.createHash('sha256').update(s).digest('hex');
-function fixture(backend = 'rex') {
+function fixture(backend = 'rex', { hooksOnly = false } = {}) {
   let now = 10000;
   const models = [
       'claude-opus-5-5',
@@ -71,6 +71,15 @@ function fixture(backend = 'rex') {
       effort: 'medium',
       configDirectory: '/fixture/claude',
     };
+  if (hooksOnly) {
+    // No status line: the record never carries metadataAt. record.model below
+    // is only the fixture's native truth that the picker renders.
+    delete record.metadataAt;
+    Object.assign(record, {
+      establishedBy: 'SessionStart',
+      establishedAt: now,
+    });
+  }
   const selectedModel = () =>
     state.selected === 0 ? models[0] : models[state.selected - 1];
   const text = () => {
@@ -162,7 +171,8 @@ function fixture(backend = 'rex') {
         record.model = selectedModel();
         record.modelName = names[models.indexOf(record.model)];
         record.effort = state.slider;
-        record.metadataAt = ++now;
+        if (hooksOnly) ++now;
+        else record.metadataAt = ++now;
         state.defaultModel = state.selected === 0;
         state.dialog = null;
         if (state.backgroundRedraw) {
@@ -220,6 +230,7 @@ function fixture(backend = 'rex') {
     inspect: async () => ({ ...process }),
     read: async () => ({ ...record }),
     bindingsDefault: () => true,
+    setupMode: () => (hooksOnly ? 'hooks' : null),
     now: () => now,
     cycleWait: async (ms) => {
       now += ms;
@@ -383,4 +394,58 @@ test('claude cycle', async () => {
   console.log(
     'PASS one-press Claude model/effort cycles in Rex and Herdr, supported effort preservation/wrap, unchanged drafts, session-only keys, modal/credit/uncertain-write refusal, scoped Herdr keys and native focus/scroll guards',
   );
+});
+
+test('claude cycle in hooks-only mode trusts the native picker, not a status line', async () => {
+  for (const backend of ['rex', 'herdr']) {
+    const f = fixture(backend, { hooksOnly: true });
+    f.state.input = 'unchanged draft';
+    const before = await f.b.focused();
+    assert.equal(before.claudeHooksOnly, true);
+    assert.equal(before.model, null, 'no status-line model in hooks-only mode');
+    await f.invoke('model');
+    assert.equal(f.record.model, 'claude-sonnet-5-5');
+    assert.equal(f.b.lastModel.model, 'claude-sonnet-5-5');
+    assert.equal(f.b.lastModel.modelName, 'Sonnet 5.5');
+    assert.equal(f.record.metadataAt, undefined, 'no heartbeat was needed');
+    assert.equal(f.state.input, 'unchanged draft');
+    assert.deepEqual(f.calls, ['alt+p', 'down', 'down', 's']);
+    for (const expected of [
+      'claude-fable-5-1',
+      'claude-haiku-5-5',
+      'claude-opus-5-5',
+    ]) {
+      await f.invoke('model');
+      assert.equal(f.record.model, expected);
+    }
+    for (const expected of ['high', 'xhigh', 'max', 'low', 'medium']) {
+      await f.invoke('effort');
+      assert.equal(f.record.effort, expected);
+      assert.equal(f.b.lastEffort.effort, expected);
+    }
+    // Model change keeps the effort the picker showed before the change.
+    const keep = fixture(backend, { hooksOnly: true });
+    keep.record.effort = 'high';
+    await keep.invoke('model');
+    assert.equal(keep.record.effort, 'high');
+    // Pane proof: an unrecognized dialog refuses before any picker key.
+    const unknown = fixture(backend, { hooksOnly: true });
+    unknown.state.unknown = true;
+    await assert.rejects(() => unknown.invoke('model'));
+    assert(!unknown.calls.includes('s'));
+    // Lifecycle proof: a session change during the apply is refused.
+    const moved = fixture(backend, { hooksOnly: true });
+    const original = moved.record.generation;
+    const sent = moved.calls;
+    moved.controls.read = async () => ({
+      ...moved.record,
+      generation: sent.includes('s') ? 'generation-two' : original,
+    });
+    await assert.rejects(() => moved.invoke('model'), /session changed/);
+    // Without lifecycle proof the cycle never starts.
+    const unproven = fixture(backend, { hooksOnly: true });
+    delete unproven.record.establishedBy;
+    await assert.rejects(() => unproven.invoke('model'));
+    assert.deepEqual(unproven.calls, []);
+  }
 });
