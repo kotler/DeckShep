@@ -22,7 +22,10 @@ is not authorization to reuse a running agent.
 - [ ] Claude running controls and Zoom in Rex; Rex Claude questions, approvals and guarded submissions.
 - [ ] Sign off on Claude approval/navigation responsiveness.
 - [ ] Physical mixed-agent navigation with native controls in the Rex profile.
-- [ ] Validate optional hook ancestry, status-line chaining, watcher behavior, live renames and removal.
+- [ ] Validate optional hook ancestry, watcher behavior, live renames and removal.
+- [ ] Hooks-only Claude (isolated config directory, disposable sessions): record which of `model`, `effort.level` and `session_title` arrive per event on 2.1.319, and whether PostModelSwitch fires for a session-only (`s`) change.
+- [ ] Hooks-only Claude: an idle session keeps controls through press-time proof; `/clear`, `/resume` and restart revoke them; Model/Effort, questions/approvals and Interrupt work in Rex with no status line installed.
+- [ ] Legacy Claude setup with the DeckShep status line: **Restore your original status line** and removal both put the original back.
 - [ ] Validate customized/default keybindings and session-only settings preservation.
 - [ ] Install on a Mac without this development checkout and complete setup without assistance.
 - [ ] Verify Intel helper execution before advertising Intel support.

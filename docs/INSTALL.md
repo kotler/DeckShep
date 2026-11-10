@@ -35,8 +35,10 @@ and explicitly enable thread-ID title matching after `/title thread-id` in each
 Codex pane. See [Herdr](HERDR.md). Herdr submissions require the keyboard.
 
 For Claude, the panel offers **Preview changes**, the exact before/after settings,
-**Apply with backup**, **Undo last change**, and removal preview. Removal also clears private Claude lifecycle records; undo restores settings and waits for fresh lifecycle reports. Status-line
-chaining is a separate choice. Enable Claude native controls only after hook
+**Apply with backup**, **Undo last change**, and removal preview. Removal also clears private Claude lifecycle records; undo restores settings and waits for fresh lifecycle reports. DeckShep
+never changes your Claude status line. If an older setup chained DeckShep's
+status line, the panel also shows **Restore your original status line**, which
+puts yours back and keeps the hooks. Enable Claude native controls only after hook
 setup; both are off initially. The stable `configure-claude.js` CLI remains
 available; see [Claude](CLAUDE.md).
 

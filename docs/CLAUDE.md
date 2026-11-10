@@ -44,7 +44,11 @@ To apply that setup with a backup:
 node "$plugin_dir/configure-claude.js" --apply
 ```
 
-This explicitly adds only this integration's command hooks to Claude settings and leaves your status line alone ([hooks-only mode](#hooks-only-mode)). DeckShep must never change a Claude Code status line; the legacy `--statusline` option below is being removed (NO-STATUS-LINE-PLAN Part B). With `--statusline`, setup also chains an existing status-line command, retains its padding/options, and records the original for removal. The wrapper forwards the original JSON to that existing command and keeps its output. With no previous command, it displays a simple Claude/model/effort line. The wrapper refreshes every two seconds; it adds local process work but no model requests. It never modifies authentication, permission rules, sandbox settings or existing unrelated hooks. Settings backups use a `settings.json.deckshep-backup-…` suffix and private permissions.
+This explicitly adds only this integration's command hooks to Claude settings and leaves your status line alone ([hooks-only mode](#hooks-only-mode)). DeckShep never changes a Claude Code status line, and `--statusline` is refused.
+
+**Older setups** chained DeckShep's wrapper as the status line. It still works: it forwards the original JSON to your previous command and keeps its output (or shows a simple Claude/model/effort line when there was none), and keeps the 15-second heartbeat check. To return to your own status line and hooks-only mode, choose **Restore your original status line** in the setup panel, or run `node "$plugin_dir/configure-claude.js" --restore-statusline` and then the same with `--apply`. It restores the recorded original only while DeckShep's wrapper is still the status line; one you changed since is left alone. Hooks stay installed.
+
+Setup never modifies authentication, permission rules, sandbox settings or existing unrelated hooks. Settings backups use a `settings.json.deckshep-backup-…` suffix and private permissions.
 
 The default target is `~/.claude/settings.json`, honoring `CLAUDE_CONFIG_DIR`; use `--settings /absolute/settings.json` for a different settings file. To run the script from the checkout while targeting an installed copy, also pass `--plugin-dir "$plugin_dir"`. Hooks reference that absolute installation and Node executable; remove the previous setup before moving either.
 
@@ -58,7 +62,7 @@ The helper reads hook/status-line JSON in memory. It stores only session/name/mo
 
 Subagent/teammate hook events are ignored. A status-line callback cannot establish or replace the root session identity. A different root ID revokes the old record; a fresh matching status-line report is required for controls. Losing that heartbeat for 15 seconds disables ordinary controls and invalidates captured presses. A known root chat retains its selected dot through freshness changes. A picker opened by the deck, or an exact waiting request from an already confirmed root, can continue for up to five minutes while Claude pauses status-line updates, provided the root identity and default keybindings still match and each fresh native dialog read is recognized. Lifecycle writes serialize for up to one second; a skipped lifecycle write marks the record invalid until a subsequent root SessionStart or UserPromptSubmit report; status-line refreshes cannot repair it. Missing, changed, expired, ambiguous or unsupported records disable native controls and invalidate old bindings, including when the same session record later returns. Claude uses hook lifecycle/input epochs rather than Codex daemon turn IDs. Native status can override a stale working hook after an interrupt.
 
-Fresh status-line data supplies the actual model, effort and custom/AI-generated session name. Unavailable titles use a short session-ID label; aliases still override it. Model/effort captions expire after 15 seconds without fresh status-line data. This preview also requires the matching heartbeat for native controls, so install the status-line bridge along with the hooks. Custom `--agent` status-line payloads are not enabled yet. Native permission mode is not presented as a continuously verified setting.
+On older setups with the wrapper, fresh status-line data supplies the model, effort and custom/AI-generated session name, and captions expire after 15 seconds without it. Hooks-only setups work as described in [Hooks-only mode](#hooks-only-mode). Unavailable titles use a short session-ID label; aliases still override it. Custom `--agent` status-line payloads are not enabled yet. Native permission mode is not presented as a continuously verified setting.
 
 In Rex, submissions require a recognized bordered Claude composer, a matching visible cursor, session/lifecycle identity and unchanged input digests. Send consumes its staged token before the write; edited/manual submissions, failed reads and changed sessions invalidate it. Only plain text is accepted. Vim modes other than visibly confirmed INSERT, unfamiliar footers, very narrow/wrapped views and overlays are refused. Custom status lines can prevent verification; a custom keybindings file explicitly disables controls. No uncertain submission is retried.
 
@@ -95,7 +99,7 @@ There is no effort-change event. The docs give no minimum version for the `effor
 
 ## Remove the optional integration first
 
-Before uninstalling the Stream Deck plugin, preview and then remove its Claude hooks/status-line wrapper while the files still exist:
+Before uninstalling the Stream Deck plugin, preview and then remove its Claude hooks (and any legacy status-line wrapper) while the files still exist:
 
 ```sh
 node "$plugin_dir/configure-claude.js" --remove

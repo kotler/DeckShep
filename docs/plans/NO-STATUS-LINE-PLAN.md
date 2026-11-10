@@ -119,6 +119,19 @@ Code today:
 
 ## Part B: Remove the status-line option, keep legacy removal
 
+> **Done (2026-11-10, branch `codex/rex-only-release`).** `plan()` refuses
+> `statusline` unless removing (`STATUSLINE_REFUSED`); the inspector's
+> "Chain the existing Claude status line" checkbox is gone. New
+> `restoreStatusLine` (`--restore-statusline`, panel **Restore your original
+> status line**) restores the recorded original over DeckShep's own wrapper,
+> keeps hooks and sets `registry.statusline=false`, so the install becomes
+> hooks-only. The button shows only when the doctor reports
+> `legacyStatusLine`. Removal is unchanged: like restore, it puts the original
+> back only while DeckShep's wrapper is still the status line, and leaves a
+> user-changed one alone. `hook.ts --statusline` is unchanged. Guard:
+> `tests/unit/claude-no-statusline.test.js` (every fixture × option, plus a
+> source scan). Legacy fixtures come from `tests/helpers/claude-legacy.js`.
+
 1. `configure.ts`, `configure-entry.ts`, `src/app/setup.ts` and the inspector:
    no path can install or modify `statusLine`. `--statusline` with `--apply`
    fails with a clear message pointing to removal.

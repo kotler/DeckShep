@@ -53,11 +53,15 @@ are reserved and forks must rename; see TRADEMARKS.md. Pinned LobeHub provider
 SVGs retain their MIT code license. OpenAI/Anthropic trademark permission remains
 pending; do not infer clearance or permission to publish from these decisions.
 
-DeckShep never changes a Codex status line (owner rule, 2026-11-08). The Rex
-footer step is a read-only check, and Codex controls bind only through a
-session ID the user's own footer shows; a source test refuses `/statusline`
-string literals. The Claude status-line option is still being removed
-(`docs/plans/NO-STATUS-LINE-PLAN.md`, Parts A–B); add nothing that writes one.
+DeckShep never changes a Claude Code or Codex status line; it may only restore
+a recorded original during removal or the explicit legacy restore (owner rule,
+2026-11-08). The Rex footer step is a read-only check, and Codex controls bind
+only through a session ID the user's own footer shows; a source test refuses
+`/statusline` string literals. Claude controls use the hooks-only press-time
+proof; `configure-claude.js --statusline` is refused, and
+`tests/unit/claude-no-statusline.test.js` fails if any setup path writes
+`statusLine` other than that restore. Keep `claude-hook.js --statusline`
+working for legacy wrappers until their users restore.
 Fresh clipboard/visible-pane consent, Herdr title identity, Claude native controls
 and Claude hooks stay off. Fewer setup steps never imply consent. Hook paths
 must stay stable or have an explicitly tested migration/removal path.

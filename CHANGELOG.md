@@ -26,6 +26,13 @@ preview artifacts use `-beta.N` release tags.
   reads the pane and the daemon; it never opens settings dialogs, stores a
   preset or changes the status line. Users enable the session ID in their own
   footer, and Codex keys in Rex show **No footer ID** until they do.
+- Run Claude controls in hooks-only mode. Without DeckShep's status line,
+  controls use press-time process, lifecycle and native-view proof instead of a
+  heartbeat; Model/Effort read the native picker, and hook captions are
+  display only (`?` after 30 minutes). Setup also registers PostModelSwitch.
+- Remove the Claude status-line install option. `configure-claude.js
+  --statusline` is refused; older setups get **Restore your original status
+  line** (`--restore-statusline`), which keeps the hooks.
 - Node build/package/recovery tools, guided setup/undo and privacy-safe doctor.
 - Automated fixture host, CI audits and draft-only release workflow.
 

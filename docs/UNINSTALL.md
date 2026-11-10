@@ -2,8 +2,9 @@
 
 Before removing the plugin, open a key's setup panel and choose **Preview removal
 of integrations**, review the exact changes, then **Apply with backup**. This
-removes only this integration's exact Claude hooks and restores its chained
-status line when still owned. Private Claude lifecycle records are removed after hooks are disabled. Unrelated hooks, permissions and settings remain.
+removes only this integration's exact Claude hooks and, for older setups that
+chained one, restores your original status line if DeckShep's wrapper is still
+there. Private Claude lifecycle records are removed after hooks are disabled. Unrelated hooks, permissions and settings remain.
 **Undo last change** is available unless those files changed afterward.
 
 Then remove DeckShep from Stream Deck and delete its profiles if wanted.
