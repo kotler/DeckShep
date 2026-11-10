@@ -9,6 +9,8 @@ const fs = require('node:fs'),
   path = require('node:path'),
   crypto = require('node:crypto'),
   os = require('node:os');
+const STATUSLINE_REFUSED: string =
+  'DeckShep no longer installs a Claude status line. To put yours back, use --restore-statusline (keeps hooks) or --remove.';
 /** Lifecycle events every DeckShep Claude install needs (doctor checks these). */
 const REQUIRED_EVENTS: string[] = [
   'SessionStart',
@@ -55,8 +57,14 @@ function plan(
     node = process.execPath,
     remove = false,
     statusline = false,
+    restoreStatusLine = false,
   }: Record<string, any> | undefined = {},
 ) {
+  // Owner rule (2026-11-08): DeckShep never installs or changes a Claude
+  // status line. It may only restore the recorded original (remove/restore).
+  if (statusline && !remove) throw Error(STATUSLINE_REFUSED);
+  if (remove && restoreStatusLine)
+    throw Error('Choose either removal or status-line restore');
   if (
     !settings ||
     typeof settings !== 'object' ||
@@ -112,29 +120,14 @@ function plan(
   const ours: boolean =
     settings.statusLine?.type === 'command' &&
     settings.statusLine.command === owned.status;
-  if (remove) {
-    if (ours) {
-      if (saved?.originalStatusLine)
-        result.statusLine = structuredClone(saved.originalStatusLine);
-      else delete result.statusLine;
-    }
-  } else if (statusline) {
-    if (
-      settings.statusLine &&
-      (settings.statusLine.type !== 'command' ||
-        typeof settings.statusLine.command !== 'string')
-    )
-      throw Error('Unsupported existing status line');
-    if (saved?.active !== false && !ours && saved?.statusline)
-      throw Error(
-        'Status line changed since setup; preserve and reconcile it manually',
-      );
-    result.statusLine = {
-      ...(settings.statusLine || {}),
-      type: 'command',
-      command: c.status,
-      refreshInterval: 2,
-    };
+  if (restoreStatusLine && saved?.active !== true)
+    throw Error('No active DeckShep setup to restore');
+  // Restore only DeckShep's own wrapper; a status line the user changed since
+  // setup is theirs and is left exactly as it is.
+  if ((remove || restoreStatusLine) && ours) {
+    if (saved?.originalStatusLine)
+      result.statusLine = structuredClone(saved.originalStatusLine);
+    else delete result.statusLine;
   }
   if (
     remove &&
@@ -158,7 +151,7 @@ function plan(
     registry: {
       ...registry,
       active: !remove,
-      statusline: !remove && (statusline || registry.statusline === true),
+      statusline: !remove && !restoreStatusLine && registry.statusline === true,
     },
   };
 }
@@ -185,7 +178,12 @@ function secure(file: string, optional: any = false) {
   }
 }
 function main(args: string[] | undefined = process.argv.slice(2)) {
-  const flags: Set<string> = new Set(['--apply', '--remove', '--statusline']),
+  const flags: Set<string> = new Set([
+      '--apply',
+      '--remove',
+      '--statusline',
+      '--restore-statusline',
+    ]),
     values: Set<string> = new Set(['--settings', '--plugin-dir']);
   for (let i: number = 0; i < args.length; i++) {
     if (values.has(args[i])) {
@@ -236,12 +234,13 @@ function main(args: string[] | undefined = process.argv.slice(2)) {
     dir,
     remove: args.includes('--remove'),
     statusline: args.includes('--statusline'),
+    restoreStatusLine: args.includes('--restore-statusline'),
   });
   console.log(
     (args.includes('--remove') ? 'Remove' : 'Install') +
       ' DeckShep Claude hooks' +
-      (args.includes('--statusline')
-        ? ' and chain the existing status line'
+      (args.includes('--restore-statusline')
+        ? ' and restore your original status line'
         : '') +
       '.',
   );
@@ -325,6 +324,13 @@ if (require.main === module)
     );
     process.exitCode = 1;
   }
-module.exports = { EVENTS, REQUIRED_EVENTS, commands, plan, main };
+module.exports = {
+  EVENTS,
+  REQUIRED_EVENTS,
+  STATUSLINE_REFUSED,
+  commands,
+  plan,
+  main,
+};
 
 export {};

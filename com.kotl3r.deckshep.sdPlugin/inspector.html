@@ -221,20 +221,19 @@
   <p class="note">
     Native Claude 2.1.319 only; physical validation is pending. Install the
     optional metadata hooks with <code>configure-claude.js</code> as described
-    in docs/CLAUDE.md. Existing hooks and status lines are preserved. Enabling
-    this checkbox does not install hooks or change permissions. Model and Effort
-    cycle settings for this session; Mode uses the Claude keyboard. Herdr
-    submissions remain unavailable.
+    in docs/CLAUDE.md. Existing hooks are preserved, and DeckShep never changes
+    your Claude status line. Enabling this checkbox does not install hooks or
+    change permissions. Model and Effort cycle settings for this session; Mode
+    uses the Claude keyboard. Herdr submissions remain unavailable.
   </p>
-  <sdpi-checkbox
-    id="chainStatus"
-    label="Chain the existing Claude status line (optional)"
-  ></sdpi-checkbox>
   <sdpi-button id="claudePreview">Preview changes</sdpi-button>
   <sdpi-button id="claudeApply" disabled>Apply with backup</sdpi-button>
   <sdpi-button id="claudeUndo">Undo last change</sdpi-button>
   <sdpi-button id="removeIntegrations"
     >Preview removal of integrations</sdpi-button
+  >
+  <sdpi-button id="claudeRestoreStatusLine" hidden
+    >Restore your original status line</sdpi-button
   >
   <pre
     id="claudeDiff"

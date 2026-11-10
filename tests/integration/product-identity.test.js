@@ -66,10 +66,10 @@ test('DeckShep profiles and pages have deterministic fresh UUIDs and every key u
 });
 test('new Claude setup refuses old preview hooks until their exact original registration is removed', () => {
   const { plan } = require('../../src/agents/claude/configure');
+  const { legacyInstall } = require('../helpers/claude-legacy');
   const oldOptions = {
     dir: '/fixture/com.local.rexagents.sdPlugin',
     node: '/fixture/node',
-    statusline: true,
   };
   const options = {
     ...oldOptions,
@@ -81,7 +81,7 @@ test('new Claude setup refuses old preview hooks until their exact original regi
     },
     statusLine: { type: 'command', command: 'original-status' },
   };
-  const legacy = plan(original, null, oldOptions);
+  const legacy = legacyInstall(original, null, oldOptions);
   const before = JSON.stringify(legacy.settings);
   assert.throws(() => plan(legacy.settings, null, options), /previous plugin/);
   const statusOnly = { statusLine: legacy.settings.statusLine };

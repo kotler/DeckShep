@@ -1168,16 +1168,19 @@ function createApplication(dependencies: Record<string, any>) {
           'claudeApply',
           'claudeUndo',
           'removeIntegrations',
+          'claudeRestoreStatusLine',
         ].includes(e.payload?.kind)
       ) {
+        const previewing = [
+          'claudePreview',
+          'removeIntegrations',
+          'claudeRestoreStatusLine',
+        ].includes(e.payload.kind);
         try {
-          if (
-            e.payload.kind === 'claudePreview' ||
-            e.payload.kind === 'removeIntegrations'
-          ) {
+          if (previewing) {
             const diff = integrationSetup.preview(
               e.payload.kind === 'removeIntegrations',
-              e.payload.statusline === true,
+              e.payload.kind === 'claudeRestoreStatusLine',
             );
             emit('sendToPropertyInspector', e.context, {
               kind: 'claudePreview',
@@ -1187,8 +1190,7 @@ function createApplication(dependencies: Record<string, any>) {
           else integrationSetup.undo();
           inspectorStatus(
             e.context,
-            e.payload.kind === 'claudePreview' ||
-              e.payload.kind === 'removeIntegrations'
+            previewing
               ? 'Review the exact changes below, then click Apply'
               : 'Integration updated; no agents restarted',
           );

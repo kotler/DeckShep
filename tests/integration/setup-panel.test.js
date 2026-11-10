@@ -8,6 +8,7 @@ const {
   diagnostics,
   herdrSessions,
 } = require('../../src/app/setup');
+const { convertToLegacy } = require('../helpers/claude-legacy');
 function fixture(t) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'asw-setup-'));
   t.after(() => fs.rmSync(home, { recursive: true, force: true }));
@@ -28,7 +29,7 @@ test('guided Claude setup previews exact changes, requires preview, preserves cu
   const paths = fixture(t),
     setup = new IntegrationSetup(paths);
   assert.throws(() => setup.apply(), /Preview/);
-  const diff = setup.preview(false, true);
+  const diff = setup.preview();
   assert.deepEqual(JSON.parse(diff.before), JSON.parse(paths.original));
   assert.notEqual(diff.before, diff.after);
   assert.equal(fs.readFileSync(paths.settings, 'utf8'), paths.original);
@@ -36,6 +37,7 @@ test('guided Claude setup previews exact changes, requires preview, preserves cu
   const after = JSON.parse(fs.readFileSync(paths.settings));
   assert.deepEqual(after.permissions, { allow: ['Read'] });
   assert.equal(after.hooks.Stop[0].hooks[0].command, 'unrelated');
+  assert.deepEqual(after.statusLine, JSON.parse(paths.original).statusLine);
   assert.equal(
     fs.statSync(path.join(paths.plugin, 'state/claude-undo.json')).mode & 0o777,
     0o600,
@@ -50,8 +52,9 @@ test('preview/apply and undo refuse concurrent edits; removal restores owned sta
   setup.preview();
   fs.writeFileSync(paths.settings, paths.original + '\n');
   assert.throws(() => setup.apply(), /changed/);
-  setup.preview(false, true);
+  setup.preview();
   setup.apply();
+  convertToLegacy(paths);
   setup.preview(true);
   setup.apply();
   assert.deepEqual(
@@ -264,3 +267,48 @@ test(
     assert(!check.reason.includes('PRIVATE'));
   },
 );
+
+test('a legacy wrapper is offered a restore that keeps hooks and goes hooks-only', async (t) => {
+  const paths = fixture(t),
+    setup = new IntegrationSetup(paths),
+    original = JSON.parse(paths.original),
+    doctor = () =>
+      diagnostics({
+        home: paths.home,
+        paths,
+        version: async () => 'fixture version',
+        rex: async () => ({ binary: '/fixture', application: '/fixture' }),
+      });
+  assert.throws(() => setup.preview(false, true), /No active/);
+  setup.preview();
+  setup.apply();
+  assert.equal(
+    (await doctor()).some((c) => c.id === 'legacyStatusLine'),
+    false,
+  );
+  convertToLegacy(paths);
+  const offered = (await doctor()).find((c) => c.id === 'legacyStatusLine');
+  assert.equal(offered.ok, false);
+  assert(!offered.reason.includes(paths.home));
+  setup.preview(false, true);
+  setup.apply();
+  const after = JSON.parse(fs.readFileSync(paths.settings, 'utf8')),
+    registry = JSON.parse(
+      fs.readFileSync(
+        path.join(paths.plugin, 'state/claude-setup.json'),
+        'utf8',
+      ),
+    );
+  assert.deepEqual(after.statusLine, original.statusLine);
+  assert.equal(after.hooks.Stop.length, 2, 'hooks kept');
+  assert.equal(registry.active, true);
+  assert.equal(registry.statusline, false);
+  assert.equal(
+    (await doctor()).some((c) => c.id === 'legacyStatusLine'),
+    false,
+  );
+  assert.equal(
+    require('../../src/agents/claude/state').setupMode(paths.plugin),
+    'hooks',
+  );
+});

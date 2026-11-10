@@ -34,17 +34,20 @@ test('setup panel routes preview/apply/undo/removal and diagnostics through the 
   // The Rex profile never probes Herdr session sockets.
   assert.equal(herdrProbes, 0);
   assert.deepEqual(h.socket.frames.at(-1).payload.sessions, []);
+  // A stale panel asking to chain the status line gets a plain hooks preview.
   await request({ kind: 'claudePreview', statusline: true });
-  assert.deepEqual(calls[0], ['preview', false, true]);
+  assert.deepEqual(calls[0], ['preview', false, false]);
   assert.equal(h.socket.frames.at(-2).payload.after, '{"hooks":{}}');
   await request({ kind: 'claudeApply' });
   await request({ kind: 'claudeUndo' });
   await request({ kind: 'removeIntegrations' });
+  await request({ kind: 'claudeRestoreStatusLine' });
   assert.deepEqual(calls, [
-    ['preview', false, true],
+    ['preview', false, false],
     'apply',
     'undo',
     ['preview', true, false],
+    ['preview', false, true],
   ]);
   setup.apply = () => {
     throw Error('SECRET /home/private');

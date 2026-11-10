@@ -92,7 +92,7 @@ export class IntegrationSetup {
     original: string | null;
     record: string | null;
     remove: boolean;
-    statusline: boolean;
+    restoreStatusLine: boolean;
   };
   #undo?: {
     original: string | null;
@@ -104,7 +104,7 @@ export class IntegrationSetup {
   constructor(private readonly paths = setupPaths()) {}
   preview(
     remove = false,
-    statusline = false,
+    restoreStatusLine = false,
   ): { before: string; after: string } {
     const source = readSetup(this.paths);
     if (remove && !source.saved)
@@ -114,13 +114,13 @@ export class IntegrationSetup {
     const result = configure.plan(source.settings, source.saved, {
       dir: this.paths.plugin,
       remove,
-      statusline,
+      restoreStatusLine,
     });
     this.#pending = {
       original: source.original,
       record: source.record,
       remove,
-      statusline,
+      restoreStatusLine,
     };
     // Only the interactive panel receives the exact diff. Never log it, include
     // it in doctor output, or cache it in Stream Deck global settings.
@@ -146,7 +146,7 @@ export class IntegrationSetup {
       this.paths.plugin,
       '--apply',
       ...(pending.remove ? ['--remove'] : []),
-      ...(pending.statusline ? ['--statusline'] : []),
+      ...(pending.restoreStatusLine ? ['--restore-statusline'] : []),
     ]);
     const after = readSetup(this.paths),
       backup = path.join(this.paths.plugin, 'state', 'claude-undo.json');
@@ -436,10 +436,16 @@ export async function diagnostics({
         ? 'Claude identity and native version verified'
         : 'Claude 2.1.319 required; preview the optional hooks below',
   });
-  let hooks = false;
+  let hooks = false,
+    wrapper = false;
   try {
     const source = readSetup(paths),
       saved = source.saved;
+    const status = source.settings.statusLine as any;
+    wrapper =
+      saved?.active === true &&
+      status?.type === 'command' &&
+      status.command === saved.commands.status;
     hooks =
       saved?.active === true &&
       configure.REQUIRED_EVENTS.every(
@@ -463,5 +469,14 @@ export async function diagnostics({
       ? 'Owned Claude hooks installed'
       : 'Preview and apply optional Claude hooks',
   });
+  // Older setups chained DeckShep's wrapper as the status line. Offer only a
+  // restore of the recorded original; DeckShep never installs one again.
+  if (wrapper)
+    checks.push({
+      id: 'legacyStatusLine',
+      ok: false,
+      reason:
+        'DeckShep status line from an older setup; preview restoring your original below',
+    });
   return checks;
 }

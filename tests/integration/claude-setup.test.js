@@ -17,10 +17,12 @@ test('claude setup', () => {
     plan,
     commands,
     EVENTS,
+    STATUSLINE_REFUSED,
   } = require('../../src/agents/claude/configure');
+  const { legacyInstall } = require('../helpers/claude-legacy');
   const root = '/plugin with space',
     node = '/node with space',
-    options = { dir: root, node, statusline: true };
+    options = { dir: root, node };
   const original = {
       permissions: {
         defaultMode: 'default',
@@ -36,7 +38,15 @@ test('claude setup', () => {
       },
     },
     before = JSON.stringify(original);
-  let install = plan(original, null, options);
+  // DeckShep can no longer chain a status line; build an older install.
+  assert.throws(
+    () => plan(original, null, { ...options, statusline: true }),
+    (error) => error.message === STATUSLINE_REFUSED,
+  );
+  const hooksOnly = plan(original, null, options);
+  assert.deepEqual(hooksOnly.settings.statusLine, original.statusLine);
+  assert.equal(hooksOnly.registry.statusline, false);
+  let install = legacyInstall(original, null, options);
   assert.equal(JSON.stringify(original), before);
   assert.deepEqual(install.settings.permissions, original.permissions);
   assert.deepEqual(install.settings.env, original.env);
@@ -55,7 +65,35 @@ test('claude setup', () => {
   edited.statusLine.command = 'user-replacement';
   removed = plan(edited, install.registry, { ...options, remove: true });
   assert.equal(removed.settings.statusLine.command, 'user-replacement');
-  assert.throws(() => plan(edited, install.registry, options));
+  assert.throws(
+    () => plan(edited, install.registry, { ...options, statusline: true }),
+    /no longer installs/,
+  );
+  // Restore keeps hooks, puts back only DeckShep's own wrapper.
+  const restored = plan(install.settings, install.registry, {
+    ...options,
+    restoreStatusLine: true,
+  });
+  assert.deepEqual(restored.settings.statusLine, original.statusLine);
+  assert.equal(restored.settings.hooks.Stop.length, 2);
+  assert.equal(restored.registry.statusline, false);
+  assert.equal(restored.registry.active, true);
+  const userKept = plan(edited, install.registry, {
+    ...options,
+    restoreStatusLine: true,
+  });
+  assert.equal(userKept.settings.statusLine.command, 'user-replacement');
+  assert.throws(
+    () => plan(original, null, { ...options, restoreStatusLine: true }),
+    /No active/,
+  );
+  assert.throws(() =>
+    plan(install.settings, install.registry, {
+      ...options,
+      remove: true,
+      restoreStatusLine: true,
+    }),
+  );
   let fresh = plan(removed.settings, removed.registry, options);
   assert.equal(fresh.registry.originalStatusLine.command, 'user-replacement');
   const extra = plan(
@@ -73,12 +111,14 @@ test('claude setup', () => {
     {},
   );
   assert.throws(() => plan({ hooks: { Stop: [{}] } }, null, options));
-  assert.throws(() =>
+  // An unusual status line is no longer inspected: it is left untouched.
+  assert.deepEqual(
     plan(
       { statusLine: { type: 'prompt', prompt: 'never execute' } },
       null,
       options,
-    ),
+    ).settings.statusLine,
+    { type: 'prompt', prompt: 'never execute' },
   );
   assert(!commands("/tmp/has'quote").hook.includes(" /tmp/has'quote"));
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'switchboard-claude-setup-'));
@@ -87,14 +127,14 @@ test('claude setup', () => {
     const file = path.join(d, 'settings.json');
     fs.writeFileSync(file, before, { mode: 0o600 });
     const script = path.join(__dirname, '../../src/agents/claude/configure.ts');
-    const args = [
-      script,
-      '--plugin-dir',
-      d,
-      '--settings',
-      file,
-      '--statusline',
-    ];
+    const args = [script, '--plugin-dir', d, '--settings', file];
+    for (const extra of [[], ['--apply']])
+      assert.throws(() =>
+        execFileSync(process.execPath, [...args, '--statusline', ...extra], {
+          stdio: 'ignore',
+        }),
+      );
+    assert.equal(fs.readFileSync(file, 'utf8'), before);
     let out = execFileSync(process.execPath, args, { encoding: 'utf8' });
     assert(out.includes('Preview only'));
     assert.equal(fs.readFileSync(file, 'utf8'), before);
@@ -137,6 +177,6 @@ test('claude setup', () => {
     fs.rmSync(d, { recursive: true, force: true });
   }
   console.log(
-    'PASS explicit preview/apply/remove, idempotent hook merge, custom status-line chaining/restoration, concurrent customization preservation, private backups and unchanged permission/auth fields',
+    'PASS explicit preview/apply/remove, idempotent hook merge, refused status-line install, legacy status-line restoration, concurrent customization preservation, private backups and unchanged permission/auth fields',
   );
 });

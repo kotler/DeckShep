@@ -253,13 +253,10 @@ for (const kind of [
   'claudeApply',
   'claudeUndo',
   'removeIntegrations',
+  'claudeRestoreStatusLine',
 ])
   byId(kind).addEventListener('click', () => {
-    send(
-      'sendToPlugin',
-      { kind, statusline: (byId('chainStatus') as any).value === true },
-      actionContext,
-    );
+    send('sendToPlugin', { kind }, actionContext);
     if (kind === 'claudeApply') {
       byId(kind).disabled = true;
       byId('claudeDiff').textContent = '';
@@ -315,6 +312,10 @@ byId('action').addEventListener('change', () =>
           byId('checklist').textContent = payload.checks
             .map((c: any) => `${c.ok ? '✓' : '⚠'} ${c.reason}`)
             .join('\n');
+          // Restore is offered only to setups that still have the wrapper.
+          byId('claudeRestoreStatusLine').hidden = !payload.checks.some(
+            (c: any) => c.id === 'legacyStatusLine',
+          );
           const list = byId('sessions') as any;
           list.textContent = '';
           for (const session of payload.sessions) {
