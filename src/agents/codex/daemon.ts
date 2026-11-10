@@ -216,12 +216,16 @@ function footerId(view: string, cursorRow: number) {
       ).exec(l.text),
     }))
     .filter((l: { row: number; match: RegExpExecArray | null }) => l.match);
+  // No footer line with a session ID at all: the user has not enabled it.
+  // Keys show this (at most 15 characters), so it gets its own code.
+  if (!candidates.length)
+    throw Object.assign(Error('No footer ID'), { code: 'FOOTER_MISSING' });
   if (
     candidates.length !== 1 ||
     !Number.isInteger(cursorRow) ||
     candidates[0].row < cursorRow + 2
   )
-    throw Error('Session-ID footer missing; run daemon setup');
+    throw Error('Session-ID footer position not verified');
   return (candidates[0].match as RegExpExecArray)[1].toLowerCase();
 }
 async function readFooter(
@@ -240,6 +244,7 @@ async function readFooter(
     JSON.stringify({ format: 'vt', extra_cursor: true, max_bytes: 960000 }),
   ];
   const deadline: number = Date.now() + 4000;
+  let missing: Error | null = null;
   for (let attempt: number = 0; attempt < 40; attempt++) {
     const before: any = await bridge.run(args);
     if (before?.id || typeof before?.content !== 'string')
@@ -257,11 +262,18 @@ async function readFooter(
     if (before.content === after.content) {
       try {
         return footerId(view, Number(cursor[1]));
-      } catch {}
+      } catch (error: unknown) {
+        missing =
+          (error as Error & { code?: string }).code === 'FOOTER_MISSING'
+            ? (error as Error)
+            : null;
+      }
     }
     if (Date.now() >= deadline) break;
     if (attempt < 39) await pause(100);
   }
+  // Report a footer without an ID only when the last stable read showed it.
+  if (missing) throw missing;
   throw Error('Session footer unavailable; check Rex');
 }
 class DaemonRpc {

@@ -38,6 +38,8 @@ export interface AgentSnapshot extends TargetRef {
   composerSupported?: boolean;
   nativeVerified?: boolean;
   nativeError?: string;
+  /** Rex Codex: the pane's own footer shows no session ID (read-only check). */
+  footerMissing?: boolean;
   model?: string | null;
   modelName?: string;
   effort?: string | null;

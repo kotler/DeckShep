@@ -84,11 +84,17 @@ function sameTarget(a: any, b: any) {
     (a.nativeIdentity || null) === (b.nativeIdentity || null)
   );
 }
+/** Codex controls in Rex need the session ID in the user's own footer. */
+function footerMissing(agent: any): boolean {
+  return agent?.app === 'codex' && agent.footerMissing === true;
+}
+const NO_FOOTER_ID = 'No footer ID';
 function modeLines(bridge: Record<string, any>) {
   const agent: any = bridge.agents?.find((a: any) =>
     sameTarget(bridge.lastTarget, a),
   );
   if (!agent) return ['Mode'];
+  if (footerMissing(agent)) return ['Mode', NO_FOOTER_ID];
   if (agent.app === 'claude-code') return ['Mode', 'Use keyboard'];
   if (
     sameTarget(bridge.lastModeRequest, agent) &&
@@ -108,6 +114,7 @@ function modelLines(bridge: Record<string, any>) {
   if (!target) return ['Model', 'Select agent'];
   const agent: any = bridge.agents?.find((a: any) => sameTarget(a, target));
   if (!agent) return ['Model', 'Agent closed'];
+  if (footerMissing(agent)) return ['Model', NO_FOOTER_ID];
   const recent: any =
       sameTarget(bridge.lastModel, target) &&
       (!bridge.lastModel.chatId || bridge.lastModel.chatId === agent.chatId) &&
@@ -135,6 +142,7 @@ function effortLines(bridge: Record<string, any>) {
     sameTarget(bridge.lastTarget, a),
   );
   if (!agent) return ['Effort', 'Unknown'];
+  if (footerMissing(agent)) return ['Effort', NO_FOOTER_ID];
   const recent: any = bridge.lastEffort;
   const value: any =
     sameTarget(recent, agent) &&
@@ -154,6 +162,7 @@ function reviewerLines(bridge: Record<string, any>) {
     sameTarget(bridge.lastTarget, a),
   );
   if (!agent) return ['Reviewer'];
+  if (footerMissing(agent)) return ['Reviewer', NO_FOOTER_ID];
   const recent: any = bridge.lastReviewer;
   const value: any =
     sameTarget(recent, agent) &&
@@ -177,6 +186,7 @@ module.exports = {
   modeLines,
   effortLines,
   reviewerLines,
+  footerMissing,
   shortModel,
   sameTarget,
 };

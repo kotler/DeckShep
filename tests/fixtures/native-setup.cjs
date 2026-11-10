@@ -117,10 +117,6 @@ const bridge = {
     '/model gpt-6-luna --reasoning=low --speed=standard',
   );
   assert.equal(
-    await setup.currentStatusLine(agent),
-    '/statusline model-with-reasoning cost',
-  );
-  assert.equal(
     await setup.currentPermissions(agent),
     '/permissions workspace-write --approval-policy=on-request --reviewer=user',
   );

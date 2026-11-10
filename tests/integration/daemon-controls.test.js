@@ -11,7 +11,6 @@ const {
   availableModels,
   nextModel,
 } = require('../../src/agents/codex/daemon');
-const { statusLineWithId } = require('../../src/agents/codex/setup-daemon');
 const id = '01a1ae31-d050-7503-afec-fd2b40d2bc26',
   other = '01a1ae31-f4ee-7212-b16a-f3b61ddf3688';
 const models = [
@@ -97,22 +96,6 @@ test('daemon controls', async () => {
   assert.throws(() => footerId('  ' + other + '\nmenu dialog\n', 1));
   assert.throws(() => footerId('  ' + id, 2));
   assert.equal(
-    statusLineWithId(
-      '/statusline model-with-reasoning current-dir --no-colors',
-    ),
-    '/statusline session-id model-with-reasoning current-dir --no-colors',
-  );
-  assert.equal(
-    statusLineWithId('/statusline session-id current-dir'),
-    '/statusline session-id model-with-reasoning current-dir',
-  );
-  assert.equal(
-    statusLineWithId(
-      '/statusline thread-id session-id model-with-reasoning current-dir --colors',
-    ),
-    '/statusline session-id model-with-reasoning current-dir --colors',
-  );
-  assert.equal(
     footerId('composer\n\n  ' + id + ' · GPT-6-Sol high\nshift-tab plan', 1),
     id,
   );
@@ -170,9 +153,21 @@ test('daemon controls', async () => {
     id,
     'reject mismatched cursor/text snapshot then read again',
   );
+  // A stable screen with no session-ID footer gets its own short code, so
+  // keys can say "No footer ID" instead of a truncated generic error.
   await assert.rejects(
     () => readFooter(footerBridge([stable], ['no footer']), {}),
-    /Session footer unavailable/,
+    (error) =>
+      error.code === 'FOOTER_MISSING' && error.message === 'No footer ID',
+  );
+  assert.throws(
+    () => footerId('composer\nmenu dialog\n', 1),
+    (error) => error.code === 'FOOTER_MISSING',
+  );
+  assert.throws(
+    () => footerId('  ' + id + ' · GPT-6-Sol high\ninput', 1),
+    (error) => error.code === undefined,
+    'a footer in the wrong place is not reported as missing',
   );
   await assert.rejects(
     () =>
@@ -183,7 +178,6 @@ test('daemon controls', async () => {
     /Session footer unavailable/,
     'never accept footer above cursor or in its immediate input row',
   );
-  assert.throws(() => statusLineWithId('/statusline current-dir\nuser prompt'));
   const f = fixture(),
     draft = f.b.draft;
   const catalog = await availableModels(f.rpc);

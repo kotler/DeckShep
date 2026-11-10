@@ -104,40 +104,6 @@ class Setup {
       throw Error('Native model settings field unavailable');
     return matches[0][1];
   }
-  async currentStatusLine(a: any) {
-    await this.menu(a);
-    await this.key(a, 's');
-    await this.wait(
-      a,
-      (s: any) => s.includes('Start preset from current settings'),
-      'Settings preset dialog missing',
-    );
-    await this.key(a, 'down', 'down', 'down', 'enter');
-    await this.wait(
-      a,
-      (s: any) => /^\s*New preset\s*$/m.test(s),
-      'New preset dialog missing',
-    );
-    const field: any = (await this.screen(a))
-      .split(/^\s*New preset\s*$/m)
-      .at(-1);
-    const matches: any[] = [
-      ...field.matchAll(/^\s*› (\/statusline(?: [a-z0-9-]+)+)\s*$/gm),
-    ];
-    for (let i: number = 0; i < 4; i++) {
-      const s: any = await this.screen(a);
-      if (
-        !/^\s*(New preset|Start preset from current settings|Presets)\s*$/m.test(
-          s,
-        )
-      )
-        break;
-      await this.key(a, 'escape');
-    }
-    if (matches.length !== 1)
-      throw Error('Native status-line settings unavailable');
-    return matches[0][1];
-  }
   async currentPermissions(a: any) {
     await this.menu(a);
     await this.key(a, 's');

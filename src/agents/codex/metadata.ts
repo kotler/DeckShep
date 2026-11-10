@@ -57,9 +57,12 @@ class AgentMetadata {
   declare footer: any;
   declare settings: any;
   declare connect: any;
+  /** Agents whose last read found no session ID in their own footer. */
+  declare missing: Set<string>;
   constructor(bridge: Record<string, any>, dependencies: any = {}) {
     this.b = bridge;
     this.cache = new Map();
+    this.missing = new Set();
     this.now = dependencies.now || Date.now;
     this.socketFor = dependencies.socketFor || socketFor;
     this.footer = dependencies.footer || readFooter;
@@ -201,6 +204,7 @@ class AgentMetadata {
     const live: Set<string> = new Set(agents.map(key));
     for (const id of this.cache.keys())
       if (!live.has(id)) this.cache.delete(id);
+    for (const id of this.missing) if (!live.has(id)) this.missing.delete(id);
     this.hydrate(agents);
     for (const agent of agents) {
       if (
@@ -219,6 +223,7 @@ class AgentMetadata {
         cached.statusAt === agent.statusAt
       ) {
         restore(agent, cached.value);
+        agent.footerMissing = this.missing.has(id);
         continue;
       }
       try {
@@ -239,7 +244,18 @@ class AgentMetadata {
         } = await this.read(agent);
         this.cache.set(id, { at: now, statusAt: agent.statusAt, value });
         restore(agent, value);
-      } catch {
+        this.missing.delete(id);
+        agent.footerMissing = false;
+      } catch (error: unknown) {
+        // Only a footer without an ID earns the key hint; other failures
+        // (daemon, Rex reads) keep the generic fail-closed behaviour.
+        if (
+          this.b.backend !== 'herdr' &&
+          (error as Error & { code?: string }).code === 'FOOTER_MISSING'
+        )
+          this.missing.add(id);
+        else this.missing.delete(id);
+        agent.footerMissing = this.missing.has(id);
         if (cached) {
           cached.value = {
             ...cached.value,

@@ -71,7 +71,7 @@ test('setup panel routes preview/apply/undo/removal and diagnostics through the 
   });
   assert.match(h.socket.frames.at(-1).payload.message, /different profile/);
 });
-test('explicit Codex setup owns its busy interval while ordinary keys captured during setup remain refused', async () => {
+test('explicit Codex footer check owns its busy interval while ordinary keys captured during setup remain refused', async () => {
   let during;
   const h = harness({
     fixtureConsent: true,
@@ -81,13 +81,16 @@ test('explicit Codex setup owns its busy interval while ordinary keys captured d
         'message',
         JSON.stringify({ event: 'keyDown', context: 'rex:2,3' }),
       );
+      // The footer check only reads the pane (block format), never sends keys.
       await bridge.run([
-        'send-key',
+        'block',
+        'call',
         '-s',
         agent.session,
         '-b',
         agent.block,
-        'fixture-setup',
+        'format',
+        '{"fixture":"setup"}',
       ]);
       during = h.calls.length;
     },
@@ -104,7 +107,7 @@ test('explicit Codex setup owns its busy interval while ordinary keys captured d
   );
   await h.api.settled();
   assert.equal(h.api.setupBusy, false);
-  assert(h.calls.some((call) => call.args?.at(-1) === 'fixture-setup'));
+  assert(h.calls.some((call) => call.args?.at(-1) === '{"fixture":"setup"}'));
   assert.equal(
     h.calls.length,
     during,

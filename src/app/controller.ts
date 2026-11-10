@@ -17,6 +17,7 @@ const {
     modeLines,
     effortLines,
     reviewerLines,
+    footerMissing,
     sameTarget,
   } = require('../domain/labels'),
   { AgentMetadata } = require('../agents/codex/metadata');
@@ -590,7 +591,11 @@ function createApplication(dependencies: Record<string, any>) {
               plan: modeLines(bridge),
               interrupt: [
                 'Interrupt',
-                mode === 'working' ? 'running' : 'not running',
+                mode === 'working' && footerMissing(target)
+                  ? 'No footer ID'
+                  : mode === 'working'
+                    ? 'running'
+                    : 'not running',
               ],
               stopTerminals: [
                 'Stop terminals',
@@ -680,6 +685,13 @@ function createApplication(dependencies: Record<string, any>) {
             color = '#38414b';
             lines = [action === 'steer' ? 'Steer' : 'Queue', 'loading run'];
           }
+          if (
+            ['model', 'effort', 'permissions', 'plan', 'interrupt'].includes(
+              action,
+            ) &&
+            footerMissing(target)
+          )
+            color = '#38414b';
           if (action.startsWith('approval')) color = '#78551e';
           if (action === 'send' && bridge.draft) color = '#416428';
           if (
@@ -1223,7 +1235,7 @@ function createApplication(dependencies: Record<string, any>) {
         ctx: e.context,
         display: { ...capture(keys.get(e.context)), setupBusy: false },
       };
-      inspectorStatus(e.context, 'Configuring the selected agent in Rex…');
+      inspectorStatus(e.context, 'Checking the selected agent’s footer…');
       try {
         if (config.backend === 'herdr')
           throw Error(
@@ -1242,13 +1254,13 @@ function createApplication(dependencies: Record<string, any>) {
         await bridge.withContext(display, () =>
           (
             dependencies.setupCodex ||
-            require('../agents/codex/setup-daemon').configure
-          )(bridge, a, pluginDirectory),
+            require('../agents/codex/setup-daemon').check
+          )(bridge, a),
         );
         await refresh(true);
         inspectorStatus(
           e.context,
-          'Status line configured; no prompt submitted',
+          'Session-ID footer found; Codex controls can use it. Nothing was changed.',
         );
       } catch (error: unknown) {
         inspectorStatus(

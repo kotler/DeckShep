@@ -195,14 +195,15 @@
     Background status checks do not use the clipboard.
   </p>
   <p class="note">
-    Enable Remote Control in Rex first. Select a ready Codex agent on the deck,
-    then configure its status line once.
+    Enable Remote Control in Rex first. Codex Model, Effort, Mode and Reviewer
+    use the session ID in your own Codex footer. To show it, run
+    <code>/statusline session-id model-with-reasoning</code> in Codex, adding
+    your other items after.
   </p>
-  <button id="setup" type="button" disabled>Set up selected Codex agent</button>
+  <button id="setup" type="button" disabled>Check selected Codex agent</button>
   <p class="note">
-    Setup opens Codex settings dialogs and saves the session-ID footer. Your
-    process and unsent input stay in place. Leave Rex alone until setup
-    finishes.
+    The check only reads the pane and Codex. DeckShep never changes your status
+    line or sends input.
   </p>
   <sdpi-checkbox
     id="bringToFront"
