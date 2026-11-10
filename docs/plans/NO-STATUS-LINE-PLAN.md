@@ -176,6 +176,14 @@ Code today:
 
 ## Part D: Docs, rules and validation
 
+> **Docs and rules done (2026-11-10, branch `codex/rex-only-release`).**
+> `AGENTS.md` carries the rule; `docs/CLAUDE.md`, `INSTALL.md`,
+> `UNINSTALL.md`, `PRIVACY.md`, the README tables, the generated
+> `COMPATIBILITY.md`, `CHANGELOG.md` and `RELEASE-NOTES.md` are updated, and
+> `HERDR-APP-PLAN.md` Phase 3 (Milestone 2) names the identity rules. Step 4's
+> live items are in `docs/BETA-CHECKLIST.md`, unchecked; they need the owner's
+> explicit authorization. Herdr parts of step 4 are deferred with Herdr.
+
 1. `AGENTS.md`: add the rule "DeckShep never changes a Claude Code or Codex
    status line; it may only restore a recorded original during removal."
 2. Update `docs/CLAUDE.md`, `docs/INSTALL.md`, `docs/UNINSTALL.md`,

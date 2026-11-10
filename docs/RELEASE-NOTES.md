@@ -1,3 +1,19 @@
+## Rex-only first release — development update
+
+- Release builds ship only the Rex profile. Herdr TUI and Herdr App stay in
+  source behind `experimental.herdr` / `experimental.herdrApp`.
+- DeckShep never changes a Claude Code or Codex status line. Codex footer setup
+  is a read-only check: you enable the session ID in your own footer, and Codex
+  keys in Rex show **No footer ID** until you do.
+- Claude controls run in hooks-only mode, using press-time process, lifecycle
+  and native-view proof instead of a status-line heartbeat. Setup also registers
+  PostModelSwitch for the Model caption.
+- `configure-claude.js --statusline` is refused. Older setups that chained
+  DeckShep's status line keep working and can **Restore your original status
+  line**, which keeps the hooks.
+- Live validation of the hooks-only fields and flows is pending; see
+  [BETA-CHECKLIST.md](BETA-CHECKLIST.md).
+
 ## DeckShep identity reset — development update
 
 - Uses `com.kotl3r.deckshep` and `com.kotl3r.deckshep.key`, with new DeckShep

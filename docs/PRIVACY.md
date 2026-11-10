@@ -17,6 +17,14 @@ formats. Status polling does not use clipboard focus. Optional Claude metadata
 hooks and native controls require explicit setup. Fresh installs keep those
 integrations, clipboard checks, and Herdr title matching off.
 
+Claude hooks read each event's JSON in memory. DeckShep stores only session,
+model and effort captions, process identity, lifecycle epochs and hashed request
+digests in a private plugin folder; prompts, assistant messages, tool inputs and
+outputs, and transcripts are never stored or logged. DeckShep never changes a
+Claude Code or Codex status line. The Codex footer check only reads the pane, and
+the only status-line write is restoring your recorded original for older setups,
+when you choose removal or **Restore your original status line**.
+
 Preferences, custom configuration, integration setup records and upgrade backups
 stay on the Mac. Draft validation retains hashes and identity in memory. Public
 diagnostic reports omit prompt/settings contents and home paths. Backup folders

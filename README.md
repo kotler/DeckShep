@@ -6,7 +6,7 @@ This beta targets **Codex CLI on a 15-key Stream Deck MK.2**. The first release 
 
 ## Claude and mixed-agent development preview
 
-The 1.4.0 development build includes experimental Claude Code support and mixed Claude/Codex banks. Claude controls are off by default; isolated native validation passed, with physical validation still in progress. Model and Effort now cycle directly from Home, with session-only changes. See [Claude setup, capabilities and limits](docs/CLAUDE.md). The published 1.2.1 beta and its existing hardware results remain the release baseline.
+The 1.4.0 development build includes experimental Claude Code support and mixed Claude/Codex banks. Claude controls are off by default; isolated native validation passed, with physical validation still in progress. Model and Effort now cycle directly from Home, with session-only changes. Claude controls use hooks only; DeckShep never changes your Claude Code or Codex status line. See [Claude setup, capabilities and limits](docs/CLAUDE.md). The published 1.2.1 beta and its existing hardware results remain the release baseline.
 
 ## Get started
 
@@ -50,7 +50,7 @@ The white dot marks the selected agent. **Page** cycles Home → Questions → P
 | Component | Verified scope | Unverified versions |
 | --- | --- | --- |
 | Codex CLI | 0.166.0 / 0.167.0 for permission controls | Affected controls disabled |
-| Claude Code | 2.1.319 native controls, opt-in preview | Native controls disabled |
+| Claude Code | 2.1.319 native controls, opt-in preview (hooks only) | Native controls disabled |
 | Herdr TUI | Not in the first release; source preview for 0.9.5 / protocol 22 | Session refused |
 | Herdr App | Not in the first release; experimental source preview | Production build records empty; [preview setup](docs/HERDR-APP.md) |
 
@@ -69,6 +69,8 @@ establish full provider parity or hardware support. See the generated
 | Zoom | Supported | API layout round-trip checked; outer terminal presentation pending |
 | Prompt staging, Send, Steer, Queue | Supported with composer checks | Unavailable; use the keyboard |
 | Focus verification | Explicit clipboard opt-in | Herdr session API; no clipboard |
+
+In Rex, Codex Model, Effort, Reviewer, Plan / Default, Interrupt, Stop terminals and prompt staging use the session ID shown in your own Codex footer (`/statusline session-id model-with-reasoning`, run by you in Codex). Without it those keys show **No footer ID**; selection, Zoom, questions and approvals still work. DeckShep only reads the footer. See [install step 5](docs/INSTALL.md).
 
 Herdr is not packaged in the first release; source builds add its profile only with `experimental.herdr` set in `config.json`. It targets local TUI **0.9.5 / protocol 22**. Its pane-read API does not expose a trustworthy composer cursor/editing mode, so it cannot support the Rex submission checks. Multiple attached clients and reconnect behavior still need validation. See [the Herdr guide](docs/HERDR.md) for identity setup and exact coverage.
 

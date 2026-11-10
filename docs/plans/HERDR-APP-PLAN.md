@@ -357,7 +357,9 @@ product/release gates remain before promotion; fixtures do not satisfy them.
 
 1. Input through core terminal input, addressed by terminal ID, gated on: exact
    verified version (H4), foreground PID and start-time match, provider identity
-   (Codex daemon session or Claude hook record), verified App focus, and a fresh
+   (Codex: title or daemon identity, never the footer; Claude: the hooks-only
+   press-time proof, never a status line — see `NO-STATUS-LINE-PLAN.md`),
+   verified App focus, and a fresh
    passive `terminal.read` with explicit `lines:0` and a complete screen result
    showing the expected native UI. `terminal.peek` opens an overlay and is not
    a read. The input-method design must also resolve the queued-write/timeout
