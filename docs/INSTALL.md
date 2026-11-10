@@ -12,8 +12,16 @@ still need release validation.
    Remote Control there if it is not already enabled.
 4. Click **Enable visible-pane checks** explicitly. The helper temporarily copies
    the pane ID and restores clipboard formats; status discovery does not use it.
-5. Select a ready Codex agent on the deck and click **Set up selected Codex agent**.
-   This configures its session-ID footer without submitting a prompt.
+5. In each Codex session, show the session ID in your own footer. Run
+   `/statusline session-id model-with-reasoning` in Codex, adding any other
+   items you want after those two. DeckShep never changes your status line.
+   Then select a ready Codex agent on the deck and click **Check selected Codex
+   agent**. The check only reads the pane and Codex.
+
+Without the session ID in the footer, Codex agents in Rex still support
+selection, Zoom, and question/approval navigation and answers. Model, Effort,
+Reviewer, Mode, Interrupt, Stop terminals, prompt staging, Send, Steer and Queue
+stay inactive, and the affected keys show **No footer ID**.
 
 For an already configured Rex/Codex session these are the five setup actions.
 Initial terminal installation, Remote Control, macOS permissions and selecting a

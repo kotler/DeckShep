@@ -22,6 +22,10 @@ preview artifacts use `-beta.N` release tags.
   `experimental.herdrApp`, with unchanged profile IDs; the Rex doctor no longer
   probes Herdr sockets.
 - Preserve stable Claude helper entry points.
+- Make Codex footer setup read-only. **Check selected Codex agent** now only
+  reads the pane and the daemon; it never opens settings dialogs, stores a
+  preset or changes the status line. Users enable the session ID in their own
+  footer, and Codex keys in Rex show **No footer ID** until they do.
 - Node build/package/recovery tools, guided setup/undo and privacy-safe doctor.
 - Automated fixture host, CI audits and draft-only release workflow.
 

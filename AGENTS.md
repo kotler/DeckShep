@@ -53,6 +53,11 @@ are reserved and forks must rename; see TRADEMARKS.md. Pinned LobeHub provider
 SVGs retain their MIT code license. OpenAI/Anthropic trademark permission remains
 pending; do not infer clearance or permission to publish from these decisions.
 
+DeckShep never changes a Codex status line (owner rule, 2026-11-08). The Rex
+footer step is a read-only check, and Codex controls bind only through a
+session ID the user's own footer shows; a source test refuses `/statusline`
+string literals. The Claude status-line option is still being removed
+(`docs/plans/NO-STATUS-LINE-PLAN.md`, Parts A–B); add nothing that writes one.
 Fresh clipboard/visible-pane consent, Herdr title identity, Claude native controls
 and Claude hooks stay off. Fewer setup steps never imply consent. Hook paths
 must stay stable or have an explicitly tested migration/removal path.

@@ -32,6 +32,16 @@ node <installed-plugin>/configure-claude.js --remove --apply
 
 If setup records are missing or paths changed, remove only the exact plugin hook
 commands from Claude settings manually; the helper refuses to guess ownership.
-Restore a modified Codex status line using its saved original native settings as
-described in [Claude](CLAUDE.md) and [Herdr](HERDR.md). Do not remove unrelated
-integrations or global Codex configuration.
+DeckShep no longer changes Codex status lines. Builds before the read-only
+footer check could have changed them, and they recorded what they found:
+
+- The original footer of each configured agent is in the plugin folder's
+  `state/daemon-controls.json`, as `originalStatusLine` (for example
+  `/statusline model-with-reasoning current-dir`). To restore it, type that
+  command in the Codex session yourself. DeckShep does not automate this,
+  since doing so would drive the status-line picker again.
+- Those builds also used Codex preset slot 0 in `~/.codex/config.toml`
+  (`[tui.presets]`) as scratch space. It is left untouched; delete that one
+  entry yourself if you no longer want it.
+
+Do not remove unrelated integrations or global Codex configuration.
