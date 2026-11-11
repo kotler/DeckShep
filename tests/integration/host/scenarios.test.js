@@ -100,7 +100,7 @@ test(
     host.send('keyDown', 14);
     await host.settled();
     const warning = svg(host, 14);
-    assert(warning.includes('Enable visible-'));
+    assert.match(warning, />Enable<\/text><text[^>]*>checks</);
     assert.equal(
       host.input.filter((m) => m.kind === 'fixtureInput').length,
       1,

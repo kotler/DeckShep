@@ -1,10 +1,7 @@
-type AgentSnapshot = import('./types').AgentSnapshot;
-type Config = import('./types').Config;
-type PressContext = import('./types').PressContext;
-const { verifiedAction } = require('./capabilities');
-function isBackground(
-  agent: import('./types').AgentSnapshot | null | undefined,
-) {
+import type { AgentSnapshot, BackendCapability, ControlId } from './types';
+import { verifiedAction } from './capabilities';
+
+export function isBackground(agent: AgentSnapshot | null | undefined) {
   return (
     agent?.app === 'codex' &&
     agent.state === 'working' &&
@@ -16,36 +13,31 @@ function isBackground(
     !!agent.backgroundTurnId
   );
 }
-function modeOf(agent: import('./types').AgentSnapshot | null | undefined) {
+export function modeOf(agent: AgentSnapshot | null | undefined) {
   if (
     !agent ||
     !['codex', 'claude-code'].includes(agent.app) ||
-    ((agent.backend === 'herdr' &&
-      (agent as any).nativeVerified === false) as any) ||
+    (agent.backend === 'herdr' && agent.nativeVerified === false) ||
     (agent.app === 'claude-code' &&
       !(
         agent.backend !== 'herdr' &&
         agent.rexSettings?.process &&
         ['idle', 'done', 'error'].includes(agent.state)
       ) &&
-      (!(agent as any).nativeVerified || !(agent as any).claudeControlsEnabled))
+      (!agent.nativeVerified || !agent.claudeControlsEnabled))
   )
     return 'unknown';
   if (isBackground(agent)) return 'background';
-  if (['idle', 'done', 'error'].includes((agent as any).state)) return 'ready';
-  if ((agent as any).state === 'working') return 'working';
-  if ((agent as any).state === 'blocked' && (agent as any).kind === 'question')
-    return 'question';
-  if (
-    (agent as any).state === 'blocked' &&
-    (agent as any).kind === 'permission'
-  )
+  if (['idle', 'done', 'error'].includes(agent.state)) return 'ready';
+  if (agent.state === 'working') return 'working';
+  if (agent.state === 'blocked' && agent.kind === 'question') return 'question';
+  if (agent.state === 'blocked' && agent.kind === 'permission')
     return 'approval';
   return 'unknown';
 }
-function homeRow(
-  agent: import('./types').AgentSnapshot | null | undefined,
-  capabilities?: ReadonlySet<string> | undefined,
+export function homeRow(
+  agent: AgentSnapshot | null | undefined,
+  capabilities?: ReadonlySet<BackendCapability> | undefined,
 ) {
   const settingsAction =
     agent?.app === 'claude-code' ? 'claudeInfo' : 'permissions';
@@ -55,7 +47,7 @@ function homeRow(
         'model',
         'effort',
         agent?.rexSettings ? 'permissions' : settingsAction,
-        (agent as any).app === 'claude-code' && !agent?.rexSettings
+        agent?.app === 'claude-code' && !agent?.rexSettings
           ? 'claudeModeInfo'
           : 'plan',
         'interrupt',
@@ -64,7 +56,7 @@ function homeRow(
       return (
         capabilities
           ? !capabilities.has('composerCursor')
-          : (agent as any).composerSupported === false
+          : agent?.composerSupported === false
       )
         ? ['none', 'none', settingsAction, 'none', 'interrupt']
         : ['steer', 'queue', settingsAction, 'none', 'interrupt'];
@@ -76,7 +68,7 @@ function homeRow(
         'down',
         'answer',
         'escape',
-        (agent as any).app === 'claude-code' && (agent as any).claudeMultiSelect
+        agent?.app === 'claude-code' && agent.claudeMultiSelect
           ? 'claudeToggle'
           : 'interrupt',
       ];
@@ -94,23 +86,23 @@ function homeRow(
   }
 }
 function rawLayout(
-  agent: import('./types').AgentSnapshot | null | undefined,
-  capabilities?: ReadonlySet<string> | undefined,
+  agent: AgentSnapshot | null | undefined,
+  capabilities?: ReadonlySet<BackendCapability> | undefined,
 ) {
   return [
     'next',
     'banknext',
     'collapse',
     'none',
-    'none',
+    'attention',
     ...homeRow(agent, capabilities),
   ];
 }
-function layout(
+export function layout(
   _page: number,
-  agent: import('./types').AgentSnapshot | null | undefined,
-  capabilities?: ReadonlySet<string>,
-  controls?: ReadonlySet<import('./types').ControlId>,
+  agent: AgentSnapshot | null | undefined,
+  capabilities?: ReadonlySet<BackendCapability>,
+  controls?: ReadonlySet<ControlId>,
 ) {
   const actions = rawLayout(agent, capabilities);
   if (!controls) return actions;
@@ -120,7 +112,7 @@ function layout(
       : 'none',
   );
 }
-const localActions: Set<string> = new Set([
+export const localActions: Set<string> = new Set([
   'none',
   'status',
   'inputInfo',
@@ -132,25 +124,26 @@ const localActions: Set<string> = new Set([
   'back',
   'collapse',
   'banknext',
+  'bankprev',
   'next',
+  'previous',
+  'attention',
 ]);
-function needsContext(action: string) {
+export function needsContext(action: string) {
   return !localActions.has(action) && !action.startsWith('agent:');
 }
-function needsChat(
+/**
+ * The long-press action of a key, or null. `previous` and `bankprev` are
+ * reachable only from here: `rawMapping` keeps them out of per-key overrides.
+ */
+export function holdActionOf(action: string): 'previous' | 'bankprev' | null {
+  if (action === 'next') return 'previous';
+  if (action === 'banknext') return 'bankprev';
+  return null;
+}
+export function needsChat(
   action: string,
-  target: import('./types').AgentSnapshot | null | undefined,
+  target: AgentSnapshot | null | undefined,
 ) {
   return target?.state !== 'blocked' && action !== 'zoom';
 }
-module.exports = {
-  isBackground,
-  modeOf,
-  homeRow,
-  layout,
-  needsContext,
-  needsChat,
-  localActions,
-};
-
-export {};

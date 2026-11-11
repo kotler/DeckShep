@@ -17,9 +17,9 @@ export function parseOwnedProcess(
   const match = (withParent ? parent : direct).exec(output || '');
   if (!match || Number(match[1]) !== process.getuid?.()) throw Error(message);
   return {
-    ownerText: match[1]!,
+    ownerText: match[1],
     parent: withParent ? Number(match[2]) : undefined,
-    startedAt: match[withParent ? 3 : 2]!.replace(/\s+/g, ' '),
-    executable: match[withParent ? 4 : 3]!,
+    startedAt: match[withParent ? 3 : 2].replace(/\s+/g, ' '),
+    executable: match[withParent ? 4 : 3],
   };
 }

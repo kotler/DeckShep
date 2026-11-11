@@ -195,7 +195,7 @@ test('provider failure and delayed metadata cannot replace Rex labels/status or 
   const image = (key) =>
     Buffer.from(api.keys.get(key).lastImage.split(',')[1], 'base64').toString();
   assert(image('0,0').includes('Rex a'));
-  assert(image('0,0').includes('READY'));
+  assert(image('0,0').includes('Ready'));
   assert(!image('0,0').includes('Provider'));
   assert(
     image('0,1').includes('id="selected-agent"'),

@@ -40,6 +40,45 @@ removes closed slots after fresh Rex discovery. Missing titles fall back to the
 Rex session label or Codex/Claude Code. Row 3 keeps provider-specific settings,
 identity and input guards; provider details do not override the Rex agent bar.
 
+## Key map (Stream Deck MK.2, 5×3)
+
+One page, no folders. Row 1 shows agents, row 2 navigates, row 3 controls the
+selected agent.
+
+| | Column 1 | Column 2 | Column 3 | Column 4 | Column 5 |
+| --- | --- | --- | --- | --- | --- |
+| Row 1 | Agent | Agent | Agent | Agent | Agent |
+| Row 2 | Next agent | Page | Collapse | | Attention |
+| Row 3, ready | Model | Effort | Permissions | Mode | Interrupt |
+| Row 3, working | Steer | Queue | Permissions | | Interrupt |
+| Row 3, background | | | Permissions | | Stop |
+| Row 3, question | Up | Down | Confirm | Esc | Interrupt or Toggle |
+| Row 3, approval | Up | Down | Confirm | Esc | Interrupt |
+
+| Key | Tap | Hold (450 ms) |
+| --- | --- | --- |
+| Agent | Focus that agent | |
+| Next agent | Focus the next agent | Focus the previous agent |
+| Page | Next group of five | Previous group of five |
+| Attention | Focus the first other agent that needs you | |
+| Row 3 keys | The labelled control | |
+
+A key with a hold action acts when you release it, or at 450 ms if you keep
+holding; a small corner mark shows which keys have one. All other keys act on
+key-down. Both gestures use the state the key showed when you pressed it, and a
+press that waits more than two seconds behind other work is refused with
+"Press again".
+
+**Attention** stays blank until another agent is waiting on a question or
+approval, has an error, or has finished, in that order of priority. It shows the
+kind and the count, including agents on other pages. Pressing it focuses the
+first such agent exactly as its own agent key would and moves the page to it.
+Holds and Attention are not offered in the experimental Herdr App profile.
+
+Each agent key pairs its colour with a shape beside the status word: disc Ready,
+triangle Working, half disc Bg task, `?` Asking, `!` Approve, check Done, cross
+Error, ring Unknown.
+
 ## Install or upgrade
 
 A downloaded 1.3.1 bundle includes both `.streamDeckProfile` files. Import each profile you want to use. On upgrade, keep your existing Rex profile and import **Herdr** once. The source installer adds only missing profile UUIDs and preserves existing layouts, including customized Rex keys. It backs up profiles and the previous plugin first.

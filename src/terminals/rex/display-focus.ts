@@ -5,10 +5,22 @@ export type SessionFocus = {
   window: string | null;
   block: string | null;
 };
+/** The window fields of a Rex session inspection that focus is read from. */
+export interface RexWindow {
+  window_id: string;
+  focused_block_id?: string | null;
+}
+export interface RexSessionSnapshot {
+  active_window_id?: string | null;
+  windows: RexWindow[];
+}
 /** Server focus is a display hint. It must never satisfy a native input preflight. */
-export function sessionFocus(session: string, snapshot: any): SessionFocus {
+export function sessionFocus(
+  session: string,
+  snapshot: RexSessionSnapshot,
+): SessionFocus {
   const active = snapshot.windows.filter(
-    (w: any) => w.window_id === snapshot.active_window_id,
+    (w: RexWindow) => w.window_id === snapshot.active_window_id,
   );
   const window = active.length === 1 ? active[0] : null;
   return {

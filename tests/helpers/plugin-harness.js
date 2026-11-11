@@ -208,13 +208,9 @@ function harness(dependencies = {}) {
         );
     },
     async profilePress(scope, row, col) {
-      socket.emit(
-        'message',
-        JSON.stringify({
-          event: 'keyDown',
-          context: scope + ':' + row + ',' + col,
-        }),
-      );
+      const context = scope + ':' + row + ',' + col;
+      socket.emit('message', JSON.stringify({ event: 'keyDown', context }));
+      socket.emit('message', JSON.stringify({ event: 'keyUp', context }));
       await api.settled();
     },
     tick: (ms = 500) => (clock += ms),

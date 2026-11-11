@@ -237,10 +237,10 @@ test('labels never present stale settings as confirmed and reject mismatched ter
   assert(!labels.sameTarget(null, agent));
   assert.equal(
     labels.agentLines({ ...agent, chatName: undefined, project: undefined })[2],
-    'READY',
+    'Ready',
   );
   assert.equal(
     labels.agentLines({ ...agent, state: 'unsupported' })[2],
-    'UNKNOWN',
+    'Unknown',
   );
 });

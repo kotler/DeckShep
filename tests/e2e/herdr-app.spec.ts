@@ -25,7 +25,11 @@ test('App selection and Next need separate consent and report requested rather t
   await command(page, 'advance', 350);
   await command(page, 'press', 0, 1);
   expect(await trace(page)).toEqual([['pane.focus', 'p2']]);
-  expect(await labels(page, 0, 1)).toEqual(['Focus requested', 'Not verified']);
+  expect(await labels(page, 0, 1)).toEqual([
+    'Focus',
+    'requested',
+    'Not verified',
+  ]);
   await command(page, 'advance', 2500);
   expect(await labels(page, 0, 1)).toContain('Deck selected');
   await command(page, 'advance', 350);

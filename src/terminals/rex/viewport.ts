@@ -2,10 +2,16 @@ import { createHash } from 'node:crypto';
 import type { KeyboardView } from '../../domain/backend';
 import type { TargetRef } from '../../domain/types';
 
+/** The reply fields of a Rex `format`/`modes` block call that are read here. */
+export interface RexBlockReply {
+  id?: unknown;
+  content?: string;
+  modes?: ({ number?: number; set?: boolean } | null)[];
+}
 /** Bind the plain text and cursor to the same native frame; return no scrollback. */
 export async function stableViewport(
   target: TargetRef,
-  run: (args: string[]) => Promise<any>,
+  run: (args: string[]) => Promise<RexBlockReply | null | undefined>,
   screen: () => Promise<string>,
 ): Promise<KeyboardView> {
   const args = [
@@ -41,7 +47,7 @@ export async function stableViewport(
           (mode: { number?: number } | null) => mode?.number === 25,
         )
       : [];
-    if (visibility.length !== 1 || visibility[0].set !== false)
+    if (visibility.length !== 1 || visibility[0]?.set !== false)
       throw Error('Rex viewport/cursor unavailable');
   }
   const text = await screen(),

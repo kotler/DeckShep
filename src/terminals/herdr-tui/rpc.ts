@@ -1,15 +1,26 @@
-const boundary = require('../../schemas');
-type StringDecoder = import('node:string_decoder').StringDecoder;
-type AgentSnapshot = import('../../domain/types').AgentSnapshot;
-type Config = import('../../domain/types').Config;
-type PressContext = import('../../domain/types').PressContext;
-('use strict');
-const { StringDecoder } = require('node:string_decoder');
-const fs = require('node:fs'),
-  net = require('node:net'),
-  os = require('node:os'),
-  path = require('node:path'),
-  crypto = require('node:crypto');
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import net from 'node:net';
+import os from 'node:os';
+import path from 'node:path';
+import { StringDecoder } from 'node:string_decoder';
+import { parse } from '../../schemas';
+
+/** A verified Herdr session socket: where to connect and how to recognise it. */
+export interface HerdrEndpoint {
+  file: string;
+  identity: string;
+  scope?: string;
+}
+/** The object a Herdr request resolves with. */
+export type HerdrResult = Record<string, unknown>;
+type HerdrParams = Record<string, unknown>;
+/** Test seams: replace socket resolution, connection and the request timeout. */
+export interface HerdrRpcDeps {
+  endpoint?: (socketPath: string) => HerdrEndpoint;
+  connect?: (file: string) => net.Socket;
+  timeout?: number;
+}
 const METHODS: Set<string> = new Set([
   'ping',
   'session.snapshot',
@@ -21,7 +32,7 @@ const METHODS: Set<string> = new Set([
   'pane.get',
   'pane.zoom',
 ]);
-function endpoint(value: any) {
+export function endpoint(value: unknown): HerdrEndpoint & { scope: string } {
   if (
     typeof value !== 'string' ||
     !value ||
@@ -34,8 +45,8 @@ function endpoint(value: any) {
     : value;
   if (!path.isAbsolute(file))
     throw Error('Herdr socket must be an absolute path');
-  const parent: import('node:fs').Stats = fs.lstatSync(path.dirname(file)),
-    stat: import('node:fs').Stats = fs.lstatSync(file);
+  const parent: fs.Stats = fs.lstatSync(path.dirname(file)),
+    stat: fs.Stats = fs.lstatSync(file);
   if (
     !parent.isDirectory() ||
     parent.isSymbolicLink() ||
@@ -57,11 +68,17 @@ function endpoint(value: any) {
       crypto.createHash('sha256').update(identity).digest('hex').slice(0, 24),
   };
 }
-const paneId: (s: any) => boolean = (s: any) =>
+export const paneId: (s: unknown) => boolean = (s: unknown) =>
   typeof s === 'string' && /^w[a-zA-Z0-9_-]+:p[a-zA-Z0-9_-]+$/.test(s);
-function validate(method: string, p: any) {
-  if (!METHODS.has(method) || !p || typeof p !== 'object' || Array.isArray(p))
+export function validate(method: string, params: unknown) {
+  if (
+    !METHODS.has(method) ||
+    !params ||
+    typeof params !== 'object' ||
+    Array.isArray(params)
+  )
     throw Error('Unsupported Herdr request');
+  const p = params as HerdrParams;
   const keys: string = Object.keys(p).sort().join(',');
   if (['ping', 'session.snapshot'].includes(method)) {
     if (keys) throw Error('Unexpected Herdr read parameters');
@@ -76,8 +93,8 @@ function validate(method: string, p: any) {
     if (
       keys !== 'format,source,strip_ansi,target' ||
       !paneId(p.target) ||
-      !['visible', 'detection'].includes(p.source) ||
-      !['text', 'ansi'].includes(p.format) ||
+      !(['visible', 'detection'] as readonly unknown[]).includes(p.source) ||
+      !(['text', 'ansi'] as readonly unknown[]).includes(p.format) ||
       p.strip_ansi !== (p.format === 'text')
     )
       throw Error('Only complete Herdr viewport reads are allowed');
@@ -100,12 +117,12 @@ function validate(method: string, p: any) {
           'alt+p',
           's',
         ].includes(p.keys[0]),
-      arrows: any =
+      arrows: boolean =
         Array.isArray(p.keys) &&
         p.keys.length > 1 &&
         p.keys.length <= 4 &&
         ['up', 'down', 'left', 'right'].includes(p.keys[0]) &&
-        p.keys.every((key: any) => key === p.keys[0]);
+        p.keys.every((key: unknown) => key === (p.keys as unknown[])[0]);
     if (keys !== 'keys,target' || !paneId(p.target) || (!one && !arrows))
       throw Error(
         'Only a guarded native key or bounded arrow batch is allowed',
@@ -120,25 +137,31 @@ function validate(method: string, p: any) {
   if (keys !== 'pane_id' || !paneId(p.pane_id))
     throw Error('Explicit Herdr pane required');
 }
-class HerdrRpc {
-  declare socketPath: any;
-  declare resolve: any;
-  declare open: any;
+
+/**
+ * A filesystem error names the socket path in its message. Guard refusals
+ * raised before a write carry no syscall and pass through unchanged.
+ */
+function pathFree(error: unknown): unknown {
+  return typeof (error as NodeJS.ErrnoException | null)?.syscall === 'string'
+    ? Error('Herdr session replaced or offline')
+    : error;
+}
+export class HerdrRpc {
+  declare socketPath: string;
+  declare resolve: (socketPath: string) => HerdrEndpoint;
+  declare open: (file: string) => net.Socket;
   declare nextId: number;
-  declare pending: Map<any, any>;
+  declare pending: Map<string, { cancel: () => void }>;
   declare verified: boolean;
   declare closed: boolean;
-  declare timeout: any;
-  declare endpoint: any;
+  declare timeout: number;
+  declare endpoint: HerdrEndpoint;
   info: { protocol: number; version: string } | null = null;
-  constructor(socketPath: any, deps: Record<string, any> | undefined = {}) {
+  constructor(socketPath: string, deps: HerdrRpcDeps | undefined = {}) {
     this.socketPath = socketPath;
     this.resolve = deps.endpoint || endpoint;
-    this.open =
-      deps.connect ||
-      (((file: string) => net.createConnection(file)) as (
-        file: string,
-      ) => import('node:net').Socket);
+    this.open = deps.connect || ((file: string) => net.createConnection(file));
     this.nextId = 0;
     this.pending = new Map();
     this.verified = false;
@@ -146,16 +169,23 @@ class HerdrRpc {
     this.timeout = deps.timeout || 4000;
   }
   async connect() {
-    this.endpoint = this.resolve(this.socketPath);
     try {
-      const pong: any = await this.exchange('ping', {});
+      this.endpoint = this.resolve(this.socketPath);
+    } catch (error: unknown) {
+      // A filesystem failure names the socket path; never let that escape.
+      if (typeof (error as NodeJS.ErrnoException)?.code === 'string')
+        throw Error('Herdr session replaced or offline');
+      throw error;
+    }
+    try {
+      const pong: HerdrResult = await this.exchange('ping', {});
       if (
         pong?.type !== 'pong' ||
         pong.protocol !== 22 ||
-        !/^0\.9\.5(?:[-+].*)?$/.test(pong.version || '')
+        !/^0\.9\.5(?:[-+].*)?$/.test(String(pong.version || ''))
       )
         throw Error('Herdr version/protocol not verified');
-      this.info = { protocol: pong.protocol, version: pong.version };
+      this.info = { protocol: pong.protocol, version: pong.version as string };
       this.verified = true;
       return this;
     } catch (error: unknown) {
@@ -163,7 +193,7 @@ class HerdrRpc {
       throw error;
     }
   }
-  request(method: string, params: any, beforeWrite?: () => void) {
+  request(method: string, params: HerdrParams, beforeWrite?: () => void) {
     try {
       validate(method, params);
       if (!this.verified || this.closed)
@@ -173,21 +203,28 @@ class HerdrRpc {
     }
     return this.exchange(method, params, beforeWrite);
   }
-  exchange(method: string, params: any, beforeWrite?: () => void) {
+  exchange(
+    method: string,
+    params: HerdrParams,
+    beforeWrite?: () => void,
+  ): Promise<HerdrResult> {
     const id: string = 'deckshep-' + ++this.nextId;
     return new Promise(
-      (resolve: (value: any) => void, reject: (reason?: any) => void) => {
-        let socket: any,
+      (
+        resolve: (value: HerdrResult) => void,
+        reject: (reason?: unknown) => void,
+      ) => {
+        let socket: net.Socket | undefined,
           done: boolean = false,
           buffer: string = '';
         const decoder: StringDecoder = new StringDecoder('utf8');
-        const finish: any = (error: any, result?: any) => {
+        const finish = (error: unknown, result?: HerdrResult) => {
           if (done) return;
           done = true;
           clearTimeout(timer);
           this.pending.delete(id);
           socket?.destroy();
-          error ? reject(error) : resolve(result);
+          error ? reject(error) : resolve(result as HerdrResult);
         };
         const timer: NodeJS.Timeout = setTimeout(
           () => finish(Error('Herdr timeout; verify any requested change')),
@@ -203,17 +240,17 @@ class HerdrRpc {
             this.resolve(this.socketPath).identity !== this.endpoint.identity
           )
             throw Error('Herdr session replaced or offline');
-          socket = this.open(this.endpoint.file);
-          socket.on('error', () =>
+          const live: net.Socket = (socket = this.open(this.endpoint.file));
+          live.on('error', () =>
             finish(Error('Herdr disconnected; verify any requested change')),
           );
-          socket.on('end', () =>
+          live.on('end', () =>
             finish(Error('Herdr disconnected; verify any requested change')),
           );
-          socket.on('close', () =>
+          live.on('close', () =>
             finish(Error('Herdr disconnected; verify any requested change')),
           );
-          socket.on('connect', () => {
+          live.on('connect', () => {
             try {
               if (
                 this.resolve(this.socketPath).identity !==
@@ -221,9 +258,9 @@ class HerdrRpc {
               )
                 throw Error('Herdr session changed while connecting');
               beforeWrite?.();
-              socket.write(
+              live.write(
                 JSON.stringify({ id, method, params }) + '\n',
-                (error: any) => {
+                (error?: Error | null) => {
                   if (error)
                     finish(
                       Error('Herdr write failed; verify any requested change'),
@@ -231,10 +268,10 @@ class HerdrRpc {
                 },
               );
             } catch (error: unknown) {
-              finish(error);
+              finish(pathFree(error));
             }
           });
-          socket.on('data', (chunk: any) => {
+          live.on('data', (chunk: Buffer) => {
             buffer += decoder.write(chunk);
             if (Buffer.byteLength(buffer) > 4e6) {
               finish(Error('Herdr response too large'));
@@ -242,9 +279,9 @@ class HerdrRpc {
             }
             const end: number = buffer.indexOf('\n');
             if (end < 0) return;
-            let message: any;
+            let message: ReturnType<typeof parse<'herdrFrame'>>;
             try {
-              message = boundary.parse('herdrFrame', buffer.slice(0, end));
+              message = parse('herdrFrame', buffer.slice(0, end));
             } catch {
               finish(Error('Invalid Herdr response'));
               return;
@@ -260,7 +297,7 @@ class HerdrRpc {
             else finish(null, message.result);
           });
         } catch (error: unknown) {
-          finish(error);
+          finish(pathFree(error));
         }
       },
     );
@@ -271,6 +308,3 @@ class HerdrRpc {
     for (const p of [...this.pending.values()]) p.cancel();
   }
 }
-module.exports = { HerdrRpc, endpoint, validate, paneId };
-
-export { HerdrRpc };

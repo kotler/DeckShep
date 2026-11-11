@@ -9,6 +9,7 @@ export const knownControls: readonly ControlId[] = [
   'collapse',
   'banknext',
   'next',
+  'attention',
   'permissions',
   'more',
   'model',
@@ -60,9 +61,15 @@ const localControls = new Set<ControlId>([
   'claudeInfo',
   'claudeModeInfo',
 ]);
-/** Selection and Next use the same verified native focus operation. */
+/** Selection, Next, Previous and Attention use the same verified native focus operation. */
 export function controlIdForAction(action: string): ControlId | null {
-  if (/^agent:[0-9]+$/.test(action) || action === 'next') return 'focus';
+  if (
+    /^agent:[0-9]+$/.test(action) ||
+    action === 'next' ||
+    action === 'previous' ||
+    action === 'attention'
+  )
+    return 'focus';
   return knownControls.includes(action as ControlId)
     ? (action as ControlId)
     : null;
@@ -105,7 +112,12 @@ const composer = new Set([
 ]);
 export function controlSpec(id: ControlId): ControlSpec {
   if (isLocalControl(id)) return { id, requires: [] };
-  if (id === 'focus' || id === 'next' || id.startsWith('agent:'))
+  if (
+    id === 'focus' ||
+    id === 'next' ||
+    id === 'attention' ||
+    id.startsWith('agent:')
+  )
     return { id, requires: ['focus', 'verifiedFocus'] };
   if (id === 'zoom') return { id, requires: ['verifiedFocus', 'zoom'] };
   return {

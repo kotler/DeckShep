@@ -76,7 +76,7 @@ test('agent metadata', async () => {
   const lines = agentLines(f.agent);
   assert(lines[0].startsWith('Fix the'));
   assert(lines[0].endsWith('…'));
-  assert.deepEqual(lines.slice(1), ['my-project', 'WORKING']);
+  assert.deepEqual(lines.slice(1), ['my-project', 'Working']);
   assert.equal(f.agent.chatName, 'Fix the login flow');
   assert.equal(f.agent.model, 'gpt-6-luna');
   assert.equal(f.closed(), 1);
@@ -166,7 +166,7 @@ test('agent metadata', async () => {
       { ...f.agent, chatName: 'Short', state: 'blocked', kind: 'permission' },
       { b: 'My chat' },
     ),
-    ['My chat', 'my-project', 'CHOICE'],
+    ['My chat', 'my-project', 'Approve'],
   );
   assert.equal(ellipsize('Hello'), 'Hello');
   assert(ellipsize('A very long conversation title').endsWith('…'));

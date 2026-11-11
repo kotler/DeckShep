@@ -1,23 +1,21 @@
-type AgentSnapshot = import('../domain/types').AgentSnapshot;
-type Config = import('../domain/types').Config;
-type PressContext = import('../domain/types').PressContext;
-('use strict');
-const {
+import type { AgentSnapshot, PressContext, TargetRef } from '../domain/types';
+import {
   isBackground,
   modeOf,
   homeRow,
   layout,
   needsContext,
   needsChat,
-} = require('../domain/layout');
-const actor: (
-  a: import('../domain/types').TargetRef | null | undefined,
-) => string | null | undefined = (
-  a: import('../domain/types').TargetRef | null | undefined,
-) =>
+} from '../domain/layout';
+
+/** Error carrying the machine-readable reason a press was refused. */
+type CodedError = Error & { code?: string };
+export const actor: (
+  a: TargetRef | null | undefined,
+) => string | null | undefined = (a: TargetRef | null | undefined) =>
   a && [a.session, a.block, a.app, a.pid, a.name, a.terminalId || ''].join('|');
-function stamp(
-  agent: import('../domain/types').AgentSnapshot | null | undefined,
+export function stamp(
+  agent: AgentSnapshot | null | undefined,
   page: number | undefined = 0,
 ) {
   return JSON.stringify([
@@ -32,117 +30,105 @@ function stamp(
     agent?.claudeUiEpoch || 0,
     page,
     ...(isBackground(agent)
-      ? [(agent as any).backgroundTurnId, (agent as any).backgroundIds]
+      ? [agent?.backgroundTurnId, agent?.backgroundIds]
       : []),
   ]);
 }
-function snapshot(
-  agent: import('../domain/types').AgentSnapshot | null | undefined,
-) {
+export function snapshot(agent: AgentSnapshot | null | undefined) {
   if (!agent) return null;
+  const keys: (keyof AgentSnapshot)[] = [
+    'session',
+    'window',
+    'block',
+    'terminalId',
+    'backend',
+    'composerSupported',
+    'pid',
+    'name',
+    'app',
+    'cwd',
+    'state',
+    'kind',
+    'statusAt',
+    'chatId',
+    'nativeVerified',
+    'nativeIdentity',
+    'codexHookEpoch',
+    'rexSettings',
+    'runId',
+    'backgroundOnly',
+    'backgroundIds',
+    'backgroundTurnId',
+    'activityStatusAt',
+    'claudeControlsEnabled',
+    'claudeUiEpoch',
+    'claudeTurnId',
+    'claudeRequestId',
+    'claudePicker',
+    'claudeMultiSelect',
+    'claudeCheckboxList',
+    'claudeQuestionReview',
+    'permissionMode',
+    'vimMode',
+    'atBottom',
+  ];
   return Object.fromEntries(
-    [
-      'session',
-      'window',
-      'block',
-      'terminalId',
-      'backend',
-      'composerSupported',
-      'pid',
-      'name',
-      'app',
-      'cwd',
-      'state',
-      'kind',
-      'statusAt',
-      'chatId',
-      'nativeVerified',
-      'nativeIdentity',
-      'codexHookEpoch',
-      'rexSettings',
-      'runId',
-      'backgroundOnly',
-      'backgroundIds',
-      'backgroundTurnId',
-      'activityStatusAt',
-      'claudeControlsEnabled',
-      'claudeUiEpoch',
-      'claudeTurnId',
-      'claudeRequestId',
-      'claudePicker',
-      'claudeMultiSelect',
-      'claudeCheckboxList',
-      'claudeQuestionReview',
-      'permissionMode',
-      'vimMode',
-      'atBottom',
-    ]
-      .filter((k: string) => (agent as Record<string, any>)[k] !== undefined)
-      .map((k: string) => [
-        k,
-        Array.isArray((agent as Record<string, any>)[k])
-          ? [...(agent as Record<string, any>)[k]]
-          : k === 'rexSettings'
-            ? { ...agent.rexSettings }
-            : (agent as Record<string, any>)[k],
-      ]),
+    keys
+      .filter((k: keyof AgentSnapshot) => agent[k] !== undefined)
+      .map((k: keyof AgentSnapshot) => {
+        const value = agent[k];
+        return [
+          k,
+          Array.isArray(value)
+            ? [...value]
+            : k === 'rexSettings'
+              ? { ...agent.rexSettings }
+              : value,
+        ];
+      }),
   );
 }
-function assertContext(
-  context: Partial<import('../domain/types').PressContext> | null | undefined,
-  current: import('../domain/types').AgentSnapshot | null | undefined,
+export function assertContext(
+  context: Partial<PressContext> | null | undefined,
+  current: AgentSnapshot | null | undefined,
 ) {
-  const target: import('../domain/types').AgentSnapshot | null | undefined =
-    context?.target;
+  const target: AgentSnapshot | null | undefined = context?.target;
   if (!target || actor(target) !== actor(current)) {
-    const error: Error = Error('Reselect agent on deck');
-    (error as any).code = 'SELECTION_CHANGED';
+    const error: CodedError = Error('Reselect agent on deck');
+    error.code = 'SELECTION_CHANGED';
     throw error;
   }
   if (
-    context!.action !== 'zoom' &&
+    context?.action !== 'zoom' &&
     target.app === 'claude-code' &&
-    (!(current as any).nativeVerified ||
-      target.chatId !== (current as any).chatId ||
-      target.nativeIdentity !== (current as any).nativeIdentity ||
-      (target.runId && target.runId !== (current as any).runId))
+    (!current?.nativeVerified ||
+      target.chatId !== current?.chatId ||
+      target.nativeIdentity !== current?.nativeIdentity ||
+      (target.runId && target.runId !== current?.runId))
   ) {
-    const error: Error = Error('Claude session changed; reselect');
-    (error as any).code = 'SELECTION_CHANGED';
+    const error: CodedError = Error('Claude session changed; reselect');
+    error.code = 'SELECTION_CHANGED';
     throw error;
   }
   if (
-    context!.action !== 'zoom' &&
+    context?.action !== 'zoom' &&
     target.app === 'claude-code' &&
-    (!(current as any).claudeControlsEnabled ||
-      target.claudeUiEpoch !== (current as any).claudeUiEpoch)
+    (!current?.claudeControlsEnabled ||
+      target.claudeUiEpoch !== current?.claudeUiEpoch)
   )
     throw Error('Claude controls updating; press again');
   const background: boolean =
     isBackground(target) &&
-    (current as any).state === 'working' &&
-    target.statusAt === (current as any).statusAt;
+    current?.state === 'working' &&
+    target.statusAt === current?.statusAt;
   if (!background && modeOf(target) !== modeOf(current))
     throw Error('Agent state changed; press again');
   if (
     target.state === 'blocked' &&
     (!target.statusAt ||
-      target.statusAt !== (current as any).statusAt ||
-      target.kind !== (current as any).kind)
+      target.statusAt !== current?.statusAt ||
+      target.kind !== current?.kind)
   )
     throw Error('Waiting request changed; press again');
 }
-module.exports = {
-  isBackground,
-  modeOf,
-  actor,
-  stamp,
-  snapshot,
-  assertContext,
-  homeRow,
-  layout,
-  needsContext,
-  needsChat,
-};
-
-export {};
+export { isBackground, modeOf, homeRow, layout, needsContext, needsChat };

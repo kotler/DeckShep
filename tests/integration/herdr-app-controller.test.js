@@ -57,11 +57,14 @@ test('App routing uses real request guards with separate consent, selection/Next
   h.tick(350);
   await h.profilePress('herdr-app', 0, 1);
   assert.deepEqual(peer.inputs(), [{ do: 'pane.focus', args: { pane: 'p2' } }]);
-  assert.match(frame(h, 'herdr-app:0,1'), /Focus requested/);
+  assert.match(
+    frame(h, 'herdr-app:0,1'),
+    />Focus<\/text><text[^>]*>requested</,
+  );
   assert.match(frame(h, 'herdr-app:0,1'), /Not verified/);
   h.tick(2500);
   app.render();
-  assert.match(frame(h, 'herdr-app:0,1'), /Deck selected/);
+  assert.match(frame(h, 'herdr-app:0,1'), />Deck selected</);
   assert(!Object.hasOwn(app.selected(), 'pid'));
   assert(!Object.hasOwn(app.selected(), 'chatId'));
   h.tick(350);

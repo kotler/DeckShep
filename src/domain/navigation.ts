@@ -39,3 +39,56 @@ export function navigationSnapshot(agent: AgentSnapshot): AgentSnapshot {
       (agent.app === 'claude-code' ? 'Claude Code' : 'Codex'),
   };
 }
+
+/** Why an agent wants the user: waiting on a reply, failed, or finished. */
+export type AttentionKind = 'waiting' | 'error' | 'done';
+
+/** One slot as the agent keys see it, in slot order. */
+export interface AttentionEntry<A> {
+  /** The agent filling the slot. */
+  agent: A;
+  /** The completion-adjusted state the agent key displays. */
+  state: string;
+  /** This is the agent the controls act on. */
+  selected: boolean;
+}
+
+export interface AttentionCandidate<A> {
+  agent: A;
+  kind: AttentionKind;
+  /** Index into the supplied entries, which is the slot index. */
+  slot: number;
+}
+
+const ATTENTION_RANK: Record<AttentionKind, number> = {
+  waiting: 0,
+  error: 1,
+  done: 2,
+};
+
+function attentionKind(state: string): AttentionKind | null {
+  if (state === 'blocked') return 'waiting';
+  if (state === 'error') return 'error';
+  if (state === 'done') return 'done';
+  return null;
+}
+
+/**
+ * Agents other than the selected one that need the user, best first:
+ * blocked, then error, then done; ties keep slot order. `entries` is indexed
+ * by slot, with `undefined` for a slot whose agent is gone.
+ */
+export function attentionCandidates<A>(
+  entries: readonly (AttentionEntry<A> | undefined)[],
+): AttentionCandidate<A>[] {
+  const found: AttentionCandidate<A>[] = [];
+  entries.forEach((entry, slot) => {
+    if (!entry || entry.selected) return;
+    const kind = attentionKind(entry.state);
+    if (kind) found.push({ agent: entry.agent, kind, slot });
+  });
+  return found.sort(
+    (a, b) =>
+      ATTENTION_RANK[a.kind] - ATTENTION_RANK[b.kind] || a.slot - b.slot,
+  );
+}

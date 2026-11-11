@@ -7,6 +7,50 @@ preview artifacts use `-beta.N` release tags.
 
 ### Changed
 
+- Add an Attention key at row 2, column 5. It appears only when another agent
+  is waiting on you, has an error or has finished, shows what and how many, and
+  one press focuses the first of them through the same guarded focus path as an
+  agent key. It is blank when nothing needs you.
+- Add hold gestures: hold Next agent (450 ms) for the previous agent and hold
+  Page for the previous page. Keys without a hold action still act on key-down
+  with no added delay; a hold uses the context captured at key-down and passes
+  the same guards as a tap.
+- Refuse a press that waited more than two seconds behind other work instead of
+  running it late. The key shows "Press again" and no input is sent.
+- Redraw the keys for 72×72 legibility. Each agent state has its own shape next
+  to the status word, so state no longer depends on colour alone. Status words
+  are now Ready, Working, Bg task, Asking, Approve, Done, Error and Unknown.
+  Text is never drawn below 10 px: long captions wrap at a space or end with an
+  ellipsis. Unavailable controls are dimmed, unused keys are fully blank, and an
+  offline slot shows one line.
+- Shorten fixed captions to fit: Stop terminals is now Stop with the terminal
+  count, and refused-press captions use whole words (for example "Press again"
+  or "Target changed") instead of a message cut at 15 characters.
+- Render only what changed. Key images are cached by content and a refresh tick
+  that changes nothing no longer builds or encodes any image; the empty title is
+  sent once per key appearance. Animation steps are quantised so pulsing keys
+  reuse cached frames.
+- Pass host events and frames between the Stream Deck adapter and the controller
+  as typed objects, without a JSON and schema round trip per frame.
+
+### Fixed
+
+- Restore the clipboard when the optional visible-pane check times out after Rex
+  has already copied a pane ID. Another app's clipboard change is still never
+  overwritten.
+- Keep socket paths out of Herdr connection errors.
+- Draw the second line of an offline agent slot at a valid position.
+
+### Internal
+
+- Move key captions and colours out of the controller into a pure, unit-tested
+  `key-face` module, and tap/hold bookkeeping into `press-gesture`.
+- Type `src/domain`, `src/guards`, `src/platform`, `src/terminals/rex` and
+  `src/terminals/herdr-tui` strictly, convert them to ES imports, and enforce
+  `no-explicit-any` there.
+
+### Changed
+
 - Follow unambiguous Rex session focus without polling the clipboard. Present
   agent settings and press targets together after discovery so a slow refresh
   cannot flash Unknown or refuse an unchanged Codex control. Recognize the

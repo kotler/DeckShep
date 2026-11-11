@@ -10,16 +10,16 @@ test('completion display', async () => {
   h.change('a', { state: 'done', statusAt: 'complete-1' });
   h.change('b', { state: 'done', statusAt: 'other-1' });
   await h.api.refresh();
-  assert(h.image(0, 0).includes('>COMPLETE<'));
-  assert(h.image(0, 1).includes('>COMPLETE<'));
+  assert(h.image(0, 0).includes('>Done<'));
+  assert(h.image(0, 1).includes('>Done<'));
   h.tick(1999);
   h.api.render();
-  assert(h.image(0, 0).includes('>COMPLETE<'));
+  assert(h.image(0, 0).includes('>Done<'));
   h.tick(1);
   h.api.render();
-  assert(h.image(0, 0).includes('>READY<'));
+  assert(h.image(0, 0).includes('>Ready<'));
   assert(h.image(0, 0).includes('id="selected-agent"'));
-  assert(h.image(0, 1).includes('>COMPLETE<'));
+  assert(h.image(0, 1).includes('>Done<'));
   assert.equal(
     h.api.bridge.agents[0].state,
     'done',
@@ -28,33 +28,33 @@ test('completion display', async () => {
   assert.equal(h.calls.length, 0, 'acknowledgement sends no native controls');
   // Acknowledged results remain Ready across rediscovery and selection changes.
   await h.press(0, 1);
-  assert(h.image(0, 0).includes('>READY<'));
+  assert(h.image(0, 0).includes('>Ready<'));
   h.tick(1000);
   h.api.render();
-  assert(h.image(0, 1).includes('>COMPLETE<'));
+  assert(h.image(0, 1).includes('>Done<'));
   await h.press(0, 0);
   h.tick(3000);
   h.api.render();
   await h.press(0, 1);
   h.tick(1999);
   h.api.render();
-  assert(h.image(0, 1).includes('>COMPLETE<'), 'dwell must be continuous');
+  assert(h.image(0, 1).includes('>Done<'), 'dwell must be continuous');
   h.tick(1);
   h.api.render();
-  assert(h.image(0, 1).includes('>READY<'));
+  assert(h.image(0, 1).includes('>Ready<'));
   // A new completion must reappear even if the intermediate working poll was missed.
   h.change('b', { statusAt: 'other-2' });
   await h.api.refresh();
-  assert(h.image(0, 1).includes('>COMPLETE<'));
+  assert(h.image(0, 1).includes('>Done<'));
   h.tick(2000);
   h.api.render();
-  assert(h.image(0, 1).includes('>READY<'));
+  assert(h.image(0, 1).includes('>Ready<'));
   h.change('b', { state: 'working', statusAt: 'run' });
   await h.api.refresh();
-  assert(h.image(0, 1).includes('>WORKING<'));
+  assert(h.image(0, 1).includes('>Working<'));
   h.change('b', { state: 'done', statusAt: 'other-2' });
   await h.api.refresh();
-  assert(h.image(0, 1).includes('>COMPLETE<'));
+  assert(h.image(0, 1).includes('>Done<'));
   h.tick(2000);
   h.api.render();
   h.setLive(h.live.filter((a) => a.block !== 'b'));
@@ -76,7 +76,7 @@ test('completion display', async () => {
   ]);
   await h.api.refresh();
   assert(
-    h.image(0, 1).includes('>COMPLETE<'),
+    h.image(0, 1).includes('>Done<'),
     'replacement cannot inherit acknowledgement',
   );
   console.log(

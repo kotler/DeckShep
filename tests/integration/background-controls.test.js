@@ -96,7 +96,7 @@ test('background controls', async () => {
   await reader.refresh([f.agent], true);
   assert(C.isBackground(f.agent));
   assert.equal(C.modeOf(f.agent), 'background');
-  assert.equal(agentLines(f.agent)[2], 'BACKGROUND');
+  assert.equal(agentLines(f.agent)[2], 'Bg task');
   assert(!JSON.stringify([...reader.cache]).includes('PRIVATE'));
   C.assertContext(
     { target: C.snapshot(f.agent) },
@@ -237,8 +237,9 @@ test('background controls', async () => {
   h.tick();
   assert.equal(h.action(2, 4), 'stopTerminals');
   // The Rex bar reports Rex's working state; daemon-only detail stays in row 3.
-  assert(h.image(0, 0).includes('>WORKING<'));
-  assert(h.image(2, 4).includes('Stop terminals'));
+  assert(h.image(0, 0).includes('>Working<'));
+  assert(h.image(2, 4).includes('>Stop<'));
+  assert.match(h.image(2, 4), />\d+ terminals</);
   assert(!h.image(2, 0).includes('Steer'));
   const old = h.api.keys.get('2,4').presented;
   h.change('a', { statusAt: 'new' });

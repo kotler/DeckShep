@@ -19,6 +19,7 @@ const {
     reviewerLines,
     footerMissing,
     sameTarget,
+    keyMessage,
   } = require('../domain/labels'),
   { AgentMetadata } = require('../agents/codex/metadata');
 const C = require('../guards/context');
@@ -38,6 +39,7 @@ const { AppCoreStatusReader } = require('../terminals/herdr-app/core-status');
 const { HerdrAppClient } = require('../terminals/herdr-app/transport');
 const { AppSelectionReader } = require('../terminals/herdr-app/selection');
 const {
+  attentionCandidates,
   navigationSnapshot,
   sameNavigationTarget,
 } = require('../domain/navigation');
@@ -59,6 +61,32 @@ const {
 const { Controller } = require('./profile-controller');
 const { CodexProvider } = require('../agents/codex/provider.ts');
 const { ClaudeProvider } = require('../agents/claude/provider.ts');
+import { keyFace } from './key-face';
+import { holdActionOf } from '../domain/layout';
+import { createPressGestures } from './press-gesture';
+import type { HostFrame } from './host-frame';
+import type { FaceAgent, FaceMode } from './key-face';
+import { createFrameCache } from '../render/frame';
+import type { KeySpec } from '../render/spec';
+/** Shown on every key while the Herdr App backend cannot discover agents. */
+const HERDR_APP_UNAVAILABLE: KeySpec = {
+  icon: 'blank',
+  lines: ['Herdr App', 'Unavailable'],
+  color: '#38414b',
+  pulse: 0,
+  badge: '',
+  accent: '#389ed7',
+  style: 'signal',
+  textOnly: false,
+  agent: false,
+};
+/** A press that waited longer than this behind earlier work is refused. */
+const QUEUE_STALE_MS = 2000;
+const PROFILE_SETUP_ERROR: KeySpec = {
+  ...HERDR_APP_UNAVAILABLE,
+  lines: ['Profile', 'setup error'],
+  color: '#893748',
+};
 function createApplication(dependencies: Record<string, any>) {
   const preferences = preferenceCodec(
     dependencies.experimentalHerdrApp === true,
@@ -72,6 +100,19 @@ function createApplication(dependencies: Record<string, any>) {
     svg: defaultSvg,
     pulse: defaultPulse,
   };
+  const frames = createFrameCache(svg);
+  const gestures = createPressGestures({
+    setTimeout: (fn: () => void, ms: number) => {
+      const handle: any = (dependencies.setTimeout || setTimeout)(fn, ms);
+      handle?.unref?.();
+      return handle;
+    },
+    clearTimeout: (handle: unknown) =>
+      (dependencies.clearTimeout || clearTimeout)(handle),
+  });
+  /** The clock that stamps `pressedAt`; the staleness check must use the same. */
+  const pressClock = (scope: string): number =>
+    scope === 'herdr-app' ? focusClock() : clock();
   const backendFactory: any =
     dependencies.backendFactory ||
     ((c: import('../domain/types').Config) =>
@@ -92,8 +133,11 @@ function createApplication(dependencies: Record<string, any>) {
     context: any,
     payload: any,
   ) => {
-    if (ws.readyState === 1)
-      ws.send(JSON.stringify({ event, context, payload }));
+    if (ws.readyState !== 1) return;
+    const frame = { event, context, payload } as HostFrame;
+    // A typed port skips the JSON round trip; string sockets keep working.
+    if (typeof ws.deliver === 'function') ws.deliver(frame);
+    else ws.send(JSON.stringify(frame));
   };
   let saved:
       | {
@@ -337,10 +381,6 @@ function createApplication(dependencies: Record<string, any>) {
     }
     const backendName: () => string = () =>
       scope === 'herdr-app' ? 'Herdr App' : scope === 'herdr' ? 'Herdr' : 'Rex';
-    const clean: (s: any) => string = (s: any) =>
-      String(s || '')
-        .replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g, '')
-        .slice(0, 15);
     function selected() {
       return bridge.agents?.find((a: any) => sameTarget(bridge.lastTarget, a));
     }
@@ -389,6 +429,37 @@ function createApplication(dependencies: Record<string, any>) {
               : undefined,
           )[(r - 1) * 5 + c];
     }
+    /** The agent the controls act on, compared by pane (navigation copies lack proof fields). */
+    function isControlTarget(a: AgentSnapshot): boolean {
+      return sameNavigationTarget(bridge.lastTarget, a);
+    }
+    function isSelectedAgent(a: AgentSnapshot): boolean {
+      return scope === 'rex'
+        ? sameNavigationTarget(navigationTarget(), a)
+        : sameTarget(bridge.lastTarget, a);
+    }
+    /** Ranked agents needing the user: the same list and states the agent keys show. */
+    function attentionList(): {
+      agent: AgentSnapshot;
+      kind: import('../domain/navigation').AttentionKind;
+      slot: number;
+    }[] {
+      const nav: AgentSnapshot[] = navigationAgents();
+      return attentionCandidates(
+        (bridge.slots as { session: string; block: string }[]).map((slot) => {
+          const agent = nav.find(
+            (a) => a.block === slot.block && a.session === slot.session,
+          );
+          return agent
+            ? {
+                agent,
+                state: completion.agent(agent).state,
+                selected: isSelectedAgent(agent) || isControlTarget(agent),
+              }
+            : undefined;
+        }),
+      );
+    }
     function mapping(k: any) {
       const action = rawMapping(k),
         backend = bridge.delivery?.backend;
@@ -397,31 +468,18 @@ function createApplication(dependencies: Record<string, any>) {
       if (action === 'collapse' && (offline || !bridge.slotGaps()))
         return 'none';
       if (action === 'banknext' && bridge.slots.length <= 5) return 'none';
+      if (
+        action === 'attention' &&
+        (scope === 'herdr-app' ||
+          backend?.id === 'herdr-app' ||
+          offline ||
+          !attentionList().length)
+      )
+        return 'none';
       return backend?.id === 'herdr-app' &&
         !verifiedAction(action, backend.capabilities, backend.verifiedControls)
         ? 'none'
         : action;
-    }
-    function bankLines() {
-      if (offline) return ['Page', backendName() + ' offline'];
-      const visible: any = bridge.slots
-        .slice(bank * 5, bank * 5 + 5)
-        .filter((s: any) =>
-          bridge.agents?.some(
-            (a: any) => a.session === s.session && a.block === s.block,
-          ),
-        ).length;
-      const total: number = Math.max(1, Math.ceil(bridge.slots.length / 5)),
-        outside: number = Math.max(0, (bridge.agents?.length || 0) - visible);
-      return [
-        'Page',
-        ...(total > 1 ? [`${bank + 1}/${total}`] : []),
-        ...(outside
-          ? [`${outside} off-page`]
-          : bridge.agents?.length
-            ? []
-            : ['No agents']),
-      ];
     }
     function capture(k: any) {
       const target: any = selected(),
@@ -443,10 +501,25 @@ function createApplication(dependencies: Record<string, any>) {
         page,
         backendKey: (bridge as any).backendKey,
         stamp: contextStamp,
-        target: C.snapshot(action.startsWith('agent:') ? k.target : target),
+        target: C.snapshot(
+          action.startsWith('agent:') || action === 'attention'
+            ? k.target
+            : target,
+        ),
         armedAt: contextState.armedAt,
         verifyChat: C.needsChat(action, target),
       };
+    }
+    function present(ctx: string, k: any, spec: KeySpec) {
+      const id = frames.key(spec);
+      if (id === k.lastSpecKey && k.lastImage === k.lastSpecImage) return;
+      const first = !k.lastImage;
+      const image = frames.image(spec);
+      k.lastSpecKey = id;
+      k.lastSpecImage = image;
+      k.lastImage = image;
+      emit('setImage', ctx, { image, target: 0 });
+      if (first) emit('setTitle', ctx, { title: '', target: 0 });
     }
     function render() {
       if (scope === 'rex' && busy) return; // Publish discovery and display selection together.
@@ -454,21 +527,9 @@ function createApplication(dependencies: Record<string, any>) {
         scope === 'herdr-app' &&
         !bridge.delivery.backend.capabilities.has('discover')
       ) {
-        const image =
-          'data:image/svg+xml;base64,' +
-          Buffer.from(
-            svg({
-              icon: 'blank',
-              lines: ['Herdr App', 'Unavailable'],
-              color: '#38414b',
-            }),
-          ).toString('base64');
         for (const [context, key] of keys) {
           key.presented = capture(key);
-          if (key.lastImage === image) continue;
-          key.lastImage = image;
-          emit('setImage', context, { image, target: 0 });
-          emit('setTitle', context, { title: '', target: 0 });
+          present(context, key, HERDR_APP_UNAVAILABLE);
         }
         return;
       }
@@ -477,15 +538,9 @@ function createApplication(dependencies: Record<string, any>) {
       } catch {
         /* Provider captions cannot interrupt Rex navigation rendering. */
       }
-      const now: any = clock(),
-        target: any = selected(),
-        mode:
-          | 'unknown'
-          | 'working'
-          | 'question'
-          | 'background'
-          | 'ready'
-          | 'approval' = C.modeOf(target),
+      const now: number = clock(),
+        target: AgentSnapshot | undefined = selected(),
+        mode: FaceMode = C.modeOf(target),
         contextStamp: string = C.stamp(target, page);
       const navigation = navigationAgents();
       completion.update(
@@ -500,44 +555,26 @@ function createApplication(dependencies: Record<string, any>) {
       if (contextState.stamp !== contextStamp)
         contextState = { stamp: contextStamp, armedAt: now + 350 };
       for (const [ctx, k] of keys) {
-        const action: any = mapping(k);
-        let icon: any =
-          (
-            {
-              effortIncrease: 'blank',
-              effortDecrease: 'blank',
-              plan: 'blank',
-              permissions: 'reviewer',
-              questionPrev: 'previous',
-              questionNext: 'next',
-              answer: 'send',
-              approvalUp: 'up',
-              approvalDown: 'down',
-              approvalConfirm: 'permissions',
-              approvalEscape: 'escape',
-              none: 'blank',
-              inputInfo: 'blank',
-              status: 'blank',
-              claudeInfo: 'claude-code',
-              claudeModeInfo: 'blank',
-              claudeToggle: 'permissions',
-            } as Record<string, any>
-          )[action] || action;
-        let lines: any[] = [],
-          color: string = '#233a50',
-          p: number = 0,
-          badge: string = '';
+        const action: string = mapping(k);
+        let agentView: FaceAgent | undefined;
+        let attention: { kind: any; count: number } | undefined;
+        if (action === 'attention') {
+          const ranked = attentionList();
+          k.target = ranked[0]?.agent;
+          if (ranked[0])
+            attention = { kind: ranked[0].kind, count: ranked.length };
+        }
         if (action.startsWith('agent:')) {
           const slot: any =
               bridge.slots[bank * 5 + Number(action.split(':')[1])],
-            a: any = navigationAgents().find(
+            a: AgentSnapshot | undefined = navigationAgents().find(
               (a: any) =>
                 a.block === slot?.block && a.session === slot?.session,
             );
           k.target = a;
+          agentView = { slotPresent: !!slot, selected: false, elapsedMs: 0 };
           if (a) {
-            const shown: import('../domain/types').AgentSnapshot =
-                completion.agent(a),
+            const shown: AgentSnapshot = completion.agent(a),
               prior: any = transitions.get(a.block);
             if (
               !prior ||
@@ -551,278 +588,37 @@ function createApplication(dependencies: Record<string, any>) {
                 statusAt: a.statusAt,
                 at: now,
               });
-            icon = a.app;
-            lines = agentLines(shown, config.aliases);
-            color = C.isBackground(shown)
-              ? '#126b78'
-              : config.palette[
-                  shown.state === 'idle' ? 'ready' : shown.state
-                ] || config.palette.unknown;
-            p = pulse(
-              C.isBackground(shown) ? 'idle' : shown.state,
-              now - transitions.get(a.block).at,
-              config.animation,
-            );
-            if (
-              scope === 'rex'
-                ? sameNavigationTarget(navigationTarget(), a)
-                : sameTarget(bridge.lastTarget, a)
-            )
-              badge = 'selected';
-          } else {
-            icon = 'empty';
-            lines = offline
-              ? [backendName() + ' offline', 'UNKNOWN']
-              : slot
-                ? ['Closed']
-                : ['No agent'];
-            color = offline ? config.palette.error : config.palette.idle;
-          }
-        } else {
-          const gaps: any = bridge.slotGaps(),
-            names: {
-              collapse: string[];
-              banknext: string[];
-              next: string[];
-              model: string[];
-              effort: string[];
-              effortIncrease: string[];
-              effortDecrease: string[];
-              permissions: any[];
-              plan: any[];
-              interrupt: string[];
-              stopTerminals: string[];
-              steer: string[];
-              queue: string[];
-              zoom: string[];
-              up: string[];
-              down: string[];
-              left: string[];
-              right: string[];
-              questionPrev: string[];
-              questionNext: string[];
-              answer: string[];
-              escape: string[];
-              approvalUp: string[];
-              approvalDown: string[];
-              approvalConfirm: string[];
-              approvalEscape: string[];
-              review: string[];
-              tests: string[];
-              continue: string[];
-              send: any[];
-              none: never[];
-              claudeToggle: string[];
-              claudeInfo: string[];
-              claudeModeInfo: any[];
-              inputInfo: string[];
-              status: any[];
-            } = {
-              collapse: [
-                'Collapse',
-                ...(offline
-                  ? [backendName() + ' offline']
-                  : gaps
-                    ? [`${gaps} gap${gaps === 1 ? '' : 's'}`]
-                    : []),
-              ],
-              banknext: bankLines(),
-              next: ['Next agent'],
-              model: modelLines(bridge),
-              effort: effortLines(bridge),
-              effortIncrease: ['Effort +'],
-              effortDecrease: ['Effort −'],
-              permissions: reviewerLines(bridge),
-              plan: modeLines(bridge),
-              interrupt: [
-                'Interrupt',
-                mode === 'working' &&
-                footerMissing(target) &&
-                !target?.rexSettings
-                  ? 'No footer ID'
-                  : mode === 'working'
-                    ? 'running'
-                    : 'not running',
-              ],
-              stopTerminals: [
-                'Stop terminals',
-                `${target?.backgroundIds?.length || 0} running`,
-              ],
-              steer: ['Steer', 'typed message'],
-              queue: ['Queue', 'typed message'],
-              zoom: ['Zoom'],
-              up: ['Up'],
-              down: ['Down'],
-              left: ['Left'],
-              right: ['Right'],
-              questionPrev: ['Shift+Tab', 'question'],
-              questionNext: ['Tab', 'question'],
-              answer: target?.claudePicker
-                ? ['Apply', 'this session']
-                : target?.claudeCheckboxList
-                  ? ['Review', 'answers']
-                  : target?.claudeQuestionReview
-                    ? ['Submit', 'answers']
-                    : ['Confirm', 'Enter'],
-              escape: ['Esc', 'question'],
-              approvalUp: ['Up', 'choice'],
-              approvalDown: ['Down', 'choice'],
-              approvalConfirm: ['Confirm', 'shown choice'],
-              approvalEscape: ['Esc', 'choice'],
-              review: ['Review', 'draft'],
-              tests: ['Tests', 'draft'],
-              continue: ['Continue', 'draft'],
-              send: bridge.draft
-                ? ['Send', bridge.draft.action]
-                : ['Send', 'no draft'],
-              none: [],
-              claudeToggle: ['Toggle', 'Space'],
-              claudeInfo: [
-                'Claude Code',
-                config.claude?.enabled
-                  ? 'Experimental'
-                  : scope === 'rex'
-                    ? 'Enable controls'
-                    : 'Set up hooks',
-              ],
-              claudeModeInfo: modeLines(bridge),
-              inputInfo: ['Use Herdr', 'keyboard'],
-              status: target
-                ? [
-                    'Check ' + backendName(),
-                    target.app === 'claude-code'
-                      ? target.claudeError ||
-                        (!target.claudeControlsEnabled ? 'Enable Claude' : '')
-                      : target.kind === 'auth'
-                        ? 'Authentication'
-                        : '',
-                  ]
-                : [bridge.selectionNotice ? 'Reselect' : 'Select', 'agent'],
+            agentView = {
+              slotPresent: !!slot,
+              agent: a,
+              shown,
+              elapsedMs: now - transitions.get(a.block).at,
+              selected: isSelectedAgent(a),
             };
-          lines = (names as Record<string, any>)[action] || [
-            action.toUpperCase(),
-          ];
-          if (
-            (action === 'collapse' && (offline || !gaps)) ||
-            (action === 'interrupt' && mode !== 'working') ||
-            action === 'none'
-          )
-            color = '#38414b';
-          if (
-            action === 'stopTerminals' ||
-            (action === 'interrupt' && mode === 'working')
-          )
-            color = '#813c42';
-          if (['steer', 'queue'].includes(action) && !target?.runId) {
-            color = '#38414b';
-            lines = [action === 'steer' ? 'Steer' : 'Queue', 'loading run'];
-          }
-          if (
-            ['model', 'effort', 'permissions', 'plan', 'interrupt'].includes(
-              action,
-            ) &&
-            footerMissing(target) &&
-            !(
-              target?.rexSettings &&
-              ((rexSettingsAction(action) && mode === 'ready') ||
-                (action === 'interrupt' && mode === 'working'))
-            )
-          )
-            color = '#38414b';
-          if (
-            target?.rexSettings &&
-            rexSettingsAction(action) &&
-            mode === 'ready'
-          ) {
-            const heading = (
-              {
-                model: 'Model',
-                effort: 'Effort',
-                permissions: 'Permissions',
-                plan: 'Mode',
-              } as Record<string, string>
-            )[action];
-            const value = target.rexSettings[action];
-            lines = [heading, clean(value)];
-          }
-          if (action.startsWith('approval')) color = '#78551e';
-          if (action === 'send' && bridge.draft) color = '#416428';
-          if (
-            ([
-              'up',
-              'down',
-              'left',
-              'right',
-              'escape',
-              'questionPrev',
-              'questionNext',
-              'answer',
-            ].includes(action) &&
-              mode !== 'question') ||
-            (action === 'permissions' && mode !== 'ready')
-          )
-            color = '#38414b';
-          if (
-            k.feedback &&
-            k.feedback.action === action &&
-            k.feedback.stamp === contextStamp &&
-            now < k.feedback.until
-          ) {
-            lines = ['Unavailable', k.feedback.message];
-            color = '#893748';
           }
         }
-        if (
-          action !== 'plan' &&
-          !['effort', 'effortIncrease', 'effortDecrease'].includes(action) &&
-          k.notice &&
-          k.notice.action === action &&
-          k.notice.stamp === contextStamp &&
-          now < k.notice.until
-        ) {
-          lines = [
-            action === 'stopTerminals'
-              ? 'Stop terminals'
-              : action === 'collapse'
-                ? 'Collapse'
-                : action === 'permissions'
-                  ? 'Permissions'
-                  : action === 'steer'
-                    ? 'Steer'
-                    : action === 'queue'
-                      ? 'Queue'
-                      : ['effortIncrease', 'effortDecrease'].includes(action)
-                        ? 'Effort'
-                        : action === 'plan'
-                          ? 'Mode'
-                          : 'Model',
-            k.notice.label,
-          ];
-          color = '#2b654c';
-        }
+        const spec = keyFace({
+          action,
+          scope,
+          backendName: backendName(),
+          offline,
+          now,
+          contextStamp,
+          mode,
+          target,
+          bridge,
+          bank,
+          gaps: agentView ? 0 : bridge.slotGaps(),
+          config,
+          agentView,
+          feedback: k.feedback,
+          notice: k.notice,
+          pulse,
+          attention,
+          hold: scope !== 'herdr-app' && holdActionOf(action) !== null,
+        });
         k.presented = capture(k);
-        const img: string =
-          'data:image/svg+xml;base64,' +
-          Buffer.from(
-            svg({
-              icon,
-              lines,
-              color,
-              pulse: p,
-              badge,
-              accent: controlAccent(action, color),
-              style: config.appearance?.style || 'signal',
-              textOnly:
-                lines.length === 1 &&
-                ['effortIncrease', 'effortDecrease', 'plan'].includes(action),
-              agent: action.startsWith('agent:'),
-            }),
-          ).toString('base64');
-        if (img !== k.lastImage) {
-          emit('setImage', ctx, { image: img, target: 0 });
-          emit('setTitle', ctx, { title: '', target: 0 });
-          k.lastImage = img;
-        }
+        present(ctx, k, spec);
       }
     }
     async function refreshMetadata(force: any = false) {
@@ -1066,11 +862,22 @@ function createApplication(dependencies: Record<string, any>) {
         return result.removed ? result : undefined;
       } else if (a === 'banknext')
         bank = (bank + 1) % Math.max(1, Math.ceil(bridge.slots.length / 5));
-      else if (a.startsWith('agent:')) {
+      else if (a === 'bankprev') {
+        const banks: number = Math.max(1, Math.ceil(bridge.slots.length / 5));
+        bank = (bank + banks - 1) % banks;
+      } else if (a.startsWith('agent:') || a === 'attention') {
         if (!display.target || offline) throw Error('No live agent');
         await bridge.focus(display.target);
-      } else if (a === 'next') {
-        await bridge.navigate(1);
+        if (a === 'attention') {
+          const index: number = bridge.slots.findIndex(
+            (s: any) =>
+              s.session === display.target.session &&
+              s.block === display.target.block,
+          );
+          if (index >= 0) bank = Math.floor(index / 5);
+        }
+      } else if (a === 'next' || a === 'previous') {
+        await bridge.navigate(a === 'next' ? 1 : -1);
         const index: any = bridge.slots.findIndex(
           (s: any) =>
             s.session === bridge.lastTarget?.session &&
@@ -1164,6 +971,14 @@ function createApplication(dependencies: Record<string, any>) {
       activePress = { ctx, display };
       try {
         let result: any;
+        // A press that sat behind slow work no longer matches the user's intent.
+        if (
+          typeof display.pressedAt === 'number' &&
+          pressClock(scope) - display.pressedAt > QUEUE_STALE_MS
+        )
+          throw Object.assign(Error('Press expired; press again'), {
+            keyLabel: 'Press again',
+          });
         guards.preflight(display, C.needsContext(a));
         if (
           bridge.delivery?.backend.id === 'herdr-app' &&
@@ -1216,7 +1031,7 @@ function createApplication(dependencies: Record<string, any>) {
         k.notice = null;
         k.feedback = {
           until: clock() + 10000,
-          message: clean(
+          message: keyMessage(
             (error as Error & { keyLabel?: string }).keyLabel ??
               (error as Error).message,
           ),
@@ -1579,9 +1394,9 @@ function createApplication(dependencies: Record<string, any>) {
       if (runtime.keys.size)
         queue = queue.then(runtime.initialize).catch(() => {});
   });
-  ws.on('message', (raw: any) => {
+  function dispatch(e: any) {
     try {
-      const e: any = boundary.parse('hostEvent', raw);
+      if (e.event === 'willDisappear') gestures.cancel(e.context);
       if (e.event === 'didReceiveGlobalSettings') {
         try {
           const input: any = boundary.validate(
@@ -1628,22 +1443,18 @@ function createApplication(dependencies: Record<string, any>) {
         if (e.event === 'didReceiveSettings' && !owners.has(e.context)) return;
         const scope: any = preferences.scopeOf(e.payload?.settings),
           prior: any = owners.get(e.context);
-        if (prior && prior !== scope) getController(prior).detach(e.context);
+        if (prior && prior !== scope) {
+          gestures.cancel(e.context);
+          getController(prior).detach(e.context);
+        }
         if (!scope) {
           owners.delete(e.context);
           emit('setImage', e.context, {
-            image:
-              'data:image/svg+xml;base64,' +
-              Buffer.from(
-                svg({
-                  icon: 'blank',
-                  lines: ['Profile', 'setup error'],
-                  color: '#893748',
-                }),
-              ).toString('base64'),
+            image: frames.image(PROFILE_SETUP_ERROR),
             target: 0,
           });
-          emit('setTitle', e.context, { title: '', target: 0 });
+          if (e.event === 'willAppear')
+            emit('setTitle', e.context, { title: '', target: 0 });
           return;
         }
         const runtime: any = getController(scope);
@@ -1681,24 +1492,38 @@ function createApplication(dependencies: Record<string, any>) {
           .catch(() => {});
         return;
       }
+      if (e.event === 'keyUp') gestures.up(e.context);
       if (e.event === 'keyDown') {
         const k: any = runtime.keys.get(e.context),
           shown: any = k?.presented,
           display: any = shown
             ? {
                 ...shown,
-                pressedAt: scope === 'herdr-app' ? focusClock() : clock(),
+                pressedAt: pressClock(scope),
                 setupBusy: runtime.setupBusy,
               }
             : undefined;
-        queue = queue
-          .then(() =>
-            owners.get(e.context) === scope
-              ? runtime.press(e.context, display)
-              : undefined,
-          )
-          .catch(() => {});
+        // The herdr-app scope keeps its per-control records: no holds there.
+        const hold: string | null =
+          shown && scope !== 'herdr-app' ? holdActionOf(shown.action) : null;
+        gestures.down(e.context, hold !== null, (kind) => {
+          // Both gestures act on the context presented at key down.
+          const pressed: any =
+            kind === 'hold' && display ? { ...display, action: hold } : display;
+          queue = queue
+            .then(() =>
+              owners.get(e.context) === scope
+                ? runtime.press(e.context, pressed)
+                : undefined,
+            )
+            .catch(() => {});
+        });
       }
+    } catch {}
+  }
+  ws.on('message', (raw: any) => {
+    try {
+      dispatch(boundary.parse('hostEvent', raw));
     } catch {}
   });
   ws.on('close', () => dependencies.onClose?.());
@@ -1715,7 +1540,11 @@ function createApplication(dependencies: Record<string, any>) {
     controllers,
     getController,
     settled,
-    receive: (event: any) => ws.emit('message', JSON.stringify(event)),
+    receive: (event: any) => {
+      try {
+        dispatch(boundary.validate('hostEvent', event));
+      } catch {}
+    },
   };
 }
 module.exports = { createApplication };

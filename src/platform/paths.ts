@@ -89,7 +89,7 @@ export async function discoverRex(
     ];
   } catch {}
   if (matches.length > 1) throw Error('Rex installation ambiguous');
-  if (matches.length === 1) return installation(matches[0]!);
+  if (matches.length === 1) return installation(matches[0]);
   for (const base of ['/Applications', path.join(probe.home, 'Applications')]) {
     for (const name of ['Rex Beta.app', 'Rex.app']) {
       const binary = path.join(base, name, helper);

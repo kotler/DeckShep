@@ -14,7 +14,7 @@ test('mode controls', async () => {
   });
   h.change('b', { collaborationMode: 'plan', metadataAt: 1 });
   await h.ready();
-  assert(h.image(2, 2).includes('>Approve for me<'));
+  assert.match(h.image(2, 2), />Approve<\/text><text[^>]*>for me</);
   assert.equal(h.action(1, 3), 'none');
   assert(h.image(2, 3).includes('>Default<'));
   assert(!h.image(2, 3).includes('<path'));

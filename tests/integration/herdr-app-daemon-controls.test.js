@@ -85,7 +85,7 @@ test('without an approved build App panes are discovered read-only and agent key
   assert.match(frame(h, 'herdr-app:1,2'), /Consent off/);
   await h.profilePress('herdr-app', 0, 1);
   assert.deepEqual(h.controller('herdr-app').selected(), ref(2));
-  assert.match(frame(h, 'herdr-app:0,1'), /Deck selected/);
+  assert.match(frame(h, 'herdr-app:0,1'), />Deck selected</);
   await h.profilePress('herdr-app', 1, 2);
   assert.deepEqual(runs, [], 'controls stay inactive without input consent');
   assert.equal(h.calls.length, 0);
@@ -102,7 +102,7 @@ test('consented daemon controls act on the deck-selected ready Codex pane only',
   h.tick(350);
   await h.profilePress('herdr-app', 0, 1);
   h.tick(350);
-  assert.match(frame(h, 'herdr-app:1,3'), /Codex daemon/);
+  assert.match(frame(h, 'herdr-app:1,3'), />Codex<\/text><text[^>]*>daemon</);
   await h.profilePress('herdr-app', 1, 3);
   assert.deepEqual(runs, [['effort', 't2']]);
   assert.match(frame(h, 'herdr-app:1,3'), /high/);
@@ -112,7 +112,10 @@ test('consented daemon controls act on the deck-selected ready Codex pane only',
     throw Error('Pane, chat or daemon changed: /private/secret');
   });
   await h.profilePress('herdr-app', 1, 2);
-  assert.match(frame(h, 'herdr-app:1,2'), /Control refused/);
+  assert.match(
+    frame(h, 'herdr-app:1,2'),
+    />Control<\/text><text[^>]*>refused</,
+  );
   assert.doesNotMatch(frame(h, 'herdr-app:1,2'), /secret/);
   setFail(null);
   h.tick(2600);
@@ -124,8 +127,8 @@ test('consented daemon controls act on the deck-selected ready Codex pane only',
 });
 test('blocked or working Codex panes show Answer in Herdr / Wait and never run controls', async () => {
   for (const [state, text] of [
-    ['blocked', /Answer in Herdr/],
-    ['working', /Wait for ready/],
+    ['blocked', />Answer<\/text><text[^>]*>in Herdr</],
+    ['working', />Wait for<\/text><text[^>]*>ready</],
   ]) {
     const { h, runs } = setup({ state });
     await h.appear('herdr-app');

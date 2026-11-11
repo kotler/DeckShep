@@ -27,24 +27,28 @@ Independent installation on another Mac, Intel execution and signing/notarizatio
 
 | Agent 1    | Agent 2    | Agent 3               | Agent 4    | Agent 5          |
 | ---------- | ---------- | --------------------- | ---------- | ---------------- |
-| Next agent | Page       | Collapse              | Empty      | Empty            |
+| Next agent | Page       | Collapse              | Empty      | Attention        |
 | Contextual | Contextual | Permissions / Confirm | Contextual | Interrupt / Stop |
 
 With visible-pane checks enabled, the white dot follows the focused Rex pane on refresh. A shell or an unverified selection has no dot. The deck stays on one dynamic Home layout.
 Row 2 manages the agent group: **Next agent** appears only with at least two
 agents, **Page** appears only with more than one group of five agent slots, and
-**Collapse** appears only when closed slots leave gaps. Row 3 follows the selected agent:
+**Collapse** appears only when closed slots leave gaps. **Attention** appears only
+when another agent is waiting on you, has an error or has finished; it shows the
+kind and count, and one press focuses the first of them. Hold **Next agent** for
+the previous agent and **Page** for the previous page; see the
+[key map](docs/PROFILES.md#key-map-stream-deck-mk2-53). Row 3 follows the selected agent:
 
 | State                     | Key 1  | Key 2  | Key 3                  | Key 4          | Key 5          |
 | ------------------------- | ------ | ------ | ---------------------- | -------------- | -------------- |
 | Ready / complete / error  | Model  | Effort | Permissions            | Plan / Default | Inactive       |
 | Working in Rex            | Steer  | Queue  | Permissions (inactive) | Empty          | Interrupt      |
 | Working in Herdr          | Empty  | Empty  | Permissions (inactive) | Empty          | Interrupt      |
-| Background terminals only | Empty  | Empty  | Permissions (inactive) | Empty          | Stop terminals |
+| Background terminals only | Empty  | Empty  | Permissions (inactive) | Empty          | Stop           |
 | Question or approval      | Up     | Down   | Confirm                | Esc            | Inactive       |
 | Unknown / authentication  | Status | Empty  | Permissions (inactive) | Empty          | Inactive       |
 
-**Interrupt** stops the current turn; background commands can continue. **Stop terminals** separately stops verified terminals belonging to that selected chat. **Permissions** cycles the actual native permission profiles. Extra confirmations stay on the terminal for you to answer. It is separate from answering an approval prompt: **Confirm** accepts the native choice currently shown.
+**Interrupt** stops the current turn; background commands can continue. **Stop** (shown with the terminal count) separately stops verified terminals belonging to that selected chat. **Permissions** cycles the actual native permission profiles. Extra confirmations stay on the terminal for you to answer. It is separate from answering an approval prompt: **Confirm** accepts the native choice currently shown.
 
 **Model** and **Effort** display current native values and cycle supported choices. **Plan / Default** toggles the native mode; Plan can use its own effort preset. Question and approval navigation appears automatically in row 3. Use the keyboard for extra Left/Right or Tab/Shift+Tab navigation and for Review, Tests, Continue and Send; there are no separate Questions or Prompts pages.
 

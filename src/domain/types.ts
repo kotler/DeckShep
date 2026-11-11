@@ -93,6 +93,7 @@ export type ControlId =
   | 'collapse'
   | 'banknext'
   | 'next'
+  | 'attention'
   | 'permissions'
   | 'more'
   | 'model'

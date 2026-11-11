@@ -1,6 +1,7 @@
 type AgentSnapshot = import('../domain/types').AgentSnapshot;
 type Config = import('../domain/types').Config;
 type PressContext = import('../domain/types').PressContext;
+type KeySpec = import('./spec').KeySpec;
 ('use strict');
 const { pluginDirectory } = require('../platform/paths.ts');
 const esc: (s: any) => string = (s: any) =>
@@ -84,7 +85,10 @@ function svg({
   textOnly = false,
   accent,
   style = 'signal',
-}: Record<string, any>) {
+  state,
+  dim,
+  hold,
+}: Partial<KeySpec>) {
   if (style === 'signal')
     return require('./signal').signalSvg({
       icon,
@@ -95,6 +99,9 @@ function svg({
       agent,
       textOnly,
       accent,
+      state,
+      dim,
+      hold,
       codexMark,
       claudeMark,
       legacyPaths: paths,
@@ -111,16 +118,18 @@ function svg({
 }
 function pulse(state: any, elapsed: number, config: Record<string, any>) {
   if (!config?.enabled) return 0;
+  // Quantised to 0.02 so animated frames repeat and hit the frame cache.
+  const q = (v: number): number => Math.round(v * 50) / 50;
   if (state === 'working')
-    return (
+    return q(
       0.09 +
-      0.09 *
-        Math.sin((elapsed * 2 * Math.PI) / (config.workingPeriodMs || 2200))
+        0.09 *
+          Math.sin((elapsed * 2 * Math.PI) / (config.workingPeriodMs || 2200)),
     );
   if (state === 'done' && elapsed < (config.completePulseMs ?? 15000))
-    return 0.12 + 0.1 * Math.sin((elapsed * 2 * Math.PI) / 1500);
+    return q(0.12 + 0.1 * Math.sin((elapsed * 2 * Math.PI) / 1500));
   if (state === 'blocked')
-    return 0.07 + 0.07 * Math.sin((elapsed * 2 * Math.PI) / 3000);
+    return q(0.07 + 0.07 * Math.sin((elapsed * 2 * Math.PI) / 3000));
   return 0;
 }
 module.exports = { svg, pulse, paths };

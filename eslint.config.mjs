@@ -44,6 +44,17 @@ export default [
     },
   },
   {
+    // Pure layers are fully typed; keep the debt from growing back.
+    files: [
+      'src/domain/**/*.ts',
+      'src/guards/**/*.ts',
+      'src/platform/**/*.ts',
+      'src/terminals/rex/**/*.ts',
+      'src/terminals/herdr-tui/**/*.ts',
+    ],
+    rules: { '@typescript-eslint/no-explicit-any': 'error' },
+  },
+  {
     files: ['tests/e2e/**/*.ts', 'playwright.config.ts'],
     languageOptions: {
       parser: tseslint.parser,

@@ -5,6 +5,7 @@ import type {
   TargetRef,
   PressContext,
   ControlId,
+  ControlSpec,
 } from './types';
 
 declare const permitBrand: unique symbol;
@@ -75,6 +76,6 @@ export interface AgentProvider {
     backend: TerminalBackend,
   ): Promise<AgentSnapshot | null>;
   state(binding: AgentSnapshot): Promise<AgentSnapshot>;
-  controls(state: AgentSnapshot): readonly import('./types').ControlSpec[];
+  controls(state: AgentSnapshot): readonly ControlSpec[];
   perform(control: string, context: ProviderContext): Promise<unknown>;
 }

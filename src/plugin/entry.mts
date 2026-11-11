@@ -12,6 +12,7 @@ import { EventEmitter } from 'node:events';
 import { applicationDependencies } from './dependencies.ts';
 import { parse, validate } from '../schemas/index.ts';
 import { createApplication } from '../app/controller.ts';
+import type { HostFrame } from '../app/host-frame.ts';
 
 // The adapter owns all host I/O. The application sees a local event port and
 // never registers a socket or reads Stream Deck launch arguments itself.
@@ -21,9 +22,9 @@ class HostPort extends EventEmitter {
     string,
     KeyAction<WillAppearEvent['payload']['settings']>
   >();
-  send(raw: string): void {
-    const frame = parse('hostEvent', raw);
-    const payload = frame.payload ?? {};
+  /** Typed frames from the application: no JSON hop, same host calls. */
+  deliver(frame: HostFrame): void {
+    const payload: Record<string, unknown> = frame.payload ?? {};
     const key = frame.context ? this.keys.get(frame.context) : undefined;
     let operation: Promise<unknown> | undefined;
     if (frame.event === 'setGlobalSettings')
@@ -36,6 +37,10 @@ class HostPort extends EventEmitter {
     else if (frame.event === 'sendToPropertyInspector')
       operation = streamDeck.ui.sendToPropertyInspector(payload as never);
     void operation?.catch(() => {}); // Host disconnects must not replay controls.
+  }
+  /** Text frames (registration, settings requests) are validated, then delivered. */
+  send(raw: string): void {
+    this.deliver(parse('hostEvent', raw) as HostFrame);
   }
 }
 const host = new HostPort();

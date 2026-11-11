@@ -184,7 +184,7 @@ export class VirtualDeck {
             (m) => m[1],
           );
           return labels[0] === 'Unavailable'
-            ? [{ context: frame.context, message: labels[1] }]
+            ? [{ context: frame.context, message: labels.slice(1).join(' ') }]
             : [];
         }),
       alerts:

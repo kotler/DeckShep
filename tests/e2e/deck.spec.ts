@@ -118,7 +118,7 @@ test('Rex navigation uses terminal titles with provider identity unavailable', a
   ];
   await command(page, 'setScenario', value);
   await command(page, 'setPreferences', { allowClipboardFocus: true });
-  expect(await labels(page, 0, 0)).toEqual(['Chat a', 'Fixture a', 'READY']);
+  expect(await labels(page, 0, 0)).toEqual(['Chat a', 'Fixture a', 'Ready']);
   await command(page, 'press', 0, 0);
   await command(page, 'press', 1, 0);
   expect((await command(page, 'snapshot')).keys[1].selected).toBe(true);
@@ -197,8 +197,8 @@ test('working controls respect Rex composer support and Herdr limitations', asyn
   page,
 }) => {
   await selected(page, 'working-rex');
-  expect(await labels(page, 2, 0)).toEqual(['Steer', 'typed message']);
-  expect(await labels(page, 2, 1)).toEqual(['Queue', 'typed message']);
+  expect(await labels(page, 2, 0)).toEqual(['Steer', 'typed text']);
+  expect(await labels(page, 2, 1)).toEqual(['Queue', 'typed text']);
   expect(await labels(page, 2, 4)).toEqual(['Interrupt', 'running']);
   await command(page, 'switchProfile', 'herdr');
   expect(await labels(page, 2, 0)).toEqual([]);
@@ -314,7 +314,7 @@ test('350 ms arming and fresh clipboard consent refuse input with short errors',
   await command(page, 'advance', 1);
   await command(page, 'press', 2, 4);
   await error(page, 2, 4);
-  expect((await labels(page, 2, 4))[1]).toBe('Enable visible-');
+  expect((await labels(page, 2, 4)).slice(1)).toEqual(['Enable', 'checks']);
   expect(await trace(page)).toEqual([focus()]);
 });
 test('a changed state during pending native verification refuses the captured press', async ({
@@ -391,7 +391,7 @@ test('Home stays dynamic in Herdr and Claude controls require explicit settings'
   await command(page, 'setScenario', 'claude-mixed');
   await command(page, 'press', 0, 1);
   await command(page, 'advance', 350);
-  expect(await labels(page, 2, 0)).toEqual(['Check Rex', 'Enable Claude']);
+  expect(await labels(page, 2, 0)).toEqual(['Check Rex', 'Enable', 'Claude']);
   expect(await trace(page)).toEqual([focus('b')]);
   await command(page, 'setPreferences', { claudeEnabled: true });
   await command(page, 'advance', 2000);

@@ -1,14 +1,14 @@
 {
-  "stale press": "Controls updati",
-  "changed backend": "Controller chan",
+  "stale press": "Press again",
+  "changed backend": "Press again",
   "changed profile": "Profile changed",
   "changed appearance": "Profile changed",
   "changed visibility": "Profile changed",
   "changed generation": "Profile changed",
-  "setup busy": "Setup finished;",
-  "changed page": "Controls change",
-  "changed stamp": "Controls change",
-  "focus mismatch": "Reselect agent ",
-  "changed chat": "Selected chat c",
-  "changed process": "Reselect agent "
+  "setup busy": "Setup finished",
+  "changed page": "Press again",
+  "changed stamp": "Press again",
+  "focus mismatch": "Reselect agent",
+  "changed chat": "Selected chat…",
+  "changed process": "Reselect agent"
 }
