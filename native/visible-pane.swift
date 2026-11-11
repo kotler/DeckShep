@@ -33,13 +33,14 @@ p.environment=env;p.standardOutput=FileHandle.nullDevice;p.standardError=FileHan
 do { try p.run() } catch { fail("Could not run Rex focus query") }
 let deadline=Date().addingTimeInterval(3)
 while p.isRunning && Date() < deadline { Thread.sleep(forTimeInterval:0.01) }
-if p.isRunning { p.terminate();fail("Rex focus query timed out") }
-p.waitUntilExit()
-let copiedCount=pb.changeCount
-let id=pb.string(forType:.string) ?? ""
-let valid=id.range(of:"^block:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",options:.regularExpression) != nil
-if valid && copiedCount != before {
-    // Compare-and-restore: never overwrite a clipboard change made by another app.
+/// Compare-and-restore. Puts the snapshot back only while the clipboard still holds the pane ID
+/// Rex copied during this query; a change made by any other app is never overwritten.
+/// Returns the copied ID, or nil when the clipboard was left untouched.
+func restoreCopiedID() -> String? {
+    let copiedCount=pb.changeCount
+    let id=pb.string(forType:.string) ?? ""
+    let valid=id.range(of:"^block:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",options:.regularExpression) != nil
+    guard valid && copiedCount != before else { return nil }
     if pb.changeCount != copiedCount { fail("Clipboard changed before restore") }
     pb.clearContents()
     let items=saved.map { record -> NSPasteboardItem in
@@ -48,7 +49,21 @@ if valid && copiedCount != before {
         return item
     }
     if !items.isEmpty && !pb.writeObjects(items) { fail("Clipboard restore failed") }
-} else { fail("Rex did not return a fresh pane ID; clipboard left untouched") }
+    return id
+}
+if p.isRunning {
+    // Rex may have copied the pane ID before it stalled. Stop it first so it cannot copy after
+    // the restore, then put the user's clipboard back before reporting the timeout.
+    p.terminate()
+    let grace=Date().addingTimeInterval(0.5)
+    while p.isRunning && Date() < grace { Thread.sleep(forTimeInterval:0.01) }
+    if p.isRunning { kill(p.processIdentifier,SIGKILL) }
+    p.waitUntilExit()
+    _ = restoreCopiedID()
+    fail("Rex focus query timed out")
+}
+p.waitUntilExit()
+guard let id=restoreCopiedID() else { fail("Rex did not return a fresh pane ID; clipboard left untouched") }
 if p.terminationStatus != 0 { fail("Rex refused focus query") }
 var restored:[[NSPasteboard.PasteboardType:Data]]=[]
 for item in pb.pasteboardItems ?? [] {
