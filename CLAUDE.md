@@ -61,7 +61,9 @@ Two independent axes, composed only in `src/app` (ADR 0001):
 - A control is available only at the intersection of provider support and *verified* backend
   capabilities (ADR 0003). Herdr TUI has no verified composer cursor.
 
-Layer rules are enforced by `.dependency-cruiser.cjs`:
+Layers. `npm run deps` (`.dependency-cruiser.cjs`) enforces that domain imports nothing, guards import
+only domain, agents and terminals never import each other, app or plugin, and only plugin imports the
+Stream Deck SDK. The other rows are conventions:
 
 | Layer | May import |
 | --- | --- |
