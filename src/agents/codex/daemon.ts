@@ -13,9 +13,11 @@ const UUID: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' =
   '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const pause: (ms: number) => Promise<any> = (ms: number) =>
   new Promise((resolve: (value: any) => void) => setTimeout(resolve, ms));
-const permissionVersionVerified: (version: string) => boolean = (
-  version: string,
-) => ['0.166.0', '0.167.0'].includes(version);
+/** The daemon must report a release version (x.y.z) in its user agent. Any
+ * release is accepted; no Codex version is pinned in source (owner decision,
+ * 2026-11-10). Each control still checks its own native contract per press. */
+const knownServerVersion: (version: unknown) => boolean = (version: unknown) =>
+  typeof version === 'string' && /^\d+\.\d+\.\d+$/.test(version);
 function socketFromListing(listing: string, pid: number) {
   const rows: ({
     pid: number;
@@ -536,8 +538,8 @@ function sameOtherSettings(a: any, b: any) {
   return isDeepStrictEqual(left, right);
 }
 async function readPermissionSettings(rpc: Record<string, any>, id: any) {
-  if (!permissionVersionVerified(rpc.serverVersion))
-    throw Error('Settings daemon version not verified');
+  if (!knownServerVersion(rpc.serverVersion))
+    throw Error('Settings daemon version unavailable');
   const before: {
       id: any;
       model: any;
@@ -856,8 +858,8 @@ class DaemonControls {
     const endpoint: any = await this.socketFor(agent.pid),
       rpc: any = await this.connect(endpoint);
     try {
-      if (!permissionVersionVerified(rpc.serverVersion))
-        throw Error('Settings daemon version not verified');
+      if (!knownServerVersion(rpc.serverVersion))
+        throw Error('Settings daemon version unavailable');
       const id: any = await this.footer(this.b, agent),
         current: any = await readPermissionSettings(rpc, id);
       if (current.cwd !== agent.cwd)
@@ -931,6 +933,7 @@ module.exports = {
   DaemonControls,
   DaemonRpc,
   socketFor,
+  knownServerVersion,
   socketFromListing,
   safeSocket,
   readFooter,

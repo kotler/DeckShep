@@ -3,9 +3,12 @@ type AgentSnapshot = import('../../domain/types').AgentSnapshot;
 type Config = import('../../domain/types').Config;
 type PressContext = import('../../domain/types').PressContext;
 ('use strict');
-const { DaemonRpc, socketFor, readFooter } = require('./daemon');
-const supported: (version: string) => boolean = (version: string) =>
-  ['0.166.0', '0.167.0'].includes(version);
+const {
+  DaemonRpc,
+  socketFor,
+  readFooter,
+  knownServerVersion: supported,
+} = require('./daemon');
 const validId: (id: any) => boolean = (id: any) =>
   typeof id === 'string' &&
   id.length > 0 &&
@@ -37,7 +40,7 @@ async function latestTurn(rpc: Record<string, any>, id: any) {
 }
 async function terminalIds(rpc: Record<string, any>, id: any) {
   if (!supported(rpc.serverVersion))
-    throw Error('Background-terminal daemon version not verified');
+    throw Error('Background-terminal daemon version unavailable');
   let cursor: any = null;
   const ids: string[] = [],
     seen: Set<any> = new Set();
@@ -161,7 +164,7 @@ class BackgroundControls {
       expected: string[] = [...agent.backgroundIds].sort();
     try {
       if (!supported(rpc.serverVersion))
-        throw Error('Background-terminal daemon version not verified');
+        throw Error('Background-terminal daemon version unavailable');
       const verify: (ids: any) => Promise<void> = async (ids: any) => {
         const current: any = await this.b.checked(agent);
         if (

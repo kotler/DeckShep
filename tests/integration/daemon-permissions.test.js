@@ -150,7 +150,7 @@ test('daemon permissions', async () => {
   assert(!sameOtherSettings(before, changed));
   for (const change of [
     (x) => {
-      x.rpc.serverVersion = '0.168.0';
+      x.rpc.serverVersion = null;
     },
     (x) => {
       x.b.checked = async () => {

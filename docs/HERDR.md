@@ -54,7 +54,7 @@ malformed replies, disconnects and stale controls.
 Codex title binding accepts only an entire native UUID or its exact 29-character
 UUID prefix followed by three ASCII dots. It requires a unique match across all
 loaded-ID pages in that foreground process's daemon, matching cwd, an interactive
-root thread and known daemon versions (0.166.0/0.167.0). Missing identity, changes
+root thread and a daemon that reports a release version (no version is pinned). Missing identity, changes
 in title/foreground/server generation, or a new binding invalidate old presses.
 Hook-reported chat references and human chat names are not independent authority.
 

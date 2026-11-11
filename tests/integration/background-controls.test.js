@@ -179,7 +179,7 @@ test('background controls', async () => {
     (f) => f.setFooter('other'),
     (f) => (f.thread.cwd = '/other'),
     (f) => (f.thread.status.activeFlags = ['waitingOnApproval']),
-    (f) => (f.rpc.serverVersion = '1.0.0'),
+    (f) => (f.rpc.serverVersion = null),
     (f) =>
       (f.b.checked = async () => {
         throw Error('Focus changed');

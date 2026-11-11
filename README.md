@@ -49,8 +49,8 @@ The white dot marks the selected agent. **Page** cycles Home → Questions → P
 
 | Component | Verified scope | Unverified versions |
 | --- | --- | --- |
-| Codex CLI | 0.166.0 / 0.167.0 for permission controls | Affected controls disabled |
-| Claude Code | Native Claude Code controls (any release), opt-in preview (hooks only) | Native controls disabled |
+| Codex CLI | Any release (validated on 0.166.0 / 0.167.0) | Controls disabled when the daemon reports no version |
+| Claude Code | Any native release, opt-in preview (hooks only) | Native controls disabled for non-native installs |
 | Herdr TUI | Not in the first release; source preview for 0.9.5 / protocol 22 | Session refused |
 | Herdr App | Not in the first release; experimental source preview | Production build records empty; [preview setup](docs/HERDR-APP.md) |
 

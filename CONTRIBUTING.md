@@ -96,11 +96,11 @@ small and include the exact application/provider versions and evidence scope.
    state and content. Verify discovery, identity, native focus, capabilities,
    controls and refusal cases, including incomplete/malformed responses,
    unsupported versions, stale targets, reconnects, changed drafts and cursors.
-2. Add fixture/contract tests before changing a version gate. For Codex,
-   `permissionVersionVerified` in `src/agents/codex/daemon.ts` currently accepts
-   `0.166.0` and `0.167.0` for the affected permission controls. Extend it only
-   when the corresponding control contract is verified; do not bypass the gate
-   or imply that all features have the same version scope.
+2. Add fixture/contract tests before changing a version gate. Codex versions
+   are not pinned (owner decision, 2026-11-10): `knownServerVersion` in
+   `src/agents/codex/daemon.ts` only requires the daemon to report a release
+   version. Each control still checks its own native contract on every press;
+   when a Codex release changes one, fix that check rather than adding a pin.
 3. For Herdr TUI, verify both the snapshot check in `src/app/herdr-session.ts`
    and ping handshake in `src/terminals/herdr-tui/rpc.ts`. Both currently require
    `0.9.5` (including its suffix variants) and protocol `22`. Extending only one

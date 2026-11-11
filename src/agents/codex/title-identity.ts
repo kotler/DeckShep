@@ -93,8 +93,8 @@ class TitleIdentity {
       identity: any = this.socketIdentity(endpoint),
       rpc: any = await this.connect(endpoint);
     try {
-      if (!['0.166.0', '0.167.0'].includes(rpc.serverVersion))
-        throw Error('Codex title identity version not verified');
+      if (!D.knownServerVersion(rpc.serverVersion))
+        throw Error('Codex title identity version unavailable');
       const matches: string[] = (await loadedIds(rpc)).filter((id: string) =>
         id.startsWith(prefix),
       );

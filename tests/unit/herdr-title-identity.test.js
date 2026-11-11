@@ -106,7 +106,7 @@ test('herdr title identity', async () => {
     (s) => delete s.thread.parentThreadId,
     (s) => (s.thread.source = { subagent: { other: 'guardian' } }),
     (s) => (s.thread.source = 'exec'),
-    (s) => (s.version = '0.168.0'),
+    (s) => (s.version = null),
     (s) => (s.replace = true),
     (s) => (s.thread.status = { type: 'active', activeFlags: ['unknown'] }),
     (s) => {

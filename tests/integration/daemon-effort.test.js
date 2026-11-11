@@ -156,7 +156,7 @@ test('daemon effort', async () => {
   for (const change of [
     (x) => x.set({ effort: 'unsupported' }),
     (x) => {
-      x.rpc.serverVersion = '0.168.0';
+      x.rpc.serverVersion = null;
     },
     (x) => {
       x.b.checked = async () => {
