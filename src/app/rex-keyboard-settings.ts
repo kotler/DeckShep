@@ -73,11 +73,14 @@ export async function performRexKeyboard(b: any, display: any) {
     display.scope !== 'rex' ||
     (!claude && target?.app !== 'codex') ||
     (claude && b.claude?.picker) ||
-    !target.rexSettings?.process ||
     b.draft ||
     b.picker
   )
     throw Error('Check focused pane');
+  // Revoking consent also clears the passive process observation.
+  if (!b.config.allowClipboardFocus)
+    throw Error('Enable visible-pane checks first');
+  if (!target.rexSettings?.process) throw Error('Check focused pane');
   async function check(visible = false) {
     b.assertDeliveryVisible();
     if (

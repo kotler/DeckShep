@@ -11,7 +11,7 @@ export function claudeFooter(view: View) {
   );
   const footer = lines.slice(start + 1).join('\n');
   const badge =
-    /^\s*(?:⏵⏵|⏸|◯|○|●)\s*(accept edits|plan mode|bypass permissions|auto mode|default mode)(?: on)?(?=\s|$)/im.exec(
+    /^\s*(?:⏵⏵|⏸|◯|○|●)\s*(accept edits|plan mode|bypass permissions|auto mode|manual mode|default mode)(?: on)?(?=\s|$)/im.exec(
       footer,
     );
   const explicit =

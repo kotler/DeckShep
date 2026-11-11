@@ -8,18 +8,54 @@ const {
   settingsHashes,
   OwnedProcesses,
 } = require('./safety.cjs');
-const { isolatedEnvironment } = require('./environment.cjs');
+const {
+  isolatedEnvironment,
+  signedInCredentials,
+} = require('./environment.cjs');
+const { spawnSync } = require('node:child_process');
+const { setTimeout: delay } = require('node:timers/promises');
+const { checkPicker } = require('./rex-picker.cjs');
+const rex =
+  '/Applications/Rex Beta.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex';
 const reason = authorization('rex');
-test(
-  'live Rex: explicit extra gate and test-owned process proof',
-  { skip: reason || false, timeout: 30000 },
-  async (t) => {
-    // A separate Rex GUI instance must be supplied; launching the ordinary app
-    // could activate the user's existing process. No default launch is allowed.
-    assert(
-      process.env.ASW_REX_ISOLATED_LAUNCHER,
-      'Provide a launcher for a disposable Rex instance; existing instances are never adopted',
+
+function run(file, args, options) {
+  const result = spawnSync(file, args, {
+    ...options,
+    encoding: 'utf8',
+    timeout: 3000,
+  });
+  if (result.status !== 0)
+    throw Error(
+      'Disposable ' +
+        path.basename(file) +
+        ' command failed: ' +
+        args.find((arg) =>
+          ['new', 'ls', 'inspect', 'call', 'capture', 'send'].includes(arg),
+        ),
     );
+  return result.stdout;
+}
+
+function verifyListener(owned, pid, socket) {
+  owned.assert(pid);
+  const stat = fs.lstatSync(socket);
+  assert(
+    stat.isSocket() && stat.uid === process.getuid() && !(stat.mode & 0o077),
+  );
+  const files = run('/usr/sbin/lsof', ['-a', '-p', String(pid), '-U', '-Fn']);
+  assert(
+    files.split('\n').includes('n' + socket),
+    'Owned Rex server must hold the private socket',
+  );
+}
+test(
+  'live Rex: owned foreground server creates and reads a disposable terminal',
+  {
+    skip: reason || false,
+    timeout: process.env.ASW_LIVE_REX_STATES === '1' ? 600000 : 60000,
+  },
+  async (t) => {
     const before = settingsHashes(os.homedir()),
       directory = fs.realpathSync(
         fs.mkdtempSync(path.join('/tmp', 'asw-rex-live-')),
@@ -36,15 +72,149 @@ test(
         }
       }
     });
+    const options = { env: isolatedEnvironment(directory), cwd: directory };
+    const repo = path.join(directory, 'repo');
+    fs.mkdirSync(repo, { mode: 0o700 });
+    run('/usr/bin/git', ['init', '--quiet', repo], options);
+    const providers = process.env.ASW_LIVE_REX_PROVIDERS === '1';
+    if (providers && process.env.ASW_LIVE_AUTH === 'signed-in') {
+      const verify = signedInCredentials(options.env);
+      t.after(verify);
+    }
+    if (providers) {
+      fs.writeFileSync(
+        path.join(options.env.CODEX_HOME, 'config.toml'),
+        '[projects.' + JSON.stringify(repo) + ']\ntrust_level = "trusted"\n',
+        { mode: 0o600 },
+      );
+      const claudeSetup = JSON.stringify({
+        hasCompletedOnboarding: true,
+        theme: 'dark',
+        projects: { [repo]: { hasTrustDialogAccepted: true } },
+      });
+      for (const home of [options.env.HOME, options.env.CLAUDE_CONFIG_DIR])
+        fs.writeFileSync(path.join(home, '.claude.json'), claudeSetup, {
+          mode: 0o600,
+        });
+    }
+    const socket = path.join(directory, 'rex.sock');
+    const address = 'unix://' + socket;
     const child = owned.spawn(
-      process.env.ASW_REX_ISOLATED_LAUNCHER,
-      ['--asw-owned-home', directory],
-      {
-        env: isolatedEnvironment(directory),
-        cwd: directory,
-      },
+      rex,
+      [
+        'server',
+        'run',
+        '--listen',
+        address,
+        '--socket-mode',
+        '0600',
+        '--restore=false',
+        '--state-dir',
+        path.join(directory, 'rex-state'),
+      ],
+      options,
     );
-    owned.assert(child.pid);
-    assert(!owned.owned.has(process.pid));
+    for (let attempt = 0; attempt < 100 && !fs.existsSync(socket); attempt++) {
+      owned.assert(child.pid);
+      await delay(50);
+    }
+    function command(args) {
+      verifyListener(owned, child.pid, socket);
+      return run(
+        rex,
+        ['--server', address, '--autostart=false', '--timeout', '2s', ...args],
+        options,
+      );
+    }
+    const label = 'deckshep-test';
+    command([
+      'new',
+      label,
+      '--cwd',
+      repo,
+      '--shell',
+      'none',
+      '--json',
+      '--',
+      '/bin/cat',
+    ]);
+    const session = JSON.parse(
+      command(['session', 'inspect', label, '--json']),
+    );
+    const window = session.windows.find(
+      (item) => item.window_id === session.active_window_id,
+    );
+    assert(window?.focused_block_id);
+    const target = ['-s', label, '-b', window.focused_block_id];
+    const { foreground } = JSON.parse(
+      command(['block', 'call', ...target, 'process']),
+    );
+    assert.equal(path.basename(foreground.name), 'cat');
+    owned.observe(foreground.pid);
+    command(['send', ...target, 'DeckShep-test-marker']);
+    const screen = command(['capture', ...target, '--trim']);
+    assert(
+      screen.includes('DeckShep-test-marker'),
+      'Disposable pane displays the test input',
+    );
+    if (providers) {
+      const cases = ['permissions', 'plan', 'interrupt', 'queue', 'choice'];
+      const selectedCases = process.env.ASW_LIVE_REX_CASES?.split(',');
+      if (selectedCases) {
+        const names = ['codex', 'claude'].flatMap((provider) =>
+          cases.map((name) => provider + '-' + name),
+        );
+        assert(
+          selectedCases.every((name) => names.includes(name)),
+          'Unknown live Rex state case',
+        );
+      }
+      for (const [provider, args] of [
+        ['codex', ['--model', 'gpt-6-luna', '--no-daemon']],
+        ['claude', ['--model', 'haiku']],
+      ]) {
+        if (process.env.ASW_LIVE_REX_STATES === '1') {
+          for (const scenario of cases) {
+            if (
+              selectedCases &&
+              !selectedCases.includes(provider + '-' + scenario)
+            )
+              continue;
+            await t.test(provider + ' ' + scenario, () =>
+              checkPicker({
+                provider,
+                args:
+                  provider === 'claude' && scenario === 'queue'
+                    ? [...args, '--allowedTools', 'Bash(sleep 14)']
+                    : args,
+                command,
+                repo,
+                owned,
+                large: true,
+                scenario,
+              }),
+            );
+          }
+          continue;
+        }
+        await t.test(provider + ' native model picker', async () => {
+          await checkPicker({ provider, args, command, repo, owned });
+        });
+      }
+      if (process.env.ASW_LIVE_REX_STATES === '1') return;
+      await t.test(
+        'Claude enlarged model picker opens and cancels',
+        async () => {
+          await checkPicker({
+            provider: 'claude',
+            args: ['--model', 'haiku'],
+            command,
+            repo,
+            owned,
+            large: true,
+          });
+        },
+      );
+    }
   },
 );

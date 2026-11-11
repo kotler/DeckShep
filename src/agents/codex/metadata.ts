@@ -25,6 +25,7 @@ const activityFields: string[] = [
   'backgroundIds',
   'backgroundTurnId',
   'activityStatusAt',
+  'codexDisplayState',
 ];
 function restore(
   agent: import('../../domain/types').AgentSnapshot,
@@ -40,12 +41,14 @@ function restore(
     )
       (agent as Record<string, any>)[field] = item;
   if (!native && value.activityStatusAt !== agent.statusAt) {
+    agent.codexDisplayState = null;
     agent.backgroundOnly = false;
     agent.backgroundIds = [];
     agent.backgroundTurnId = null;
   }
 }
 class AgentMetadata {
+  private bindingSequence = 0;
   declare b: Record<string, any>;
   declare cache: Map<any, any>;
   declare now: any;
@@ -118,6 +121,7 @@ class AgentMetadata {
         }),
         thread: any = result?.thread;
       if (
+        (this.b.backend !== 'herdr' && thread?.status?.type === 'notLoaded') ||
         thread?.id !== id ||
         typeof thread.cwd !== 'string' ||
         thread.cwd !== agent.cwd ||
@@ -136,6 +140,17 @@ class AgentMetadata {
           backgroundTurnId: null,
           activityStatusAt: agent.statusAt,
         };
+      let codexDisplayState: AgentSnapshot['codexDisplayState'] = null;
+      const flags = thread.status?.activeFlags;
+      if (this.b.backend !== 'herdr' && agent.state !== 'blocked') {
+        if (thread.status?.type === 'systemError') codexDisplayState = 'error';
+        else if (
+          thread.status?.type === 'active' &&
+          Array.isArray(flags) &&
+          flags.includes('waitingOnUserInput')
+        )
+          codexDisplayState = 'waiting';
+      }
       if (
         this.b.backend !== 'herdr' &&
         (thread.status?.type === 'active' || agent.state === 'working')
@@ -146,15 +161,24 @@ class AgentMetadata {
             status: any;
           } = await latestTurn(rpc, id);
           if (turn.status === 'inProgress' && thread.status?.type === 'active')
-            runId = turn.id;
+            runId = flags?.length ? null : turn.id;
           else {
+            if (
+              agent.state === 'working' &&
+              !codexDisplayState &&
+              ['failed', 'interrupted'].includes(turn.status)
+            )
+              codexDisplayState =
+                turn.status === 'failed' ? 'error' : 'interrupted';
             const background: {
               backgroundOnly: boolean;
               backgroundIds: string[];
               backgroundTurnId: any;
             } | null = await backgroundState(rpc, id, thread, turn);
-            if (background && (await this.footer(this.b, agent)) === id)
+            if (background && (await this.footer(this.b, agent)) === id) {
               Object.assign(activity, background);
+              codexDisplayState = null;
+            }
           }
         } catch {}
       let collaborationMode: any = null,
@@ -194,6 +218,7 @@ class AgentMetadata {
         reviewer,
         runId,
         ...activity,
+        codexDisplayState,
         metadataAt: started,
       };
     } finally {
@@ -237,6 +262,7 @@ class AgentMetadata {
       try {
         const value: {
           metadataAt: any;
+          codexBindingEpoch?: number;
           backgroundOnly: boolean;
           backgroundIds: never[];
           backgroundTurnId: null;
@@ -250,6 +276,12 @@ class AgentMetadata {
           reviewer: any;
           runId: any;
         } = await this.read(candidate);
+        if (this.b.backend !== 'herdr' && value.chatId) {
+          value.codexBindingEpoch =
+            cached?.value.chatId === value.chatId
+              ? cached.value.codexBindingEpoch
+              : ++this.bindingSequence;
+        }
         this.cache.set(id, { at: now, statusAt: agent.statusAt, value });
         if (candidate.codexHookNotice)
           this.notices.set(id, candidate.codexHookNotice);
@@ -274,6 +306,13 @@ class AgentMetadata {
         if (cached) {
           cached.value = {
             ...cached.value,
+            ...(this.b.backend !== 'herdr' && {
+              chatId: null,
+              runId: null,
+              codexDisplayState: null,
+              codexHookEpoch: undefined,
+              codexBindingEpoch: undefined,
+            }),
             backgroundOnly: false,
             backgroundIds: [],
             backgroundTurnId: null,

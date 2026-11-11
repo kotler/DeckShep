@@ -525,7 +525,7 @@ test('claude controls', async () => {
     await x.invoke(kind, () => x.b.submitRunning(kind));
     assert.deepEqual(
       x.calls.at(-1).args.slice(5),
-      kind === 'queue' ? ['enter'] : ['ctrl+x', 'ctrl+s'],
+      kind === 'queue' ? ['ctrl+x', 'enter'] : ['ctrl+x', 'ctrl+s'],
     );
     const n = x.calls.length;
     await assert.rejects(

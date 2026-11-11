@@ -48,3 +48,22 @@ export async function refreshRexClaudeMetadata(
       source.lastTarget = snapshot(live);
   }
 }
+
+/** Provider observations may restrict the row or flag a pane for attention.
+ * Native delivery still verifies the process, turn and visible control. */
+export function rexDisplayAgent(agent: AgentSnapshot): AgentSnapshot {
+  if (
+    !agent.codexDisplayState ||
+    agent.app !== 'codex' ||
+    agent.activityStatusAt !== agent.statusAt ||
+    agent.state === 'blocked'
+  )
+    return agent;
+  if (agent.codexDisplayState === 'waiting')
+    return { ...agent, state: 'blocked', kind: 'form', runId: null };
+  return {
+    ...agent,
+    state: agent.codexDisplayState === 'error' ? 'error' : 'unknown',
+    runId: null,
+  };
+}

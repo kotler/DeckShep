@@ -241,7 +241,7 @@ export const claudeRecord = z
     sessionId,
     generation: identifier,
     turnId: identifier,
-    state: z.enum(['idle', 'working', 'done', 'blocked', 'unknown']),
+    state: z.enum(['idle', 'working', 'done', 'error', 'blocked', 'unknown']),
     updatedAt: z.number().finite(),
     requestId: identifier.nullish(),
   })

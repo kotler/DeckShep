@@ -32,6 +32,43 @@ function ready(view: View, target: AgentSnapshot) {
   configurationView(view, { requireEmpty: true });
 }
 
+// The headless 80x24 viewport can end mid-catalog. This shape only
+// authorizes cancelling a picker opened by this press, never applying a row.
+function clippedModelPicker(before: View, after: View) {
+  const heading = /^\s*(Select|Choose) model\s*$/;
+  if (
+    before.hash === after.hash ||
+    before.text.split('\n').some((line) => heading.test(line))
+  )
+    return false;
+  const lines = after.text.split('\n');
+  const start = lines.findLastIndex((line) => heading.test(line));
+  if (
+    start < 0 ||
+    !/^\s*Switch between Claude models\./.test(lines[start + 1] || '')
+  )
+    return false;
+  const catalog = lines.slice(start + 2);
+  const first = catalog.findIndex((line) =>
+    /^\s*(?:[❯›>]\s*)?1\. Default \(recommended\)\s+/.test(line),
+  );
+  if (first < 0 || first > 4) return false;
+  let number = 0;
+  for (const line of catalog.slice(first)) {
+    const row =
+      /^\s*(?:[❯›>]\s*)?(\d+)\. (Default \(recommended\)|Sonnet|Fable|Opus|Haiku)\s+(Sonnet|Fable|Opus|Haiku) \d+\.\d+(?:\.\d+)?\s*·\s*\S/.exec(
+        line,
+      );
+    if (row) {
+      if (Number(row[1]) !== ++number || (number > 1 && row[2] !== row[3]))
+        return false;
+    } else if (!/^\s{6,}[\p{L}\p{N}][\p{L}\p{N} ,.‘’'-]*$/u.test(line))
+      return false;
+  }
+  // A new dialog or a composer below the list invalidates this observation.
+  return number >= 3 && /^\s*(?:[❯›>]\s*)?\d+\. /.test(lines.at(-1) || '');
+}
+
 export async function cycleClaudeKeyboard(
   initial: View,
   key: (view: View, key: string) => Promise<View>,
@@ -52,7 +89,18 @@ export async function cycleClaudeKeyboard(
   } catch {
     ready(view, target);
     view = await key(view, 'alt+p');
-    menu = picker(view, true);
+    try {
+      menu = picker(view, true);
+    } catch (error) {
+      if (!clippedModelPicker(initial, view)) throw error;
+      ready(await key(view, 'escape'), target);
+      throw Object.assign(
+        Error(
+          'Claude’s model list was clipped. Enlarge the Rex pane and press the key again.',
+        ),
+        { keyLabel: 'Enlarge pane' },
+      );
+    }
   }
   const current = currentRow(menu);
   if (menu.selected.number !== current.number) throw Error('Check highlight');

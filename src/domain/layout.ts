@@ -41,6 +41,8 @@ export function homeRow(
 ) {
   const settingsAction =
     agent?.app === 'claude-code' ? 'claudeInfo' : 'permissions';
+  if (agent?.state === 'blocked' && ['auth', 'form'].includes(agent.kind ?? ''))
+    return ['status', 'none', 'none', 'none', 'none'];
   switch (modeOf(agent)) {
     case 'ready':
       return [

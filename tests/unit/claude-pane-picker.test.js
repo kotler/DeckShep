@@ -181,6 +181,30 @@ test('picker cycles live labels, wraps effort at a native cap, and stops on draf
   assert.deepEqual(writes, ['shift+tab']);
 });
 
+test('Claude settings explain an unverified empty prompt without sending a key', async () => {
+  const idle = new ClaudeKeyboardScreen().view();
+  for (const content of ['draft after the cursor', '\nwrapped draft']) {
+    const view = { ...idle, text: idle.text.replace('❯ ', '❯ ' + content) };
+    for (const action of ['model', 'effort', 'permissions', 'plan']) {
+      const writes = [];
+      await assert.rejects(
+        cycleClaudeKeyboard(
+          view,
+          async (_view, key) => writes.push(key),
+          action,
+          agent,
+        ),
+        {
+          keyLabel: 'Check input box',
+          message:
+            'DeckShep could not verify an empty Claude composer. Save any draft and return to the empty prompt in Rex.',
+        },
+      );
+      assert.deepEqual(writes, []);
+    }
+  }
+});
+
 test('every Claude picker key rechecks the visible pane, registration and opt-in', async () => {
   for (const race of [
     'focus',
@@ -229,5 +253,70 @@ test('every Claude picker key rechecks the visible pane, registration and opt-in
       performRexKeyboard(b, { scope: 'rex', target, action: 'model' }),
     );
     assert.deepEqual(trace, race === 'view' ? [] : ['alt+p']);
+  }
+});
+
+test('a newly opened clipped native model picker closes once and explains the required resize', async () => {
+  const idle = new ClaudeKeyboardScreen().view();
+  const clipped = [
+    'Select model',
+    'Switch between Claude models. Your choice is the default for new',
+    'sessions. Use /model to switch.',
+    '',
+    '  1. Default (recommended)  Sonnet 5.5 · Balanced for general tasks',
+    '  2. Sonnet                 Sonnet 5.5 · Balanced for general tasks',
+    '  3. Fable                  Fable 5.2 · For complex work and',
+    '                            longer running tasks',
+    '  4. Opus                   Opus 5.5 · Advanced reasoning',
+  ].join('\n');
+  const run = async (initial, text, writes) =>
+    cycleClaudeKeyboard(
+      initial,
+      async (_v, k) => {
+        writes.push(k);
+        return k === 'escape' ? idle : { ...idle, text, hash: 'opened' };
+      },
+      'model',
+      agent,
+    );
+  let writes = [];
+  await assert.rejects(run(idle, clipped, writes), {
+    keyLabel: 'Enlarge pane',
+  });
+  assert.deepEqual(writes, ['alt+p', 'escape']);
+  for (const text of [
+    clipped + '\nContinue using additional credits?',
+    clipped + '\n        Continue using additional credits',
+    clipped.replace('2. Sonnet', '5. Sonnet'),
+    clipped.replace('Switch between Claude models.', 'Unknown menu'),
+  ]) {
+    writes = [];
+    await assert.rejects(run(idle, text, writes));
+    assert.deepEqual(writes, ['alt+p']);
+  }
+  writes = [];
+  await assert.rejects(run({ ...idle, text: clipped }, clipped, writes));
+  assert.deepEqual(writes, []);
+});
+
+test('both Ready keys report the native manual mode badge after exactly one press', async () => {
+  const idle = new ClaudeKeyboardScreen().view();
+  for (const action of ['permissions', 'plan']) {
+    const writes = [];
+    const result = await cycleClaudeKeyboard(
+      idle,
+      async (_view, key) => {
+        writes.push(key);
+        return {
+          ...idle,
+          hash: 'manual',
+          text: idle.text + '\n⏸ manual mode on · ? for shortcuts',
+        };
+      },
+      action,
+      agent,
+    );
+    assert.deepEqual(writes, ['shift+tab']);
+    assert.deepEqual(result, { label: 'manual mode' });
   }
 });

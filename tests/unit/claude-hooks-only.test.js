@@ -470,7 +470,13 @@ test('PostModelSwitch is an owned hook but not a doctor requirement', () => {
   assert(!configure.REQUIRED_EVENTS.includes('PostModelSwitch'));
   const dir = '/fixture/plugin',
     installed = configure.plan({}, null, { dir, node: '/node' });
-  assert.equal(installed.settings.hooks.PostModelSwitch.length, 1);
+  for (const event of [
+    'PostModelSwitch',
+    'StopFailure',
+    'Elicitation',
+    'ElicitationResult',
+  ])
+    assert.equal(installed.settings.hooks[event].length, 1);
   assert.equal(
     installed.settings.statusLine,
     undefined,
@@ -531,4 +537,28 @@ test('any native Claude Code release is accepted; no version is pinned', async (
     inspect: async () => ({ ...proc, version: '2.1.322' }),
   });
   assert.equal((await f.enrich()).nativeVerified, false);
+});
+
+test('a newer verified external request restricts the Rex controls even while Rex still reports idle', async () => {
+  const { homeRow } = require('../../src/domain/layout');
+  const f = harness({
+    record: hookRecord({
+      state: 'blocked',
+      kind: 'form',
+      requestId: 'request',
+      updatedAt: NOW,
+    }),
+  });
+  const a = await f.controls.enrich({
+    ...raw,
+    statusAt: new Date(NOW - 100).toISOString(),
+  });
+  assert.equal(a.nativeVerified, true);
+  assert.equal(a.state, 'blocked');
+  assert.deepEqual(homeRow(a), ['status', 'none', 'none', 'none', 'none']);
+  const stale = await f.controls.enrich({
+    ...raw,
+    statusAt: new Date(NOW + 100).toISOString(),
+  });
+  assert.equal(stale.state, 'unknown');
 });

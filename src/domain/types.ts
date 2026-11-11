@@ -43,7 +43,7 @@ export interface AgentSnapshot extends TargetRef {
     permissions?: string;
     plan?: string;
   };
-  kind?: 'question' | 'permission' | 'auth' | null;
+  kind?: 'question' | 'permission' | 'auth' | 'form' | null;
   statusAt?: string;
   composerSupported?: boolean;
   nativeVerified?: boolean;
@@ -51,12 +51,14 @@ export interface AgentSnapshot extends TargetRef {
   /** Rex Codex: the pane's own footer shows no session ID (read-only check). */
   footerMissing?: boolean;
   codexHookEpoch?: string;
+  codexBindingEpoch?: number;
   codexHookNotice?: string;
   model?: string | null;
   modelName?: string;
   effort?: string | null;
   reviewer?: string | null;
   collaborationMode?: string | null;
+  codexDisplayState?: 'waiting' | 'error' | 'interrupted' | null;
   metadataAt?: number;
   runId?: string | null;
   backgroundOnly?: boolean;

@@ -253,7 +253,9 @@ function validate(
     !session(record.sessionId) ||
     !text(record.generation, 128) ||
     !text(record.turnId, 128) ||
-    !['idle', 'working', 'done', 'blocked', 'unknown'].includes(record.state) ||
+    !['idle', 'working', 'done', 'error', 'blocked', 'unknown'].includes(
+      record.state,
+    ) ||
     record.ended ||
     !Number.isFinite(record.updatedAt) ||
     now - record.updatedAt > 86400000 ||
@@ -262,7 +264,7 @@ function validate(
     throw Error('Claude session metadata unavailable or unsupported');
   if (
     record.state === 'blocked' &&
-    (!['question', 'permission'].includes(record.kind) ||
+    (!['question', 'permission', 'auth', 'form'].includes(record.kind) ||
       !text(record.requestId, 128))
   )
     throw Error('Claude request identity unavailable');
@@ -328,6 +330,9 @@ function reduce(
       'PermissionRequest',
       'Notification',
       'PostModelSwitch',
+      'StopFailure',
+      'Elicitation',
+      'ElicitationResult',
     ].includes(event)
   )
     return null;
@@ -339,6 +344,18 @@ function reduce(
     previous.eventAt > now
   )
     return null;
+  if (event === 'SessionStart' && data.source === 'compact') {
+    // Compaction redraws the CLI within the same turn. Invalidate old presses
+    // without treating the redraw as a new prompt or renewing hook proof.
+    if (
+      !same ||
+      previous.ended ||
+      previous.version !== p.version ||
+      previous.cwd !== data.cwd
+    )
+      return null;
+    return { ...previous, generation: id(), eventAt: now };
+  }
   const r: any = same
     ? { ...previous }
     : {
@@ -395,11 +412,29 @@ function reduce(
     r.state = 'unknown';
     r.ended = true;
   }
+  if (
+    same &&
+    (previous.ended || previous.state === 'error') &&
+    ![
+      'SessionStart',
+      'UserPromptSubmit',
+      'SessionEnd',
+      'PostModelSwitch',
+    ].includes(event)
+  )
+    return null;
+  if (event === 'StopFailure') r.state = 'error';
   if (event === 'Stop') {
     r.state = 'done';
   }
   if (
-    ['SessionStart', 'SessionEnd', 'UserPromptSubmit', 'Stop'].includes(event)
+    [
+      'SessionStart',
+      'SessionEnd',
+      'UserPromptSubmit',
+      'Stop',
+      'StopFailure',
+    ].includes(event)
   ) {
     r.pendingToolDigest = null;
     r.pendingToolId = null;
@@ -420,6 +455,31 @@ function reduce(
     r.kind = data.tool_name === 'AskUserQuestion' ? 'question' : 'permission';
     r.requestId = hash([digest, toolId || null]);
     r.toolId = toolId || null;
+  } else if (event === 'Elicitation') {
+    if (
+      !text(data.mcp_server_name, 256) ||
+      ![undefined, 'form', 'url'].includes(data.mode)
+    )
+      return null;
+    r.state = 'blocked';
+    r.kind = data.mode === 'url' ? 'auth' : 'form';
+    r.requestId = id();
+    // Form results can omit an ID. Only a correlated result or the
+    // originating tool's completion may clear the outstanding wait.
+    r.elicitationDigest = text(data.elicitation_id, 256)
+      ? hash([data.mcp_server_name, data.elicitation_id])
+      : null;
+    r.toolId = previous?.state === 'working' ? r.pendingToolId : null;
+  } else if (event === 'ElicitationResult') {
+    if (
+      !['auth', 'form'].includes(r.kind) ||
+      !r.elicitationDigest ||
+      !text(data.elicitation_id, 256) ||
+      !['accept', 'decline', 'cancel'].includes(data.action) ||
+      r.elicitationDigest !== hash([data.mcp_server_name, data.elicitation_id])
+    )
+      return null;
+    r.state = 'working';
   } else if (event === 'Notification') {
     if (data.notification_type !== 'permission_prompt') return null;
     if (r.state === 'blocked') return null;
@@ -441,6 +501,8 @@ function reduce(
     r.pendingToolId = text(data.tool_use_id, 128) ? data.tool_use_id : null;
     r.state = 'working';
   }
+  if (!['auth', 'form'].includes(r.kind) || r.state !== 'blocked')
+    delete r.elicitationDigest;
   if (r.state !== 'blocked') {
     r.kind = null;
     r.requestId = null;
@@ -572,6 +634,7 @@ async function record(
     }
     if (
       !statusline &&
+      !(data.hook_event_name === 'SessionStart' && data.source === 'compact') &&
       ['SessionStart', 'UserPromptSubmit', 'SessionEnd'].includes(
         data.hook_event_name,
       ) &&

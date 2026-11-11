@@ -291,3 +291,96 @@ test('background controls', async () => {
     'PASS background-only readback and privacy, interrupted/active distinction, fresh chat/turn/process/list checks, scoped terminal termination, partial batch/new-run refusal, no uncertain retries, stale cache/button rejection and strict RPC payloads',
   );
 });
+
+test('only the captured in-progress parent turn can be interrupted', async () => {
+  const f = fixture();
+  f.b.actionContext = { target: { chatId: id, runId: 'parent' } };
+  f.setTurn({ id: 'parent', status: 'inProgress' });
+  assert.equal((await f.control().running(f.agent)).runId, 'parent');
+  for (const [turnId, status] of [
+    ['parent', 'interrupted'],
+    ['replacement', 'inProgress'],
+    ['parent', 'failed'],
+  ]) {
+    f.setTurn({ id: turnId, status });
+    await assert.rejects(f.control().running(f.agent));
+  }
+  assert(
+    f.calls.every((call) =>
+      ['thread/read', 'thread/turns/list'].includes(call.method),
+    ),
+  );
+});
+
+test('Rex displays the bound Codex parent state across retry, compaction, child completion and terminal failure', async () => {
+  const { rexDisplayAgent } = require('../../src/app/rex-provider-metadata');
+  const f = fixture(),
+    reader = f.reader();
+  f.setIds([]);
+  f.setTurn({ id: 'parent', status: 'inProgress' });
+  // These unsolicited events share the socket with replies about the parent.
+  class Socket extends EventEmitter {
+    readyState = 1;
+    send(raw) {
+      const request = JSON.parse(raw);
+      for (const frame of [
+        {
+          method: 'error',
+          params: { threadId: id, turnId: 'parent', willRetry: true },
+        },
+        {
+          method: 'item/completed',
+          params: {
+            threadId: id,
+            turnId: 'parent',
+            item: { type: 'contextCompaction' },
+          },
+        },
+        {
+          method: 'turn/completed',
+          params: {
+            threadId: 'child',
+            turn: { id: 'child-turn', status: 'completed' },
+          },
+        },
+      ])
+        this.emit('message', Buffer.from(JSON.stringify(frame)));
+      f.rpc
+        .request(request.method, request.params)
+        .then((result) =>
+          this.emit(
+            'message',
+            Buffer.from(JSON.stringify({ id: request.id, result })),
+          ),
+        );
+    }
+    terminate() {}
+  }
+  const rpc = new DaemonRpc('/fixture', () => new Socket());
+  rpc.serverVersion = '0.167.1';
+  reader.connect = async () => rpc;
+  const read = async () => {
+    await reader.refresh([f.agent], true);
+    return rexDisplayAgent(f.agent);
+  };
+  let a = await read();
+  assert.equal(a.runId, 'parent');
+  assert.equal(a.state, 'working');
+  assert.equal(C.homeRow(a)[4], 'interrupt');
+  f.thread.status.activeFlags = ['waitingOnUserInput'];
+  a = await read();
+  assert.equal(a.state, 'blocked');
+  assert.deepEqual(C.homeRow(a), ['status', 'none', 'none', 'none', 'none']);
+  f.thread.status.activeFlags = [];
+  f.setTurn({ id: 'parent', status: 'failed' });
+  a = await read();
+  assert.equal(a.runId, null);
+  assert.equal(a.state, 'error');
+  f.setTurn({ id: 'parent', status: 'interrupted' });
+  a = await read();
+  assert.equal(a.state, 'unknown');
+  f.setTurn({ id: 'next', status: 'inProgress' });
+  a = await read();
+  assert.equal(a.runId, 'next');
+  assert.equal(a.state, 'working');
+});

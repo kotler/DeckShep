@@ -1,3 +1,4 @@
+import { state as statusFromRecords } from '../../src/domain/identity';
 import { test, expect } from '../../tools/e2e';
 import { createHash } from 'node:crypto';
 import expected from './expected/svg-sha256.json';
@@ -233,6 +234,19 @@ test('Queue on the virtual deck sends one Tab for a bound run and refuses an unb
   await error(page, 2, 1);
   expect(await trace(page)).toEqual(queued);
 });
+test('a Queue press captured during one turn cannot submit into its replacement', async ({
+  page,
+}) => {
+  await selected(page, 'working-rex');
+  await command(page, 'pauseFocus');
+  await command(page, 'down', 2, 1);
+  const replacement = scenario('working-rex');
+  replacement.agents[0].runId = 'replacement-run';
+  await command(page, 'setScenario', replacement);
+  await command(page, 'up', 2, 1);
+  expect((await command(page, 'snapshot')).alerts).toContain('key-11');
+  expect(await trace(page)).toEqual([focus()]);
+});
 test('Interrupt on an idle agent sends no input', async ({ page }) => {
   await selected(page);
   await command(page, 'press', 2, 4);
@@ -294,9 +308,13 @@ for (const scenario of ['question', 'approval'])
       expect((await labels(page, 2, 1))[0]).toBe('Down');
       expect((await labels(page, 2, 2))[0]).toBe('Confirm');
       expect((await labels(page, 2, 3))[0]).toBe('Esc');
+      await command(page, 'press', 2, 1);
+      await command(page, 'press', 2, 0);
       await command(page, 'press', 2, 2);
       expect(await trace(page)).toEqual([
         focus(),
+        ['send-key', '-s', 'fixture', '-b', 'a', 'down'],
+        ['send-key', '-s', 'fixture', '-b', 'a', 'up'],
         ['send-key', '-s', 'fixture', '-b', 'a', 'enter'],
       ]);
     },
@@ -430,3 +448,206 @@ for (const [name, scenario, profile] of [
       maxDiffPixels: 0,
     });
   });
+
+test('Attention counts mixed states and focuses the Asking pane without answering', async ({
+  page,
+}) => {
+  const value = scenario('overflow-banks');
+  value.agents[1].state = 'error';
+  value.agents[2].state = 'done';
+  Object.assign(value.agents[5], { state: 'blocked', kind: 'question' });
+  await command(page, 'setScenario', value);
+  await command(page, 'setPreferences', { allowClipboardFocus: true });
+  await command(page, 'press', 0, 0);
+  expect(await labels(page, 1, 4)).toEqual(['Waiting', '3 agents']);
+  await command(page, 'press', 1, 4);
+  expect(await trace(page)).toEqual([focus(), focus('f')]);
+  expect(await labels(page, 2, 2)).toEqual(['Confirm', 'Enter']);
+  expect(await labels(page, 1, 4)).toEqual(['Error', '2 agents']);
+});
+
+test('revoking visible-pane consent refuses the next keyboard setting before input', async ({
+  page,
+}) => {
+  await selected(page, 'keyboard-codex');
+  await command(page, 'setPreferences', { allowClipboardFocus: false });
+  expect(await labels(page, 2, 0)).toEqual(['Select', 'agent']);
+  await command(page, 'press', 2, 0);
+  expect(await trace(page)).toEqual([focus()]);
+  await command(page, 'press', 0, 0);
+  await command(page, 'advance', 350);
+  expect((await labels(page, 2, 0))[0]).toBe('Model');
+  await command(page, 'press', 2, 0);
+  expect((await labels(page, 2, 0)).join(' ')).toBe(
+    'Unavailable Enable checks',
+  );
+  expect(await trace(page)).toEqual([focus(), focus()]);
+});
+
+test('fresh Claude keyboard controls follow the first matching idle status record', async ({
+  page,
+}) => {
+  const value = scenario('keyboard-claude');
+  const agent = value.agents[0];
+  const now = Date.UTC(2026, 10, 11);
+  const record = {
+    app: agent.app,
+    owner: { pid: agent.pid, name: agent.name },
+    updated_at: new Date(now).toISOString(),
+    state: 'idle',
+  };
+  for (const records of [[], [record]]) {
+    Object.assign(
+      agent,
+      { statusAt: undefined },
+      statusFromRecords(records, agent, now),
+    );
+    await command(page, 'setScenario', value);
+    await command(page, 'setPreferences', {
+      claudeEnabled: true,
+      allowClipboardFocus: true,
+    });
+    await command(page, 'press', 0, 0);
+    await command(page, 'advance', 2350);
+    const hasRecord = records.length > 0;
+    expect(await labels(page, 0, 0)).toContain(hasRecord ? 'Ready' : 'Unknown');
+    if (!hasRecord)
+      expect((await labels(page, 2, 2)).join(' ')).toBe('Claude Code Preview');
+    const headings = [];
+    for (let col = 0; col < 4; col++)
+      headings.push((await labels(page, 2, col))[0]);
+    expect(headings).toEqual(
+      hasRecord
+        ? ['Model', 'Effort', 'Permissions', 'Mode']
+        : ['Check Rex', undefined, 'Claude', undefined],
+    );
+  }
+});
+
+test('a manually opened Claude picker shows session-only Apply', async ({
+  page,
+}) => {
+  const value = scenario('claude-mixed');
+  Object.assign(value.agents[1], {
+    state: 'blocked',
+    kind: 'question',
+    claudePicker: true,
+    claudeControlsEnabled: true,
+  });
+  await command(page, 'setScenario', value);
+  await command(page, 'setPreferences', {
+    claudeEnabled: true,
+    allowClipboardFocus: true,
+  });
+  await command(page, 'press', 0, 1);
+  expect(await labels(page, 2, 2)).toEqual(['Apply', 'this session']);
+  expect(await trace(page)).toEqual([focus('b')]);
+});
+
+for (const [kind, caption] of [
+  ['auth', ['Open', 'browser']],
+  ['form', ['Answer in', 'Rex']],
+] as const)
+  test(
+    'held Confirm expires when a choice becomes ' + kind,
+    async ({ page }) => {
+      await selected(page, 'question');
+      await command(page, 'pauseFocus');
+      await command(page, 'down', 2, 2);
+      const external = scenario('question');
+      Object.assign(external.agents[0], { kind, statusAt: 'external-request' });
+      await command(page, 'setScenario', external);
+      await command(page, 'up', 2, 2);
+      expect(await labels(page, 2, 0)).toEqual(caption);
+      expect(await trace(page)).toEqual([focus()]);
+      await command(page, 'advance', 2350);
+      for (let col = 1; col < 5; col++) {
+        expect(await labels(page, 2, col)).toEqual([]);
+        await command(page, 'press', 2, col);
+      }
+      expect(await trace(page)).toEqual([focus()]);
+    },
+  );
+
+test('held Queue expires on terminal failure and Error gains Attention when focus moves', async ({
+  page,
+}) => {
+  await selected(page, 'working-rex');
+  expect((await labels(page, 2, 1))[0]).toBe('Queue');
+  await command(page, 'pauseFocus');
+  await command(page, 'down', 2, 1);
+  const failed = scenario('working-rex');
+  Object.assign(failed.agents[0], { state: 'error', runId: null });
+  await command(page, 'setScenario', failed);
+  await command(page, 'up', 2, 1);
+  expect(await labels(page, 0, 0)).toContain('Error');
+  expect(await trace(page)).toEqual([focus()]);
+  await command(page, 'press', 0, 1);
+  expect((await labels(page, 1, 4))[0]).toBe('Error');
+});
+
+test('a working parent retains Interrupt while Attention selects an external form ahead of Error and Done', async ({
+  page,
+}) => {
+  const value = scenario('overflow-banks');
+  Object.assign(value.agents[0], { state: 'working', runId: 'parent' });
+  value.agents[1].state = 'done';
+  value.agents[2].state = 'error';
+  Object.assign(value.agents[3], { state: 'blocked', kind: 'form' });
+  await command(page, 'setScenario', value);
+  await command(page, 'setPreferences', { allowClipboardFocus: true });
+  await command(page, 'press', 0, 0);
+  expect((await labels(page, 2, 4))[0]).toBe('Interrupt');
+  expect(await labels(page, 1, 4)).toEqual(['Waiting', '3 agents']);
+  await command(page, 'press', 1, 4);
+  expect(await labels(page, 2, 0)).toEqual(['Answer in', 'Rex']);
+  expect(await labels(page, 1, 4)).toEqual(['Error', '2 agents']);
+  expect(await trace(page)).toEqual([focus(), focus('d')]);
+});
+
+test('an Interrupt pending across an interrupted turn and its replacement sends zero Escapes', async ({
+  page,
+}) => {
+  await selected(page, 'working-rex');
+  await command(page, 'pauseFocus');
+  await command(page, 'down', 2, 4);
+  const next = scenario('working-rex');
+  Object.assign(next.agents[0], { state: 'idle', runId: null });
+  await command(page, 'setScenario', next);
+  Object.assign(next.agents[0], { state: 'working', runId: 'new-turn' });
+  await command(page, 'setScenario', next);
+  await command(page, 'up', 2, 4);
+  expect((await command(page, 'snapshot')).alerts).toContain('key-14');
+  expect(await trace(page)).toEqual([focus()]);
+});
+
+test('an unloaded thread refuses a pending Queue and accepts a fresh press after reload', async ({
+  page,
+}) => {
+  const value = scenario('working-rex');
+  value.agents[0].codexBindingEpoch = 1;
+  await command(page, 'setScenario', value);
+  await command(page, 'setPreferences', { allowClipboardFocus: true });
+  await command(page, 'press', 0, 0);
+  await command(page, 'advance', 350);
+  await command(page, 'pauseFocus');
+  await command(page, 'down', 2, 1);
+  const before = { ...value.agents[0] };
+  Object.assign(value.agents[0], {
+    chatId: null,
+    runId: null,
+    codexBindingEpoch: undefined,
+  });
+  await command(page, 'setScenario', value);
+  await command(page, 'up', 2, 1);
+  expect((await command(page, 'snapshot')).alerts).toContain('key-11');
+  expect(await trace(page)).toEqual([focus()]);
+  Object.assign(value.agents[0], before, { codexBindingEpoch: 2 });
+  await command(page, 'setScenario', value);
+  await command(page, 'advance', 2350);
+  await command(page, 'press', 2, 1);
+  expect(await trace(page)).toEqual([
+    focus(),
+    ['send-key', '-s', 'fixture', '-b', 'a', 'tab'],
+  ]);
+});

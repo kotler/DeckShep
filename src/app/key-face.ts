@@ -263,6 +263,22 @@ function agentFace(input: KeyFaceInput): {
   };
 }
 
+function statusLines({ target, bridge, backendName }: KeyFaceInput): string[] {
+  if (!target) return [bridge.selectionNotice ? 'Reselect' : 'Select', 'agent'];
+  if (target.state === 'blocked') {
+    if (target.kind === 'form') return ['Answer in', backendName];
+    if (target.kind === 'auth') return ['Open browser'];
+  }
+  const detail =
+    target.app === 'claude-code'
+      ? target.claudeError ||
+        (!target.claudeControlsEnabled ? 'Enable Claude' : '')
+      : target.kind === 'auth'
+        ? 'Sign in'
+        : '';
+  return ['Check ' + backendName, detail];
+}
+
 function controlLines(input: KeyFaceInput): Record<string, string[]> {
   const { bridge, target, mode, offline, backendName, gaps, config } = input;
   return {
@@ -334,17 +350,7 @@ function controlLines(input: KeyFaceInput): Record<string, string[]> {
     ],
     claudeModeInfo: modeLines(bridge),
     inputInfo: ['Use Herdr', 'keyboard'],
-    status: target
-      ? [
-          'Check ' + backendName,
-          target.app === 'claude-code'
-            ? target.claudeError ||
-              (!target.claudeControlsEnabled ? 'Enable Claude' : '')
-            : target.kind === 'auth'
-              ? 'Sign in'
-              : '',
-        ]
-      : [bridge.selectionNotice ? 'Reselect' : 'Select', 'agent'],
+    status: statusLines(input),
   };
 }
 

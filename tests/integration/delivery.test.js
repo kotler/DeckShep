@@ -149,7 +149,14 @@ test('delayed native edges recheck visibility, generation and current consent im
       writes++;
     });
   }
+  // The same pane, thread and turn can all reappear after a verified unload.
+  // Only a fresh press can use the newly observed binding.
+  target.codexBindingEpoch = 1;
   for (const [change, restore] of [
+    [
+      () => (session.agents = [{ ...target, codexBindingEpoch: 2 }]),
+      () => (session.agents = [target]),
+    ],
     [() => (current.visible = false), () => (current.visible = true)],
     [() => (current.generation = 2), () => (current.generation = 1)],
     [

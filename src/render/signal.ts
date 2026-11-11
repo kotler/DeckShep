@@ -72,6 +72,7 @@ interface SignalInput {
   hold?: boolean;
   codexMark: string;
   claudeMark: string;
+  busyRing?: string;
   legacyPaths: Record<string, string>;
 }
 const glyphs: Record<string, string> = Object.fromEntries(
@@ -257,6 +258,7 @@ function signalSvg({
   codexMark,
   claudeMark,
   legacyPaths,
+  busyRing = '',
 }: SignalInput) {
   const empty: boolean = agent && icon === 'empty',
     fill: string = agent && !empty ? color : '#252a39';
@@ -363,7 +365,7 @@ function signalSvg({
     hold && !agent
       ? `<g id="hold-hint"><path d="M126 2H142V18Z" fill="${accent}"/></g>`
       : '';
-  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144" height="144" viewBox="0 0 144 144"><defs><linearGradient id="surface" x2="1" y2="1"><stop stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient><clipPath id="key"><rect x="2" y="2" width="140" height="140" rx="14"/></clipPath></defs><g clip-path="url(#key)"><rect x="2" y="2" width="140" height="140" fill="url(#surface)"/>${agent && !empty ? `<rect x="2" y="2" width="140" height="140" fill="white" opacity="${Math.max(0, Math.min(0.22, pulse))}"/>` : ''}${watermark}${!textOnly && !empty ? glyph : ''}${rail}${tick}</g>${stateMark}${text}${badge === 'selected' ? '<g id="selected-agent"><circle cx="123" cy="19" r="6" fill="white"/></g>' : ''}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144" height="144" viewBox="0 0 144 144"><defs><linearGradient id="surface" x2="1" y2="1"><stop stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient><clipPath id="key"><rect x="2" y="2" width="140" height="140" rx="14"/></clipPath></defs><g clip-path="url(#key)"><rect x="2" y="2" width="140" height="140" fill="url(#surface)"/>${agent && !empty ? `<rect x="2" y="2" width="140" height="140" fill="white" opacity="${Math.max(0, Math.min(0.22, pulse))}"/>` : ''}${watermark}${!textOnly && !empty ? glyph : ''}${rail}${tick}</g>${stateMark}${text}${badge === 'selected' ? '<g id="selected-agent"><circle cx="123" cy="19" r="6" fill="white"/></g>' : ''}${busyRing}</svg>`;
 }
 module.exports = { signalSvg, controlAccent };
 

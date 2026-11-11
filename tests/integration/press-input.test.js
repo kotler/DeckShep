@@ -357,3 +357,66 @@ test('a stale Attention press sends zero input when the target changed or closed
     assert.equal(d.c.bridge.lastTarget.block, 'a', 'focus did not move');
   }
 });
+
+test('Page from bank two of three distinguishes a 449 ms tap from a 450 ms hold', async () => {
+  for (const hold of [false, true]) {
+    const d = await deck(Array.from('abcdefghijk'));
+    d.down(1, 1);
+    d.up(1, 1);
+    await d.settle();
+    d.down(1, 1);
+    d.timers.advance(449);
+    await d.settle();
+    assert.equal(d.c.getBank(), 1);
+    if (hold) {
+      d.timers.advance(1);
+      await d.settle();
+      assert.equal(d.c.getBank(), 0);
+    }
+    d.up(1, 1);
+    await d.settle();
+    assert.equal(d.c.getBank(), hold ? 0 : 2);
+    assert.deepEqual(d.calls, []);
+  }
+});
+
+test('a repeated press on a busy key animates a ring over its caption and delivers only the original action', async () => {
+  const d = await deck();
+  const original = d.c.bridge.focus.bind(d.c.bridge);
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  d.c.bridge.focus = async (target) => {
+    await gate;
+    return original(target);
+  };
+  const image = () =>
+    Buffer.from(d.key(0, 1).lastImage.split(',')[1], 'base64').toString();
+  d.down(0, 1);
+  d.up(0, 1);
+  await new Promise(setImmediate);
+  d.advanceClock(250);
+  d.c.render();
+  assert.match(image(), /id="busy-ring"/);
+  assert.match(image(), />Chat b</);
+  d.down(0, 1);
+  d.up(0, 1);
+  const first = image().match(/id="busy-ring" transform="([^"]+)"/)[1];
+  d.advanceClock(250);
+  d.c.render();
+  assert.notEqual(
+    image().match(/id="busy-ring" transform="([^"]+)"/)[1],
+    first,
+  );
+  d.advanceClock(2500);
+  release();
+  await d.settle();
+  assert.equal(d.focused().length, 1);
+  assert.doesNotMatch(image(), /id="busy-ring"/);
+  assert(!d.h.socket.frames.some((frame) => frame.event === 'showAlert'));
+  d.down(0, 1);
+  d.up(0, 1);
+  await d.settle();
+  assert.equal(d.focused().length, 2);
+});

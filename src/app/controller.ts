@@ -49,7 +49,10 @@ const {
   rexSettingsAction,
 } = require('./rex-keyboard-settings');
 const { cycleClaudeMode } = require('../agents/claude/keyboard-mode');
-const { refreshRexClaudeMetadata } = require('./rex-provider-metadata');
+const {
+  refreshRexClaudeMetadata,
+  rexDisplayAgent,
+} = require('./rex-provider-metadata');
 const { appFocusBackend } = require('./herdr-app-backend');
 const { GuardedBackend } = require('../terminals/contract/backend');
 const {
@@ -82,6 +85,14 @@ const HERDR_APP_UNAVAILABLE: KeySpec = {
 };
 /** A press that waited longer than this behind earlier work is refused. */
 const QUEUE_STALE_MS = 2000;
+const LOADING_DELAY_MS = 200;
+const informationalActions = new Set([
+  'none',
+  'status',
+  'inputInfo',
+  'claudeInfo',
+  'claudeModeInfo',
+]);
 const PROFILE_SETUP_ERROR: KeySpec = {
   ...HERDR_APP_UNAVAILABLE,
   lines: ['Profile', 'setup error'],
@@ -382,12 +393,36 @@ function createApplication(dependencies: Record<string, any>) {
     const backendName: () => string = () =>
       scope === 'herdr-app' ? 'Herdr App' : scope === 'herdr' ? 'Herdr' : 'Rex';
     function selected() {
-      return bridge.agents?.find((a: any) => sameTarget(bridge.lastTarget, a));
+      const agent = bridge.agents?.find((a: any) =>
+        sameTarget(bridge.lastTarget, a),
+      );
+      return scope === 'rex' && agent ? rexDisplayAgent(agent) : agent;
     }
     function navigationAgents() {
       return scope === 'rex'
         ? (bridge.navigationAgents || bridge.agents || []).map(
-            navigationSnapshot,
+            (raw: AgentSnapshot) => {
+              const live = bridge.agents?.find((agent: AgentSnapshot) =>
+                sameNavigationTarget(raw, agent),
+              );
+              const observed = live && rexDisplayAgent(live);
+              if (
+                observed &&
+                (observed !== live ||
+                  (live.app === 'claude-code' &&
+                    live.nativeVerified &&
+                    (live.state === 'error' ||
+                      (live.state === 'blocked' &&
+                        ['auth', 'form'].includes(live.kind)))))
+              ) {
+                return navigationSnapshot({
+                  ...raw,
+                  state: observed.state,
+                  kind: observed.kind,
+                });
+              }
+              return navigationSnapshot(raw);
+            },
           )
         : bridge.agents || [];
     }
@@ -618,7 +653,19 @@ function createApplication(dependencies: Record<string, any>) {
           hold: scope !== 'herdr-app' && holdActionOf(action) !== null,
         });
         k.presented = capture(k);
-        present(ctx, k, spec);
+        present(
+          ctx,
+          k,
+          k.loadingAt !== undefined && now >= k.loadingAt
+            ? {
+                ...spec,
+                busyFrame: config.animation?.enabled
+                  ? Math.floor(now / 250) % 4
+                  : 0,
+                hold: false,
+              }
+            : spec,
+        );
       }
     }
     async function refreshMetadata(force: any = false) {
@@ -650,6 +697,7 @@ function createApplication(dependencies: Record<string, any>) {
             for (const field of [
               'chatId',
               'codexHookEpoch',
+              'codexBindingEpoch',
               'codexHookNotice',
               'chatName',
               'project',
@@ -662,6 +710,7 @@ function createApplication(dependencies: Record<string, any>) {
               'backgroundIds',
               'backgroundTurnId',
               'activityStatusAt',
+              'codexDisplayState',
               'metadataAt',
             ])
               if (
@@ -672,6 +721,7 @@ function createApplication(dependencies: Record<string, any>) {
                     'backgroundOnly',
                     'backgroundIds',
                     'backgroundTurnId',
+                    'codexDisplayState',
                     'activityStatusAt',
                   ].includes(field)
                 ) &&
@@ -680,6 +730,7 @@ function createApplication(dependencies: Record<string, any>) {
                   'backgroundOnly',
                   'backgroundIds',
                   'backgroundTurnId',
+                  'codexDisplayState',
                   'activityStatusAt',
                 ].includes(field) ||
                   live.statusAt === agent.statusAt)
@@ -956,16 +1007,7 @@ function createApplication(dependencies: Record<string, any>) {
       display = display || k.presented || capture(k);
       if (busy) await refreshDone;
       const a: any = display.action;
-      if (
-        [
-          'none',
-          'status',
-          'inputInfo',
-          'claudeInfo',
-          'claudeModeInfo',
-        ].includes(a)
-      )
-        return;
+      if (informationalActions.has(a)) return;
       let completed: boolean = false;
       actionBusy = true;
       activePress = { ctx, display };
@@ -1503,6 +1545,15 @@ function createApplication(dependencies: Record<string, any>) {
                 setupBusy: runtime.setupBusy,
               }
             : undefined;
+        if (k?.loadingAt !== undefined) {
+          k.loadingAt = clock();
+          runtime.render();
+          return;
+        }
+        if (!shown || informationalActions.has(shown.action)) {
+          gestures.cancel(e.context);
+          return;
+        }
         // The herdr-app scope keeps its per-control records: no holds there.
         const hold: string | null =
           shown && scope !== 'herdr-app' ? holdActionOf(shown.action) : null;
@@ -1510,12 +1561,22 @@ function createApplication(dependencies: Record<string, any>) {
           // Both gestures act on the context presented at key down.
           const pressed: any =
             kind === 'hold' && display ? { ...display, action: hold } : display;
+          // Reserve this key appearance before queueing so a second keyDown
+          // cannot replay the action after the first one changes the screen.
+          k.loadingAt = clock() + LOADING_DELAY_MS;
           queue = queue
-            .then(() =>
-              owners.get(e.context) === scope
-                ? runtime.press(e.context, pressed)
-                : undefined,
-            )
+            .then(async () => {
+              try {
+                if (
+                  runtime.keys.get(e.context) === k &&
+                  owners.get(e.context) === scope
+                )
+                  await runtime.press(e.context, pressed);
+              } finally {
+                delete k.loadingAt;
+                if (runtime.keys.get(e.context) === k) runtime.render();
+              }
+            })
             .catch(() => {});
         });
       }

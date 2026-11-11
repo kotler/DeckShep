@@ -199,3 +199,27 @@ test('agent metadata', async () => {
     'PASS chat/project/status labels, Unicode ellipsis, aliases, last-verified models, metadata-only busy-agent reads, identity guards, cache freshness and no preview retention',
   );
 });
+
+test('an unloaded Codex thread loses its binding and run while its Rex pane remains selectable', async () => {
+  const f = fixture();
+  await f.reader.refresh([f.agent], true);
+  assert.equal(f.agent.runId, 'active-turn');
+  const initialEpoch = f.agent.codexBindingEpoch;
+  assert(initialEpoch > 0);
+  f.thread.status = { type: 'notLoaded' };
+  await f.reader.refresh([f.agent], true);
+  assert.equal(f.agent.chatId, null);
+  assert.equal(f.agent.runId, null);
+  assert.equal(f.agent.block, 'b');
+  const next = { ...f.agent };
+  f.reader.hydrate([next]);
+  assert.equal(next.chatId, null);
+  f.thread.status = { type: 'active', activeFlags: [] };
+  await f.reader.refresh([next], true);
+  assert.equal(next.chatId, id);
+  assert(next.codexBindingEpoch > initialEpoch);
+  f.rpc.request = async () => ({ data: [], nextCursor: null });
+  await f.reader.refresh([next], true);
+  assert.equal(next.runId, null);
+  assert.equal(next.chatId, null);
+});

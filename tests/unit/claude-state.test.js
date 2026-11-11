@@ -406,6 +406,16 @@ test('claude state', async () => {
       () => S.readRecord(42, d),
       'a tool callback cannot repair a lost input epoch',
     );
+    await S.record(event('SessionStart', { source: 'compact' }), {
+      dir: d,
+      inspect,
+      parent: 77,
+      now: 2156,
+    });
+    assert.throws(
+      () => S.readRecord(42, d),
+      'compaction cannot restore lost session proof',
+    );
     await S.record(event('UserPromptSubmit'), {
       dir: d,
       inspect,
@@ -482,4 +492,129 @@ test('claude state', async () => {
   console.log(
     'PASS Claude metadata privacy, root/subagent isolation, lifecycle/request epochs, version/cwd/PID-reuse guards, exact tool completion, private atomic records and no authority from status-line callbacks',
   );
+});
+
+test('parent lifecycle preserves working through compaction and child events and distinguishes terminal failure', () => {
+  const process = { pid: 42, startedAt: 'start', version: '2.1.322' };
+  const agent = { pid: 42, cwd: '/fixture' };
+  let now = 1000;
+  let record;
+  function apply(name, fields = {}) {
+    const next = S.reduce(
+      record,
+      {
+        cwd: agent.cwd,
+        session_id: 'test-parent',
+        hook_event_name: name,
+        ...fields,
+      },
+      process,
+      ++now,
+    );
+    if (next) record = S.validate(next, agent, process, now);
+    return next;
+  }
+  apply('UserPromptSubmit');
+  const turn = record.turnId;
+  apply('PostToolUseFailure', { tool_use_id: 'recoverable' });
+  for (const event of [
+    'PreCompact',
+    'PostCompact',
+    'SubagentStop',
+    'TeammateIdle',
+  ]) {
+    apply(event);
+    assert.equal(record.state, 'working');
+    assert.equal(record.turnId, turn);
+  }
+  const generation = record.generation;
+  apply('SessionStart', { source: 'compact' });
+  assert.equal(record.state, 'working');
+  assert.equal(record.turnId, turn);
+  assert.notEqual(record.generation, generation);
+  apply('StopFailure', { agent_id: 'child' });
+  assert.equal(record.state, 'working');
+  apply('StopFailure', { last_assistant_message: 'PRIVATE' });
+  assert.equal(record.state, 'error');
+  for (const event of ['PostToolUseFailure', 'PostToolUse', 'Notification']) {
+    apply(event, { tool_use_id: 'late', notification_type: 'idle_prompt' });
+    assert.equal(record.state, 'error');
+  }
+  apply('UserPromptSubmit');
+  assert.notEqual(record.turnId, turn);
+  apply('Stop');
+  apply('Notification', { notification_type: 'idle_prompt' });
+  assert.equal(record.state, 'done');
+  assert(!JSON.stringify(record).includes('PRIVATE'));
+});
+
+test('external Claude requests displace a choice without retaining form, URL or answer content', () => {
+  const process = { pid: 42, startedAt: 'start', version: '2.1.322' };
+  let record,
+    now = 100;
+  function apply(name, fields = {}) {
+    const next = S.reduce(
+      record,
+      {
+        cwd: '/fixture',
+        session_id: 'test-parent',
+        hook_event_name: name,
+        ...fields,
+      },
+      process,
+      ++now,
+    );
+    if (next)
+      record = S.validate(next, { pid: 42, cwd: '/fixture' }, process, now);
+  }
+  apply('UserPromptSubmit');
+  apply('PreToolUse', {
+    tool_name: 'AskUserQuestion',
+    tool_use_id: 'question',
+  });
+  const choice = record.requestId;
+  for (const [mode, kind] of [
+    ['url', 'auth'],
+    ['form', 'form'],
+  ]) {
+    apply('PreToolUse', { tool_name: 'mcp_tool', tool_use_id: 'tool' });
+    const fields = {
+      mode,
+      mcp_server_name: 'PRIVATE_SERVER',
+      elicitation_id: 'request-' + mode,
+    };
+    apply('Elicitation', {
+      ...fields,
+      message: 'PRIVATE',
+      url: 'PRIVATE_URL',
+      requested_schema: { title: 'PRIVATE_FORM' },
+    });
+    assert.equal(record.state, 'blocked');
+    assert.equal(record.kind, kind);
+    assert.notEqual(record.requestId, choice);
+    apply('ElicitationResult', {
+      ...fields,
+      elicitation_id: 'old',
+      action: 'accept',
+    });
+    apply('PostToolUse', { tool_use_id: 'question' });
+    assert.equal(record.kind, kind);
+    apply('ElicitationResult', {
+      ...fields,
+      action: 'accept',
+      content: { answer: 'PRIVATE_ANSWER' },
+    });
+    assert.equal(record.state, 'working');
+    assert(!JSON.stringify(record).includes('PRIVATE'));
+  }
+  apply('PreToolUse', { tool_name: 'mcp_form', tool_use_id: 'origin' });
+  apply('Elicitation', { mcp_server_name: 'PRIVATE_SERVER' });
+  apply('ElicitationResult', {
+    mcp_server_name: 'PRIVATE_SERVER',
+    action: 'accept',
+  });
+  apply('PostToolUse', { tool_use_id: 'other' });
+  assert.equal(record.kind, 'form');
+  apply('PostToolUse', { tool_use_id: 'origin' });
+  assert.equal(record.state, 'working');
 });

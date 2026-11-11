@@ -241,7 +241,12 @@ function configurationView(
       .replace(/^\s*❯[ \u00a0]?/, '')
       .trim()
   )
-    throw Error('Claude empty composer unavailable');
+    throw Object.assign(
+      Error(
+        'DeckShep could not verify an empty Claude composer. Save any draft and return to the empty prompt in Rex.',
+      ),
+      { keyLabel: 'Check input box' },
+    );
   return digest(lines.slice(upper + 1, lower));
 }
 module.exports = { levels, picker, nextModel, configurationView };

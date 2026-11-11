@@ -61,13 +61,29 @@ class ScenarioSession extends Bridge {
       if (!current.keyboard) throw Error('Fixture screen unavailable');
       return keyboard.view();
     };
-    this.readComposer = async () => ({
-      chatId: 'chat-' + current.focused,
-      hash: 'fixture-draft',
-      cursor: { row: 2, column: 9 },
-    });
+    this.readComposer = async () => {
+      const pane = current.agents.find(
+        (agent) => agent.block === current.focused,
+      );
+      // The native reader compares the daemon's current turn with the turn captured by the press.
+      if (!pane?.runId || pane.runId !== this.actionContext?.target.runId)
+        throw Error('Run metadata changed; press again');
+      return {
+        chatId: pane.chatId,
+        runId: pane.runId,
+        hash: 'fixture-draft',
+        cursor: { row: 2, column: 9 },
+      };
+    };
     this.readRequest = async () => 'fixture-request';
-    this.verifyRunning = async () => ({});
+    this.verifyRunning = async () => {
+      const pane = current.agents.find(
+        (agent) => agent.block === current.focused,
+      );
+      if (!pane?.runId || pane.runId !== this.actionContext?.target.runId)
+        throw Error('Agent started a new turn');
+      return { runId: pane.runId };
+    };
   }
   private normalize(a: AgentSnapshot): AgentSnapshot {
     return {

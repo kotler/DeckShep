@@ -1,3 +1,4 @@
+import { sameNavigationTarget } from '../domain/navigation';
 import { isRexRead } from '../domain/transport';
 import { GuardPipeline } from '../guards/pipeline';
 import { RexBackend } from '../terminals/rex/backend';
@@ -144,6 +145,16 @@ export class DeliveryKernel {
       if (this.backend.generation !== context.generation)
         throw Error('Controller changed; no input sent');
       if (['keys', 'paste', 'providerMutation'].includes(input.kind)) {
+        if (
+          context.target?.codexBindingEpoch &&
+          this.session.config.backend === 'rex'
+        ) {
+          const pane = this.session.agents?.find((agent) =>
+            sameNavigationTarget(agent, context.target),
+          );
+          if (pane?.codexBindingEpoch !== context.target.codexBindingEpoch)
+            throw Error('Chat binding changed');
+        }
         if (
           this.session.config.backend === 'rex' &&
           this.session.config.allowClipboardFocus !== true

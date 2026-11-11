@@ -34,4 +34,6 @@ export interface KeySpec {
   dim?: boolean;
   /** Wave 2: key has a long-press action and shows a corner tick. */
   hold?: boolean;
+  /** Quarter turn of the ring while a button press is pending. */
+  busyFrame?: number;
 }

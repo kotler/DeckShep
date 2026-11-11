@@ -306,6 +306,12 @@ function captions(r: any, fresh: boolean, hooksOnly: boolean, now: number) {
     claudeEffortStale: !!effort && now - c.effortAt > S.CAPTION_STALE_MS,
   };
 }
+function runningKeys(kind: string): string[] {
+  // Submit follows the user's Enter behavior. Queue and Send Now have explicit chords.
+  if (kind === 'queue') return ['ctrl+x', 'enter'];
+  if (kind === 'steer') return ['ctrl+x', 'ctrl+s'];
+  throw Error('Unsupported Claude input action');
+}
 class ClaudeControls {
   declare b: Record<string, any>;
   declare read: any;
@@ -535,7 +541,8 @@ class ClaudeControls {
       if (
         agent.state === 'working' &&
         r.state !== 'working' &&
-        r.state !== 'blocked'
+        r.state !== 'blocked' &&
+        r.state !== 'error'
       ) {
         a.state = 'unknown';
         a.runId = null;
@@ -547,8 +554,12 @@ class ClaudeControls {
         a.state = agent.state;
         a.runId = null;
       }
+      const newerExternalRequest =
+        ['auth', 'form'].includes(r.kind) &&
+        r.updatedAt >= Date.parse(agent.statusAt ?? '');
       if (
         r.state === 'blocked' &&
+        !newerExternalRequest &&
         ['idle', 'done', 'error'].includes(agent.state)
       ) {
         a.state = 'unknown';
@@ -599,6 +610,7 @@ class ClaudeControls {
       }
       if (
         a.claudeControlsEnabled &&
+        !['auth', 'form'].includes(a.kind) &&
         (a.state === 'blocked' ||
           (this.picker?.actor === key && !this.picker.pending))
       ) {
@@ -1001,8 +1013,7 @@ class ClaudeControls {
     }
   }
   async running(kind: string) {
-    if (!['steer', 'queue'].includes(kind))
-      throw Error('Unsupported Claude input action');
+    const keys = runningKeys(kind);
     const a: any = await this.selected();
     if (a.state !== 'working' || !a.runId) throw Error('Claude is not running');
     const before: {
@@ -1041,13 +1052,10 @@ class ClaudeControls {
       throw Error('Already submitted; check Claude');
     this.submissions.set(identity, this.now());
     this.b.draft = null;
-    await this.key(
-      current,
-      ...(kind === 'queue' ? ['enter'] : ['ctrl+x', 'ctrl+s']),
-    );
+    await this.key(current, ...keys);
     return { kind, label: kind === 'queue' ? 'Queued' : 'Sent now' };
   }
 }
-module.exports = { ClaudeControls, composer, dialog, same, actor };
+module.exports = { ClaudeControls, composer, dialog, same, actor, runningKeys };
 
 export { ClaudeControls };

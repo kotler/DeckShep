@@ -88,7 +88,13 @@ function svg({
   state,
   dim,
   hold,
+  busyFrame,
 }: Partial<KeySpec>) {
+  // Stream Deck receives individual images, so rotate the arc in each frame.
+  const busyRing =
+    busyFrame === undefined
+      ? ''
+      : `<g id="busy-ring" transform="rotate(${busyFrame * 90} 123 19)" fill="none" stroke="white" stroke-width="3"><circle cx="123" cy="19" r="10" opacity=".3"/><path d="M123 9a10 10 0 0 1 10 10" stroke-linecap="round"/></g>`;
   if (style === 'signal')
     return require('./signal').signalSvg({
       icon,
@@ -105,6 +111,7 @@ function svg({
       codexMark,
       claudeMark,
       legacyPaths: paths,
+      busyRing,
     });
   return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144" height="144" viewBox="0 0 144 144"><rect x="2" y="2" width="140" height="140" rx="17" fill="${color}"/><rect x="2" y="2" width="140" height="140" rx="17" fill="white" opacity="${Math.max(0, Math.min(0.22, pulse))}"/><rect x="3" y="3" width="138" height="138" rx="16" fill="none" stroke="#ffffff" stroke-opacity=".22" stroke-width="2"/><g transform="${agent ? 'translate(32 -1) scale(.78)' : 'translate(20 0)'}" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">${textOnly ? '' : (((paths as Record<string, any>)[icon] ?? paths.more) as Record<string, any>)}</g>${lines
     .slice(0, 3)
@@ -114,7 +121,7 @@ function svg({
     )
     .join(
       '',
-    )}${badge === 'selected' ? `<g id="selected-agent"><circle cx="123" cy="19" r="6" fill="white"/></g>` : badge ? `<circle cx="125" cy="17" r="7" fill="#ffd66c"/>` : ''}</svg>`;
+    )}${badge === 'selected' ? `<g id="selected-agent"><circle cx="123" cy="19" r="6" fill="white"/></g>` : badge ? `<circle cx="125" cy="17" r="7" fill="#ffd66c"/>` : ''}${busyRing}</svg>`;
 }
 function pulse(state: any, elapsed: number, config: Record<string, any>) {
   if (!config?.enabled) return 0;

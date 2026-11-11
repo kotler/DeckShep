@@ -46,10 +46,30 @@ prints a fixed test marker, and persistent approval rules must remain unchanged.
 Native identity transitions require explicit reselection in the driver; production
 stale-input guards remain enabled. Mutations are never retried.
 
-Rex additionally requires `ASW_LIVE_REX=1` and an explicitly supplied disposable
-GUI launcher with PID ownership proof. This does not authorize the ordinary Rex
-app or any existing daemon or agent. The Rex skeleton remains skipped without
-that separate environment and authorization.
+The Rex test launches the installed macOS Rex Beta CLI as a foreground server.
+It creates a temporary Git repository, checks that the owned server holds its
+private Unix socket before each CLI request, and verifies input in an owned
+cat pane. Run just this scenario with current authorization:
+
+```sh
+ASW_LIVE=1 ASW_LIVE_REX=1 ASW_LIVE_AUTHORIZATION=test-owned-only \
+  node --import tsx --test tests/live/rex.test.js
+```
+
+Add `ASW_LIVE_REX_PROVIDERS=1 ASW_LIVE_AUTH=signed-in` for the native picker
+checks using disposable Codex Luna (with `--no-daemon`) and Claude Haiku panes.
+The probes open a model picker and attempt Escape after recognition. They
+send no inference prompts. GUI focus, Stream Deck routing and physical key
+timing require separate verification.
+
+For the provider state matrix, use the same command with
+`ASW_LIVE_REX_PROVIDERS=1 ASW_LIVE_REX_STATES=1 ASW_LIVE_AUTH=signed-in`.
+This starts fresh Luna and Haiku panes for each of five cases. Permissions and
+Mode run from an empty composer. Interrupt requires an active turn, Queue
+checks that two distinct answers appear in order, and choice selection checks
+the highlight and the provider's answer. The latter three cases use inference.
+The private-server checks cover native CLI behavior. The virtual deck and
+controller suites cover button mapping, stale presses, opt-in and display state.
 
 `OwnedProcesses` and fingerprint refusals have ordinary unit tests. A separate
 shape-only real host capture still needs an explicitly authorized plugin dev

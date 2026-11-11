@@ -15,7 +15,7 @@ Claude and Codex share discovery, stable slots, bank cycling, Next agent, Collap
 | Multiple-select question | Toggle for verified checkbox layouts; Home Review then Submit | Same |
 | Interrupt | One Escape, current lifecycle and visible interrupt-hint checks | Same; scoped to explicit pane |
 | Review / Tests / Continue and guarded Send | Implemented for recognized composer | Unavailable; cursor API missing |
-| Queue / Steer | Enter queues; Ctrl+X Ctrl+S sends now | Unavailable; cursor API missing |
+| Queue / Steer | Ctrl+X Enter queues; Ctrl+X Ctrl+S sends now | Unavailable; cursor API missing |
 | Permission modes / Plan | Permissions and Mode each advance one native Shift+Tab step | Keyboard only |
 | Stop background tasks/terminals | Not implemented for Claude | Not implemented for Claude |
 
@@ -81,6 +81,8 @@ The existing guards still apply: default keybindings, focus checks, generation/v
 Model and Effort read the current setting from the native picker before changing anything. After a session-only change (`s`), the caption comes from the picker state DeckShep verified before pressing `s`, after confirming the session and turn did not change and the draft is intact. Otherwise, captions show the last value a hook reported: SessionStart `model`, PostModelSwitch `to_model`, or the `effort.level` on tool events. A caption older than 30 minutes shows a trailing `?`. Captions are display only and never enable or disable a control. Session names come from `session_title`, which Claude sends only for `--name` or `/rename` titles, so other chats show the short session-ID label.
 
 Setup also registers PostModelSwitch (Claude Code 2.1.251+) to refresh the Model caption. It is optional: the doctor checks only the original lifecycle events, and removal deletes the owned PostModelSwitch entry with the rest.
+
+Reapplying the Claude hook setup also registers StopFailure, Elicitation and ElicitationResult. A terminal failure shows Error. An MCP form shows **Answer in Rex** and a URL request shows **Open browser**. Both are informational keys. A matching result, the originating tool finishing, or a new turn clears the wait. DeckShep stores no form fields, answers or URLs. Existing hook installations can continue using the original events.
 
 ### Hook fields on the pinned version
 

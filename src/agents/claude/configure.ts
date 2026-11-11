@@ -26,7 +26,13 @@ const REQUIRED_EVENTS: string[] = [
 /** Owned hook set. PostModelSwitch (Claude Code 2.1.251+) only refreshes the
  * Model caption; installs made before it was added keep working without it.
  * Removal deletes the owned command from every listed event. */
-const EVENTS: string[] = [...REQUIRED_EVENTS, 'PostModelSwitch'];
+const EVENTS: string[] = [
+  ...REQUIRED_EVENTS,
+  'PostModelSwitch',
+  'StopFailure',
+  'Elicitation',
+  'ElicitationResult',
+];
 const quote: (s: any) => string = (s: any) =>
   "'" + s.replace(/'/g, "'\\''") + "'";
 function commands(dir: string, node: any = process.execPath) {
