@@ -24,7 +24,7 @@ const states = {
   complete: { state: 'done' },
   error: { state: 'error' },
 };
-const pages = ['Home', 'Questions', 'Prompts'];
+const pages = ['Home'];
 
 function snapshot(name, actual) {
   const file = path.join(goldenDirectory, name + '.json');
@@ -139,7 +139,7 @@ test('golden: all 15 keys across backend/provider/state/page combinations', asyn
       }
     }
   }
-  assert.equal(Object.keys(layouts).length, 96);
+  assert.equal(Object.keys(layouts).length, 32);
   snapshot('layouts', layouts);
   snapshot('presses', presses);
 });

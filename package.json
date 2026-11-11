@@ -36,6 +36,7 @@
     "marketplace:check": "node scripts/marketplace-check.mjs",
     "release:check": "node scripts/release-readiness.mjs",
     "deck:preview": "node --import tsx scripts/virtual-deck.mjs",
+    "poc:rex-hook": "node --import tsx scripts/poc-rex-hook.mjs",
     "test:e2e": "node scripts/tool.mjs @playwright/test test",
     "test:e2e:update": "node scripts/tool.mjs @playwright/test test --update-snapshots",
     "e2e:install": "node scripts/tool.mjs @playwright/test install --only-shell chromium"

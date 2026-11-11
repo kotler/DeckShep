@@ -236,7 +236,8 @@ test('background controls', async () => {
   await h.api.refresh();
   h.tick();
   assert.equal(h.action(2, 4), 'stopTerminals');
-  assert(h.image(0, 0).includes('>BACKGROUND<'));
+  // The Rex bar reports Rex's working state; daemon-only detail stays in row 3.
+  assert(h.image(0, 0).includes('>WORKING<'));
   assert(h.image(2, 4).includes('Stop terminals'));
   assert(!h.image(2, 0).includes('Steer'));
   const old = h.api.keys.get('2,4').presented;

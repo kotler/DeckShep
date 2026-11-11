@@ -54,6 +54,7 @@ test(
       socket.send(JSON.stringify({ id: current, method, args }));
       return result;
     }
+    await command('setPreferences', { allowClipboardFocus: true });
     state = await command('press', 0, 1);
     assert.deepEqual(state.trace, [['focus', '--session', 'fixture', 'b']]);
     assert.equal(state.keys[1].selected, true);

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-async function inspector(page: Page, replies = true) {
+async function inspector(page: Page, replies = true, backend = 'herdr-app') {
   const { bundle } = await import('../../scripts/bundle.mjs');
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dsh-inspector-'));
   fs.chmodSync(root, 0o700);
@@ -44,11 +44,16 @@ async function inspector(page: Page, replies = true) {
     context?: string;
     payload?: { kind?: string };
   }[] = [];
+  let lastMessage = '';
   await page.routeWebSocket('ws://localhost:19191', (socket) => {
     socket.onMessage((message) => {
       const frame = JSON.parse(String(message));
       frames.push(frame);
       if (!replies || frame.event !== 'sendToPlugin') return;
+      if (frame.payload?.kind === 'setupFooter')
+        lastMessage = 'This Codex footer shows no session ID.';
+      else if (frame.payload?.kind === 'refresh')
+        lastMessage = 'App status refreshed';
       const payload =
         frame.payload.kind === 'doctor'
           ? {
@@ -58,18 +63,22 @@ async function inspector(page: Page, replies = true) {
             }
           : {
               kind: 'status',
-              backend: 'herdr-app',
-              profileScope: 'herdr-app',
-              profileName: 'Herdr App',
+              backend,
+              profileScope: backend,
+              profileName: backend === 'rex' ? 'Rex' : 'Herdr App',
               preferences: {
                 prompts: { review: '', tests: '', continue: '' },
                 herdrAppHome: '/fixture/app',
+                allowClipboardFocus: true,
               },
               offline: false,
               agents: 2,
+              metadata: 0,
+              codex: 1,
+              selected:
+                backend === 'rex' ? { app: 'codex', state: 'idle' } : null,
               setupBusy: false,
-              message:
-                frame.payload.kind === 'refresh' ? 'App status refreshed' : '',
+              message: lastMessage,
             };
       socket.send(
         JSON.stringify({ event: 'sendToPropertyInspector', payload }),
@@ -90,7 +99,7 @@ async function inspector(page: Page, replies = true) {
         action: 'com.kotl3r.deckshep.key',
         context: 'fixture-action',
         device: 'fixture-device',
-        payload: { settings: { profileScope: 'herdr-app' } },
+        payload: { settings: { profileScope: backend } },
       }),
     ),
   );
@@ -132,4 +141,20 @@ test('Refresh status reports a missing plugin reply instead of silently doing no
   await expect(page.locator('#message')).toContainText('No plugin response', {
     timeout: 6000,
   });
+});
+
+test('Rex footer-check result is visible after pressing its setup button', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 400, height: 400 });
+  const frames = await inspector(page, true, 'rex');
+  await expect(page.locator('#setup')).toBeEnabled();
+  await page.locator('#setup').click();
+  await expect(page.locator('#message')).toHaveText(
+    'This Codex footer shows no session ID.',
+  );
+  await expect(page.locator('#message')).toBeInViewport();
+  expect(frames.some((frame) => frame.payload?.kind === 'setupFooter')).toBe(
+    true,
+  );
 });

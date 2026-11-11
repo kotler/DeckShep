@@ -125,7 +125,10 @@ function fixture(backend = 'rex', { hooksOnly = false } = {}) {
       '\n────────────────────────\nClaude ' +
       record.modelName +
       ' · ' +
-      record.effort
+      record.effort +
+      (state.modeBadge
+        ? '\n⏵⏵ ' + state.modeBadge + ' on (shift+tab to cycle)'
+        : '')
     );
   };
   const dispatch = async (keys) => {
@@ -136,6 +139,11 @@ function fixture(backend = 'rex', { hooksOnly = false } = {}) {
       }
       calls.push(key);
       now++;
+      if (key === 'shift+tab' && !state.dialog) {
+        state.modeBadge =
+          state.modeBadge === 'accept edits' ? 'plan mode' : 'accept edits';
+        continue;
+      }
       if (key === 'alt+p') {
         state.dialog = 'picker';
         state.selected = state.defaultModel
@@ -448,4 +456,26 @@ test('claude cycle in hooks-only mode trusts the native picker, not a status lin
     await assert.rejects(() => unproven.invoke('model'));
     assert.deepEqual(unproven.calls, []);
   }
+});
+
+test('Rex Claude Permissions and Mode advance the real Claude mode once using hooks-only identity', async () => {
+  const {
+    cycleClaudeMode,
+    claudeFooter,
+  } = require('../../src/agents/claude/keyboard-mode');
+  const f = fixture('rex', { hooksOnly: true });
+  const invoke = async (action) => {
+    const a = await f.b.focused();
+    return f.b.withContext(
+      { action, target: C.snapshot(a), verifyChat: true },
+      () => cycleClaudeMode(f.b, C.snapshot(a)),
+    );
+  };
+  assert.equal((await invoke('permissions')).label, 'accept edits');
+  assert.equal((await invoke('plan')).label, 'plan mode');
+  assert.equal(claudeFooter(await f.controls.view()).model, 'Opus 5.5');
+  assert.deepEqual(f.calls, ['shift+tab', 'shift+tab']);
+  f.state.input = 'draft';
+  await assert.rejects(invoke('permissions'));
+  assert.equal(f.calls.length, 2);
 });

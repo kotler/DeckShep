@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import { parse } from '../schemas';
 import { exec } from '../platform/exec';
 import { discoverRex, pluginDirectory } from '../platform/paths';
+import { readRexApi } from '../terminals/rex/diagnostics';
 const configure = require('../agents/claude/configure');
 export interface Check {
   id: string;
@@ -363,6 +364,8 @@ export async function diagnostics({
   model,
   rex = discoverRex,
   version = rexVersion,
+  api = readRexApi,
+  rexPath,
   paths = setupPaths(),
   online = false,
   herdr = false,
@@ -372,6 +375,8 @@ export async function diagnostics({
   model?: number;
   rex?: typeof discoverRex;
   version?: (application: string) => Promise<string>;
+  api?: typeof readRexApi;
+  rexPath?: string;
   paths?: SetupPaths;
   online?: boolean;
   /** Herdr is outside the Rex-only release; only its own profile probes it. */
@@ -386,7 +391,7 @@ export async function diagnostics({
     },
   ];
   try {
-    const installation = await rex();
+    const installation = await rex(rexPath);
     let foundVersion = 'version unavailable';
     try {
       foundVersion = await version(installation.application);
@@ -396,6 +401,22 @@ export async function diagnostics({
       ok: true,
       reason: 'Rex installation found · ' + foundVersion,
     });
+    if (!herdr) {
+      try {
+        const report = await api(installation.binary);
+        checks.push({
+          id: 'rex-api',
+          ok: true,
+          reason: `Rex server API ${report.revision} (minimum ${report.minimum}${report.legacy ? '; legacy fields omitted' : ''})`,
+        });
+      } catch {
+        checks.push({
+          id: 'rex-api',
+          ok: false,
+          reason: 'Rex server API unavailable; no server started',
+        });
+      }
+    }
   } catch {
     checks.push({
       id: 'rex',
@@ -426,7 +447,7 @@ export async function diagnostics({
     reason:
       selected?.app === 'codex' && selected.chatId
         ? 'Selected Codex metadata available'
-        : 'Select a ready Codex agent, then set up its status line',
+        : 'Select Codex and check its hook binding or session-ID footer',
   });
   checks.push({
     id: 'claude',

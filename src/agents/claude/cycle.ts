@@ -8,14 +8,17 @@ const digest: (value: any) => string = (value: any) =>
 const levels: string[] = ['low', 'medium', 'high', 'xhigh', 'max'];
 const modelName: (text: string) => RegExpExecArray | null = (text: string) =>
   /\b(Opus|Sonnet|Fable|Haiku)\s+(\d+\.\d+(?:\.\d+)?)(?=\s|$)/.exec(text);
-function picker(view: {
-  text: string;
-  hash: string;
-  cursor?: {
-    row: number;
-    column: number;
-  } | null;
-}) {
+function picker(
+  view: {
+    text: string;
+    hash: string;
+    cursor?: {
+      row: number;
+      column: number;
+    } | null;
+  },
+  displayLabels = false,
+) {
   const lines: string[] = view.text.split('\n'),
     start: number = lines.findLastIndex((line: any) =>
       /^\s*(Select|Choose) model\s*$/.test(line),
@@ -42,19 +45,33 @@ function picker(view: {
       const name: RegExpExecArray | null = modelName(m[3]),
         isDefault: boolean = /^Default\b/.test(m[3]),
         more: boolean = /^More models\b/.test(m[3]);
-      if (!name && !isDefault && !more)
+      // The pane picker compares the native row labels directly. Legacy
+      // hook metadata uses canonical provider IDs and keeps its own parser.
+      const displayName = m[3]
+        .replace(/^Default(?: \(recommended\))?\s*/i, '')
+        .replace(/[✔✓]/g, '')
+        .trim()
+        .split(/\s+·\s*|\s{2,}/)[0]
+        .trim();
+      if (!displayLabels && !name && !isDefault && !more)
         throw Error('Unrecognized Claude model row');
       rows.push({
         number: Number(m[2]),
         selected: !!m[1],
         label: m[3],
-        name: name ? name[1] + ' ' + name[2] : null,
-        model: name
-          ? 'claude-' +
-            name[1].toLowerCase() +
-            '-' +
-            name[2].replace(/\./g, '-')
-          : null,
+        name: displayLabels
+          ? displayName
+          : name
+            ? name[1] + ' ' + name[2]
+            : null,
+        model: displayLabels
+          ? displayName
+          : name
+            ? 'claude-' +
+              name[1].toLowerCase() +
+              '-' +
+              name[2].replace(/\./g, '-')
+            : null,
         isDefault,
         more,
       });

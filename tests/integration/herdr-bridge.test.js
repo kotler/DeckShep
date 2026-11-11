@@ -503,8 +503,9 @@ test('herdr bridge', async () => {
     assert.equal(stale.chatId, undefined);
   }
   const home = C.homeRow({ ...agents[0], state: 'working' });
-  assert.deepEqual(home, ['none', 'none', 'zoom', 'none', 'interrupt']);
-  assert.equal(C.layout(2, agents[0])[0], 'inputInfo');
+  assert.deepEqual(home, ['none', 'none', 'permissions', 'none', 'interrupt']);
+  assert.equal(C.layout(2, agents[0])[0], 'next');
+  assert(!C.layout(2, agents[0]).includes('inputInfo'));
   console.log(
     'PASS Herdr topology/order, process ownership and foreground identity, terminal/server replacement guards, native session binding, focus/Zoom, native approval/question keys, changed-view/scroll guards, Plan and disabled unverified composer actions',
   );

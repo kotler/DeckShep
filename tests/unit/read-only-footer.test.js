@@ -175,13 +175,85 @@ test('metadata marks only a missing footer ID and clears it once the footer show
   await reader.refresh([a], true);
   assert.equal(a.footerMissing, false, 'other failures keep generic behaviour');
 });
+test('fresh discovery records retain the missing-footer hint for the same process only', async () => {
+  const footer = { value: () => Promise.reject(missing()) },
+    { a, reader } = metadataFixture(footer);
+  await reader.refresh([a]);
+  const fresh = agent();
+  reader.hydrate([fresh]);
+  assert.equal(fresh.footerMissing, true);
+  const replacement = { ...agent(), pid: 43 };
+  reader.hydrate([replacement]);
+  assert.notEqual(replacement.footerMissing, true);
+  footer.value = async () => id;
+  await reader.refresh([fresh], true);
+  const recovered = agent();
+  reader.hydrate([recovered]);
+  assert.equal(recovered.footerMissing, false);
+  assert.equal(recovered.chatId, id);
+});
+
+test('Codex hook diagnostics survive fresh discovery without granting identity', async () => {
+  const footer = { value: async () => id },
+    { a, reader } = metadataFixture(footer);
+  reader.read = async (current) => {
+    current.codexHookNotice =
+      'Codex hooks: multiple daemon clients; the selected CLI cannot be bound safely.';
+    throw missing();
+  };
+  await reader.refresh([a]);
+  const fresh = agent();
+  reader.hydrate([fresh]);
+  assert.match(fresh.codexHookNotice, /multiple daemon clients/);
+  assert.equal(fresh.chatId, undefined);
+  const replacement = { ...agent(), pid: 43 };
+  reader.hydrate([replacement]);
+  assert.equal(replacement.codexHookNotice, undefined);
+  reader.read = async (current) => {
+    delete current.codexHookNotice;
+    return { chatId: id, metadataAt: 1000 };
+  };
+  await reader.refresh([fresh], true);
+  const recovered = agent();
+  reader.hydrate([recovered]);
+  assert.equal(recovered.codexHookNotice, undefined);
+  assert.equal(recovered.chatId, id);
+});
+
+test('render hydration cannot erase an in-flight hook notice or hook epoch', async () => {
+  const footer = { value: async () => id },
+    { a, reader } = metadataFixture(footer);
+  let finish;
+  const pendingRead = new Promise((resolve) => {
+    finish = resolve;
+  });
+  reader.read = async (current) => {
+    current.codexHookNotice =
+      'Codex hooks: multiple daemon clients; the selected CLI cannot be bound safely.';
+    current.codexHookEpoch = 'fresh-hook-epoch';
+    await pendingRead;
+    return {
+      chatId: id,
+      codexHookEpoch: current.codexHookEpoch,
+      metadataAt: 1000,
+    };
+  };
+  const pending = reader.refresh([a]);
+  reader.hydrate([a]);
+  finish();
+  await pending;
+  const fresh = agent();
+  reader.hydrate([fresh]);
+  assert.match(fresh.codexHookNotice, /multiple daemon clients/);
+  assert.equal(fresh.codexHookEpoch, 'fresh-hook-epoch');
+});
 test('Codex keys say No footer ID; other agents are unaffected', () => {
   const a = { ...agent(), footerMissing: true },
     bridge = { lastTarget: a, agents: [a] };
   assert.deepEqual(L.modelLines(bridge), ['Model', 'No footer ID']);
   assert.deepEqual(L.effortLines(bridge), ['Effort', 'No footer ID']);
   assert.deepEqual(L.modeLines(bridge), ['Mode', 'No footer ID']);
-  assert.deepEqual(L.reviewerLines(bridge), ['Reviewer', 'No footer ID']);
+  assert.deepEqual(L.reviewerLines(bridge), ['Permissions', 'No footer ID']);
   for (const line of ['No footer ID']) assert(line.length <= 15);
   const claude = { ...a, app: 'claude-code' };
   assert.equal(L.footerMissing(claude), false);

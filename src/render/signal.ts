@@ -196,7 +196,10 @@ function signalSvg({
         );
       const fit: '' | ' textLength="120" lengthAdjust="spacingAndGlyphs"' =
         width > 120 ? ' textLength="120" lengthAdjust="spacingAndGlyphs"' : '';
-      return `<text x="${centered ? 72 : 12}" y="${ys[i]}" fill="${empty ? '#a7aec0' : '#f9fbff'}" text-anchor="${centered ? 'middle' : 'start'}" font-family="Arial" font-size="${size}" font-weight="${i === 0 || (agent && i === 2) ? 'bold' : 'normal'}"${fit}>${esc(s).slice(0, 140)}</text>`;
+      // Native key renderers can ignore textLength; a bounded font size keeps
+      // long captions such as Permissions inside the same 120-unit text area.
+      const fittedSize = width > 120 ? Math.floor((size * 120) / width) : size;
+      return `<text x="${centered ? 72 : 12}" y="${ys[i]}" fill="${empty ? '#a7aec0' : '#f9fbff'}" text-anchor="${centered ? 'middle' : 'start'}" font-family="Arial" font-size="${fittedSize}" font-weight="${i === 0 || (agent && i === 2) ? 'bold' : 'normal'}"${fit}>${esc(s).slice(0, 140)}</text>`;
     })
     .join('');
   return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144" height="144" viewBox="0 0 144 144"><defs><linearGradient id="surface" x2="1" y2="1"><stop stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient><clipPath id="key"><rect x="2" y="2" width="140" height="140" rx="14"/></clipPath></defs><g clip-path="url(#key)"><rect x="2" y="2" width="140" height="140" fill="url(#surface)"/>${agent && !empty ? `<rect x="2" y="2" width="140" height="140" fill="white" opacity="${Math.max(0, Math.min(0.22, pulse))}"/>` : ''}${watermark}${!textOnly && !empty ? glyph : ''}${!agent ? `<rect id="control-rail" x="14" y="120" width="116" height="12" rx="6" fill="${accent}"/>` : ''}</g>${text}${badge === 'selected' ? '<g id="selected-agent"><circle cx="123" cy="19" r="6" fill="white"/></g>' : ''}</svg>`;

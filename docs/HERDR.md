@@ -28,8 +28,7 @@ Herdr focus checks use its API; they do not use the clipboard. Switch back using
 | Control | Implementation |
 | --- | --- |
 | Agent row, bank, Next agent, Collapse | Herdr topology and foreground identity; stable slot behavior shared with Rex |
-| Zoom | Explicit pane target through Herdr |
-| Model, Effort, Reviewer | Guarded Codex daemon path, with explicit title-ID binding; live API changes and restoration verified |
+| Model, Effort, Permissions | Guarded Codex daemon path, with explicit title-ID binding; live API changes and restoration verified |
 | Plan / Default | One native Shift+Tab key; live Plan/Default round-trip verified |
 | Interrupt | Active native turn verification, then one explicit Escape key |
 | Stop terminals | Existing ended-turn and exact terminal-ID checks |
@@ -37,9 +36,9 @@ Herdr focus checks use its API; they do not use the clipboard. Switch back using
 | Review / Tests / Continue / Send | Unavailable; use the Herdr keyboard |
 | Steer / Queue | Unavailable; use the Herdr keyboard |
 
-Codex gets native controls only with a verified, opted-in title binding. Other foreground agents whose executable matches Herdr's detected agent kind can appear for status, focus and Zoom; their native settings and input controls are not verified.
+Codex gets native controls only with a verified, opted-in title binding. Other foreground agents whose executable matches Herdr's detected agent kind can appear for status and focus; their native settings and input controls are not verified.
 
-The public pane-read result supplies text and revision but no composer cursor. The adapter therefore cannot safely tell typed input from ghost suggestions or prove the editing position. It does not substitute a text-only guess for the Rex draft checks. On Herdr, the Prompts page displays **Use Herdr keyboard**, and the running row omits Steer and Queue.
+The public pane-read result supplies text and revision but no composer cursor. The adapter therefore cannot safely tell typed input from ghost suggestions or prove the editing position. It does not substitute a text-only guess for the Rex draft checks. Use the Herdr keyboard for prompts; the running row omits Steer and Queue.
 
 Backend focus is the session API's focused pane, not proof of which of several attached terminal clients is in front. Multiple-client behavior requires live validation. The adapter does not bring an outer terminal app to the foreground.
 

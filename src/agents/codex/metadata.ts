@@ -4,12 +4,8 @@ type Config = import('../../domain/types').Config;
 type PressContext = import('../../domain/types').PressContext;
 ('use strict');
 const path = require('node:path');
-const {
-  DaemonRpc,
-  socketFor,
-  readFooter,
-  readPermissionSettings,
-} = require('./daemon');
+const { DaemonRpc, socketFor, readPermissionSettings } = require('./daemon');
+const { readIdentity } = require('./hook-identity');
 const { latestTurn, backgroundState } = require('./background');
 const key: (agent: AgentSnapshot) => string = (
   agent: import('../../domain/types').AgentSnapshot,
@@ -59,13 +55,15 @@ class AgentMetadata {
   declare connect: any;
   /** Agents whose last read found no session ID in their own footer. */
   declare missing: Set<string>;
+  declare notices: Map<string, string>;
   constructor(bridge: Record<string, any>, dependencies: any = {}) {
     this.b = bridge;
     this.cache = new Map();
     this.missing = new Set();
+    this.notices = new Map();
     this.now = dependencies.now || Date.now;
     this.socketFor = dependencies.socketFor || socketFor;
-    this.footer = dependencies.footer || readFooter;
+    this.footer = dependencies.footer || readIdentity;
     this.settings = dependencies.settings || readPermissionSettings;
     this.connect =
       dependencies.connect ||
@@ -85,6 +83,10 @@ class AgentMetadata {
       if (agent.app !== 'codex') continue;
       const cached: any = this.cache.get(key(agent));
       if (cached) restore(agent, cached.value);
+      // Discovery replaces snapshots between metadata reads. Preserve the hint
+      // under the same process identity without granting a chat binding.
+      agent.footerMissing = this.missing.has(key(agent));
+      agent.codexHookNotice = this.notices.get(key(agent));
     }
   }
   async read(agent: import('../../domain/types').AgentSnapshot) {
@@ -172,6 +174,7 @@ class AgentMetadata {
         } catch {}
       return {
         chatId: id,
+        codexHookEpoch: agent.codexHookEpoch,
         chatName:
           typeof thread.name === 'string' && thread.name.trim()
             ? thread.name.trim()
@@ -205,6 +208,8 @@ class AgentMetadata {
     for (const id of this.cache.keys())
       if (!live.has(id)) this.cache.delete(id);
     for (const id of this.missing) if (!live.has(id)) this.missing.delete(id);
+    for (const id of this.notices.keys())
+      if (!live.has(id)) this.notices.delete(id);
     this.hydrate(agents);
     for (const agent of agents) {
       if (
@@ -226,6 +231,9 @@ class AgentMetadata {
         agent.footerMissing = this.missing.has(id);
         continue;
       }
+      // Rendering hydrates discovery snapshots while these reads await I/O.
+      // Keep identity evidence private until the complete read is published.
+      const candidate = { ...agent, codexHookNotice: undefined };
       try {
         const value: {
           metadataAt: any;
@@ -241,12 +249,19 @@ class AgentMetadata {
           collaborationMode: any;
           reviewer: any;
           runId: any;
-        } = await this.read(agent);
+        } = await this.read(candidate);
         this.cache.set(id, { at: now, statusAt: agent.statusAt, value });
+        if (candidate.codexHookNotice)
+          this.notices.set(id, candidate.codexHookNotice);
+        else this.notices.delete(id);
         restore(agent, value);
+        agent.codexHookNotice = this.notices.get(id);
         this.missing.delete(id);
         agent.footerMissing = false;
       } catch (error: unknown) {
+        if (candidate.codexHookNotice)
+          this.notices.set(id, candidate.codexHookNotice);
+        else this.notices.delete(id);
         // Only a footer without an ID earns the key hint; other failures
         // (daemon, Rex reads) keep the generic fail-closed behaviour.
         if (
@@ -266,6 +281,7 @@ class AgentMetadata {
           restore(agent, cached.value);
         } else if (this.b.backend !== 'herdr' || !agent.chatName)
           agent.chatName = 'Name unavailable';
+        agent.codexHookNotice = this.notices.get(id);
       }
     }
     return agents;

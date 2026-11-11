@@ -37,6 +37,17 @@ const { HerdrAppController } = require('./herdr-app-controller');
 const { AppCoreStatusReader } = require('../terminals/herdr-app/core-status');
 const { HerdrAppClient } = require('../terminals/herdr-app/transport');
 const { AppSelectionReader } = require('../terminals/herdr-app/selection');
+const {
+  navigationSnapshot,
+  sameNavigationTarget,
+} = require('../domain/navigation');
+const {
+  observeSettings,
+  performRexKeyboard,
+  rexSettingsAction,
+} = require('./rex-keyboard-settings');
+const { cycleClaudeMode } = require('../agents/claude/keyboard-mode');
+const { refreshRexClaudeMetadata } = require('./rex-provider-metadata');
 const { appFocusBackend } = require('./herdr-app-backend');
 const { GuardedBackend } = require('../terminals/contract/backend');
 const {
@@ -277,6 +288,7 @@ function createApplication(dependencies: Record<string, any>) {
     let page: number = 0,
       bank: number = 0,
       busy: boolean = false,
+      refreshDone: Promise<void> = Promise.resolve(),
       offline: boolean = true,
       metadataBusy: boolean = false,
       metadataAgain: boolean = false,
@@ -332,10 +344,21 @@ function createApplication(dependencies: Record<string, any>) {
     function selected() {
       return bridge.agents?.find((a: any) => sameTarget(bridge.lastTarget, a));
     }
+    function navigationAgents() {
+      return scope === 'rex'
+        ? (bridge.navigationAgents || bridge.agents || []).map(
+            navigationSnapshot,
+          )
+        : bridge.agents || [];
+    }
+    function navigationTarget() {
+      return bridge.lastNavigationTarget === undefined
+        ? bridge.lastTarget
+        : bridge.lastNavigationTarget;
+    }
     function rawMapping(k: any) {
       const override: any = k.settings.action;
       if (override) {
-        if (override === 'tools') return 'questions';
         if (
           [
             'planPrompt',
@@ -343,6 +366,12 @@ function createApplication(dependencies: Record<string, any>) {
             'effortPicker',
             'previous',
             'bankprev',
+            'zoom',
+            'tools',
+            'more',
+            'questions',
+            'prompts',
+            'back',
           ].includes(override)
         )
           return 'none';
@@ -363,13 +392,18 @@ function createApplication(dependencies: Record<string, any>) {
     function mapping(k: any) {
       const action = rawMapping(k),
         backend = bridge.delivery?.backend;
+      // Group controls are useful only when topology offers work to do.
+      if (action === 'next' && (bridge.agents?.length || 0) <= 1) return 'none';
+      if (action === 'collapse' && (offline || !bridge.slotGaps()))
+        return 'none';
+      if (action === 'banknext' && bridge.slots.length <= 5) return 'none';
       return backend?.id === 'herdr-app' &&
         !verifiedAction(action, backend.capabilities, backend.verifiedControls)
         ? 'none'
         : action;
     }
     function bankLines() {
-      if (offline) return ['Agents ▶', backendName() + ' offline'];
+      if (offline) return ['Page', backendName() + ' offline'];
       const visible: any = bridge.slots
         .slice(bank * 5, bank * 5 + 5)
         .filter((s: any) =>
@@ -380,8 +414,8 @@ function createApplication(dependencies: Record<string, any>) {
       const total: number = Math.max(1, Math.ceil(bridge.slots.length / 5)),
         outside: number = Math.max(0, (bridge.agents?.length || 0) - visible);
       return [
-        'Agents ▶',
-        ...(total > 1 ? [`bank ${bank + 1}/${total}`] : []),
+        'Page',
+        ...(total > 1 ? [`${bank + 1}/${total}`] : []),
         ...(outside
           ? [`${outside} off-page`]
           : bridge.agents?.length
@@ -415,6 +449,7 @@ function createApplication(dependencies: Record<string, any>) {
       };
     }
     function render() {
+      if (scope === 'rex' && busy) return; // Publish discovery and display selection together.
       if (
         scope === 'herdr-app' &&
         !bridge.delivery.backend.capabilities.has('discover')
@@ -437,7 +472,11 @@ function createApplication(dependencies: Record<string, any>) {
         }
         return;
       }
-      metadata.hydrate(bridge.agents || []);
+      try {
+        metadata.hydrate(bridge.agents || []);
+      } catch {
+        /* Provider captions cannot interrupt Rex navigation rendering. */
+      }
       const now: any = clock(),
         target: any = selected(),
         mode:
@@ -448,7 +487,16 @@ function createApplication(dependencies: Record<string, any>) {
           | 'ready'
           | 'approval' = C.modeOf(target),
         contextStamp: string = C.stamp(target, page);
-      completion.update(bridge.agents || [], target, now);
+      const navigation = navigationAgents();
+      completion.update(
+        navigation,
+        scope === 'rex'
+          ? navigation.find((agent: any) =>
+              sameNavigationTarget(navigationTarget(), agent),
+            )
+          : target,
+        now,
+      );
       if (contextState.stamp !== contextStamp)
         contextState = { stamp: contextStamp, armedAt: now + 350 };
       for (const [ctx, k] of keys) {
@@ -460,10 +508,6 @@ function createApplication(dependencies: Record<string, any>) {
               effortDecrease: 'blank',
               plan: 'blank',
               permissions: 'reviewer',
-              more: 'more',
-              questions: 'more',
-              prompts: 'more',
-              back: 'previous',
               questionPrev: 'previous',
               questionNext: 'next',
               answer: 'send',
@@ -486,7 +530,7 @@ function createApplication(dependencies: Record<string, any>) {
         if (action.startsWith('agent:')) {
           const slot: any =
               bridge.slots[bank * 5 + Number(action.split(':')[1])],
-            a: any = bridge.agents?.find(
+            a: any = navigationAgents().find(
               (a: any) =>
                 a.block === slot?.block && a.session === slot?.session,
             );
@@ -519,7 +563,12 @@ function createApplication(dependencies: Record<string, any>) {
               now - transitions.get(a.block).at,
               config.animation,
             );
-            if (sameTarget(bridge.lastTarget, a)) badge = 'selected';
+            if (
+              scope === 'rex'
+                ? sameNavigationTarget(navigationTarget(), a)
+                : sameTarget(bridge.lastTarget, a)
+            )
+              badge = 'selected';
           } else {
             icon = 'empty';
             lines = offline
@@ -562,10 +611,6 @@ function createApplication(dependencies: Record<string, any>) {
               tests: string[];
               continue: string[];
               send: any[];
-              more: string[];
-              questions: string[];
-              prompts: string[];
-              back: string[];
               none: never[];
               claudeToggle: string[];
               claudeInfo: string[];
@@ -591,7 +636,9 @@ function createApplication(dependencies: Record<string, any>) {
               plan: modeLines(bridge),
               interrupt: [
                 'Interrupt',
-                mode === 'working' && footerMissing(target)
+                mode === 'working' &&
+                footerMissing(target) &&
+                !target?.rexSettings
                   ? 'No footer ID'
                   : mode === 'working'
                     ? 'running'
@@ -628,30 +675,15 @@ function createApplication(dependencies: Record<string, any>) {
               send: bridge.draft
                 ? ['Send', bridge.draft.action]
                 : ['Send', 'no draft'],
-              more: [
-                `Page ${page + 1}/3`,
-                ['Home', 'Questions', 'Prompts'][page],
-                page === 0
-                  ? {
-                      ready: 'Ready',
-                      working: 'Working',
-                      background: 'Background',
-                      question: 'Question',
-                      approval: 'Choice',
-                      unknown: target
-                        ? 'Check ' + backendName()
-                        : 'Select agent',
-                    }[mode]
-                  : 'next page',
-              ],
-              questions: ['Questions'],
-              prompts: ['Prompts'],
-              back: ['Back', 'Questions'],
               none: [],
               claudeToggle: ['Toggle', 'Space'],
               claudeInfo: [
                 'Claude Code',
-                config.claude?.enabled ? 'Experimental' : 'Set up hooks',
+                config.claude?.enabled
+                  ? 'Experimental'
+                  : scope === 'rex'
+                    ? 'Enable controls'
+                    : 'Set up hooks',
               ],
               claudeModeInfo: modeLines(bridge),
               inputInfo: ['Use Herdr', 'keyboard'],
@@ -689,9 +721,30 @@ function createApplication(dependencies: Record<string, any>) {
             ['model', 'effort', 'permissions', 'plan', 'interrupt'].includes(
               action,
             ) &&
-            footerMissing(target)
+            footerMissing(target) &&
+            !(
+              target?.rexSettings &&
+              ((rexSettingsAction(action) && mode === 'ready') ||
+                (action === 'interrupt' && mode === 'working'))
+            )
           )
             color = '#38414b';
+          if (
+            target?.rexSettings &&
+            rexSettingsAction(action) &&
+            mode === 'ready'
+          ) {
+            const heading = (
+              {
+                model: 'Model',
+                effort: 'Effort',
+                permissions: 'Permissions',
+                plan: 'Mode',
+              } as Record<string, string>
+            )[action];
+            const value = target.rexSettings[action];
+            lines = [heading, clean(value)];
+          }
           if (action.startsWith('approval')) color = '#78551e';
           if (action === 'send' && bridge.draft) color = '#416428';
           if (
@@ -733,7 +786,7 @@ function createApplication(dependencies: Record<string, any>) {
               : action === 'collapse'
                 ? 'Collapse'
                 : action === 'permissions'
-                  ? 'Reviewer'
+                  ? 'Permissions'
                   : action === 'steer'
                     ? 'Steer'
                     : action === 'queue'
@@ -780,8 +833,10 @@ function createApplication(dependencies: Record<string, any>) {
       metadataBusy = true;
       try {
         const source: any = bridge,
-          reader: any = metadata,
-          agents: any = await reader.refresh(source.agents || [], force);
+          reader: any = metadata;
+        if (scope === 'rex')
+          await refreshRexClaudeMetadata(source, () => source === bridge);
+        const agents: any = await reader.refresh(source.agents || [], force);
         if (source !== bridge) return;
         for (const agent of agents) {
           if (agent.app !== 'codex') continue;
@@ -798,6 +853,8 @@ function createApplication(dependencies: Record<string, any>) {
           )
             for (const field of [
               'chatId',
+              'codexHookEpoch',
+              'codexHookNotice',
               'chatName',
               'project',
               'model',
@@ -834,6 +891,8 @@ function createApplication(dependencies: Record<string, any>) {
                 live[field] = (agent as Record<string, any>)[field];
         }
         render();
+      } catch {
+        // Optional provider availability must never take Rex navigation offline.
       } finally {
         metadataBusy = false;
         if (metadataAgain) {
@@ -842,12 +901,139 @@ function createApplication(dependencies: Record<string, any>) {
         }
       }
     }
+    let settingsRead:
+      | {
+          source: any;
+          target: any;
+          pending: boolean;
+          values: any;
+          readAt: number;
+        }
+      | undefined;
+    function observeFocusedSettings(source: any, agent: any) {
+      const live = source.agents?.find((item: any) =>
+        sameNavigationTarget(item, agent),
+      );
+      if (
+        !live?.rexSettings ||
+        !(
+          ['idle', 'done', 'error'].includes(agent.state) ||
+          (agent.app === 'codex' && agent.state === 'working')
+        )
+      ) {
+        settingsRead = undefined;
+        return;
+      }
+      if (
+        settingsRead?.source !== source ||
+        !sameNavigationTarget(settingsRead?.target, agent) ||
+        settingsRead?.target.cwd !== agent.cwd ||
+        ((agent.state === 'working' ||
+          settingsRead?.target.state === 'working') &&
+          (agent.state !== settingsRead?.target.state ||
+            agent.statusAt !== settingsRead?.target.statusAt))
+      )
+        settingsRead = {
+          source,
+          target: agent,
+          pending: false,
+          values: {},
+          readAt: 0,
+        };
+      const record = settingsRead!;
+      live.rexSettings = record.values;
+      if (record.pending) return;
+      record.pending = true;
+      // A slow or missing provider frame must not delay the dot or row 2.
+      void observeSettings(source, agent)
+        .then((values: any) => {
+          if (
+            settingsRead !== record ||
+            bridge !== source ||
+            !keys.size ||
+            !config.allowClipboardFocus ||
+            !sameNavigationTarget(source.lastNavigationTarget, agent)
+          )
+            return;
+          const current = source.agents?.find(
+            (item: any) =>
+              sameNavigationTarget(item, agent) && item.cwd === agent.cwd,
+          );
+          if (current) {
+            // A transient repaint may lose the frame, but should not blank a
+            // known caption between polls. Never retain a hash or grant input
+            // from this display-only grace period, or cross a process change.
+            if (
+              !values.viewHash &&
+              values.process &&
+              values.process === record.values.process &&
+              clock() - record.readAt < 4500
+            ) {
+              for (const field of ['model', 'effort', 'permissions', 'plan'])
+                values[field] = record.values[field];
+            } else if (values.viewHash) record.readAt = clock();
+            record.values = values;
+            current.rexSettings = values;
+            render();
+          }
+        })
+        .finally(() => {
+          record.pending = false;
+        });
+    }
+    async function followRexSelection() {
+      if (scope !== 'rex') return;
+      if (!config.allowClipboardFocus) {
+        settingsRead = undefined;
+        bridge.resetDisplayFocus?.();
+        bridge.lastNavigationTarget = null;
+        return;
+      }
+      const source = bridge,
+        previous = navigationTarget(),
+        previousProof = source.lastTarget;
+      try {
+        const agent = await source.displayedAgent();
+        if (source !== bridge || !config.allowClipboardFocus || !keys.size)
+          return;
+        bridge.lastTarget = sameNavigationTarget(previousProof, agent)
+          ? previousProof
+          : C.snapshot(agent);
+        bridge.lastNavigationTarget = navigationSnapshot(agent);
+        bridge.selectionNotice = false;
+        if (!sameNavigationTarget(previous, agent)) {
+          bridge.draft = null;
+          bridge.picker = null;
+          if (bridge.claude) bridge.claude.picker = null;
+          const slot = bridge.slots.findIndex(
+            (entry: any) =>
+              entry.session === agent.session && entry.block === agent.block,
+          );
+          if (slot >= 0) bank = Math.floor(slot / 5);
+        }
+        observeFocusedSettings(source, agent);
+      } catch {
+        if (source !== bridge) return;
+        settingsRead = undefined;
+        // Shells, closed panes and unavailable native focus never retain a dot.
+        bridge.lastNavigationTarget = null;
+        bridge.lastTarget = null;
+        bridge.draft = null;
+        bridge.picker = null;
+        if (bridge.claude) bridge.claude.picker = null;
+      }
+    }
     async function refresh(forceMetadata: any = false) {
-      if (busy || actionBusy) return;
+      if (busy || actionBusy || setupBusy) return;
       busy = true;
+      let finish!: () => void;
+      refreshDone = new Promise((resolve) => {
+        finish = resolve;
+      });
       try {
         loadConfig();
         await bridge.discover();
+        await followRexSelection();
         offline =
           scope === 'herdr-app' &&
           !bridge.delivery.backend.capabilities.has('discover');
@@ -855,19 +1041,23 @@ function createApplication(dependencies: Record<string, any>) {
       } catch {
         offline = true;
         bridge.agents = [];
+        if (scope === 'rex') {
+          settingsRead = undefined;
+          bridge.resetDisplayFocus?.();
+          bridge.navigationAgents = [];
+          bridge.lastNavigationTarget = null;
+          bridge.lastTarget = null;
+        }
         bridge.draft = null;
         bridge.picker = null;
       } finally {
         busy = false;
+        finish();
         render();
       }
     }
     async function performLegacy(a: any, display: any) {
-      if (a === 'more') page = (page + 1) % 3;
-      else if (a === 'questions') page = 1;
-      else if (a === 'prompts') page = 2;
-      else if (a === 'back') page = 0;
-      else if (a === 'collapse') {
+      if (a === 'collapse') {
         const result: any = await bridge.collapse();
         bank = Math.min(
           bank,
@@ -957,6 +1147,7 @@ function createApplication(dependencies: Record<string, any>) {
       )
         return;
       display = display || k.presented || capture(k);
+      if (busy) await refreshDone;
       const a: any = display.action;
       if (
         [
@@ -986,7 +1177,29 @@ function createApplication(dependencies: Record<string, any>) {
           ].includes(a)
         )
           assertVerifiedControl(bridge.delivery.backend, display);
-        if (C.needsContext(a)) {
+        if (
+          display.target?.rexSettings &&
+          scope === 'rex' &&
+          (rexSettingsAction(a) ||
+            (a === 'interrupt' &&
+              display.target.state === 'working' &&
+              !display.target.chatId)) &&
+          (display.target.app === 'codex' ||
+            (display.target.app === 'claude-code' &&
+              display.target.rexSettings.process &&
+              rexSettingsAction(a)))
+        ) {
+          result = await performRexKeyboard(bridge, display);
+        } else if (
+          display.target?.rexSettings &&
+          scope === 'rex' &&
+          display.target.app === 'claude-code' &&
+          ['plan', 'permissions'].includes(a)
+        ) {
+          result = await bridge.withContext(display, () =>
+            cycleClaudeMode(bridge, display.target),
+          );
+        } else if (C.needsContext(a)) {
           result = await bridge.withContext(display, () => perform(a, display));
         } else result = await perform(a, display);
         guards.postflight(display);
@@ -1004,11 +1217,8 @@ function createApplication(dependencies: Record<string, any>) {
         k.feedback = {
           until: clock() + 10000,
           message: clean(
-            (
-              error as Error & {
-                code?: string;
-              }
-            ).message,
+            (error as Error & { keyLabel?: string }).keyLabel ??
+              (error as Error).message,
           ),
           action: a,
           stamp: display.stamp,
@@ -1076,10 +1286,7 @@ function createApplication(dependencies: Record<string, any>) {
     async function initialize() {
       if (!keys.size) return;
       await refresh();
-      if (
-        !startupSelectionRead &&
-        (config.backend === 'herdr' || config.allowClipboardFocus)
-      ) {
+      if (!startupSelectionRead && config.backend === 'herdr') {
         startupSelectionRead = true;
         try {
           await bridge.focused();
@@ -1112,6 +1319,10 @@ function createApplication(dependencies: Record<string, any>) {
               state: a.state,
               mode:
                 a.app === 'claude-code' ? null : a.collaborationMode || null,
+              ...(a.codexHookEpoch ? { identitySource: 'hook' } : {}),
+              ...(a.codexHookNotice
+                ? { identityMessage: a.codexHookNotice }
+                : {}),
               ...(a.app === 'claude-code'
                 ? {
                     identityMessage: a.claudeError || '',
@@ -1149,6 +1360,7 @@ function createApplication(dependencies: Record<string, any>) {
           online: !offline,
           model: e.payload.model,
           herdr: scope === 'herdr',
+          rexPath: config.rexPath,
         });
         // Only the Herdr profile probes Herdr session sockets.
         const sessions =
@@ -1237,7 +1449,7 @@ function createApplication(dependencies: Record<string, any>) {
         ctx: e.context,
         display: { ...capture(keys.get(e.context)), setupBusy: false },
       };
-      inspectorStatus(e.context, 'Checking the selected agent’s footer…');
+      inspectorStatus(e.context, 'Checking the selected Codex identity…');
       try {
         if (config.backend === 'herdr')
           throw Error(
@@ -1262,7 +1474,7 @@ function createApplication(dependencies: Record<string, any>) {
         await refresh(true);
         inspectorStatus(
           e.context,
-          'Session-ID footer found; Codex controls can use it. Nothing was changed.',
+          'Codex session identity verified. Nothing was changed.',
         );
       } catch (error: unknown) {
         inspectorStatus(
@@ -1287,13 +1499,15 @@ function createApplication(dependencies: Record<string, any>) {
       const hadConsent: any = config.allowClipboardFocus;
       loadConfig();
       if (scope === 'rex' && hadConsent && !config.allowClipboardFocus) {
+        settingsRead = undefined;
         bridge.lastTarget = null;
+        bridge.lastNavigationTarget = null;
         bridge.draft = null;
         bridge.picker = null;
       } else if (
         keys.size &&
         !startupSelectionRead &&
-        (scope === 'herdr' || config.allowClipboardFocus)
+        (scope === 'herdr' || (!hadConsent && config.allowClipboardFocus))
       )
         queue = queue.then(initialize).catch(() => {});
       render();
@@ -1305,7 +1519,7 @@ function createApplication(dependencies: Record<string, any>) {
         bridge.draft = null;
         bridge.picker = null;
         if (bridge.claude) bridge.claude.picker = null;
-        completion.update(bridge.agents || [], null, clock());
+        completion.update(navigationAgents(), null, clock());
       }
     }
     function attach(context: any, payload: any) {

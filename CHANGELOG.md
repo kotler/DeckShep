@@ -7,6 +7,46 @@ preview artifacts use `-beta.N` release tags.
 
 ### Changed
 
+- Follow unambiguous Rex session focus without polling the clipboard. Present
+  agent settings and press targets together after discovery so a slow refresh
+  cannot flash Unknown or refuse an unchanged Codex control. Recognize the
+  native context-percentage footer when opening a settings picker.
+
+- Make the first two Rex rows independent of provider integrations. Use Rex
+  titles, owned process/status records and physical pane selection for the agent
+  bar and navigation; refresh Claude proof asynchronously for row 3. Preserve
+  row-3 identity/input guards and existing optional hook setup.
+- Integrate explicitly addressed Rex panel/PID observations into active Codex
+  hooks. Commit lifecycle reports first; keep optional metadata in separate
+  private epoch-bound sidecars. Query failures preserve lifecycle state and
+  observations grant no shared-daemon control authority.
+- Follow the visible Rex pane for the selection dot, including manual tab changes,
+  shell tabs and tab closures. Background agent arrivals do not steal selection.
+- Route the four Rex ready-state settings keys through native keyboard controls.
+  Model and Effort use session-only selection; Permissions cycles actual native
+  profiles. Unknown views and extra confirmations stop input. The status line
+  and terminal title need no changes.
+- Keep in-flight Codex metadata isolated from render hydration so hook identity
+  epochs and safe verification diagnostics survive concurrent display refreshes.
+
+- Add optional Codex lifecycle-hook identity for Rex, with private setup/report
+  records, exact process/pane checks, single-client/single-thread proofs and
+  captured-epoch refusals. Preserve independent footer verification and all
+  native composer/focus/provider guards. Fresh installs do not enable hooks.
+
+- Remove Zoom from deck layouts and inspector action choices. Its former Home
+  and Prompts positions become available; question/approval Confirm stays in place.
+- Rename Reviewer to Permissions and move the Codex Home key to the former
+  Zoom position. Rename the bank button to Page without an arrow.
+- Keep one dynamic Home layout. Row 2 is Next agent / Page / Collapse, shown
+  only for multiple agents / multiple agent pages / gaps respectively. Remove
+  the Questions/Prompts page selector; keep contextual questions in row 3.
+- Embed provider watermarks as inline SVG paths with explicit fills so they
+  render in Stream Deck's native editor.
+- Fit long key captions with an explicit font size as well as SVG text-length
+  hints, preventing native clipping of labels such as Permissions.
+- Preserve the missing Codex footer-ID hint across discovery refreshes and bring
+  the read-only footer-check result into view in the setup panel.
 - Reset prelaunch plugin/action IDs to `com.kotl3r.deckshep` / `.key`, with a
   matching plugin folder/installer and fresh profile/page/key UUIDs. Older preview
   profiles require recreation and exact Claude-hook removal before new setup.
@@ -31,13 +71,20 @@ preview artifacts use `-beta.N` release tags.
   heartbeat; Model/Effort read the native picker, and hook captions are
   display only (`?` after 30 minutes). Setup also registers PostModelSwitch.
 - Remove the Claude status-line install option. `configure-claude.js
-  --statusline` is refused; older setups get **Restore your original status
+--statusline` is refused; older setups get **Restore your original status
   line** (`--restore-statusline`), which keeps the hooks.
 - Node build/package/recovery tools, guided setup/undo and privacy-safe doctor.
 - Automated fixture host, CI audits and draft-only release workflow.
 
 ### Added
 
+- Fixed phase and execution-failure diagnostics for optional hook panel reads,
+  without recording command output, arguments or paths or granting identity.
+- Add an isolated hook-to-Rex-process registration POC, including explicit panel
+  targeting, private candidate records, lifecycle/race refusals and a synthetic
+  shared-daemon stale-context counterexample. It grants no production authority.
+- Privacy-safe Rex server API-revision diagnostics and fixture regression cases
+  for app reconnects, changed panes/processes/requests and uncertain writes.
 - Disabled Herdr App fixture foundation, v3 reservation/rollback and source ADR.
 - One-time backup/native-install migration for legacy customizations and Claude
   records, included in the beta ZIP.

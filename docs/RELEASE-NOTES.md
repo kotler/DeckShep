@@ -1,5 +1,12 @@
 ## Rex-only first release — development update
 
+- Zoom has been removed from the deck and inspector action choices. Reviewer
+  is now Permissions at the former Home Zoom position; its old key is empty.
+  The bank key is now Page without an arrow. Confirm stays in place.
+- The deck has one dynamic Home layout. Row 2 is Next agent / Page / Collapse;
+  each is hidden when unnecessary. Row 3 contains the selected agent's controls.
+  Use the keyboard for extra navigation and prompt actions previously on pages
+  2 and 3.
 - Release builds ship only the Rex profile. Herdr TUI and Herdr App stay in
   source behind `experimental.herdr` / `experimental.herdrApp`.
 - DeckShep never changes a Claude Code or Codex status line. Codex footer setup

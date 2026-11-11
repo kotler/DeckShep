@@ -12,6 +12,12 @@ export function isRexRead(args: readonly string[]): boolean {
       args[1] === 'inspect' &&
       args[3] === '--json' &&
       args.length === 4) ||
-    (args[0] === 'block' && args[1] === 'call' && reads.has(args[6] ?? ''))
+    (args[0] === 'block' && args[1] === 'call' && reads.has(args[6] ?? '')) ||
+    (args[0] === 'block' &&
+      args[1] === 'call' &&
+      args[2] === '-s' &&
+      args[4] === '-b' &&
+      args[6] === 'title' &&
+      args.length === 7)
   );
 }

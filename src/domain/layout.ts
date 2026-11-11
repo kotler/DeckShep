@@ -23,6 +23,11 @@ function modeOf(agent: import('./types').AgentSnapshot | null | undefined) {
     ((agent.backend === 'herdr' &&
       (agent as any).nativeVerified === false) as any) ||
     (agent.app === 'claude-code' &&
+      !(
+        agent.backend !== 'herdr' &&
+        agent.rexSettings?.process &&
+        ['idle', 'done', 'error'].includes(agent.state)
+      ) &&
       (!(agent as any).nativeVerified || !(agent as any).claudeControlsEnabled))
   )
     return 'unknown';
@@ -42,13 +47,17 @@ function homeRow(
   agent: import('./types').AgentSnapshot | null | undefined,
   capabilities?: ReadonlySet<string> | undefined,
 ) {
+  const settingsAction =
+    agent?.app === 'claude-code' ? 'claudeInfo' : 'permissions';
   switch (modeOf(agent)) {
     case 'ready':
       return [
         'model',
         'effort',
-        'zoom',
-        (agent as any).app === 'claude-code' ? 'claudeModeInfo' : 'plan',
+        agent?.rexSettings ? 'permissions' : settingsAction,
+        (agent as any).app === 'claude-code' && !agent?.rexSettings
+          ? 'claudeModeInfo'
+          : 'plan',
         'interrupt',
       ];
     case 'working':
@@ -57,10 +66,10 @@ function homeRow(
           ? !capabilities.has('composerCursor')
           : (agent as any).composerSupported === false
       )
-        ? ['none', 'none', 'zoom', 'none', 'interrupt']
-        : ['steer', 'queue', 'zoom', 'none', 'interrupt'];
+        ? ['none', 'none', settingsAction, 'none', 'interrupt']
+        : ['steer', 'queue', settingsAction, 'none', 'interrupt'];
     case 'background':
-      return ['none', 'none', 'zoom', 'none', 'stopTerminals'];
+      return ['none', 'none', settingsAction, 'none', 'stopTerminals'];
     case 'question':
       return [
         'up',
@@ -81,83 +90,29 @@ function homeRow(
       ];
     case 'unknown':
     default:
-      return ['status', 'none', 'zoom', 'none', 'interrupt'];
+      return ['status', 'none', settingsAction, 'none', 'interrupt'];
   }
 }
 function rawLayout(
-  page: number,
   agent: import('./types').AgentSnapshot | null | undefined,
   capabilities?: ReadonlySet<string> | undefined,
 ) {
-  const stop: 'stopTerminals' | 'claudeToggle' | 'interrupt' = isBackground(
-    agent,
-  )
-    ? 'stopTerminals'
-    : agent?.app === 'claude-code' &&
-        agent.kind === 'question' &&
-        agent.claudeMultiSelect
-      ? 'claudeToggle'
-      : 'interrupt';
-  if (page === 1)
-    return [
-      'questionPrev',
-      'up',
-      'questionNext',
-      'answer',
-      'more',
-      'left',
-      'down',
-      'right',
-      'escape',
-      stop,
-    ];
-  if (
-    page === 2 &&
-    (capabilities
-      ? !capabilities.has('composerCursor')
-      : agent?.composerSupported === false)
-  )
-    return [
-      'inputInfo',
-      'none',
-      'none',
-      'none',
-      'more',
-      'none',
-      'none',
-      'zoom',
-      'none',
-      stop,
-    ];
-  if (page === 2)
-    return [
-      'review',
-      'tests',
-      'continue',
-      'send',
-      'more',
-      'none',
-      'none',
-      'zoom',
-      'none',
-      stop,
-    ];
   return [
-    'collapse',
-    'banknext',
     'next',
-    agent?.app === 'claude-code' ? 'claudeInfo' : 'permissions',
-    'more',
+    'banknext',
+    'collapse',
+    'none',
+    'none',
     ...homeRow(agent, capabilities),
   ];
 }
 function layout(
-  page: number,
+  _page: number,
   agent: import('./types').AgentSnapshot | null | undefined,
   capabilities?: ReadonlySet<string>,
   controls?: ReadonlySet<import('./types').ControlId>,
 ) {
-  const actions = rawLayout(page, agent, capabilities);
+  const actions = rawLayout(agent, capabilities);
   if (!controls) return actions;
   return actions.map((action) =>
     verifiedAction(action, capabilities ?? new Set(), controls)

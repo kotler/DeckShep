@@ -114,17 +114,17 @@ async function fixture(controls = ['questionPrev', 'questionNext']) {
   };
 }
 
-test('a question-navigation record renders only those native controls and preserves local navigation', async () => {
+test('a question-navigation record grants no unverified Home controls and preserves local navigation', async () => {
   const f = await fixture();
   const caps = f.kernel.backend.capabilities,
     controls = f.kernel.backend.verifiedControls;
   const row = layout(1, f.target, caps, controls);
   assert.deepEqual(row, [
-    'questionPrev',
     'none',
-    'questionNext',
+    'banknext',
+    'collapse',
     'none',
-    'more',
+    'none',
     'none',
     'none',
     'none',
@@ -393,5 +393,12 @@ test('controller custom overrides cannot render or execute unverified App contro
   key.settings.action = 'questionPrev';
   assert.equal(h.api.mapping(key), 'questionPrev');
   key.settings.action = 'banknext';
+  assert.equal(h.api.mapping(key), 'none');
+  h.api.bridge.slots.push(
+    ...Array.from({ length: 4 }, (_, index) => ({
+      session: 's',
+      block: 'extra-' + index,
+    })),
+  );
   assert.equal(h.api.mapping(key), 'banknext');
 });

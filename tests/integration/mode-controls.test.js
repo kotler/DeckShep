@@ -14,16 +14,20 @@ test('mode controls', async () => {
   });
   h.change('b', { collaborationMode: 'plan', metadataAt: 1 });
   await h.ready();
-  assert(h.image(1, 3).includes('>Approve for me<'));
+  assert(h.image(2, 2).includes('>Approve for me<'));
+  assert.equal(h.action(1, 3), 'none');
   assert(h.image(2, 3).includes('>Default<'));
   assert(!h.image(2, 3).includes('<path'));
   assert(h.image(2, 1).includes('>Effort<'));
-  assert(h.image(2, 1).includes('>Unknown<'));
+  assert.match(
+    h.image(2, 1),
+    /<text\b[^>]*>Effort<\/text><text\b[^>]*><\/text>/,
+  );
   assert(
     h.image(2, 1).includes('<path'),
     'Effort uses the matching brain icon',
   );
-  assert(h.image(2, 2).includes('>Zoom<'));
+  assert.equal(h.action(2, 2), 'permissions');
   await h.press(2, 3);
   assert.deepEqual(
     h.calls.map((c) => c.args.at(-1)),
@@ -131,32 +135,32 @@ test('mode controls', async () => {
     agents: [{ ...agent, chatId: id, reviewer: 'user', metadataAt: 100 }],
     lastTarget: agent,
   };
-  assert.deepEqual(reviewerLines(bridge), ['Reviewer', 'Ask me']);
+  assert.deepEqual(reviewerLines(bridge), ['Permissions', 'Ask me']);
   bridge.lastReviewer = {
     ...agent,
     chatId: id,
     reviewer: 'auto_review',
     at: 200,
   };
-  assert.deepEqual(reviewerLines(bridge), ['Reviewer', 'Approve for me']);
+  assert.deepEqual(reviewerLines(bridge), ['Permissions', 'Approve for me']);
   bridge.agents[0].metadataAt = 300;
-  assert.deepEqual(reviewerLines(bridge), ['Reviewer', 'Ask me']);
+  assert.deepEqual(reviewerLines(bridge), ['Permissions', 'Ask me']);
   bridge.agents[0].metadataAt = 100;
   bridge.agents[0].chatId = 'other';
   assert.deepEqual(
     reviewerLines(bridge),
-    ['Reviewer', 'Ask me'],
+    ['Permissions', 'Ask me'],
     'a different chat must not inherit the last toggle',
   );
   bridge.agents[0].reviewer = null;
-  assert.deepEqual(reviewerLines(bridge), ['Reviewer']);
+  assert.deepEqual(reviewerLines(bridge), ['Permissions']);
   bridge.lastTarget = { ...agent, pid: 43 };
   assert.deepEqual(
     reviewerLines(bridge),
-    ['Reviewer'],
+    ['Permissions'],
     'a different process must not inherit reviewer state',
   );
   console.log(
-    'PASS brain Effort icon and ready-state Zoom, text-only mode key, verified Plan/Default display, native toggle once, manual changes, agent isolation, unavailable metadata and settings privacy',
+    'PASS brain Effort icon and Permissions at the former Zoom key, text-only mode key, verified Plan/Default display, native toggle once, manual changes, agent isolation, unavailable metadata and settings privacy',
   );
 });

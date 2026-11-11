@@ -251,7 +251,7 @@ test('daemon effort', async () => {
     'chat replacement cannot inherit last effort',
   );
   agent.effort = null;
-  assert.deepEqual(effortLines(bridge), ['Effort', 'Unknown']);
+  assert.deepEqual(effortLines(bridge), ['Effort', '']);
   const rpc = Object.create(DaemonRpc.prototype);
   for (const params of [
     { threadId: id, effort: null },

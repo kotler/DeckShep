@@ -43,6 +43,9 @@ test('inspector', () => {
         addEventListener(name, handler) {
           this.handlers[name] = handler;
         },
+        scrollIntoView() {
+          this.scrolledIntoView = true;
+        },
       });
     return nodes.get(id);
   }
@@ -121,13 +124,38 @@ test('inspector', () => {
   assert.equal(frames.at(-1).event, 'sendToPlugin');
   assert.equal(frames.at(-1).payload.preferences.animationEnabled, false);
   assert.equal(frames.at(-1).context, 'runtime-action-context');
-  node('action').value = 'zoom';
+  assert(!node('action').options.some((option) => option.value === 'zoom'));
+  node('action').value = 'effort';
   node('action').handlers.change();
   assert.equal(frames.at(-1).context, 'runtime-action-context');
   assert.equal(frames.at(-1).event, 'setSettings');
   assert.equal(frames.at(-1).payload.profileScope, 'herdr');
   assert.equal(frames.at(-1).payload.custom, 'preserved');
   assert.equal(node('backend').disabled, true);
+  socket.onmessage({
+    data: JSON.stringify({
+      event: 'sendToPropertyInspector',
+      payload: {
+        kind: 'status',
+        backend: 'rex',
+        preferences: P.view({ ...defaults, allowClipboardFocus: true }),
+        offline: false,
+        agents: 1,
+        codex: 1,
+        metadata: 0,
+        selected: { app: 'codex', state: 'idle' },
+        setupBusy: false,
+      },
+    }),
+  });
+  assert.equal(node('setup').disabled, false);
+  node('setup').handlers.click();
+  assert.equal(frames.at(-1).payload.kind, 'setupFooter');
+  assert.equal(node('message').scrolledIntoView, true);
+  assert.equal(
+    node('message').textContent,
+    'Checking the selected Codex identity…',
+  );
   socket.onmessage({
     data: JSON.stringify({
       event: 'sendToPropertyInspector',
@@ -185,9 +213,7 @@ test('inspector', () => {
   assert.equal(node('claudeEnabled').disabled, true);
   assert.equal(node('herdrAppFocusRequestEnabled').checked, false);
   assert(node('selection').textContent.includes('do not verify'));
-  assert(
-    node('action').options.find((option) => option.value === 'zoom').disabled,
-  );
+  assert(!node('action').options.some((option) => option.value === 'zoom'));
   assert(
     !node('action').options.find((option) => option.value === 'next').disabled,
   );

@@ -51,6 +51,28 @@ test(
     assert.equal(status.profileScope, 'rex');
     assert.equal(status.preferences.allowClipboardFocus, false);
     assert.equal(status.preferences.claudeEnabled, false);
+    send('sendToPlugin', 0, { kind: 'doctor' });
+    await until(() =>
+      frames.some(
+        (frame) =>
+          frame.event === 'sendToPropertyInspector' &&
+          frame.payload?.kind === 'doctor',
+      ),
+    );
+    assert.deepEqual(
+      frames.find(
+        (frame) =>
+          frame.event === 'sendToPropertyInspector' &&
+          frame.payload?.kind === 'doctor',
+      ).payload.checks,
+      [
+        {
+          id: 'rex-api',
+          ok: true,
+          reason: 'Fixture server API 23 (minimum 17)',
+        },
+      ],
+    );
     await new Promise((resolve) => setTimeout(resolve, 400));
     send('keyDown', 0);
     send('keyUp', 0);

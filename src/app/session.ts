@@ -4,6 +4,10 @@ type Config = import('../domain/types').Config;
 type PressContext = import('../domain/types').PressContext;
 ('use strict');
 const { state, token } = require('../domain/identity');
+const {
+  sameNavigationTarget,
+  navigationSnapshot,
+} = require('../domain/navigation');
 const { isRexRead } = require('../domain/transport');
 const { pluginDirectory } = require('../platform/paths.ts');
 const path = require('node:path');
@@ -44,6 +48,12 @@ class Bridge {
   declare config: import('../domain/types').Config;
   declare activate: any;
   declare readVisible: any;
+  declare inspectClaudeKeyboard: typeof import('../agents/claude/keyboard-identity').claudeKeyboardIdentity;
+  declare inspectKeyboardProcess: typeof import('../agents/codex/hook-process').inspectProcess;
+  declare codexIdentity: (
+    bridge: Record<string, any>,
+    agent: AgentSnapshot,
+  ) => Promise<string>;
   declare slots: {
     session: string;
     block: string;
@@ -56,7 +66,28 @@ class Bridge {
   } | null;
   declare claude: import('../agents/claude/controls').ClaudeControls;
   declare agents: any[] | undefined;
+  declare navigationAgents: AgentSnapshot[] | undefined;
+  declare lastNavigationTarget:
+    import('../domain/types').TargetRef | null | undefined;
   declare lastClient: any;
+  private readonly displayFocus =
+    new (require('../terminals/rex/display-focus').RexDisplayFocus)();
+  private sessionFocuses?: import('../terminals/rex/display-focus').SessionFocus[];
+  resetDisplayFocus() {
+    this.displayFocus.reset();
+  }
+  async displayedAgent() {
+    if (!this.config.allowClipboardFocus)
+      throw focusError('Visible checks disabled');
+    const a = await this.displayFocus.read(
+      this.lastClient,
+      this.sessionFocuses || [],
+      this.agents || [],
+      this.readVisible,
+    );
+    if (!a) throw focusError('No selected agent');
+    return a;
+  }
   declare lastTarget: import('../domain/types').TargetRef | null | undefined;
   declare picker:
     | {
@@ -120,8 +151,24 @@ class Bridge {
     run?: any,
     activate?: any,
     readVisible?: any,
+    codexIdentity?: (
+      bridge: Record<string, any>,
+      agent: AgentSnapshot,
+    ) => Promise<string>,
   ) {
     this.config = config;
+    this.inspectKeyboardProcess = run
+      ? async () => {
+          throw Error('Fixture process unavailable');
+        }
+      : require('../agents/codex/hook-process').inspectProcess;
+    this.inspectClaudeKeyboard = run
+      ? async () => {
+          throw Error('Fixture process unavailable');
+        }
+      : require('../agents/claude/keyboard-identity').claudeKeyboardIdentity;
+    this.codexIdentity =
+      codexIdentity || require('../agents/codex/hook-identity').readIdentity;
     const native: RexTransport = new RexTransport(() => this.config);
     this.#transport = run
       ? (args, input, beforeIO) => {
@@ -170,7 +217,7 @@ class Bridge {
   method(t: any, m: any) {
     return this.run(['block', 'call', '-s', t.session, '-b', t.block, m]);
   }
-  async agent(t: any) {
+  async agent(t: any, terminalOnly = false) {
     let p: any = await this.method(t, 'process');
     if (!p || !Object.hasOwn(p, 'foreground'))
       throw Error('Incomplete terminal process metadata');
@@ -214,12 +261,15 @@ class Bridge {
       ...status,
       project: path.basename(a.cwd || '') || a.app,
     };
-    return a.app === 'claude-code' ? this.claude.enrich(agent) : agent;
+    return !terminalOnly && a.app === 'claude-code'
+      ? this.claude.enrich(agent)
+      : agent;
   }
   async discover() {
     const client: any = await this.client(),
       listing: any = await this.run(['ls', '--json']);
-    const agents: any[] = [];
+    const agents: any[] = [],
+      focuses: import('../terminals/rex/display-focus').SessionFocus[] = [];
     if (!Array.isArray(listing?.sessions))
       throw Error('Incomplete Rex session list');
     for (const s of listing.sessions) {
@@ -233,6 +283,12 @@ class Bridge {
       ]);
       if (!Array.isArray(ins?.windows))
         throw Error('Incomplete Rex window list');
+      focuses.push(
+        require('../terminals/rex/display-focus').sessionFocus(
+          s.session_id,
+          ins,
+        ),
+      );
       for (const w of ins.windows) {
         if (typeof w.window_id !== 'string' || !Array.isArray(w.layers))
           throw Error('Incomplete Rex window');
@@ -253,8 +309,18 @@ class Bridge {
               window: w.window_id,
               block: b.block_id,
             };
-            const a: any = await this.agent(t);
-            if (a) agents.push(a);
+            const a: any = await this.agent(t, true);
+            if (a) {
+              try {
+                const title = await this.method(t, 'title');
+                if (typeof title?.title === 'string')
+                  a.terminalTitle = title.title;
+              } catch {
+                /* A missing display-only title cannot hide a live pane. */
+              }
+              a.rexSettings = {};
+              agents.push(a);
+            }
           }
         }
       }
@@ -268,13 +334,12 @@ class Bridge {
       )
         this.slots.push({ session: a.session, block: a.block });
     this.agents = agents;
+    this.navigationAgents = agents.map(navigationSnapshot);
     this.lastClient = client;
-    this.claude.prune(agents);
+    this.sessionFocuses = focuses;
     if (
       this.lastTarget?.app === 'claude-code' &&
-      !agents.some((a: any) =>
-        require('../domain/labels').sameTarget(a, this.lastTarget),
-      )
+      !agents.some((a: any) => sameNavigationTarget(a, this.lastTarget))
     ) {
       this.lastTarget = null;
       this.draft = null;
@@ -306,12 +371,13 @@ class Bridge {
         : 'No gaps',
     };
   }
-  async focused() {
+  async focused(terminalOnly = false, observeOnly = false) {
     this.assertDeliveryVisible();
     if (!this.config.allowClipboardFocus)
       throw new Error('Clipboard focus query not authorized; input disabled');
     const c: any = await this.client();
     const block: any = await this.readVisible(c.client_id);
+    this.displayFocus.observed(c.client_id, block);
     const { sessions = [] } = await this.run(['ls', '--json']);
     const matches: any[] = [];
     for (const session of sessions) {
@@ -336,7 +402,7 @@ class Bridge {
     }
     if (matches.length !== 1)
       throw focusError('Visible pane is closed or ambiguous');
-    const a: any = await this.agent(matches[0]);
+    const a: any = await this.agent(matches[0], terminalOnly);
     if (!a) throw focusError('Visible pane is not a supported agent');
     if (this.actionContext) {
       require('../guards/context').assertContext(this.actionContext, a);
@@ -346,12 +412,13 @@ class Bridge {
         if (a.app === 'claude-code')
           this.claude.assert(this.actionContext.target, a);
         else if (
-          (await require('../agents/codex/daemon').readFooter(this, a)) !==
+          (await this.codexIdentity(this, a)) !==
           this.actionContext.target.chatId
         )
           throw Error('Selected chat changed');
       }
     }
+    if (observeOnly) return a;
     this.lastTarget = {
       session: a.session,
       block: a.block,
@@ -367,6 +434,7 @@ class Bridge {
           }
         : {}),
     } as import('../domain/types').TargetRef;
+    if (terminalOnly) this.lastNavigationTarget = navigationSnapshot(a);
     this.assertDeliveryVisible();
     return a;
   }
@@ -417,7 +485,7 @@ class Bridge {
   }
   async focus(t: any) {
     const c: any = await this.client();
-    const a: any = await this.agent(t);
+    const a: any = await this.agent(t, true);
     if (!a) throw new Error('Agent closed');
     if (
       t.pid !== undefined &&
@@ -457,7 +525,19 @@ class Bridge {
           }
         : {}),
     } as import('../domain/types').TargetRef;
+    this.resetDisplayFocus();
+    // Rex acknowledged a focus request. Only a visible-pane read may move the dot.
     if (this.config.bringToFront !== false) await this.activate();
+  }
+  readKeyboardView(target: AgentSnapshot) {
+    return require('../terminals/rex/viewport').stableViewport(
+      target,
+      this.run,
+      () =>
+        new (require('../agents/codex/setup-presets').Setup)(this).screen(
+          target,
+        ),
+    );
   }
   async readPane(target: import('../domain/types').TargetRef) {
     const agent = await this.agent(target);
@@ -471,7 +551,7 @@ class Bridge {
   }
   async navigate(delta: number) {
     await this.discover();
-    const a: any = await this.focused();
+    const a: any = await this.focused(true);
     const i: number = (this.agents as any[]).findIndex(
       (x: any) => token(x) === token(a),
     );

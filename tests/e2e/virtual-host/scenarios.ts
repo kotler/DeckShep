@@ -6,6 +6,9 @@ import type {
 
 export const scenarioNames = [
   'idle-two-codex',
+  'keyboard-codex',
+  'keyboard-claude',
+  'keyboard-interrupt',
   'working-rex',
   'question',
   'approval',
@@ -22,6 +25,7 @@ export interface Scenario {
   agents: AgentSnapshot[];
   focused: string;
   offline?: boolean;
+  keyboard?: boolean;
   slots?: { session: string; block: string }[];
   app?: { panes: AppPaneStatus[]; selected: AppPaneRef | null; epoch: number };
 }
@@ -40,6 +44,7 @@ function agent(block: string, index: number): AgentSnapshot {
     statusAt: 'request-1',
     project: 'Fixture ' + block,
     chatName: 'Chat ' + block,
+    terminalTitle: 'Chat ' + block,
     model: 'fixture-model',
     effort: 'medium',
     nativeVerified: true,
@@ -77,6 +82,26 @@ export function scenario(input: ScenarioName | Scenario): Scenario {
     };
   }
   const agents = ['a', 'b'].map(agent);
+  if (
+    input === 'keyboard-codex' ||
+    input === 'keyboard-claude' ||
+    input === 'keyboard-interrupt'
+  ) {
+    if (input === 'keyboard-claude')
+      Object.assign(agents[0], {
+        app: 'claude-code',
+        name: 'claude',
+        nativeVerified: false,
+      });
+    if (input === 'keyboard-interrupt') agents[0].state = 'working';
+    for (const agent of agents)
+      Object.assign(agent, {
+        chatId: null,
+        nativeIdentity: null,
+        rexSettings: {},
+      });
+    return { agents, focused: 'a', keyboard: true };
+  }
   if (input === 'working-rex' || input === 'herdr-tui')
     Object.assign(agents[0], { state: 'working', runId: 'turn-1' });
   if (input === 'question' || input === 'approval')

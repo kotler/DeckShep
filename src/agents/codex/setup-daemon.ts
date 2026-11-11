@@ -1,23 +1,24 @@
 type DaemonRpc = import('./daemon').DaemonRpc;
 type AgentSnapshot = import('../../domain/types').AgentSnapshot;
 ('use strict');
-const { readFooter, socketFor, DaemonRpc, loadedThread } = require('./daemon');
+const { socketFor, DaemonRpc, loadedThread } = require('./daemon');
+const { readIdentity } = require('./hook-identity');
 /** Shown in the setup panel (at most 160 characters). */
 const FOOTER_HELP =
-  'This Codex footer shows no session ID. In Codex, run /statusline session-id model-with-reasoning (add your other items after), then check again.';
+  'No verified Codex identity. Review DeckShep in /hooks, or run /statusline session-id model-with-reasoning in Codex, then check again.';
 /**
- * Read-only Codex footer check. The owner rule (2026-11-08) is that DeckShep
+ * Read-only Codex identity check. The owner rule (2026-11-08) is that DeckShep
  * never changes a Codex status line, so this only reads the pane and the
  * daemon: it sends no keys or text, stores no preset and writes no state.
- * Codex controls in Rex bind through the session ID the user's own footer
- * shows; this confirms that the ID names a loaded chat in the pane's folder.
+ * Codex controls in Rex bind through a verified hook or the user's footer;
+ * this confirms that the ID names a loaded chat in the pane's folder.
  */
 async function check(
   bridge: Record<string, any>,
   agent: AgentSnapshot,
   deps: Record<string, any> = {},
 ) {
-  const footer = deps.footer || readFooter,
+  const footer = deps.footer || readIdentity,
     locate = deps.socketFor || socketFor,
     connect =
       deps.connect ||

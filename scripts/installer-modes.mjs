@@ -1,8 +1,10 @@
 import { zip, unzip } from './archive.mjs';
 
-const executableFiles = ['visible-pane', 'herdr-app-peer'].map(
-  (name) => 'com.kotl3r.deckshep.sdPlugin/bin/' + name,
-);
+const executableFiles = [
+  'visible-pane',
+  'herdr-app-peer',
+  'codex-hook-process',
+].map((name) => 'com.kotl3r.deckshep.sdPlugin/bin/' + name);
 
 /** Elgato's packer encodes every payload as 0644, including Mach-O helpers.
  * Preserve signed file bytes while explicitly recording Unix execute modes. */

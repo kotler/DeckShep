@@ -6,7 +6,6 @@ type PressContext = import('../../domain/types').PressContext;
 const {
   DaemonRpc,
   socketFor,
-  readFooter,
   knownServerVersion: supported,
 } = require('./daemon');
 const validId: (id: any) => boolean = (id: any) =>
@@ -101,7 +100,7 @@ class BackgroundControls {
   ) {
     this.b = bridge;
     this.socketFor = deps.socketFor || socketFor;
-    this.footer = deps.footer || readFooter;
+    this.footer = deps.footer || require('./hook-identity').readIdentity;
     this.connect =
       deps.connect ||
       ((async (endpoint: { socket: string }) => {

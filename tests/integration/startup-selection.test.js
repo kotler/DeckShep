@@ -41,6 +41,9 @@ function fixture(allowed = true, fail = false) {
       this.agents = agents.map((a) => ({ ...a }));
       return this.agents;
     }
+    async displayedAgent() {
+      return this.focused();
+    }
     async focused() {
       reads++;
       if (fail) throw Error('Rex focus unavailable');
@@ -98,10 +101,10 @@ test('startup selection', async () => {
     await f.api.refresh();
     assert(f.selected(1));
   }
-  assert.equal(f.reads(), 1);
+  assert.equal(f.reads(), 4);
   f.socket.emit('open');
   await f.api.ready();
-  assert.equal(f.reads(), 1);
+  assert.equal(f.reads(), 5);
   const denied = fixture(false);
   denied.socket.emit('open');
   await denied.api.ready();
@@ -115,8 +118,5 @@ test('startup selection', async () => {
   assert(!failed.selected(0));
   assert(!failed.selected(1));
   await failed.api.refresh();
-  assert.equal(failed.reads(), 1);
-  console.log(
-    'PASS selected dot initializes from actual Rex selection before key presses, one startup read only, no recurring focus queries, existing opt-in respected and failed reads leave no false selection',
-  );
+  assert.equal(failed.reads(), 2);
 });

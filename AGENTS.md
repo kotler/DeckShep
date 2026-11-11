@@ -17,6 +17,7 @@ The installed plugin retains its existing Stream Deck Node runtime.
 - `npm run format:check` / `npm run format`: format JS/TS/HTML/JSON/YAML; golden JSON stays byte-stable.
 - `npm run knip`: unused-file/dependency scan; confirm findings with `rg` before removal. Dynamic CommonJS exports, VM imports, fixture lookup and icon names need manual verification.
 - `npm run deck:preview`: print an owned random loopback URL for the synthetic 15-key browser deck.
+- `npm run poc:rex-hook`: exercise hook-to-panel registration using synthetic hook/CLI subprocesses and private temporary records; no live Rex/Codex access or control authority.
 - `npm run e2e:install`: one-time pinned Chromium headless-shell download; no full browser/system dependencies.
 - `npm run test:e2e`: exact SVG/label/trace checks plus six deck-only visual smoke checks.
 - `npm run test:e2e:update`: deliberately regenerate OS-specific smoke images; review and justify changes.
@@ -34,6 +35,26 @@ This is a refactor, not a feature release. Retain every identity/process guard,
 stale-press refusal, focus check, digest/cursor check, generation/visibility gate,
 opt-in and privacy rule. Add a test before questioning a guard; do not delete it.
 Golden snapshot changes require a written justification.
+On 2026-11-10 the owner removed Zoom from deck layouts and inspector choices,
+renamed Reviewer to Permissions and moved the Codex Home control to row 2,
+column 2 (zero-based), leaving its old position empty. Confirm still uses that
+position for questions/approvals. Separate Questions/Prompts pages are removed.
+Row 2 is Next agent / Page / Collapse: hide Next with fewer than two agents,
+Page with only one agent bank, and Collapse without gaps. Row 3 is agent-specific.
+The owner additionally approved Rex-only navigation on 2026-11-10. Rows 1–2
+use independent Rex discovery/status/title snapshots and physical pane selection;
+provider hook/daemon availability must not affect their labels, status or focus.
+Page is local and Collapse compacts Rex-discovered slots. Keep OS process,
+visible-pane consent, PID replacement and delivery/profile guards. Provider
+enrichment runs separately for row 3; navigation never grants provider identity.
+The owner approved Rex row-3 native keyboard settings for Model, Effort,
+Permissions (actual native profiles), and Mode. Only these four ready-state
+settings may use Codex pane/process generation and verified native UI in place
+of thread identity. Keep hooks and the original guards for other actions. No
+status-line or terminal-title changes. The selection dot follows observed Rex
+focus with consent; shell tabs and unreadable focus have no dot.
+Saved Zoom overrides stay inactive; keep the guarded native backend interfaces
+and tests intact.
 
 Never change plugin UUID `com.kotl3r.deckshep`, action UUID
 `com.kotl3r.deckshep.key`, `PROFILE_IDS`/`PAGE_IDS`, per-key UUID5 ActionIDs,
@@ -56,15 +77,38 @@ pending; do not infer clearance or permission to publish from these decisions.
 DeckShep never changes a Claude Code or Codex status line; it may only restore
 a recorded original during removal or the explicit legacy restore (owner rule,
 2026-11-08). The Rex footer step is a read-only check, and Codex controls bind
-only through a session ID the user's own footer shows; a source test refuses
+through a session ID the user's own footer shows or the owner-approved optional
+Codex hook proof below; a source test refuses
 `/statusline` string literals. Claude controls use the hooks-only press-time
 proof; `configure-claude.js --statusline` is refused, and
 `tests/unit/claude-no-statusline.test.js` fails if any setup path writes
 `statusLine` other than that restore. Keep `claude-hook.js --statusline`
 working for legacy wrappers until their users restore.
 Fresh clipboard/visible-pane consent, Herdr title identity, Claude native controls
-and Claude hooks stay off. Fewer setup steps never imply consent. Hook paths
+and Claude/Codex hooks stay off. Fewer setup steps never imply consent. Hook paths
 must stay stable or have an explicitly tested migration/removal path.
+
+On 2026-11-10 the owner approved optional Codex hook identity in Rex. Keep the
+existing footer path as an independent fallback before capture. Hook authority
+requires an active private setup epoch, a root lifecycle report, exact Rex
+session/block and directory hash, fresh owned CLI/daemon process generations,
+one external Unix client and one loaded thread. Bracket the thread read with
+loaded-thread, peer, process and record checks. Multiple clients or threads
+never imply a binding. A captured hook epoch cannot fall back to a footer or
+another epoch. Do not relax native focus, provider, cursor/digest or delivery
+guards. `codex-hook.js` / `configure-codex.js` are stable integration entry paths;
+setup edits only owned entries in Codex hooks.json with a private backup and
+never writes config.toml or a status line. Codex's hook trust remains explicit.
+Fixture success grants no native/hardware calibration claim. See
+docs/CODEX-HOOKS.md for the conservative shared-daemon limits.
+The owner also approved integrating the panel/PID observation POC into active
+Codex hooks. The installed entry composes a process-only Rex reader; providers
+receive its domain port. Publish lifecycle state first, and keep observations in
+separate private `.panel.json` sidecars tied to setup/hook epochs with
+`controlAuthority: false`. SessionEnd never queries or rebinds a foreground
+process. Missing explicit local routing or a failed read must not erase the
+lifecycle report, fall back to GUI focus or retry. Sidecars never satisfy the
+existing shared-client/thread guards. Keep newer sidecars during upgrade restore.
 
 Never start, stop, restart, attach to or send input to a developer's existing Rex,
 Herdr, Codex daemon or agent. Never run live tests without `ASW_LIVE=1` **and**
@@ -76,6 +120,11 @@ Historical validation logs are evidence, not permission to reuse scratch agents.
 Keep prompts, transcripts, tokens and home/workspace paths out of logs, errors
 and distributed artifacts. Key errors are at most 15 characters; inspector
 messages at most 160. Keep the package privacy/path/default/version audits.
+
+Rex API revisions are diagnostic only. The bounded `whoami --json` read disables
+autostart, drops inherited server routing and discards identity/location/log-path
+fields. It never grants capabilities or replaces pane/process/footer checks.
+Virtual-host dependencies must inject synthetic diagnostics as well as backends.
 
 ## Architecture being implemented
 
@@ -91,6 +140,14 @@ across axes; `src/app` composes them; only `src/plugin` imports the Stream Deck 
 Move legacy families incrementally. Input must eventually flow through one
 explicit guarded `deliver()` with a single-use token, preserving all native
 preflights and no-retry semantics. Do not prematurely remove the legacy guards.
+
+For the owner-approved Rex row-three pane macros, Model, Effort, Permissions
+and Mode may use native Claude CLI registration bound to the foreground process
+and the verified visible pane. Recheck opt-in, process start, session, default
+keybindings and the native screen at each write. Claude turn-specific actions
+still require their hook proof. An unbound working Codex Interrupt may send one
+Escape with matching Rex working timestamp, foreground process, visible pane
+and current native interrupt hint.
 
 ## Working conventions
 

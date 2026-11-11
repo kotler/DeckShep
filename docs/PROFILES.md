@@ -6,11 +6,39 @@
 > profile, page and key IDs are unchanged for a later release. The rest of this
 > page describes that preview.
 
-Version 1.3.1 provided two profiles: **Rex** and **Herdr**. Use the profile selector at the top of Stream Deck’s editor to switch. Both use the same 15-key layout. No key is consumed by a backend switch; Page still cycles the interaction pages inside the selected profile.
+Version 1.3.1 provided two profiles: **Rex** and **Herdr**. Use the profile selector at the top of Stream Deck’s editor to switch. Both use the same 15-key dynamic Home layout. No key is consumed by a backend switch. Page cycles groups of five agents and appears only when there is more than one group; separate Questions and Prompts pages have been removed.
 
 Each profile pins its controller. The key settings show a read-only **Controller for this profile** field. Configure Rex visible-pane consent and bring-to-front behavior in Rex; configure the explicit Herdr session socket and title matching in Herdr. Claude native-control opt-in is separate for each controller. Animation and Review/Tests/Continue prompt text are shared.
 
 Selection, bank, page and stable slots are independent for Rex and Herdr during a plugin run. Switching away clears tracked Send drafts and native picker confirmations, while leaving typed text and agents running. Returning retains that controller’s navigation state; restarting the plugin rebuilds navigation and slots. Connection preferences persist across restarts. Hidden controllers stop periodic polling. Queued presses for a hidden or replaced key are refused; an operation already sent to a native API can still finish.
+
+With visible-pane checks enabled, each Rex refresh (normally every two seconds)
+reads the active window and focused block from session inspection when the client
+has one known session. No clipboard operation is used for those polls. With
+ambiguous attachments, the Mac visible-pane check runs on startup or changes
+to reported focus, not on every refresh. A purely client-local session switch
+with unchanged server focus may not be visible until an explicit selection.
+Manual tab changes and closing the active tab move the
+dot to the agent Rex now shows, including across pages. A shell, missing agent,
+or unreadable focus clears the dot. Opening an agent in the background does
+not steal selection. Focus tracking sends no terminal input.
+
+Ready-state Model, Effort, Permissions and Mode use native keyboard controls.
+The deck reads the focused view passively and leaves the subtitle blank until
+it can read the value. A press reads the relevant native picker before selecting a
+setting. Codex settings do not require a thread ID. The four Claude settings use the native-controls opt-in, foreground CLI registration,
+default keybindings and verified visible pane. Turn-specific Claude controls require hook identity. In Claude, Plan belongs
+to the permission-mode cycle, so Permissions and Mode each send one Shift+Tab.
+The Codex Permissions key skips Full Access. If its confirmation is already
+open, pressing Permissions cancels it and continues the cycle.
+Neither the terminal title nor the status line is changed.
+
+In Rex, rows 1–2 use Rex discovery, owned program-status records, terminal titles
+and physical pane selection. They work without Codex/Claude hook or daemon
+metadata. Row 2 remains Next agent / Page / Collapse; Page is local and Collapse
+removes closed slots after fresh Rex discovery. Missing titles fall back to the
+Rex session label or Codex/Claude Code. Row 3 keeps provider-specific settings,
+identity and input guards; provider details do not override the Rex agent bar.
 
 ## Install or upgrade
 

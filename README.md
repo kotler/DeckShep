@@ -25,34 +25,37 @@ Independent installation on another Mac, Intel execution and signing/notarizatio
 
 ## Controls
 
-| Agent 1 | Agent 2 | Agent 3 | Agent 4 | Agent 5 |
-| --- | --- | --- | --- | --- |
-| Collapse | Agents | Next agent | Reviewer | Page |
-| Contextual | Contextual | Zoom / Confirm | Contextual | Interrupt / Stop |
+| Agent 1    | Agent 2    | Agent 3               | Agent 4    | Agent 5          |
+| ---------- | ---------- | --------------------- | ---------- | ---------------- |
+| Next agent | Page       | Collapse              | Empty      | Empty            |
+| Contextual | Contextual | Permissions / Confirm | Contextual | Interrupt / Stop |
 
-The white dot marks the selected agent. **Page** cycles Home → Questions → Prompts → Home, staying in the same position. Home's third row follows the selected agent:
+With visible-pane checks enabled, the white dot follows the focused Rex pane on refresh. A shell or an unverified selection has no dot. The deck stays on one dynamic Home layout.
+Row 2 manages the agent group: **Next agent** appears only with at least two
+agents, **Page** appears only with more than one group of five agent slots, and
+**Collapse** appears only when closed slots leave gaps. Row 3 follows the selected agent:
 
-| State | Key 1 | Key 2 | Key 3 | Key 4 | Key 5 |
-| --- | --- | --- | --- | --- | --- |
-| Ready / complete / error | Model | Effort | Zoom | Plan / Default | Inactive |
-| Working in Rex | Steer | Queue | Zoom | Empty | Interrupt |
-| Working in Herdr | Empty | Empty | Zoom | Empty | Interrupt |
-| Background terminals only | Empty | Empty | Zoom | Empty | Stop terminals |
-| Question or approval | Up | Down | Confirm | Esc | Inactive |
-| Unknown / authentication | Status | Empty | Zoom | Empty | Inactive |
+| State                     | Key 1  | Key 2  | Key 3                  | Key 4          | Key 5          |
+| ------------------------- | ------ | ------ | ---------------------- | -------------- | -------------- |
+| Ready / complete / error  | Model  | Effort | Permissions            | Plan / Default | Inactive       |
+| Working in Rex            | Steer  | Queue  | Permissions (inactive) | Empty          | Interrupt      |
+| Working in Herdr          | Empty  | Empty  | Permissions (inactive) | Empty          | Interrupt      |
+| Background terminals only | Empty  | Empty  | Permissions (inactive) | Empty          | Stop terminals |
+| Question or approval      | Up     | Down   | Confirm                | Esc            | Inactive       |
+| Unknown / authentication  | Status | Empty  | Permissions (inactive) | Empty          | Inactive       |
 
-**Interrupt** stops the current turn; background commands can continue. **Stop terminals** separately stops verified terminals belonging to that selected chat. **Reviewer** cycles Ask me / Approve for me without changing the sandbox or approval policy. It is separate from answering an approval prompt: **Confirm** accepts the native choice currently shown.
+**Interrupt** stops the current turn; background commands can continue. **Stop terminals** separately stops verified terminals belonging to that selected chat. **Permissions** cycles the actual native permission profiles. Extra confirmations stay on the terminal for you to answer. It is separate from answering an approval prompt: **Confirm** accepts the native choice currently shown.
 
-**Model** and **Effort** display current native values and cycle supported choices. **Plan / Default** toggles the native mode; Plan can use its own effort preset. The Questions page adds Left/Right, Tab and Shift+Tab. The Prompts page offers Review, Tests, Continue and guarded Send in Rex; Herdr displays **Use Herdr keyboard**.
+**Model** and **Effort** display current native values and cycle supported choices. **Plan / Default** toggles the native mode; Plan can use its own effort preset. Question and approval navigation appears automatically in row 3. Use the keyboard for extra Left/Right or Tab/Shift+Tab navigation and for Review, Tests, Continue and Send; there are no separate Questions or Prompts pages.
 
 ## Verified version scope
 
-| Component | Verified scope | Unverified versions |
-| --- | --- | --- |
-| Codex CLI | Any release (validated on 0.166.0 / 0.167.0) | Controls disabled when the daemon reports no version |
-| Claude Code | Any native release, opt-in preview (hooks only) | Native controls disabled for non-native installs |
-| Herdr TUI | Not in the first release; source preview for 0.9.5 / protocol 22 | Session refused |
-| Herdr App | Not in the first release; experimental source preview | Production build records empty; [preview setup](docs/HERDR-APP.md) |
+| Component   | Verified scope                                                   | Unverified versions                                                |
+| ----------- | ---------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Codex CLI   | Any release (validated on 0.166.0 / 0.167.0)                     | Controls disabled when the daemon reports no version               |
+| Claude Code | Any native release, opt-in preview (hooks only)                  | Native controls disabled for non-native installs                   |
+| Herdr TUI   | Not in the first release; source preview for 0.9.5 / protocol 22 | Session refused                                                    |
+| Herdr App   | Not in the first release; experimental source preview            | Production build records empty; [preview setup](docs/HERDR-APP.md) |
 
 Version checks fail closed by design. Verification of one control does not
 establish full provider parity or hardware support. See the generated
@@ -61,22 +64,21 @@ establish full provider parity or hardware support. See the generated
 
 ## Backend support
 
-| Feature | Rex | Herdr (unreleased source preview) |
-| --- | --- | --- |
-| Agent selection, cycling banks, Next agent, Collapse | Supported; hardware checked | Supported; core hardware and six-agent API checked |
-| Model, Effort, Reviewer, Plan / Default | Supported | Requires verified thread-ID titles |
-| Questions, approval navigation, Interrupt, Stop terminals | Supported | Requires verified thread-ID titles |
-| Zoom | Supported | API layout round-trip checked; outer terminal presentation pending |
-| Prompt staging, Send, Steer, Queue | Supported with composer checks | Unavailable; use the keyboard |
-| Focus verification | Explicit clipboard opt-in | Herdr session API; no clipboard |
+| Feature                                                   | Rex                            | Herdr (unreleased source preview)                  |
+| --------------------------------------------------------- | ------------------------------ | -------------------------------------------------- |
+| Agent selection, cycling banks, Next agent, Collapse      | Supported; hardware checked    | Supported; core hardware and six-agent API checked |
+| Model, Effort, Permissions, Plan / Default                | Supported                      | Requires verified thread-ID titles                 |
+| Questions, approval navigation, Interrupt, Stop terminals | Supported                      | Requires verified thread-ID titles                 |
+| Steer, Queue                                              | Supported with composer checks | Unavailable; use the keyboard                      |
+| Focus verification                                        | Explicit clipboard opt-in      | Herdr session API; no clipboard                    |
 
-In Rex, Codex Model, Effort, Reviewer, Plan / Default, Interrupt, Stop terminals and prompt staging use the session ID shown in your own Codex footer (`/statusline session-id model-with-reasoning`, run by you in Codex). Without it those keys show **No footer ID**; selection, Zoom, questions and approvals still work. DeckShep only reads the footer. See [install step 5](docs/INSTALL.md).
+In Rex, the four ready-state settings keys use the focused native UI, without a thread ID. For thread-bound actions, Codex can use the optional [hook identity integration](docs/CODEX-HOOKS.md) without displaying the thread ID, when one CLI connection and one loaded thread can be verified. Ambiguous shared-daemon cases retain the independent footer path (`/statusline session-id model-with-reasoning`, run by you in Codex). Native message composition still needs its existing footer/cursor checks. DeckShep never changes your status line. See [install step 5](docs/INSTALL.md).
 
 Herdr is not packaged in the first release; source builds add its profile only with `experimental.herdr` set in `config.json`. It targets local TUI **0.9.5 / protocol 22**. Its pane-read API does not expose a trustworthy composer cursor/editing mode, so it cannot support the Rex submission checks. Multiple attached clients and reconnect behavior still need validation. See [the Herdr guide](docs/HERDR.md) for identity setup and exact coverage.
 
 ## Selection and input behavior
 
-Slots stay stable during a plugin run. Closed agents leave holes; new agents append into later banks. **Collapse** removes closed slots and brings overflow forward without rearranging terminal tabs or changing relative order. Incomplete discovery never compacts slots. Agents and Next agent cycle forward and wrap. Slots rebuild when the plugin restarts.
+Slots stay stable during a plugin run. Closed agents leave holes; new agents append into later banks. **Collapse** removes closed slots and brings overflow forward without rearranging terminal tabs or changing relative order. Incomplete discovery never compacts slots. Page and Next agent cycle forward and wrap. Slots rebuild when the plugin restarts.
 
 The dot represents the last deck selection or verified focus. Manual Rex tab changes cannot silently update it with the current API. Contextual actions check actual focus; a mismatch clears stale selection and asks you to **Reselect agent**. Background status updates never poll clipboard focus.
 
@@ -86,7 +88,7 @@ Agent keys use full status-color backgrounds, a provider watermark and larger ch
 
 ## Preferences
 
-Select any **DeckShep Key** in Stream Deck's editor. The release ships the **Rex** profile; a source preview build can add **Herdr**, chosen with Stream Deck’s profile selector. Each profile pins its controller and keeps its own connection, consent, selected agent, bank and page. Animation and prompt text are shared. See [profiles and migration](docs/PROFILES.md). New installations keep clipboard checks and Herdr title matching off until explicitly enabled.
+Select any **DeckShep Key** in Stream Deck's editor. The release ships the **Rex** profile; a source preview build can add **Herdr**, chosen with Stream Deck’s profile selector. Each profile pins its controller and keeps its own connection, consent, selected agent and agent page. Animation and prompt text are shared. See [profiles and migration](docs/PROFILES.md). New installations keep clipboard checks and Herdr title matching off until explicitly enabled.
 
 Advanced aliases, palette, bindings and model filters live in `config.json`. Legacy upgrades use the ZIP’s one-time backup/migration helper to preserve disk customizations; shared UI preferences override their corresponding defaults. The settings panel accepts no sandbox or approval-policy fields. Unknown metadata or unsupported native versions disable the affected action.
 

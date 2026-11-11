@@ -86,6 +86,9 @@ socket.addEventListener('close', () => {
 });
 const names = [
   'idle-two-codex',
+  'keyboard-codex',
+  'keyboard-claude',
+  'keyboard-interrupt',
   'working-rex',
   'question',
   'approval',

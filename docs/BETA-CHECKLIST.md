@@ -19,7 +19,7 @@ is not authorization to reuse a running agent.
 ## Remaining physical and independent validation
 
 - [ ] Claude physical multi-select Toggle → Review → Submit.
-- [ ] Claude running controls and Zoom in Rex; Rex Claude questions, approvals and guarded submissions.
+- [ ] Claude running controls in Rex; Rex Claude questions, approvals and guarded submissions.
 - [ ] Sign off on Claude approval/navigation responsiveness.
 - [ ] Physical mixed-agent navigation with native controls in the Rex profile.
 - [ ] Validate optional hook ancestry, watcher behavior, live renames and removal.

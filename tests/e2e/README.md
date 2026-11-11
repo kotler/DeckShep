@@ -33,6 +33,15 @@ press on its former context is ignored with no input. No production error is
 invented for that event. Context changes can replace a brief refusal image with
 the new layout; the original short refusal remains in the trace.
 
+The Rex/TUI deck now stays on dynamic Home. Group controls are Next agent,
+Page (agent banks) and Collapse, and hide when they have no work. The old
+interaction-page actions are inactive, including explicit legacy overrides.
+Question/approval controls remain contextual in row 3.
+The Rex navigation case removes provider chat/native identities and verifies
+agent selection, Next, Page and Collapse using synthetic terminal titles/status.
+The production Bridge/provider-failure boundary is covered separately by the
+Rex navigation integration tests; browser fixtures never probe a real provider.
+
 `herdr-app-panes` uses App pane records without synthetic provider PIDs/chat
 identity. Its request backend exists only in the substituted fixture bundle;
 no native helper/Swift build is needed. Set an absolute synthetic App home and
@@ -61,5 +70,16 @@ with a focused regression test, rather than silently changing this harness phase
 
 These tests prove fixture logic/rendering and host-protocol routing. They do not
 verify native Rex/Herdr/provider behavior, actual clipboard/focus or Stream Deck
-hardware scaling. Inspector UI is outside this phase. No scenario uses randomness
-or a model account; the manual clock starts at 10000 ms on every reset.
+hardware scaling. Separate inspector browser tests use the pinned sdpi library
+with mocked host replies: refresh routing, missing-reply feedback and the Rex
+footer-check message staying in view. No scenario uses randomness or a model
+account; the manual clock starts at 10000 ms on every reset.
+
+Interrupt has explicit browser cases for one Escape on a bound working agent,
+no input for an idle agent, and no input without a Codex chat binding. The
+fixture must refuse a missing captured chat ID just as the real Bridge does;
+two absent IDs are not a verified match. Metadata acquisition and the native
+active-turn read are substituted here. The Rex integration tests separately
+exercise the real Bridge/footer/active-turn guards with synthetic transport
+replies. Neither level proves that an installed agent currently has the required
+footer, metadata hooks or control consent.

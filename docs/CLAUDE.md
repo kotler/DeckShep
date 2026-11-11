@@ -16,14 +16,14 @@ Claude and Codex share discovery, stable slots, bank cycling, Next agent, Collap
 | Interrupt | One Escape, current lifecycle and visible interrupt-hint checks | Same; scoped to explicit pane |
 | Review / Tests / Continue and guarded Send | Implemented for recognized composer | Unavailable; cursor API missing |
 | Queue / Steer | Enter queues; Ctrl+X Ctrl+S sends now | Unavailable; cursor API missing |
-| Permission modes / Plan | Keyboard only; Mode is informational | Keyboard only |
+| Permission modes / Plan | Permissions and Mode each advance one native Shift+Tab step | Keyboard only |
 | Stop background tasks/terminals | Not implemented for Claude | Not implemented for Claude |
 
-**Model** and **Effort** now cycle directly from Home and show the current value. Model cycles the available concrete models in the native picker’s primary list, skipping Default duplicates and More models. It retains effort where the next model supports it. Effort advances through the native levels and wraps at the upper bound to Low, respecting native caps. Both controllers use the same flow.
+**Model** and **Effort** now cycle directly from Home and show the current value. Model cycles the available concrete models in the native picker’s primary list, skipping Default duplicates and More models. It retains effort where the next model supports it. Effort advances through the native levels and wraps at the upper bound to Low, respecting native caps. Rex can verify these four idle settings from the foreground native Claude process and its own interactive CLI registration. Enable visible-pane verification and Claude native controls in the Rex profile. DeckShep metadata hooks remain optional for these settings and are required for turn-specific actions.
 
-A press opens the native picker, verifies the selection, changes it and uses Claude’s visible `s` action to apply only to the current session. It never sends Enter to save a default. Typed drafts are preserved; Herdr’s text-only view is used only for this non-submitting configuration shortcut. Unknown dialogs, changed lists, focus/session changes, unsupported bindings and unverified results stop the operation. Credit/consent prompts are never accepted automatically. No inference request is sent by a configuration cycle.
+A press opens the native picker, verifies the selection, changes it and uses Claude’s visible `s` action to apply only to the current session. It never sends Enter to save a default. The Rex pane picker requires an empty prompt and default keybindings. The hook-bound path preserves typed drafts; Herdr’s text-only view is used only for this non-submitting configuration shortcut. Unknown dialogs, changed lists, focus/session changes, unsupported bindings and unverified results stop the operation. Credit/consent prompts are never accepted automatically. No inference request is sent by a configuration cycle.
 
-The normal Claude Home row keeps Zoom in the middle. The Codex Reviewer key becomes a Claude information key. Mode says Use keyboard because Claude's permission-mode cycle can include Accept edits, Bypass and Auto; it is not equivalent to Codex Plan/Default. The integration does not automatically cycle those modes, accept an approval or create permission rules.
+In Rex, Permissions and Mode use Claude’s own permission-mode cycle, which includes Plan and may include Accept edits, Bypass and Auto. Each press advances once from a verified empty composer. An extra confirmation stays open for the user. Herdr Mode remains informational.
 
 ## Optional setup for later live validation
 
@@ -54,7 +54,7 @@ The default target is `~/.claude/settings.json`, honoring `CLAUDE_CONFIG_DIR`; u
 
 Claude normally notices settings-file edits through its watcher; check its read-only `/hooks` menu when validating setup. Identity needs a root SessionStart or UserPromptSubmit event, so an already-open idle chat can remain unverified until its next user-submitted message. The plugin never sends that message or restarts the chat automatically. Project or managed settings can disable/override these hooks; the integration does not bypass those settings.
 
-Select the intended Rex or Herdr profile. In a key’s settings, explicitly enable **Claude native controls after hook setup**. In Rex, visible-pane consent is still required. In Herdr, choose the intended local session socket; Claude identity does not require `/title thread-id`. Reselect the desired agent after changing opt-in or controller settings.
+Select the intended Rex or Herdr profile. In a key’s settings, explicitly enable **Enable Claude native controls**. In Rex, visible-pane consent is still required. In Herdr, choose the intended local session socket; Claude identity does not require `/title thread-id`. Reselect the desired agent after changing opt-in or controller settings.
 
 ## Metadata, identity and input guards
 
@@ -70,7 +70,7 @@ Questions and approvals require the matching hook request and a recognized nativ
 
 ## Hooks-only mode
 
-Setups without the DeckShep status line (the default above) run in hooks-only mode. There is no two-second heartbeat. Instead, every refresh and press requires all of:
+Turn-specific controls use hooks-only mode on setups without the legacy DeckShep status line. For these controls, each refresh and press checks the following:
 
 - **Process proof:** the pane's foreground process is the recorded PID, with the same start time, native executable and version it had when the record was written.
 - **Lifecycle proof:** the record's root session was established for this process by a SessionStart or UserPromptSubmit hook. There must be no SessionEnd and no lost-event marker since then. `/clear`, `/resume` and restarts start another session or generation, which re-binds the key identity and refuses older presses.

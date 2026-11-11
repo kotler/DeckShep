@@ -33,7 +33,7 @@ test('backend switch', async () => {
   await rex.refresh();
   await h.profilePress('rex', 1, 1);
   await h.profilePress('rex', 1, 4);
-  assert.equal(rex.getPage(), 1);
+  assert.equal(rex.getPage(), 0);
   assert.equal(rex.getBank(), 1);
   rex.bridge.draft = {
     target: { session: 's', block: 'a', pid: 42 },
@@ -60,15 +60,15 @@ test('backend switch', async () => {
   assert.equal(herdr.mapping(herdr.keys.get('herdr:2,0')), 'none');
   await h.profilePress('herdr', 1, 4);
   await h.profilePress('herdr', 1, 4);
-  assert.equal(herdr.getPage(), 2);
-  assert.equal(herdr.mapping(herdr.keys.get('herdr:1,0')), 'inputInfo');
+  assert.equal(herdr.getPage(), 0);
+  assert.equal(herdr.mapping(herdr.keys.get('herdr:1,0')), 'next');
   h.hide('herdr');
   await h.appear('rex');
   assert.equal(rex.bridge, oldBridge);
   assert.equal(rex.selected().block, 'a');
-  assert.equal(rex.getPage(), 1);
+  assert.equal(rex.getPage(), 0);
   assert.equal(rex.getBank(), 1);
-  assert.equal(herdr.getPage(), 2);
+  assert.equal(herdr.getPage(), 0);
   const n = h.calls.length;
   await rex.press('rex:2,2', stale);
   assert.equal(
@@ -89,7 +89,7 @@ test('backend switch', async () => {
   );
   assert.equal(rex.bridge, rexBridge);
   assert.equal(rex.getBank(), 1);
-  assert.equal(rex.getPage(), 1);
+  assert.equal(rex.getPage(), 0);
   await prefs(h, 'herdr', {
     animationEnabled: false,
     prompts: { review: 'Shared review text' },
@@ -97,7 +97,7 @@ test('backend switch', async () => {
   assert.equal(rex.bridge.config.animation.enabled, false);
   assert.equal(rex.bridge.config.prompts.review, 'Shared review text');
   assert.equal(herdr.bridge.config.prompts.review, 'Shared review text');
-  assert.equal(rex.getPage(), 1);
+  assert.equal(rex.getPage(), 0);
   const current = herdr.bridge;
   await prefs(h, 'rex', { backend: 'herdr' });
   assert.equal(rex.bridge.config.backend, 'rex');
@@ -150,6 +150,6 @@ test('backend switch', async () => {
   await pending;
   assert(!herdr.bridge.agents?.some((a) => a.chatName === 'Wrong socket'));
   console.log(
-    'PASS separate profile routing, independent selection/banks/pages, safe legacy Rex keys, draft invalidation, stale/context-reuse refusal, shared presentation, scoped connections, hidden queued controls and delayed metadata isolation',
+    'PASS separate profile routing, independent selection/banks with Home-only layouts, safe legacy Rex keys, draft invalidation, stale/context-reuse refusal, shared presentation, scoped connections, hidden queued controls and delayed metadata isolation',
   );
 });

@@ -11,17 +11,21 @@ still need release validation.
 3. Select a key in Stream Deck to open its setup panel. Open Rex and enable
    Remote Control there if it is not already enabled.
 4. Click **Enable visible-pane checks** explicitly. The helper temporarily copies
-   the pane ID and restores clipboard formats; status discovery does not use it.
-5. In each Codex session, show the session ID in your own footer. Run
+   the pane ID and restores clipboard formats on each visible-selection check.
+5. For thread-bound controls, choose the optional [Codex hook integration](CODEX-HOOKS.md) for status-line-free
+   identity when its ownership checks succeed. Alternatively, in each Codex
+   session, show the session ID in your own footer. Run
    `/statusline session-id model-with-reasoning` in Codex, adding any other
    items you want after those two. DeckShep never changes your status line.
    Then select a ready Codex agent on the deck and click **Check selected Codex
    agent**. The check only reads the pane and Codex.
 
-Without the session ID in the footer, Codex agents in Rex still support
-selection, Zoom, and question/approval navigation and answers. Model, Effort,
-Reviewer, Mode, Interrupt, Stop terminals, prompt staging, Send, Steer and Queue
+Without a verified hook binding or the session ID in the footer, Codex agents in Rex still support
+selection, question/approval navigation and answers, and the four ready-state settings
+keys (Model, Effort, Permissions and Mode). Interrupt, Stop terminals, prompt staging, Send, Steer and Queue
 stay inactive, and the affected keys show **No footer ID**.
+Hook identity does not replace the native composer/cursor checks for prompt
+staging, Send, Steer or Queue; those retain their existing viewport requirements.
 
 For an already configured Rex/Codex session these are the five setup actions.
 Initial terminal installation, Remote Control, macOS permissions and selecting a
@@ -84,6 +88,13 @@ The panel's checklist reports the current backend and selected agent. The safe
 CLI report is `node <installed-plugin>/bin/doctor.js` (or add `--json`). It contains
 no prompts, settings contents or home paths. It does not grant consent or change
 agent settings. [Uninstall](UNINSTALL.md) explains integration removal.
+
+Rex diagnostics report the app version and server API revision separately.
+The API read runs `whoami --json` with autostart disabled and returns only
+`api_revision` and `api_min_revision`; identity, session and log-path fields are
+discarded. Missing legacy revision fields default to zero and are marked as
+legacy. An unavailable server reports a check failure without starting one.
+These numbers are informational and grant no control capability.
 
 The experimental [Herdr App preview](HERDR-APP.md) has its own home selection,
 default-off plain-focus-request consent and App-only checklist. Use

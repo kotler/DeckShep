@@ -6,25 +6,32 @@ test('dynamic controls', async () => {
   // Explicit consent for this synthetic native-control scenario.
   const h = harness({ fixtureConsent: true });
   await h.ready();
-  assert.equal(h.action(1, 4), 'more');
+  assert.equal(h.action(1, 4), 'none');
   assert.equal(h.action(2, 4), 'interrupt');
   assert(h.image(2, 4).includes('not running'));
   assert.deepEqual(
     [0, 1, 2, 3].map((c) => h.action(2, c)),
-    ['model', 'effort', 'zoom', 'plan'],
+    ['model', 'effort', 'permissions', 'plan'],
   );
   await h.press(2, 0);
   assert.equal(h.calls.at(-1).cycle, 'model');
   await h.press(2, 1);
   assert.equal(h.calls.at(-1).cycle, 'effort');
+  const beforeEmptyPress = h.calls.length;
+  await h.press(1, 3);
+  assert.equal(h.calls.length, beforeEmptyPress);
   await h.press(2, 2);
-  assert.equal(h.calls.at(-1).args[0], 'zoom');
+  assert.equal(h.calls.at(-1).cycle, 'permissions');
+  assert(h.image(2, 2).includes('>Permissions<'));
+  assert.equal(h.action(1, 1), 'none');
+  assert.equal(h.action(1, 0), 'next');
+  assert.equal(h.action(1, 2), 'none');
   h.change('a', { state: 'working', statusAt: 'v2' });
   await h.api.refresh();
   h.tick();
   assert.deepEqual(
     [0, 1, 2, 3, 4].map((c) => h.action(2, c)),
-    ['steer', 'queue', 'zoom', 'none', 'interrupt'],
+    ['steer', 'queue', 'permissions', 'none', 'interrupt'],
   );
   await h.press(2, 0);
   assert.equal(h.calls.at(-1).args.at(-1), 'enter');
@@ -71,11 +78,9 @@ test('dynamic controls', async () => {
   h.tick();
   await h.press(2, 2);
   assert.equal(h.calls.length, before);
-  assert.equal(h.api.bridge.lastTarget, null);
+  assert.equal(h.api.bridge.lastTarget.block, 'b');
   assert(!h.image(0, 0).includes('id="selected-agent"'));
-  assert(
-    h.image(2, 0).includes('>Reselect<') && h.image(2, 0).includes('>agent<'),
-  );
+  assert(h.image(0, 1).includes('id="selected-agent"'));
   h.native('a');
   await h.press(0, 0);
   // Let a transition settle before allowing context actions.
@@ -88,8 +93,8 @@ test('dynamic controls', async () => {
   assert.equal(h.calls.at(-1).args.at(-1), 'escape');
   for (let page = 1; page <= 3; page++) {
     await h.press(1, 4);
-    assert.equal(h.api.getPage(), page % 3);
-    assert.equal(h.action(1, 4), 'more');
+    assert.equal(h.api.getPage(), 0);
+    assert.equal(h.action(1, 4), 'none');
     assert.equal(h.action(2, 4), 'interrupt');
   }
   // Existing explicit old-button overrides remain inert.
@@ -99,6 +104,12 @@ test('dynamic controls', async () => {
     'modelPicker',
     'effortPicker',
     'planPrompt',
+    'zoom',
+    'more',
+    'questions',
+    'prompts',
+    'back',
+    'tools',
   ])
     assert.equal(
       h.api.mapping({
@@ -137,7 +148,7 @@ test('dynamic controls', async () => {
   await h.press(1, 1);
   assert.equal(h.api.getBank(), 0);
   h.api.bridge.slots.splice(1, 0, { session: 's', block: 'closed' });
-  await h.press(1, 0);
+  await h.press(1, 2);
   assert(!h.api.bridge.slots.some((s) => s.block === 'closed'));
   // Claude arrows send no post-key scan. The next action must still see a
   // changed native request and reject a confirmation captured before it.
@@ -239,6 +250,6 @@ test('dynamic controls', async () => {
   await m.press(2, 2);
   assert.equal(nativeKeys.at(-1), 'enter');
   console.log(
-    'PASS dynamic ready/running/question/approval rows, fixed Stop/page positions, contextual Steer/Queue, stale press/request rejection, focus binding, transition delay, page cycling, removed previous buttons and stable selection/bank/collapse behavior',
+    'PASS dynamic ready/running/question/approval rows, fixed Stop position, contextual Steer/Queue, stale press/request rejection, focus binding, transition delay, removed page navigation, removed previous buttons and stable selection/bank/collapse behavior',
   );
 });

@@ -7,9 +7,12 @@ import { spawnSync } from 'node:child_process';
 import { requireStopped, mergedConfig } from './install.mjs';
 
 const plugin = 'com.kotl3r.deckshep.sdPlugin';
-const lifecycle = (name) => /^state\/claude\/\d+\.(?:json|invalid)$/.test(name);
+const lifecycle = (name) =>
+  /^state\/(?:claude\/\d+\.(?:json|invalid)|codex\/\d+-[a-f0-9-]{36}(?:\.panel(?:-status)?)?\.json)$/.test(
+    name,
+  );
 const ephemeralLock = (name) =>
-  name.startsWith('state/claude/') && /(?:\.lock|\.tmp)$/.test(name);
+  /^state\/(?:claude|codex)\//.test(name) && /(?:\.lock|\.tmp)$/.test(name);
 const digest = (bytes) =>
   crypto.createHash('sha256').update(bytes).digest('hex');
 function directory(dir, create = false) {
@@ -188,7 +191,13 @@ export function restoreUpgrade({
   const current = snapshot(locations.installed),
     currentProfiles = snapshot(locations.profiles);
   identity(current);
-  for (const name of ['bin/plugin.js', 'claude-hook.js', 'configure-claude.js'])
+  for (const name of [
+    'bin/plugin.js',
+    'claude-hook.js',
+    'configure-claude.js',
+    'codex-hook.js',
+    'configure-codex.js',
+  ])
     if (!current.has(name))
       throw Error('Install the new plugin before restoring');
   const config = Buffer.from(

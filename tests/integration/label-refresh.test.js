@@ -6,7 +6,7 @@ const assert = require('node:assert/strict'),
   { EventEmitter } = require('node:events');
 const { Bridge } = require('../../src/app/session'),
   { AgentMetadata } = require('../../src/agents/codex/metadata');
-test('label refresh', async () => {
+test('Herdr provider label refresh retains its existing cache behavior', async () => {
   const directory = path.join(__dirname, '../../com.kotl3r.deckshep.sdPlugin');
   const baseline = {
     session: 's',
@@ -47,13 +47,13 @@ test('label refresh', async () => {
     backendFactory: (config) => new FixtureBridge(config),
     metadataFactory: (bridge) => new FixtureMetadata(bridge),
   });
-  const context = { api: app.getController('rex') };
+  const context = { api: app.getController('herdr') };
   const api = context.api;
   api.bridge.slots = [{ session: baseline.session, block: baseline.block }];
   api.keys.set('agent', { settings: {}, coordinates: { column: 0, row: 0 } });
   api.keys.set('reviewer', {
     settings: {},
-    coordinates: { column: 3, row: 1 },
+    coordinates: { column: 2, row: 2 },
   });
   await api.bridge.discover();
   await api.refreshMetadata(true);
@@ -67,8 +67,8 @@ test('label refresh', async () => {
     api.keys.get('reviewer').lastImage.split(',')[1],
     'base64',
   ).toString();
-  assert(reviewer.includes('>Reviewer<'));
-  assert(!reviewer.includes('>Permissions<'));
+  assert(reviewer.includes('>Permissions<'));
+  assert(!reviewer.includes('>Reviewer<'));
   assert(!displayed().includes('id="selected-agent"'));
   api.bridge.lastTarget = {
     session: baseline.session,

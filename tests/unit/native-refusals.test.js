@@ -197,7 +197,7 @@ test('labels never present stale settings as confirmed and reject mismatched ter
   ]);
   assert.deepEqual(labels.modelLines({ agents: [agent], lastTarget: agent }), [
     'Model',
-    'Unknown',
+    '',
   ]);
   assert.equal(
     labels.modelLines({
@@ -218,9 +218,9 @@ test('labels never present stale settings as confirmed and reject mismatched ter
       reviewer: 'auto_review',
     },
   };
-  assert.deepEqual(labels.modelLines(bridge), ['Model', 'Unknown']);
+  assert.deepEqual(labels.modelLines(bridge), ['Model', '']);
   assert.deepEqual(labels.effortLines(bridge), ['Effort', 'Low']);
-  assert.deepEqual(labels.reviewerLines(bridge), ['Reviewer', 'Ask me']);
+  assert.deepEqual(labels.reviewerLines(bridge), ['Permissions', 'Ask me']);
   for (const patch of [
     { session: 'other' },
     { block: 'other' },

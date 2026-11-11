@@ -287,7 +287,8 @@ test('claude controls', async () => {
   assert.equal(a.modelName, 'Sonnet 4.6');
   assert.equal(C.modeOf(a), 'ready');
   assert.equal(C.homeRow(a)[3], 'claudeModeInfo');
-  assert.equal(C.layout(0, a)[3], 'claudeInfo');
+  assert.equal(C.layout(0, a)[3], 'none');
+  assert.equal(C.layout(0, a)[7], 'claudeInfo');
   for (const value of ['hello', 'hello world']) {
     f.state.input = value;
     a = await f.b.focused();

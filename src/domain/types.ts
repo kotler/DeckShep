@@ -33,6 +33,16 @@ export interface AgentSnapshot extends TargetRef {
   project?: string;
   chatName?: string;
   sessionLabel?: string;
+  /** Display-only title read from Rex, independent of provider metadata. */
+  terminalTitle?: string;
+  rexSettings?: {
+    viewHash?: string;
+    process?: string;
+    model?: string | null;
+    effort?: string;
+    permissions?: string;
+    plan?: string;
+  };
   kind?: 'question' | 'permission' | 'auth' | null;
   statusAt?: string;
   composerSupported?: boolean;
@@ -40,6 +50,8 @@ export interface AgentSnapshot extends TargetRef {
   nativeError?: string;
   /** Rex Codex: the pane's own footer shows no session ID (read-only check). */
   footerMissing?: boolean;
+  codexHookEpoch?: string;
+  codexHookNotice?: string;
   model?: string | null;
   modelName?: string;
   effort?: string | null;

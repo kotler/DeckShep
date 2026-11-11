@@ -3,6 +3,77 @@ const { test } = require('node:test'),
   assert = require('node:assert/strict');
 const { exec } = require('../../src/platform/exec.ts');
 const { discoverRex } = require('../../src/platform/paths.ts');
+test('optional execution diagnostics expose fixed categories and exit codes without native output', async () => {
+  for (const [message, kind] of [
+    [
+      'connect: operation not permitted /PRIVATE/path?token=SECRET',
+      'permission',
+    ],
+    ['connection refused /PRIVATE/socket', 'connection-refused'],
+    ['unknown flag: PRIVATE', 'invalid-option'],
+    ['request timed out PRIVATE', 'timeout'],
+    ['block not found PRIVATE', 'not-found'],
+    ['PRIVATE unclassified error', 'exit'],
+  ]) {
+    let diagnostic;
+    await assert.rejects(
+      exec(
+        process.execPath,
+        [
+          '-e',
+          `process.stderr.write(${JSON.stringify(message)});process.exit(3)`,
+        ],
+        {
+          timeout: 3000,
+          onFailure: (value) => {
+            diagnostic = value;
+          },
+        },
+      ),
+      (error) => error.message === 'Local command failed' && !error.cause,
+    );
+    assert.deepEqual(diagnostic, { kind, exitCode: 3 });
+    assert(!/PRIVATE|SECRET|token=/.test(JSON.stringify(diagnostic)));
+  }
+  let missing;
+  await assert.rejects(
+    exec('/fixture/missing-deckshep-program', [], {
+      onFailure: (value) => {
+        missing = value;
+      },
+    }),
+  );
+  assert.deepEqual(missing, { kind: 'missing-executable', exitCode: null });
+  let timeout;
+  await assert.rejects(
+    exec(process.execPath, ['-e', 'setTimeout(()=>{},10000)'], {
+      timeout: 50,
+      onFailure: (value) => {
+        timeout = value;
+      },
+    }),
+  );
+  assert.equal(timeout.kind, 'timeout');
+  let limit;
+  await assert.rejects(
+    exec(process.execPath, ['-e', 'process.stdout.write("x".repeat(10000))'], {
+      maxBuffer: 20,
+      timeout: 3000,
+      onFailure: (value) => {
+        limit = value;
+      },
+    }),
+  );
+  assert.equal(limit.kind, 'output-limit');
+  await assert.rejects(
+    exec(process.execPath, ['-e', 'process.exit(1)'], {
+      onFailure: () => {
+        throw Error('PRIVATE callback');
+      },
+    }),
+    (error) => error.message === 'Local command failed',
+  );
+});
 test('bounded execution scrubs inherited Rex routing and never exposes failed arguments/output', async () => {
   const value = await exec(
     process.execPath,

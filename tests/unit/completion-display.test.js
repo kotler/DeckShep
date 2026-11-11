@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict'),
   { harness } = require('../helpers/plugin-harness');
 test('completion display', async () => {
-  const h = harness();
+  const h = harness({ fixtureConsent: true });
   await h.ready();
   assert(h.image(0, 2).includes('>No agent<'));
   assert(!h.image(0, 2).includes('>IDLE<'));

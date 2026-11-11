@@ -8,6 +8,8 @@
         "src/app/preferences.ts",
         "tests/**/*.test.js",
         "tests/fixtures/**/*.{js,cjs,ts}",
+        "tests/poc/rex-hook/hook-entry.cjs",
+        "tests/poc/rex-hook/rex-cli-fixture.cjs",
         "scripts/*.{mjs,cjs}",
         "eslint.config.mjs",
         "commitlint.config.cjs",

@@ -36,6 +36,10 @@ export interface PaneView {
   hash?: string;
   cursor?: { row: number; column: number } | null;
 }
+export interface KeyboardView extends PaneView {
+  hash: string;
+  cursor: { row: number; column: number } | null;
+}
 export interface TerminalBackend {
   readonly id: BackendId;
   readonly generation: number;

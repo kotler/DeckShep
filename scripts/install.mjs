@@ -111,9 +111,12 @@ export function installLocal({
     'manifest.json',
     'bin/visible-pane',
     'bin/herdr-app-peer',
+    'bin/codex-hook-process',
     'bin/plugin.js',
     'claude-hook.js',
     'configure-claude.js',
+    'codex-hook.js',
+    'configure-codex.js',
   ])
     if (!fs.statSync(path.join(source, name)).isFile())
       throw Error('Build plugin first');

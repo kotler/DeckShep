@@ -18,9 +18,18 @@ function providerMark(provider: string): string {
     ),
     'utf8',
   );
-  // Preserve upstream fill rules and viewBox; em dimensions need a fixed canvas
-  // when the static SVG is nested inside Stream Deck's generated key image.
-  return source.replace(/\b(width|height)="1em"/g, '$1="24"');
+  // The pinned marks use a 24×24 viewBox. Inline their geometry in the key's
+  // document so native rendering needs neither nested SVG nor CSS color
+  // inheritance. Keep upstream fill/clip rules, titles and paths intact.
+  return source
+    .replace(/<svg\b([^>]*)>/, (_tag: string, attributes: string) => {
+      const rules = attributes.replace(
+        /\s(?:xmlns|viewBox|width|height|style|fill)="[^"]*"/g,
+        '',
+      );
+      return `<g${rules} fill="white">`;
+    })
+    .replace('</svg>', '</g>');
 }
 const codexMark: string = providerMark('codex');
 const claudeMark: string = providerMark('claude');

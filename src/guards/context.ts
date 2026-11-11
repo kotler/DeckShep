@@ -27,6 +27,8 @@ function stamp(
     agent?.chatId || null,
     agent?.runId || null,
     agent?.nativeIdentity || null,
+    ...(agent?.codexHookEpoch ? [agent.codexHookEpoch] : []),
+    ...(agent?.rexSettings?.process ? [agent.rexSettings.process] : []),
     agent?.claudeUiEpoch || 0,
     page,
     ...(isBackground(agent)
@@ -56,6 +58,8 @@ function snapshot(
       'chatId',
       'nativeVerified',
       'nativeIdentity',
+      'codexHookEpoch',
+      'rexSettings',
       'runId',
       'backgroundOnly',
       'backgroundIds',
@@ -78,7 +82,9 @@ function snapshot(
         k,
         Array.isArray((agent as Record<string, any>)[k])
           ? [...(agent as Record<string, any>)[k]]
-          : (agent as Record<string, any>)[k],
+          : k === 'rexSettings'
+            ? { ...agent.rexSettings }
+            : (agent as Record<string, any>)[k],
       ]),
   );
 }

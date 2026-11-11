@@ -5,10 +5,79 @@ const path = require('node:path');
 const os = require('node:os');
 const {
   IntegrationSetup,
-  diagnostics,
+  diagnostics: runDiagnostics,
   herdrSessions,
 } = require('../../src/app/setup');
+// All doctor fixtures supply their own API read; none contacts the host Rex.
+const diagnostics = (options) =>
+  runDiagnostics({
+    api: async () => ({ revision: 23, minimum: 17, legacy: false }),
+    ...options,
+  });
 const { convertToLegacy } = require('../helpers/claude-legacy');
+test('doctor reports server API separately from the app, honors configured Rex, and contains failures', async (t) => {
+  const paths = fixture(t);
+  const calls = [];
+  const options = {
+    home: paths.home,
+    paths,
+    rexPath: '/fixture/override',
+    version: async () => '0.1.0-preview.28',
+    rex: async (override) => {
+      calls.push(['discover', override]);
+      return { binary: '/fixture/rex', application: '/fixture/app' };
+    },
+    api: async (binary) => {
+      calls.push(['api', binary]);
+      return { revision: 23, minimum: 17, legacy: false };
+    },
+  };
+  const checks = await diagnostics(options);
+  assert.match(checks.find((c) => c.id === 'rex').reason, /preview.28/);
+  assert.deepEqual(
+    checks.find((c) => c.id === 'rex-api'),
+    {
+      id: 'rex-api',
+      ok: true,
+      reason: 'Rex server API 23 (minimum 17)',
+    },
+  );
+  assert.deepEqual(calls, [
+    ['discover', '/fixture/override'],
+    ['api', '/fixture/rex'],
+  ]);
+  const legacy = await diagnostics({
+    ...options,
+    api: async () => ({ revision: 0, minimum: 0, legacy: true }),
+  });
+  assert.match(
+    legacy.find((c) => c.id === 'rex-api').reason,
+    /legacy fields omitted/,
+  );
+  const failed = await diagnostics({
+    ...options,
+    api: async () => {
+      throw Error('PRIVATE /home/token');
+    },
+  });
+  assert.equal(failed.find((c) => c.id === 'rex').ok, true);
+  assert.deepEqual(
+    failed.find((c) => c.id === 'rex-api'),
+    {
+      id: 'rex-api',
+      ok: false,
+      reason: 'Rex server API unavailable; no server started',
+    },
+  );
+  assert(!JSON.stringify(failed).includes('PRIVATE'));
+  calls.length = 0;
+  assert(
+    !(await diagnostics({ ...options, herdr: true })).some(
+      (c) => c.id === 'rex-api',
+    ),
+  );
+  assert.deepEqual(calls, [['discover', '/fixture/override']]);
+});
 function fixture(t) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'asw-setup-'));
   t.after(() => fs.rmSync(home, { recursive: true, force: true }));

@@ -5,7 +5,8 @@ type Config = import('../../domain/types').Config;
 type PressContext = import('../../domain/types').PressContext;
 ('use strict');
 const crypto = require('node:crypto');
-const { readFooter, DaemonRpc, socketFor } = require('./daemon');
+const { DaemonRpc, socketFor } = require('./daemon');
+const { readIdentity } = require('./hook-identity');
 const { Setup } = require('./setup-presets');
 const digest: (text: string) => string = (text: string) =>
   crypto.createHash('sha256').update(text).digest('hex');
@@ -115,7 +116,7 @@ interface NativeInputPorts {
   };
 }
 const inputPorts: NativeInputPorts = {
-  footer: readFooter,
+  footer: readIdentity,
   endpoint: socketFor,
   open: (socket) => new DaemonRpc(socket),
 };

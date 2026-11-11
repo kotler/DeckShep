@@ -26,6 +26,9 @@ class FixtureSession extends Bridge {
     }));
     return this.agents;
   }
+  async displayedAgent() {
+    return this.focused();
+  }
   async focused() {
     const agent =
       this.agents.find(
@@ -45,6 +48,9 @@ class FixtureSession extends Bridge {
 }
 export function applicationDependencies() {
   return {
+    diagnostics: async () => [
+      { id: 'rex-api', ok: true, reason: 'Fixture server API 23 (minimum 17)' },
+    ],
     backendFactory: (config: Record<string, unknown>) =>
       new FixtureSession(config),
     metadataFactory: () => ({

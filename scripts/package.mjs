@@ -67,7 +67,11 @@ if (option('--verify')) {
     '--no-file-list',
   ]);
   for (const architecture of ['arm64', 'x86_64'])
-    for (const helper of ['visible-pane', 'herdr-app-peer'])
+    for (const helper of [
+      'visible-pane',
+      'herdr-app-peer',
+      'codex-hook-process',
+    ])
       run('lipo', [
         path.join(plugin, 'bin', helper),
         '-verify_arch',

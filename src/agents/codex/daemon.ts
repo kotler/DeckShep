@@ -699,7 +699,8 @@ class DaemonControls {
   constructor(bridge: Record<string, any>, dependencies: any = {}) {
     this.b = bridge;
     this.socketFor = dependencies.socketFor || socketFor;
-    this.footer = dependencies.footer || readFooter;
+    this.footer =
+      dependencies.footer || require('./hook-identity').readIdentity;
     this.connect =
       dependencies.connect ||
       ((async (endpoint: { socket: string }) => {

@@ -44,7 +44,7 @@ for (const name of ['src', 'native', 'com.kotl3r.deckshep.sdPlugin'])
     if (
       !filename ||
       /(?:^|\/)(?:bin|node_modules|state)(?:\/|$)/.test(filename) ||
-      /(?:claude-hook|configure-claude|inspector|preferences)\.js$/.test(
+      /(?:claude-hook|configure-claude|codex-hook|configure-codex|inspector|preferences)\.js$/.test(
         filename,
       )
     )

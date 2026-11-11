@@ -184,7 +184,8 @@ test('mixed agents', async () => {
   await h.api.refresh();
   await h.press(0, 1);
   h.tick();
-  assert.equal(h.action(1, 3), 'claudeInfo');
+  assert.equal(h.action(1, 3), 'none');
+  assert.equal(h.action(2, 2), 'claudeInfo');
   assert.equal(h.action(2, 3), 'claudeModeInfo');
   assert(h.image(0, 1).includes('claude-watermark'));
   assert(!h.image(0, 1).includes('agent-watermark'));
@@ -199,7 +200,8 @@ test('mixed agents', async () => {
     n,
     'captured Claude press cannot become Codex action',
   );
-  assert.equal(h.action(1, 3), 'permissions');
+  assert.equal(h.action(1, 3), 'none');
+  assert.equal(h.action(2, 2), 'permissions');
   assert.equal(h.action(2, 3), 'plan');
   assert(h.image(0, 0).includes('agent-watermark'));
   assert(h.image(0, 0).includes('<title>Codex</title>'));

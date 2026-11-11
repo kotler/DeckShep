@@ -17,6 +17,8 @@ com.kotl3r.deckshep.sdPlugin/state/
 # Generated entries; source lives under src/.
 com.kotl3r.deckshep.sdPlugin/claude-hook.js
 com.kotl3r.deckshep.sdPlugin/configure-claude.js
+com.kotl3r.deckshep.sdPlugin/codex-hook.js
+com.kotl3r.deckshep.sdPlugin/configure-codex.js
 com.kotl3r.deckshep.sdPlugin/inspector.js
 com.kotl3r.deckshep.sdPlugin/preferences.js
 

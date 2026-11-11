@@ -22,6 +22,7 @@ function harness(dependencies = {}) {
     statusAt: 'v1',
     chatId: 'chat-' + block,
     chatName: 'Chat ' + block,
+    terminalTitle: 'Chat ' + block,
     project: 'project',
     model: 'gpt-6-luna',
   }));
@@ -70,6 +71,9 @@ function harness(dependencies = {}) {
         )
           this.slots.push({ session: a.session, block: a.block });
       return this.agents;
+    }
+    async displayedAgent() {
+      return this.focused();
     }
     async focused() {
       const found = live.find(

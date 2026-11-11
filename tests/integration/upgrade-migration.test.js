@@ -63,6 +63,8 @@ async function fixture(t) {
       'bin/plugin.js',
       'claude-hook.js',
       'configure-claude.js',
+      'codex-hook.js',
+      'configure-codex.js',
     ])
       fs.writeFileSync(path.join(installed, name), 'new runtime');
     fs.writeFileSync(page, 'installer default');
@@ -204,3 +206,50 @@ test('upgrade retains newer reports from running Claude hooks and never restores
     '{"active":true,"commands":{"hook":"stable"}}\n',
   );
 });
+
+for (const suffix of ['json', 'panel.json', 'panel-status.json'])
+  test(`upgrade preserves Codex ${suffix} reports, setup and stable helper paths`, async (t) => {
+    const f = await fixture(t);
+    const record =
+      'state/codex/80-01a1ae31-d050-7503-afec-fd2b40d2bc26.' + suffix;
+    fs.mkdirSync(path.join(f.installed, 'state/codex'), {
+      recursive: true,
+      mode: 0o700,
+    });
+    fs.writeFileSync(
+      path.join(f.installed, 'state/codex-setup.json'),
+      '{"active":true,"epoch":"saved"}',
+      { mode: 0o600 },
+    );
+    fs.writeFileSync(path.join(f.installed, record), 'old report', {
+      mode: 0o600,
+    });
+    fs.writeFileSync(
+      path.join(f.installed, 'state/codex/stale.tmp'),
+      'old temporary',
+      { mode: 0o600 },
+    );
+    const backup = f.backupUpgrade(f.options).backup;
+    f.upgrade();
+    fs.mkdirSync(path.join(f.installed, 'state/codex'), {
+      recursive: true,
+      mode: 0o700,
+    });
+    fs.writeFileSync(path.join(f.installed, record), 'new report', {
+      mode: 0o600,
+    });
+    f.restoreUpgrade({ ...f.options, backup, apply: true });
+    assert.equal(
+      fs.readFileSync(path.join(f.installed, record), 'utf8'),
+      'new report',
+    );
+    assert.equal(
+      fs.readFileSync(path.join(f.installed, 'state/codex-setup.json'), 'utf8'),
+      '{"active":true,"epoch":"saved"}',
+    );
+    assert(!fs.existsSync(path.join(f.installed, 'state/codex/stale.tmp')));
+    assert.equal(
+      fs.readFileSync(path.join(f.installed, 'codex-hook.js'), 'utf8'),
+      'new runtime',
+    );
+  });

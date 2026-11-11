@@ -167,7 +167,7 @@
   <sdpi-checkbox
     id="herdrAppInputEnabled"
     disabled
-    label="Allow Codex model, effort and reviewer changes"
+    label="Allow Codex model, effort and permission changes"
   ></sdpi-checkbox>
   <p class="note">
     Selection and Next can request a pane. They do not verify keyboard focus or
@@ -191,14 +191,15 @@
   ></sdpi-checkbox>
   <p class="note">
     Required for controls. Rex temporarily copies its pane ID; the helper
-    restores your clipboard formats. Rex may show a copy notification.
-    Background status checks do not use the clipboard.
+    restores your clipboard formats. The dot normally follows Rex session focus
+    without copying. Ambiguous session changes and guarded input may show a copy
+    notification.
   </p>
   <p class="note">
-    Enable Remote Control in Rex first. Codex Model, Effort, Mode and Reviewer
-    use the session ID in your own Codex footer. To show it, run
-    <code>/statusline session-id model-with-reasoning</code> in Codex, adding
-    your other items after.
+    Enable Remote Control in Rex first. Ready-state Model, Effort, Permissions
+    and Mode use the focused native UI; they do not need a thread ID. Other
+    thread-bound actions require a verified Codex hook binding or the session ID
+    in your own footer.
   </p>
   <button id="setup" type="button" disabled>Check selected Codex agent</button>
   <p class="note">
@@ -216,15 +217,15 @@
   <sdpi-checkbox
     id="claudeEnabled"
     disabled
-    label="Enable Claude native controls after hook setup"
+    label="Enable Claude native controls"
   ></sdpi-checkbox>
   <p class="note">
-    Native Claude 2.1.319 only; physical validation is pending. Install the
-    optional metadata hooks with <code>configure-claude.js</code> as described
-    in docs/CLAUDE.md. Existing hooks are preserved, and DeckShep never changes
-    your Claude status line. Enabling this checkbox does not install hooks or
-    change permissions. Model and Effort cycle settings for this session; Mode
-    uses the Claude keyboard. Herdr submissions remain unavailable.
+    In Rex, Model and Effort cycle the focused native Claude CLI’s picker for
+    this session. Permissions and Mode advance its permission mode. These four
+    keys use the CLI’s local session registration and default keyboard
+    shortcuts. Other Claude controls require the optional metadata hooks
+    described in docs/CLAUDE.md. Physical validation of the hook-free picker is
+    pending. Herdr submissions remain unavailable.
   </p>
   <sdpi-button id="claudePreview">Preview changes</sdpi-button>
   <sdpi-button id="claudeApply" disabled>Apply with backup</sdpi-button>
@@ -282,9 +283,11 @@
   >
 </details>
 <p class="note">
-  Home’s third row follows the selected agent. Page cycles Home → Questions →
-  Prompts. Reviewer shows and switches between Ask me and Approve for me;
-  request Confirm acts only on the native choice shown in Rex.
+  Row 2 manages agents: Next agent, Page (groups of five), and Collapse (gaps).
+  Each appears only when needed. Row 3 follows the selected agent. Use the
+  keyboard for extra question navigation and prompt actions. In Rex, Permissions
+  cycles the native permission profiles; request Confirm acts only on the native
+  choice shown in Rex.
 </p>
 <script src="preferences.js"></script>
 <script src="inspector.js"></script>

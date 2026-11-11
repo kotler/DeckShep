@@ -46,14 +46,12 @@ for (const action of [
   'collapse',
   'banknext',
   'next',
-  'more',
   'model',
   'effort',
   'plan',
   'permissions',
   'interrupt',
   'stopTerminals',
-  'zoom',
   'steer',
   'queue',
   'review',
@@ -83,12 +81,11 @@ for (const action of [
     new Option(
       {
         effort: 'Effort (cycle supported levels)',
-        permissions: 'Reviewer (Ask me / Approve for me)',
-        more: 'Page selector',
+        permissions: 'Permissions',
         interrupt: 'Interrupt',
         stopTerminals: 'Stop background terminals',
-        plan: 'Plan / Default',
-        banknext: 'Agent bank',
+        plan: 'Mode',
+        banknext: 'Page',
         next: 'Next agent',
         approvalConfirm: 'Confirm shown approval choice',
       }[action] || action,
@@ -148,7 +145,7 @@ function fill(status: any) {
     : status.selectionNotice
       ? 'Selection changed. Select an agent on the deck.'
       : status.selected
-        ? `Selected: ${status.selected.app} · ${status.selected.state}${status.selected.mode ? ' · ' + status.selected.mode : ''}`
+        ? `Selected: ${status.selected.app} · ${status.selected.state}${status.selected.mode ? ' · ' + status.selected.mode : ''}${status.selected.identitySource === 'hook' ? ' · hook identity' : ''}`
         : 'Select an agent on the deck to enable controls.';
   byId('message').textContent =
     status.message || status.selected?.identityMessage || '';
@@ -266,8 +263,12 @@ byId('useSession').addEventListener('click', () => {
   byId('herdrSocketPath').value = byId('sessions').value;
   save('herdrSocketPath');
 });
-byId('setup').addEventListener('click', () => {
+byId('setup').addEventListener('click', function checkSelectedFooter() {
   byId('setup').disabled = true;
+  byId('message').textContent = 'Checking the selected Codex identity…';
+  // The setup button is below the status area in the short native inspector.
+  // Bring its progress/result into view so the response is not hidden above it.
+  byId('message').scrollIntoView({ block: 'nearest' });
   send('sendToPlugin', { kind: 'setupFooter' }, actionContext);
 });
 byId('action').addEventListener('change', () =>

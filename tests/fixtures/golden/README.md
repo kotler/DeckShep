@@ -4,11 +4,20 @@ Captured from plugin 1.3.4, commit `0262267`, tagged `v1.3.4-pre-refactor`.
 No production source changed for this capture. Fixtures use synthetic processes,
 private records, terminal views and transports; no installed agent is contacted.
 
-- `layouts.json`: 96 backend × provider × state × page combinations, each with
+The owner-approved 2026-11-10 UI changes replace the original 96 interaction-page
+cases with 32 dynamic Home cases. See the mapping and snapshot justification in
+[the validation record](../../../docs/validation/2026-11-10-rex-rendering-controls.md).
+Native traces and refusals retain their original coverage.
+
+The owner-approved Rex navigation separation strips provider proof from Rex
+agent-button dispatch targets. Layout actions and native traces/refusals stay
+unchanged. See the [navigation validation record](../../../docs/validation/2026-11-10-rex-navigation-independence.md).
+
+- `layouts.json`: 32 backend × provider × dynamic Home state combinations, each with
   all 15 key actions. Includes approval, completion and error in addition to the
   five states required by the plan. Background-only is deliberately Codex-only;
   the Claude combination preserves the baseline's working layout.
-- `presses.json`: each of those 1,440 keys pressed in a fresh controller fixture,
+- `presses.json`: each of those 480 keys pressed in a fresh controller fixture,
   recording provider dispatch, fixture backend calls, result label and alert.
   Provider operations are injected here; this captures controller routing, not
   evidence that a native operation succeeded.

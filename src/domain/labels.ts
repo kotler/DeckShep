@@ -131,7 +131,7 @@ function modelLines(bridge: Record<string, any>) {
             (agent.model === verified ? agent.modelName : null) ||
             verified.replace(/^claude-/, '')
           : shortModel(verified)
-        : 'Unknown',
+        : '',
       126,
       16,
     ) + (!recent && verified && agent.claudeModelStale ? '?' : ''),
@@ -141,7 +141,7 @@ function effortLines(bridge: Record<string, any>) {
   const agent: any = bridge.agents?.find((a: any) =>
     sameTarget(bridge.lastTarget, a),
   );
-  if (!agent) return ['Effort', 'Unknown'];
+  if (!agent) return ['Effort', ''];
   if (footerMissing(agent)) return ['Effort', NO_FOOTER_ID];
   const recent: any = bridge.lastEffort;
   const fresh: boolean =
@@ -154,15 +154,15 @@ function effortLines(bridge: Record<string, any>) {
     value
       ? clean(value).replace(/^./, (c: string) => c.toUpperCase()) +
         (!fresh && agent.claudeEffortStale ? '?' : '')
-      : 'Unknown',
+      : '',
   ];
 }
 function reviewerLines(bridge: Record<string, any>) {
   const agent: any = bridge.agents?.find((a: any) =>
     sameTarget(bridge.lastTarget, a),
   );
-  if (!agent) return ['Reviewer'];
-  if (footerMissing(agent)) return ['Reviewer', NO_FOOTER_ID];
+  if (!agent) return ['Permissions'];
+  if (footerMissing(agent)) return ['Permissions', NO_FOOTER_ID];
   const recent: any = bridge.lastReviewer;
   const value: any =
     sameTarget(recent, agent) &&
@@ -176,7 +176,7 @@ function reviewerLines(bridge: Record<string, any>) {
       auto_review: 'Approve for me',
     } as Record<string, any>
   )[value];
-  return label ? ['Reviewer', label] : ['Reviewer'];
+  return label ? ['Permissions', label] : ['Permissions'];
 }
 module.exports = {
   clean,

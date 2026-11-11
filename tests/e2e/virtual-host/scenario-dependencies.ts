@@ -6,11 +6,14 @@ import type {
   TargetRef,
 } from '../../../src/domain/types';
 import { scenario, type Scenario, type ScenarioName } from './scenarios';
+import { ClaudeKeyboardScreen } from '../../helpers/claude-keyboard-screen';
+import { KeyboardScreen } from '../../helpers/keyboard-screen';
 import { virtualAppFocus } from './app-focus';
 const { Bridge } = require('../../../src/app/session');
 const C = require('../../../src/guards/context');
 let current = scenario('idle-two-codex');
 let revision = 0;
+let keyboard: KeyboardScreen | ClaudeKeyboardScreen = new KeyboardScreen();
 let clock = 10000;
 const timers: { callback: () => void; period: number; next: number }[] = [];
 let pauseNext = false;
@@ -24,6 +27,12 @@ class ScenarioSession extends Bridge {
       async (args: string[], input?: string) => {
         if (!['focus', 'send-key', 'zoom', 'send'].includes(args[0]))
           throw Error('Unexpected fixture transport');
+        if (current.keyboard && ['send', 'send-key'].includes(args[0])) {
+          if (args[4] !== current.focused) throw Error('Wrong fixture pane');
+          keyboard.send(
+            args[0] === 'send' ? String(input).slice(6, -6) : args[5],
+          );
+        }
         process.send?.({
           kind: 'fixtureInput',
           args,
@@ -37,6 +46,21 @@ class ScenarioSession extends Bridge {
         throw Error('Fixture visible read unavailable');
       },
     );
+    this.inspectClaudeKeyboard = async () => {
+      if (!(keyboard instanceof ClaudeKeyboardScreen))
+        throw Error('Fixture unavailable');
+      return 'fixture-claude-process';
+    };
+    this.inspectKeyboardProcess = async (pid: number) => ({
+      pid,
+      codex: true,
+      startedAt: '1.000001',
+      image: 'a'.repeat(64),
+    });
+    this.readKeyboardView = async () => {
+      if (!current.keyboard) throw Error('Fixture screen unavailable');
+      return keyboard.view();
+    };
     this.readComposer = async () => ({
       chatId: 'chat-' + current.focused,
       hash: 'fixture-draft',
@@ -77,6 +101,9 @@ class ScenarioSession extends Bridge {
     const found = current.agents.find((a) => a.block === target.block);
     return found ? this.normalize(found) : null;
   }
+  async displayedAgent() {
+    return this.focused();
+  }
   async focused(): Promise<AgentSnapshot> {
     if (pauseNext) {
       pauseNext = false;
@@ -91,6 +118,13 @@ class ScenarioSession extends Bridge {
     this.assertDeliveryVisible();
     if (this.actionContext) {
       C.assertContext(this.actionContext, agent);
+      if (this.actionContext.verifyChat && !this.actionContext.target.chatId)
+        throw Error('Chat metadata loading; try again');
+      if (
+        this.actionContext.target.codexHookEpoch &&
+        this.actionContext.target.codexHookEpoch !== agent.codexHookEpoch
+      )
+        throw Error('Codex hook changed; reselect');
       if (
         this.actionContext.verifyChat &&
         this.actionContext.target.chatId !== agent.chatId
@@ -116,7 +150,9 @@ class ScenarioSession extends Bridge {
   }
   // Unsupported fixture operations fail closed instead of constructing any
   // daemon, process-inspection or native pane reader on the developer's machine.
-  async method(): Promise<never> {
+  async method(_target: TargetRef, method: string) {
+    if (current.keyboard && method === 'modes')
+      return { modes: [{ number: 2004, set: true }] };
     throw Error('Fixture read unavailable');
   }
   async client(): Promise<never> {
@@ -137,6 +173,12 @@ async function command(message: Record<string, unknown>): Promise<void> {
     if (message.command === 'scenario') {
       current = scenario(message.value as ScenarioName | Scenario);
       revision++;
+      keyboard = new KeyboardScreen();
+      keyboard.showShortcutRow = current.keyboard === true;
+      if (current.keyboard && current.agents[0]?.app === 'claude-code')
+        keyboard = new ClaudeKeyboardScreen();
+      else if (current.keyboard && current.agents[0]?.state === 'working')
+        keyboard.surface = 'working';
       for (const timer of timers) if (timer.period === 2000) timer.callback();
     } else if (message.command === 'advance') {
       const amount = Number(message.value);
@@ -175,6 +217,9 @@ export function applicationDependencies() {
   });
   return {
     experimentalHerdrApp: true,
+    diagnostics: async () => [
+      { id: 'rex-api', ok: true, reason: 'Fixture server API 23 (minimum 17)' },
+    ],
     appFocusBackend: virtualAppFocus(
       () => current,
       async () => {

@@ -7,6 +7,17 @@ chained one, restores your original status line if DeckShep's wrapper is still
 there. Private Claude lifecycle records are removed after hooks are disabled. Unrelated hooks, permissions and settings remain.
 **Undo last change** is available unless those files changed afterward.
 
+If optional Codex hooks were installed, remove them before deleting the plugin:
+
+```sh
+node <installed-plugin>/configure-codex.js --remove
+node <installed-plugin>/configure-codex.js --remove --apply
+```
+
+This revokes the private Codex setup epoch before removing only DeckShep's exact
+hook commands. Other Codex hooks and config.toml remain unchanged. Keep the
+private backups. The inspector's Claude removal flow does not remove Codex hooks.
+
 Then remove DeckShep from Stream Deck and delete its profiles if wanted.
 The App peer helper is inside DeckShep's plugin folder and is removed with it;
 this focus-request path installs no Herdr mod or layout changes.

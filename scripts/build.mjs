@@ -88,6 +88,7 @@ export async function build({ universal = false } = {}) {
       : [os.arch() === 'arm64' ? 'arm64' : 'x86_64'];
     for (const [name, sources, flags] of [
       ['visible-pane', ['visible-pane.swift'], []],
+      ['codex-hook-process', ['codex-hook-process.swift'], []],
       [
         'herdr-app-peer',
         [
@@ -135,6 +136,8 @@ export async function build({ universal = false } = {}) {
     ['src/plugin/entry.mts', 'bin/plugin.js'],
     ['src/plugin/hook-entry.ts', 'claude-hook.js'],
     ['src/plugin/configure-entry.ts', 'configure-claude.js'],
+    ['src/plugin/codex-hook-entry.ts', 'codex-hook.js'],
+    ['src/plugin/configure-codex-entry.ts', 'configure-codex.js'],
     ['src/inspector/index.ts', 'inspector.js', { browser: true }],
     [
       'src/app/preferences.ts',

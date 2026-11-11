@@ -24,7 +24,7 @@ function json(data) {
 function installerZip(Z, files) {
   return Z.zip(files, {
     executableFiles: [...files.keys()].filter((name) =>
-      /^com\.kotl3r\.deckshep\.sdPlugin\/bin\/(visible-pane|herdr-app-peer)$/.test(
+      /^com\.kotl3r\.deckshep\.sdPlugin\/bin\/(visible-pane|herdr-app-peer|codex-hook-process)$/.test(
         name,
       ),
     ),
@@ -42,6 +42,7 @@ test('installer repair preserves helper bytes and executable mode through real Z
   assert.deepEqual(Z.unzip(fixed, { modes }), files);
   assert.equal(modes.get(prefix + 'bin/herdr-app-peer'), 0o100755);
   assert.equal(modes.get(prefix + 'bin/visible-pane'), 0o100755);
+  assert.equal(modes.get(prefix + 'bin/codex-hook-process'), 0o100755);
   assert.equal(modes.get(prefix + 'bin/plugin.js'), 0o100644);
   assert.throws(
     () => Z.zip(files, { executableFiles: ['missing'] }),
@@ -59,7 +60,7 @@ test('installer repair preserves helper bytes and executable mode through real Z
     ['-q', archive, '-d', path.join(directory, 'unpacked')],
     { stdio: 'pipe' },
   );
-  for (const helper of ['herdr-app-peer', 'visible-pane'])
+  for (const helper of ['herdr-app-peer', 'visible-pane', 'codex-hook-process'])
     assert.equal(
       fs.statSync(path.join(directory, 'unpacked', prefix, 'bin', helper))
         .mode & 0o777,
@@ -102,10 +103,13 @@ async function installerFiles(t) {
       'THIRD-PARTY-NOTICES.md': Buffer.from('Fixture dependencies'),
       'bin/visible-pane': Buffer.from('fixture'),
       'bin/herdr-app-peer': Buffer.from('fixture'),
+      'bin/codex-hook-process': Buffer.from('fixture'),
       'bin/plugin.js': Buffer.from('fixture'),
       'bin/doctor.js': Buffer.from('fixture'),
       'claude-hook.js': Buffer.from('fixture'),
       'configure-claude.js': Buffer.from('fixture'),
+      'codex-hook.js': Buffer.from('fixture'),
+      'configure-codex.js': Buffer.from('fixture'),
       'inspector.html': Buffer.from('fixture'),
       'inspector.js': Buffer.from('fixture'),
       'sdpi-components.js': Buffer.from('fixture'),
@@ -288,9 +292,12 @@ test('upgrade in temporary HOME adds bundled entries without a Herdr profile or 
     'manifest.json',
     'bin/visible-pane',
     'bin/herdr-app-peer',
+    'bin/codex-hook-process',
     'bin/plugin.js',
     'claude-hook.js',
     'configure-claude.js',
+    'codex-hook.js',
+    'configure-codex.js',
   ])
     fs.writeFileSync(
       path.join(source, name),
