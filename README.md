@@ -8,15 +8,63 @@ This beta targets **Codex CLI on a 15-key Stream Deck MK.2**. The first release 
 
 The 1.4.0 development build includes experimental Claude Code support and mixed Claude/Codex banks. Claude controls are off by default; isolated native validation passed, with physical validation still in progress. Model and Effort now cycle directly from Home, with session-only changes. In Rex, Claude settings and working Interrupt can use the focused native CLI without hooks. Queue and choice controls use optional hooks. DeckShep never changes your Claude Code or Codex status line. See [Claude setup, capabilities and limits](docs/CLAUDE.md). The published 1.2.1 beta and its existing hardware results remain the release baseline.
 
-## Get started
+## Install on macOS
 
-DeckShep is being prepared for a free, open-source release under Apache-2.0. Source is maintained in [kotler/DeckShep](https://github.com/kotler/DeckShep); the first release remains pending owner review. Once available, use the versioned macOS ZIP attached to a GitHub Release and follow [Installation and upgrades](docs/INSTALL.md). GitHub's automatically generated source archive is not an installer.
+You'll need Rex, the Elgato Stream Deck app and a 15-key Stream Deck MK.2. Connect the deck and open Stream Deck once so it creates the device profile.
 
-The single plugin installer includes the **Rex** profile; the ZIP also includes setup guides, build information and checksums. The plugin ID is `com.kotl3r.deckshep`. Older private previews need the new profiles and explicit integration setup; see the [prelaunch identity reset](docs/IDENTITY.md).
+**From a beta ZIP:** Extract the versioned macOS ZIP supplied by the maintainer, double-click `com.kotl3r.deckshep.streamDeckPlugin`, and accept the bundled **Rex** profile. The public release is pending. If you're upgrading a customized installation, back it up first. [Upgrade and restore instructions](docs/INSTALL.md#upgrading-a-customized-deckshep-installation)
+
+**From this checkout:** With Node 22.13 or later and Xcode Command Line Tools installed, run these commands from the repository root:
+
+```sh
+npm ci
+npm run build
+```
+
+Quit **Stream Deck** from its menu, leave Rex running, then install and reopen Stream Deck:
+
+```sh
+node scripts/install.mjs
+open -a "Elgato Stream Deck"
+```
+
+The installer backs up your profiles and previous plugin before updating them. If you have several MK.2 devices, pass `--device-uuid <uuid>` to select one. Older private previews with a different plugin ID require a fresh profile. [Identity migration](docs/IDENTITY.md)
+
+**Connect the deck to Rex:**
+
+1. Enable **Remote Control** in Rex and open a Codex CLI or native Claude Code session there.
+2. In Stream Deck, choose the **Rex** profile and select a **DeckShep Key** in the editor. Click **Enable visible-pane checks** so DeckShep can verify which pane will receive your press. The check temporarily copies the pane ID and restores the clipboard.
+3. For Claude, also select **Enable Claude native controls**. Press the agent's top-row key. The white dot marks the selected agent. A ready agent exposes **Model**, **Effort** and **Permissions**. In Claude, **Permissions** also cycles Plan mode.
+
+## Optional hooks
+
+You can use the focused Rex pane for settings and working **Interrupt** without installing hooks. Install the integration for the provider whose additional controls you want. Both helpers run from the installed plugin directory so their registered paths survive checkout moves. For the Terminal commands below, use Node 22.13 or later and set:
+
+```sh
+plugin_dir="$HOME/Library/Application Support/com.elgato.StreamDeck/Plugins/com.kotl3r.deckshep.sdPlugin"
+```
+
+**Claude Code.** Install Claude lifecycle hooks for **Queue**, **Steer** and question or approval controls. In the DeckShep key inspector, choose **Preview changes**, review the settings diff, then choose **Apply with backup**. You can also preview and apply from Terminal:
+
+```sh
+node "$plugin_dir/configure-claude.js"
+node "$plugin_dir/configure-claude.js" --apply
+```
+
+Check the entries with `/hooks` in Claude. A new session or your next submitted message can establish the binding. Your existing status line is preserved. [Claude hook setup and removal](docs/CLAUDE.md)
+
+**Codex CLI.** Install Codex lifecycle hooks if you want thread-bound controls to identify a verified session without adding the session ID to your footer. Preview the entries, then apply them:
+
+```sh
+node "$plugin_dir/configure-codex.js"
+node "$plugin_dir/configure-codex.js" --apply
+```
+
+Review and trust the DeckShep entries in Codex's `/hooks` menu. After a fresh session event, select the agent and click **Check selected Codex agent** in the key inspector. A verified binding shows **hook identity**. [Codex hook setup and removal](docs/CODEX-HOOKS.md)
 
 - [Release readiness](docs/RELEASE-READINESS.md) · [Marketplace draft](docs/MARKETPLACE.md)
 - [Switching profiles](docs/PROFILES.md)
-- [Rex setup](docs/INSTALL.md#rex-setup)
+- [Rex setup](docs/INSTALL.md)
 - [Herdr (unreleased preview)](docs/HERDR.md#setup)
 - [Uninstall and optional cleanup](docs/UNINSTALL.md)
 - [Compatibility](docs/COMPATIBILITY.md) · [Release notes](docs/RELEASE-NOTES.md) · [Validation record](docs/BETA-CHECKLIST.md)
@@ -29,6 +77,20 @@ Independent installation on another Mac, Intel execution and signing/notarizatio
 | ---------- | ---------- | --------------------- | ---------- | ---------------- |
 | Next agent | Page       | Collapse              | Empty      | Attention        |
 | Contextual | Contextual | Permissions / Confirm | Contextual | Interrupt / Stop |
+
+These screenshots show the Rex profile on the virtual MK.2 with two example Codex sessions. The white dot stays on the selected agent while the bottom row follows its state.
+
+**Ready** — change the model, effort, permissions or mode.
+
+![Ready Rex layout with Chat a selected and the Model, Effort, Permissions and Mode keys visible](tests/e2e/__screenshots__/idle-darwin.png)
+
+**Working** — steer the current turn, queue typed text or interrupt.
+
+![Working Rex layout with Steer, Queue and Interrupt on the bottom row](tests/e2e/__screenshots__/working-darwin.png)
+
+**Asking** — move the highlight with Up or Down, then press Confirm or Esc.
+
+![Rex layout for a selected agent asking a question, with Up, Down, Confirm and Esc keys](tests/e2e/__screenshots__/question-darwin.png)
 
 With visible-pane checks enabled, the white dot follows the focused Rex pane on refresh. A shell or an unverified selection has no dot. The deck stays on one dynamic Home layout.
 Row 2 manages the agent group: **Next agent** appears only with at least two
@@ -76,7 +138,7 @@ establish full provider parity or hardware support. See the generated
 | Steer, Queue                                              | Supported with composer checks | Unavailable; use the keyboard                      |
 | Focus verification                                        | Explicit clipboard opt-in      | Herdr session API; no clipboard                    |
 
-In Rex, the four ready-state settings keys use the focused native UI, without a thread ID. For thread-bound actions, Codex can use the optional [hook identity integration](docs/CODEX-HOOKS.md) without displaying the thread ID, when one CLI connection and one loaded thread can be verified. Ambiguous shared-daemon cases retain the independent footer path (`/statusline session-id model-with-reasoning`, run by you in Codex). Native message composition still needs its existing footer/cursor checks. DeckShep never changes your status line. See [install step 5](docs/INSTALL.md).
+In Rex, the four ready-state settings keys use the focused native UI, without a thread ID. For thread-bound actions, Codex can use the optional [hook identity integration](docs/CODEX-HOOKS.md) without displaying the thread ID, when one CLI connection and one loaded thread can be verified. Ambiguous shared-daemon cases retain the independent footer path (`/statusline session-id model-with-reasoning`, run by you in Codex). Native message composition still needs its existing footer/cursor checks. DeckShep never changes your status line. See [Rex installation guide](docs/INSTALL.md).
 
 Herdr is not packaged in the first release; source builds add its profile only with `experimental.herdr` set in `config.json`. It targets local TUI **0.9.5 / protocol 22**. Its pane-read API does not expose a trustworthy composer cursor/editing mode, so it cannot support the Rex submission checks. Multiple attached clients and reconnect behavior still need validation. See [the Herdr guide](docs/HERDR.md) for identity setup and exact coverage.
 
@@ -108,7 +170,7 @@ npm run test:coverage
 npm run package -- --tag v1.4.0-beta.1
 ```
 
-This builds a universal helper, validates and packs with the pinned official Elgato CLI, audits the actual archives and writes a versioned ZIP under `dist/`. It never uploads. See [source installation](docs/INSTALL.md#install-from-source) and [release procedure](docs/RELEASING.md).
+This builds a universal helper, validates and packs with the pinned official Elgato CLI, audits the actual archives and writes a versioned ZIP under `dist/`. It never uploads. See [checkout installation](#install-on-macos) and [release procedure](docs/RELEASING.md).
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, safety rules and version verification; `AGENTS.md` contains the full standing instructions. `npm run build`
 creates a portable local build without installing it. `npm run clean` removes only
