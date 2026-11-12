@@ -33,6 +33,7 @@ const DAEMON_CONTRACT: Readonly<Record<string, readonly string[]>> =
     ],
     'thread/backgroundTerminals/list': ['threadId', 'limit', 'cursor'],
     'thread/backgroundTerminals/terminate': ['threadId', 'processId'],
+    'turn/interrupt': ['threadId', 'turnId'],
   });
 const DAEMON_METHODS: readonly string[] = Object.freeze(
   Object.keys(DAEMON_CONTRACT),
@@ -407,6 +408,19 @@ class DaemonRpc {
   request(method: string, params: any, beforeWrite?: () => void) {
     if (!DAEMON_METHODS.includes(method))
       return Promise.reject(Error('Unsupported daemon method'));
+    // The turn ID is the stale guard: a press drawn for one turn names that
+    // turn and cannot stop a later one.
+    if (
+      method === 'turn/interrupt' &&
+      (!params ||
+        Object.keys(params).sort().join(',') !== 'threadId,turnId' ||
+        !new RegExp('^' + UUID + '$', 'i').test(params.threadId) ||
+        typeof params.turnId !== 'string' ||
+        !params.turnId ||
+        params.turnId.length > 256 ||
+        /[\x00-\x1f\x7f]/.test(params.turnId))
+    )
+      return Promise.reject(Error('Only scoped turn interrupts are allowed'));
     if (method.startsWith('thread/backgroundTerminals/')) {
       const keys: string = Object.keys(params || {})
           .sort()

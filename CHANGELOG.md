@@ -40,6 +40,12 @@ preview artifacts use `-beta.N` release tags.
 - Report the Claude Code release in the setup checklist and warn when it is
   different from the tested releases (2.1.319 and 2.1.322). Nothing is disabled; no
   version is pinned.
+- Add an opt-in Codex Interrupt through the app-server (`turn/interrupt`),
+  switched on with `daemonControls.interruptEnabled` in `config.json` (default
+  off). It names the turn the key was drawn for, so it cannot stop a later
+  turn, is sent once per turn and leaves a typed draft alone. The default stays
+  one Escape key. It has fixture coverage only and has not been run against a
+  live Codex.
 - The Claude information key now reads "Enable keys" when Claude controls are
   off; "Enable controls" did not fit and was cut.
 

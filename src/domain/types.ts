@@ -208,7 +208,12 @@ export interface Config {
   statusMaxAgeMs: number;
   draftMaxAgeMs: number;
   metadataRefreshMs: number;
-  daemonControls: { enabled: boolean; permissionsEnabled: boolean };
+  daemonControls: {
+    enabled: boolean;
+    permissionsEnabled: boolean;
+    /** Opt-in: Codex Interrupt uses `turn/interrupt` instead of Escape. */
+    interruptEnabled?: boolean;
+  };
   effortKeys: { increase: string; decrease: string };
   aliases: Record<string, string>;
   sendKeys: Record<string, string>;

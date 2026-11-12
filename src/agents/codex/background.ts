@@ -118,34 +118,78 @@ class BackgroundControls {
     const endpoint: any = await this.socketFor(agent.pid),
       rpc: any = await this.connect(endpoint);
     try {
-      const id: any = await this.footer(this.b, agent),
-        expected: any = this.b.actionContext?.target;
-      if (expected?.chatId && expected.chatId !== id)
-        throw Error('Selected chat changed');
-      const thread: any = (
-        await rpc.request('thread/read', { threadId: id, includeTurns: false })
-      )?.thread;
-      if (
-        thread?.id !== id ||
-        thread.cwd !== agent.cwd ||
-        thread.status?.type !== 'active' ||
-        !accepting(thread)
-      )
-        throw Error('No agent turn to interrupt');
-      const turn: {
-        id: any;
-        status: any;
-      } = await latestTurn(rpc, id);
-      if (turn.status !== 'inProgress')
-        throw Error('Only background terminals remain');
-      if (expected?.runId && turn.id !== expected.runId)
-        throw Error('Agent started a new turn');
-      if ((await this.footer(this.b, agent)) !== id)
-        throw Error('Selected chat changed');
-      return { chatId: id, runId: turn.id };
+      return await this.verifyRunning(rpc, agent);
     } finally {
       rpc.close();
     }
+  }
+  /** Interrupt the verified in-progress turn through the app-server instead
+   * of an Escape key. One request per turn; the composer is not touched. */
+  async interrupt(agent: import('../../domain/types').AgentSnapshot) {
+    const endpoint: any = await this.socketFor(agent.pid),
+      rpc: any = await this.connect(endpoint);
+    try {
+      const verified: { chatId: string; runId: string } =
+        await this.verifyRunning(rpc, agent);
+      const latest: any = await this.socketFor(agent.pid);
+      if (latest.pid !== endpoint.pid || latest.socket !== endpoint.socket)
+        throw Error('Daemon changed');
+      const key: string = JSON.stringify([
+        agent.session,
+        agent.block,
+        agent.pid,
+        verified.chatId,
+        verified.runId,
+      ]);
+      if (this.b.lastTurnInterrupt === key)
+        throw Error('Interrupt already sent');
+      this.b.lastTurnInterrupt = key;
+      const result: any = await this.b.deliverMutation(
+        agent,
+        'turn/interrupt',
+        (beforeWrite: () => void) =>
+          rpc.request(
+            'turn/interrupt',
+            { threadId: verified.chatId, turnId: verified.runId },
+            beforeWrite,
+          ),
+      );
+      if (!result || typeof result !== 'object' || Array.isArray(result))
+        throw Error('Interrupt unconfirmed; check Rex');
+      return { kind: 'interrupt', ...verified };
+    } finally {
+      rpc.close();
+    }
+  }
+  private async verifyRunning(
+    rpc: Record<string, any>,
+    agent: import('../../domain/types').AgentSnapshot,
+  ) {
+    const id: any = await this.footer(this.b, agent),
+      expected: any = this.b.actionContext?.target;
+    if (expected?.chatId && expected.chatId !== id)
+      throw Error('Selected chat changed');
+    const thread: any = (
+      await rpc.request('thread/read', { threadId: id, includeTurns: false })
+    )?.thread;
+    if (
+      thread?.id !== id ||
+      thread.cwd !== agent.cwd ||
+      thread.status?.type !== 'active' ||
+      !accepting(thread)
+    )
+      throw Error('No agent turn to interrupt');
+    const turn: {
+      id: any;
+      status: any;
+    } = await latestTurn(rpc, id);
+    if (turn.status !== 'inProgress')
+      throw Error('Only background terminals remain');
+    if (expected?.runId && turn.id !== expected.runId)
+      throw Error('Agent started a new turn');
+    if ((await this.footer(this.b, agent)) !== id)
+      throw Error('Selected chat changed');
+    return { chatId: id, runId: turn.id };
   }
   async stop(agent: import('../../domain/types').AgentSnapshot) {
     if (

@@ -115,6 +115,7 @@ async function controlFixture(t, working = false) {
         };
         return {};
       }
+      if (method === 'turn/interrupt') return {};
       throw Error('Unexpected fixture RPC');
     },
   };
@@ -203,6 +204,8 @@ async function controlFixture(t, working = false) {
   const controls = new DaemonControls(bridge, deps);
   bridge.verifyRunning = (agent) =>
     new BackgroundControls(bridge, deps).running(agent);
+  bridge.interruptTurn = (agent) =>
+    new BackgroundControls(bridge, deps).interrupt(agent);
   return {
     ...f,
     bridge,
@@ -265,6 +268,38 @@ test('hook-bound Interrupt and Mode use exact native keys after real focus check
     ready.native.filter((args) => args[0] === 'send-key'),
     [['send-key', '-s', session, '-b', block, 'shift+tab']],
   );
+});
+
+test('opt-in API Interrupt stops the captured turn and sends no key', async (t) => {
+  const f = await controlFixture(t, true);
+  f.bridge.config.daemonControls = {
+    enabled: true,
+    permissionsEnabled: true,
+    interruptEnabled: true,
+  };
+  await f.bridge.withContext(
+    { target: f.target, action: 'interrupt', verifyChat: true },
+    () => f.bridge.interrupt(),
+  );
+  assert.deepEqual(
+    f.requests
+      .filter(({ method }) => method === 'turn/interrupt')
+      .map(({ params }) => params),
+    [{ threadId: id, turnId: 'turn-1' }],
+  );
+  assert(!f.native.some((args) => ['send', 'send-key'].includes(args[0])));
+  // The switch is off unless set: the default stays one Escape key.
+  const off = await controlFixture(t, true);
+  off.bridge.config.daemonControls = {
+    enabled: true,
+    permissionsEnabled: true,
+  };
+  await off.bridge.withContext(
+    { target: off.target, action: 'interrupt', verifyChat: true },
+    () => off.bridge.interrupt(),
+  );
+  assert(off.requests.every(({ method }) => method !== 'turn/interrupt'));
+  assert.equal(off.native.filter((args) => args[0] === 'send-key').length, 1);
 });
 
 test('a fresh hook report invalidates a captured control before any provider write', async (t) => {

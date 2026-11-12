@@ -139,7 +139,11 @@ export const config = z
     draftMaxAgeMs: z.number().finite().nonnegative().optional(),
     metadataRefreshMs: z.number().finite().nonnegative().optional(),
     daemonControls: z
-      .object({ enabled: bool, permissionsEnabled: bool })
+      .object({
+        enabled: bool,
+        permissionsEnabled: bool,
+        interruptEnabled: bool,
+      })
       .passthrough()
       .optional(),
     effortKeys: z

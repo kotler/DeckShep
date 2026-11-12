@@ -904,6 +904,23 @@ class Bridge {
     const a: any = await this.focused();
     if (a.app === 'claude-code') return this.claude.interrupt();
     if (a.state !== 'working') throw new Error('Interrupt only while working');
+    if (
+      a.app === 'codex' &&
+      this.config.daemonControls?.enabled &&
+      this.config.daemonControls.interruptEnabled === true
+    ) {
+      // Opt-in: stop the turn through the app-server. The typed draft stays,
+      // because no key reaches the composer.
+      const current: any = await this.checked(a);
+      if (current.state !== 'working')
+        throw Error('Run ended; no interrupt sent');
+      await ((this as any).interruptTurn
+        ? (this as any).interruptTurn(a)
+        : new (require('../agents/codex/background').BackgroundControls)(
+            this,
+          ).interrupt(a));
+      return;
+    }
     if (a.app === 'codex')
       await ((
         (this as any).verifyRunning

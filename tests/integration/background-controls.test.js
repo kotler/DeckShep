@@ -17,6 +17,7 @@ function fixture() {
     turn = { id: 'turn', status: 'interrupted' },
     footer = id,
     endpoint = { pid: 50, socket: '/socket' },
+    interruptReply = {},
     time = 100;
   const calls = [],
     agent = {
@@ -65,6 +66,7 @@ function fixture() {
         ids = ids.filter((x) => x !== params.processId);
         return { terminated: true };
       }
+      if (method === 'turn/interrupt') return interruptReply;
       throw Error('Unexpected method');
     },
   };
@@ -86,6 +88,7 @@ function fixture() {
     setTurn: (v) => (turn = v),
     setFooter: (v) => (footer = v),
     setEndpoint: (v) => (endpoint = v),
+    setInterruptReply: (v) => (interruptReply = v),
     reader: () => new AgentMetadata(b, { ...deps, now: () => time }),
     tick: () => time++,
   };
@@ -278,6 +281,17 @@ test('background controls', async () => {
     await assert.rejects(() =>
       rpc.request('thread/backgroundTerminals/' + method, params),
     );
+  for (const params of [
+    { threadId: id },
+    { threadId: id, turnId: '' },
+    { threadId: id, turnId: 'turn', force: true },
+    { threadId: 'wrong', turnId: 'turn' },
+    { threadId: id, turnId: 'bad\nturn' },
+    { threadId: id, turnId: 7 },
+  ])
+    await assert.rejects(() => rpc.request('turn/interrupt', params));
+  await rpc.request('turn/interrupt', { threadId: id, turnId: 'turn' });
+  await assert.rejects(() => rpc.request('turn/steer', { threadId: id }));
   await rpc.request('thread/backgroundTerminals/list', {
     threadId: id,
     limit: 100,
@@ -312,6 +326,76 @@ test('only the captured in-progress parent turn can be interrupted', async () =>
   );
 });
 
+test('an API interrupt names the captured turn and is sent once', async () => {
+  const f = fixture();
+  const sent = () => f.calls.filter((c) => c.method === 'turn/interrupt');
+  f.b.actionContext = { target: { chatId: id, runId: 'parent' } };
+  f.setTurn({ id: 'parent', status: 'inProgress' });
+  const mutations = [];
+  f.b.deliverMutation = async (target, method, operation) => {
+    mutations.push({ target, method });
+    return operation(() => {});
+  };
+  assert.deepEqual(await f.control().interrupt(f.agent), {
+    kind: 'interrupt',
+    chatId: id,
+    runId: 'parent',
+  });
+  assert.deepEqual(sent(), [
+    { method: 'turn/interrupt', params: { threadId: id, turnId: 'parent' } },
+  ]);
+  assert.deepEqual(mutations, [{ target: f.agent, method: 'turn/interrupt' }]);
+  // A second press for the same turn sends nothing.
+  await assert.rejects(f.control().interrupt(f.agent), /already sent/);
+  assert.equal(sent().length, 1);
+});
+test('an API interrupt refuses a changed turn, chat or daemon before writing', async () => {
+  const cases = [
+    (f) => f.setTurn({ id: 'replacement', status: 'inProgress' }),
+    (f) => f.setTurn({ id: 'parent', status: 'interrupted' }),
+    (f) => f.setTurn({ id: 'parent', status: 'completed' }),
+    (f) => f.setFooter('11111111-1111-7111-8111-111111111111'),
+    (f) => (f.thread.status = { type: 'idle' }),
+    (f) =>
+      (f.thread.status = {
+        type: 'active',
+        activeFlags: ['waitingOnApproval'],
+      }),
+    (f) => (f.thread.cwd = '/elsewhere'),
+  ];
+  for (const change of cases) {
+    const f = fixture();
+    f.b.actionContext = { target: { chatId: id, runId: 'parent' } };
+    f.setTurn({ id: 'parent', status: 'inProgress' });
+    change(f);
+    await assert.rejects(f.control().interrupt(f.agent));
+    assert(f.calls.every((c) => c.method !== 'turn/interrupt'));
+    assert.equal(f.rpc.closed, true);
+  }
+  // The daemon was replaced between verification and the write.
+  const f = fixture();
+  f.b.actionContext = { target: { chatId: id, runId: 'parent' } };
+  f.setTurn({ id: 'parent', status: 'inProgress' });
+  let reads = 0;
+  f.deps.socketFor = async () =>
+    reads++ ? { pid: 51, socket: '/other' } : { pid: 50, socket: '/socket' };
+  await assert.rejects(f.control().interrupt(f.agent), /Daemon changed/);
+  assert(f.calls.every((c) => c.method !== 'turn/interrupt'));
+});
+test('an unconfirmed API interrupt is reported and never repeated', async () => {
+  for (const reply of [null, undefined, 'ok', []]) {
+    const f = fixture();
+    f.b.actionContext = { target: { chatId: id, runId: 'parent' } };
+    f.setTurn({ id: 'parent', status: 'inProgress' });
+    f.setInterruptReply(reply);
+    await assert.rejects(f.control().interrupt(f.agent), /unconfirmed/);
+    await assert.rejects(f.control().interrupt(f.agent), /already sent/);
+    assert.equal(
+      f.calls.filter((c) => c.method === 'turn/interrupt').length,
+      1,
+    );
+  }
+});
 test('Rex displays the bound Codex parent state across retry, compaction, child completion and terminal failure', async () => {
   const { rexDisplayAgent } = require('../../src/app/rex-provider-metadata');
   const f = fixture(),

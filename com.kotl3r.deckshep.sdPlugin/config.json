@@ -9,7 +9,8 @@
   "draftMaxAgeMs": 300000,
   "daemonControls": {
     "enabled": true,
-    "permissionsEnabled": true
+    "permissionsEnabled": true,
+    "interruptEnabled": false
   },
   "metadataRefreshMs": 4000,
   "effortKeys": {

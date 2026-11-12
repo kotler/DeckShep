@@ -76,15 +76,41 @@ async function checkPicker({
     'Unexpected private pane dimensions',
   );
   const setup = new Setup({ run, method });
+  // Opt-in frame recording (ASW_RECORD_FRAMES=1) for the screen corpus in
+  // tests/fixtures/screens. It only observes reads this harness already makes
+  // of its own private pane, and is inert for a provider whose release cannot
+  // be read from the foreground path.
+  let frameRecorder = null;
+  function frames() {
+    if (frameRecorder) return frameRecorder;
+    let version = '';
+    try {
+      version =
+        /\/versions\/(\d+\.\d+\.\d+)$/.exec(
+          method(target, 'process').foreground?.path || '',
+        )?.[1] || '';
+    } catch {
+      /* No readable release: recording stays off. */
+    }
+    frameRecorder = require('../helpers/screen-corpus.cjs').recorder({
+      provider,
+      version,
+      scenario: scenario || (large ? 'picker-large' : 'picker'),
+      secrets: [repo],
+    });
+    return frameRecorder;
+  }
   async function read(frameIdentity) {
     for (let attempt = 0; ; attempt++) {
       try {
-        return await stableViewport(
+        const view = await stableViewport(
           target,
-          run,
+          frames().tap(run),
           () => setup.screen(target),
           frameIdentity,
         );
+        frames().save(view);
+        return view;
       } catch (error) {
         if (error.message !== 'Rex view changed' || attempt === 4) throw error;
         await delay(100);
@@ -134,6 +160,7 @@ async function checkPicker({
   }
   async function deliver(view, verb, value, readBack = true) {
     assert((await read()).hash === view.hash, 'Provider view changed');
+    frames().note(verb === 'send-key' ? value : 'text');
     writeOwned(verb, value);
     await delay(650);
     if (!readBack) return;
