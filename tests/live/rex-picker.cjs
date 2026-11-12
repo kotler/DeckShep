@@ -9,6 +9,7 @@ async function checkPicker({
   owned,
   large = false,
   scenario,
+  hookPlugin,
 }) {
   const { stableViewport } = require('../../src/terminals/rex/viewport');
   const { Setup } = require('../../src/agents/codex/setup-presets');
@@ -97,6 +98,16 @@ async function checkPicker({
     'Provider foreground unavailable',
   );
   owned.observe(identity.pid);
+  if (provider === 'claude' && hookPlugin) {
+    const state = require('../../src/agents/claude/state');
+    const hookDir = require('node:path').join(hookPlugin, 'state/claude');
+    const record = state.readRecord(identity.pid, hookDir);
+    state.validate(
+      record,
+      { pid: identity.pid, cwd: repo },
+      await state.processInfo(identity.pid),
+    );
+  }
   function assertOwnedPane() {
     const current = method(target, 'process').foreground;
     assert(
@@ -272,6 +283,7 @@ async function checkPicker({
           }
         : undefined,
       sessionId,
+      hookPlugin,
       owned,
       pid: identity.pid,
       repo,

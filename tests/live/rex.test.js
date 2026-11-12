@@ -77,6 +77,22 @@ test(
     fs.mkdirSync(repo, { mode: 0o700 });
     run('/usr/bin/git', ['init', '--quiet', repo], options);
     const providers = process.env.ASW_LIVE_REX_PROVIDERS === '1';
+    let hookPlugin;
+    if (providers && process.env.ASW_LIVE_REX_CLAUDE_HOOKS === '1') {
+      hookPlugin = path.join(directory, 'com.kotl3r.deckshep.sdPlugin');
+      fs.cpSync(path.resolve('dist/com.kotl3r.deckshep.sdPlugin'), hookPlugin, {
+        recursive: true,
+      });
+      run(
+        process.execPath,
+        [path.join(hookPlugin, 'configure-claude.js'), '--apply'],
+        options,
+      );
+      assert.equal(
+        require('../../src/agents/claude/state').setupMode(hookPlugin),
+        'hooks',
+      );
+    }
     if (providers && process.env.ASW_LIVE_AUTH === 'signed-in') {
       const verify = signedInCredentials(options.env);
       t.after(verify);
@@ -217,6 +233,7 @@ test(
                 resume = ['--resume', sessionId];
               }
               await checkPicker({
+                hookPlugin,
                 provider,
                 args:
                   scenario === 'effort-fresh'
@@ -240,7 +257,14 @@ test(
           continue;
         }
         await t.test(provider + ' native model picker', async () => {
-          await checkPicker({ provider, args, command, repo, owned });
+          await checkPicker({
+            provider,
+            args,
+            command,
+            repo,
+            owned,
+            hookPlugin,
+          });
         });
       }
       if (process.env.ASW_LIVE_REX_STATES === '1') return;
@@ -254,6 +278,7 @@ test(
             repo,
             owned,
             large: true,
+            hookPlugin,
           });
         },
       );

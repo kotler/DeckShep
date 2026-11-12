@@ -96,6 +96,7 @@ async function checkState({
   writeOwned,
   effortBridge,
   sessionId,
+  hookPlugin,
   pid,
   owned,
   repo,
@@ -119,7 +120,7 @@ async function checkState({
             undefined,
             path.join(path.dirname(repo), 'home/.claude'),
           ),
-        readKeyboardView: read,
+        readKeyboardView: (_pane, frameIdentity) => read(frameIdentity),
       },
       fresh,
     );
@@ -371,7 +372,7 @@ async function checkState({
       // This headless server has no Mac client. Its only eligible pane is the one launched here.
       bridge.focused = async () => {
         owned.assert(pid);
-        const current = await bridge.agent(target, true);
+        const current = await bridge.agent(target, !hookPlugin);
         assert.equal(current?.pid, pid);
         return current;
       };
@@ -381,6 +382,15 @@ async function checkState({
           undefined,
           path.join(path.dirname(repo), 'home/.claude'),
         );
+      if (hookPlugin) {
+        const state = require('../../src/agents/claude/state');
+        const { ClaudeControls } = require('../../src/agents/claude/controls');
+        bridge.claude = new ClaudeControls(bridge, {
+          read: (pid) =>
+            state.readRecord(pid, path.join(hookPlugin, 'state/claude')),
+          setupMode: () => state.setupMode(hookPlugin),
+        });
+      }
       // Validate the spinner-only recognizer against the native screen even
       // when this CLI also prints the optional footer shortcut.
       const {
@@ -399,16 +409,29 @@ async function checkState({
         'working',
         'Rex must identify the current working state',
       );
-      active.rexSettings = await observeSettings(bridge, active);
-      assert(
-        active.rexSettings.process,
-        'Expected fresh Claude CLI registration',
-      );
-      await performRexKeyboard(bridge, {
-        action: 'interrupt',
-        scope: 'rex',
-        target: active,
-      });
+      if (hookPlugin) {
+        assert(active.nativeVerified && active.claudeControlsEnabled);
+        const context = require('../../src/guards/context');
+        await bridge.withContext(
+          {
+            action: 'interrupt',
+            target: context.snapshot(active),
+            verifyChat: true,
+          },
+          () => bridge.interrupt(),
+        );
+      } else {
+        active.rexSettings = await observeSettings(bridge, active);
+        assert(
+          active.rexSettings.process,
+          'Expected fresh Claude CLI registration',
+        );
+        await performRexKeyboard(bridge, {
+          action: 'interrupt',
+          scope: 'rex',
+          target: active,
+        });
+      }
     }
     await until(async () => {
       const text = await screen();

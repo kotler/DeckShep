@@ -58,6 +58,10 @@ ASW_LIVE=1 ASW_LIVE_REX=1 ASW_LIVE_AUTHORIZATION=test-owned-only \
 
 Add `ASW_LIVE_REX_PROVIDERS=1 ASW_LIVE_AUTH=signed-in` for the native picker
 checks using disposable Codex Luna (with `--no-daemon`) and Claude Haiku panes.
+Claude runs hook-free by default. Add `ASW_LIVE_REX_CLAUDE_HOOKS=1` to
+install the bundled Claude hooks in the disposable home. Each interactive
+Claude case then validates its hook record against the actual foreground PID,
+process start, version and working directory before exercising native controls.
 The probes open a model picker and attempt Escape after recognition. They
 send no inference prompts. GUI focus, Stream Deck routing and physical key
 timing require separate verification.
