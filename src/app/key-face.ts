@@ -392,7 +392,15 @@ function controlFace(input: KeyFaceInput): { lines: string[]; color: string } {
     color = GREY;
   if (target?.rexSettings && rexSettingsAction(action) && mode === 'ready') {
     const settings = target.rexSettings as Record<string, unknown>;
-    lines = [REX_HEADINGS[action], clean(settings[action])];
+    const value =
+      settings[action] ||
+      (action === 'effort' && settings.effortHidden && settings.process
+        ? 'Press to cycle'
+        : '');
+    lines = [REX_HEADINGS[action], clean(value)];
+  }
+  if (action === 'effort' && target?.rexSettings?.effortSlider) {
+    lines = ['Apply effort', clean(target.rexSettings.effort)];
   }
   if (action.startsWith('approval')) color = '#78551e';
   if (action === 'send' && input.bridge.draft) color = '#416428';

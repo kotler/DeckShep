@@ -75,10 +75,15 @@ async function checkPicker({
     'Unexpected private pane dimensions',
   );
   const setup = new Setup({ run, method });
-  async function read() {
+  async function read(frameIdentity) {
     for (let attempt = 0; ; attempt++) {
       try {
-        return await stableViewport(target, run, () => setup.screen(target));
+        return await stableViewport(
+          target,
+          run,
+          () => setup.screen(target),
+          frameIdentity,
+        );
       } catch (error) {
         if (error.message !== 'Rex view changed' || attempt === 4) throw error;
         await delay(100);
@@ -92,7 +97,7 @@ async function checkPicker({
     'Provider foreground unavailable',
   );
   owned.observe(identity.pid);
-  function writeOwned(verb, ...values) {
+  function assertOwnedPane() {
     const current = method(target, 'process').foreground;
     assert(
       current?.pid === identity.pid &&
@@ -100,7 +105,21 @@ async function checkPicker({
         current.cwd === identity.cwd,
     );
     owned.assert(current.pid);
+  }
+  function writeOwned(verb, ...values) {
+    assertOwnedPane();
     command([verb, ...route, ...values]);
+  }
+  async function readOwnedAgent() {
+    assertOwnedPane();
+    const { Bridge } = require('../../src/app/session');
+    const pane = await Bridge.prototype.agent.call(
+      { method, config: {} },
+      { ...target, window: topology.active_window_id },
+      true,
+    );
+    assert.equal(pane?.pid, identity.pid);
+    return pane;
   }
   async function deliver(view, verb, value, readBack = true) {
     assert((await read()).hash === view.hash, 'Provider view changed');
@@ -206,10 +225,52 @@ async function checkPicker({
       provider,
       target,
       read,
+      run,
       deliver,
       assertEmpty,
       screen: () => setup.screen(target),
       writeOwned,
+      effortBridge: scenario?.startsWith('effort')
+        ? {
+            config: {
+              backend: 'rex',
+              allowClipboardFocus: true,
+              claude: { enabled: true },
+            },
+            assertDeliveryVisible: assertOwnedPane,
+            agent: readOwnedAgent,
+            focused: async () => {
+              const current = JSON.parse(
+                command(['session', 'inspect', session, '--json']),
+              );
+              assert.equal(
+                current.windows.find(
+                  (w) => w.window_id === current.active_window_id,
+                )?.focused_block_id,
+                block,
+              );
+              assertOwnedPane();
+              return readOwnedAgent();
+            },
+            inspectClaudeKeyboard: (a, _inspect, _directory, surface) =>
+              require('../../src/agents/claude/keyboard-identity').claudeKeyboardIdentity(
+                a,
+                undefined,
+                require('node:path').join(repo, '../home/.claude'),
+                surface,
+              ),
+            readKeyboardText: () => setup.screen(target),
+            readKeyboardView: require('../../src/app/session').Bridge.prototype
+              .readKeyboardView,
+            method,
+            run: async (args, input) => {
+              if (args[0] === 'block') return run(args);
+              assert.deepEqual(args.slice(1, 5), route);
+              assertOwnedPane();
+              command(args, input);
+            },
+          }
+        : undefined,
       sessionId,
       owned,
       pid: identity.pid,

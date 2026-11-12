@@ -11,7 +11,7 @@ const { Bridge } = require('../../src/app/session'),
   } = require('../../src/agents/claude/controls'),
   defaults = require('../../com.kotl3r.deckshep.sdPlugin/config.json');
 const hash = (s) => crypto.createHash('sha256').update(s).digest('hex');
-function fixture() {
+function fixture(hooksOnly = false) {
   const raw = {
     session: 's',
     window: 'w',
@@ -90,7 +90,8 @@ function fixture() {
             : 'Enter to confirm · Esc to cancel')
       : 'Claude session\n────────────────────────\n❯ ' +
         state.input +
-        '\n────────────────────────\nClaude Sonnet · high' +
+        '\n────────────────────────' +
+        (hooksOnly ? '' : '\nClaude Sonnet · high') +
         (r.state === 'working' && state.workingHint
           ? '\nesc to interrupt'
           : '');
@@ -108,6 +109,7 @@ function fixture() {
     read: async () => ({ ...r }),
     now: () => 10000,
     view,
+    ...(hooksOnly ? { setupMode: () => 'hooks' } : {}),
   });
   b.claude = controls;
   b.focused = async () => {
@@ -133,6 +135,30 @@ function fixture() {
   };
   return { b, controls, r, p, raw, state, calls, text, invoke };
 }
+test('a fresh hook-bound Claude turn interrupts once without a status line', async () => {
+  const f = fixture(true);
+  delete f.r.metadataAt;
+  Object.assign(f.r, {
+    establishedBy: 'UserPromptSubmit',
+    establishedAt: 9999,
+    state: 'working',
+  });
+  assert(!f.text().includes('Sonnet'));
+  f.state.workingHint = false;
+  f.controls.viewReader = async () => ({
+    text: f.text().replace('Claude session', '✻ Thinking… (3s · ↓ 40 tokens)'),
+  });
+  await f.invoke('interrupt', () => f.b.interrupt());
+  await assert.rejects(
+    f.invoke('interrupt', () => f.b.interrupt()),
+    /already requested/,
+  );
+  assert.deepEqual(
+    f.calls.map((c) => c.args.at(-1)),
+    ['escape'],
+  );
+});
+
 test('claude controls', async () => {
   const approvalPanel =
     '────────────────────────\n Bash command\n /usr/bin/printf TEST_ONLY\n Do you want to proceed?\n ❯ 1. Yes\n   2. No\n Esc to cancel · Tab to amend';
@@ -286,7 +312,7 @@ test('claude controls', async () => {
   assert.equal(a.chatId, 'claude-session');
   assert.equal(a.modelName, 'Sonnet 4.6');
   assert.equal(C.modeOf(a), 'ready');
-  assert.equal(C.homeRow(a)[3], 'claudeModeInfo');
+  assert.equal(C.homeRow(a)[3], 'none');
   assert.equal(C.layout(0, a)[3], 'none');
   assert.equal(C.layout(0, a)[7], 'claudeInfo');
   for (const value of ['hello', 'hello world']) {

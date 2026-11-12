@@ -6,9 +6,24 @@ export class ClaudeKeyboardScreen {
   selected = 0;
   effort = 1;
   open = false;
+  nativeEffort = false;
+  hideBadge = false;
+  command = false;
+  slider = false;
+  working = false;
   plan = false;
   send(key: string) {
-    if (!this.open && key === 'alt+p') {
+    if (this.nativeEffort && key === '/effort') this.command = true;
+    else if (this.command && key === 'enter') {
+      this.command = false;
+      this.slider = true;
+    } else if (this.slider && key === 's') {
+      this.slider = false;
+      this.hideBadge = true;
+    } else if (this.slider && key === 'right') this.effort++;
+    else if (this.slider && key === 'left') this.effort--;
+    else if (this.working && key === 'escape') this.working = false;
+    else if (!this.open && key === 'alt+p') {
       this.open = true;
       this.selected = this.model;
     } else if (!this.open && key === 'shift+tab') this.plan = !this.plan;
@@ -34,26 +49,61 @@ export class ClaudeKeyboardScreen {
         (i === this.model ? ' ✔' : '') +
         ' · Native model',
     );
-    const text = this.open
+    const nativeLabel = this.levels[this.effort];
+    const text = this.slider
       ? [
-          'Select model',
-          ...rows,
-          this.levels[this.effort] + ' effort ←/→ to adjust',
-          'Enter to set as default · s to use this session only · Esc to cancel',
+          'Effort',
+          'Faster      Smarter',
+          '─'.repeat([1, 7, 15][this.effort]) + '▲────',
+          'low   medium  high',
+          this.effort === 1
+            ? 'The default effort for this model'
+            : '~1.9x the estimated cost of medium (the default)',
+          '←/→ to adjust · Enter to confirm · s for this session only · Esc to cancel',
         ].join('\n')
-      : [
-          border,
-          '❯ ',
-          border,
-          'Claude ' +
-            this.models[this.model] +
-            ' · ' +
-            this.levels[this.effort],
-          this.plan ? '⏸ plan mode on' : '',
-        ].join('\n');
+      : this.command
+        ? [
+            '❯ /effort   Set effort level for model usage',
+            border,
+            '❯ /effort',
+            border,
+          ].join('\n')
+        : this.open
+          ? [
+              'Select model',
+              ...rows,
+              this.levels[this.effort] + ' effort ←/→ to adjust',
+              'Enter to set as default · s to use this session only · Esc to cancel',
+            ].join('\n')
+          : [
+              ...(this.working
+                ? ['✻ Working… (3s · ↓ 12 tokens)', '◐ indicator · /status']
+                : this.nativeEffort && !this.hideBadge
+                  ? ['◐ ' + nativeLabel + ' · /effort']
+                  : []),
+              border,
+              '❯ ',
+              border,
+              this.working
+                ? '⏵⏵ accept edits on (shift+tab to cycle) · ← for agents'
+                : this.nativeEffort
+                  ? '? for shortcuts'
+                  : 'Claude ' +
+                    this.models[this.model] +
+                    ' · ' +
+                    this.levels[this.effort],
+              this.plan ? '⏸ plan mode on' : '',
+            ].join('\n');
     return {
       text,
-      cursor: this.open ? null : { row: 2, column: 3 },
+      cursor:
+        this.open || this.slider
+          ? null
+          : {
+              row:
+                this.command || (this.nativeEffort && !this.hideBadge) ? 3 : 2,
+              column: this.command ? 10 : 3,
+            },
       hash: createHash('sha256').update(text).digest('hex'),
     };
   }

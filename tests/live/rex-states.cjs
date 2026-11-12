@@ -89,17 +89,51 @@ async function checkState({
   provider,
   target,
   read,
+  run,
   deliver,
   assertEmpty,
   screen,
   writeOwned,
+  effortBridge,
   sessionId,
   pid,
   owned,
   repo,
 }) {
   const codex = provider === 'codex';
-  const key = (view, value) => deliver(view, 'send-key', value);
+  if (!codex && scenario === 'plan') {
+    // Reproduce the first refresh before Rex has published an idle record.
+    const {
+      claudeKeyboardIdentity,
+    } = require('../../src/agents/claude/keyboard-identity');
+    const { observeSettings } = require('../../src/app/rex-keyboard-settings');
+    const path = require('node:path');
+    owned.assert(pid);
+    const fresh = { ...target, pid, state: 'unknown' };
+    const observed = await observeSettings(
+      {
+        config: { claude: { enabled: true } },
+        inspectClaudeKeyboard: (a) =>
+          claudeKeyboardIdentity(
+            a,
+            undefined,
+            path.join(path.dirname(repo), 'home/.claude'),
+          ),
+        readKeyboardView: read,
+      },
+      fresh,
+    );
+    assert(
+      observed.idleComposer,
+      'Expected a verified fresh CLI and empty composer',
+    );
+  }
+  const key = (view, value, paste = false) =>
+    deliver(
+      view,
+      paste ? 'send' : 'send-key',
+      paste ? '\x1b[200~' + value + '\x1b[201~' : value,
+    );
   async function setting(action) {
     if (codex)
       return cycleCodexSetting(
@@ -145,6 +179,37 @@ async function checkState({
     const view = await read();
     await assertEmpty(view);
     await deliver(await type(view, text), 'send-key', 'enter', false);
+  }
+  if (scenario.startsWith('effort')) {
+    // Exercise the first press at startup and subsequent presses after badge expiry.
+    for (const next of scenario === 'effort'
+      ? ['max', 'low', 'medium', 'high', 'xhigh']
+      : scenario === 'effort-history'
+        ? ['max', 'low']
+        : [null]) {
+      const {
+        observeSettings,
+        performRexKeyboard,
+      } = require('../../src/app/rex-keyboard-settings');
+      const pane = await effortBridge.focused();
+      pane.rexSettings = await observeSettings(effortBridge, pane);
+      const { label } = await performRexKeyboard(effortBridge, {
+        scope: 'rex',
+        action: 'effort',
+        target: pane,
+      });
+      if (next) assert.equal(label, next);
+      else assert.match(label, /^(low|medium|high|xhigh|max)$/);
+      const observed = readClaudeSettings(await read()).effort;
+      if (observed) assert.equal(observed, label);
+      if (
+        next &&
+        next !== 'xhigh' &&
+        !(scenario === 'effort-history' && next === 'low')
+      )
+        await delay(12000);
+    }
+    return;
   }
   if (scenario === 'plan' || scenario === 'permissions') {
     const before = codex
@@ -215,7 +280,9 @@ async function checkState({
     return;
   }
   await prompt(
-    'First run sleep 14. Then answer 123 times 17. Complete this request before answering any queued follow-up.',
+    !codex && scenario === 'interrupt'
+      ? 'Run sleep 14, then say done.'
+      : 'First run sleep 14. Then answer 123 times 17. Complete this request before answering any queued follow-up.',
   );
   const activity = /esc to interrupt/i;
   const queueText = 'After the first answer, give the product of 239 and 31.';
@@ -233,7 +300,8 @@ async function checkState({
     )
       return false;
     const nearby = rows.slice(Math.max(0, index - 8)).join('\n');
-    if (!codex && scenario === 'queue') return runningDelay(pid, owned);
+    if (!codex && ['queue', 'interrupt'].includes(scenario))
+      return runningDelay(pid, owned);
     return activity.test(nearby);
   }
   async function until(check, message) {
@@ -269,7 +337,79 @@ async function checkState({
   );
   if (scenario === 'interrupt') {
     assert(await workingScreen(''));
-    writeOwned('send-key', 'escape');
+    if (codex) writeOwned('send-key', 'escape');
+    else {
+      const { Bridge } = require('../../src/app/session');
+      const {
+        observeSettings,
+        performRexKeyboard,
+      } = require('../../src/app/rex-keyboard-settings');
+      const {
+        claudeKeyboardIdentity,
+      } = require('../../src/agents/claude/keyboard-identity');
+      const path = require('node:path');
+      const bridge = new Bridge(
+        {
+          backend: 'rex',
+          claude: { enabled: true },
+          allowClipboardFocus: true,
+          statusMaxAgeMs: 86400000,
+        },
+        async (args) => {
+          if (args[0] !== 'send-key') return run(args);
+          assert.deepEqual(args, [
+            'send-key',
+            '-s',
+            target.session,
+            '-b',
+            target.block,
+            'escape',
+          ]);
+          writeOwned('send-key', 'escape');
+        },
+      );
+      // This headless server has no Mac client. Its only eligible pane is the one launched here.
+      bridge.focused = async () => {
+        owned.assert(pid);
+        const current = await bridge.agent(target, true);
+        assert.equal(current?.pid, pid);
+        return current;
+      };
+      bridge.inspectClaudeKeyboard = (agent) =>
+        claudeKeyboardIdentity(
+          agent,
+          undefined,
+          path.join(path.dirname(repo), 'home/.claude'),
+        );
+      // Validate the spinner-only recognizer against the native screen even
+      // when this CLI also prints the optional footer shortcut.
+      const {
+        hasClaudeInterruptCue,
+      } = require('../../src/agents/claude/interrupt-cue');
+      const observed = (await screen())
+        .replace(/(?:·\s*)?esc to interrupt\s*(?:·\s*)?/gi, ' · ')
+        .replace(/^\s*·\s*$/gm, '');
+      assert(
+        hasClaudeInterruptCue(observed),
+        'Native spinner must independently confirm activity',
+      );
+      const active = await bridge.focused();
+      assert.equal(
+        active.state,
+        'working',
+        'Rex must identify the current working state',
+      );
+      active.rexSettings = await observeSettings(bridge, active);
+      assert(
+        active.rexSettings.process,
+        'Expected fresh Claude CLI registration',
+      );
+      await performRexKeyboard(bridge, {
+        action: 'interrupt',
+        scope: 'rex',
+        target: active,
+      });
+    }
     await until(async () => {
       const text = await screen();
       return (

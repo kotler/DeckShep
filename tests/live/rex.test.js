@@ -118,12 +118,12 @@ test(
       owned.assert(child.pid);
       await delay(50);
     }
-    function command(args) {
+    function command(args, input) {
       verifyListener(owned, child.pid, socket);
       return run(
         rex,
         ['--server', address, '--autostart=false', '--timeout', '2s', ...args],
-        options,
+        { ...options, input },
       );
     }
     const label = 'deckshep-test';
@@ -162,7 +162,10 @@ test(
       const selectedCases = process.env.ASW_LIVE_REX_CASES?.split(',');
       if (selectedCases) {
         const names = ['codex', 'claude'].flatMap((provider) =>
-          cases.map((name) => provider + '-' + name),
+          (provider === 'claude'
+            ? [...cases, 'effort', 'effort-fresh', 'effort-history']
+            : cases
+          ).map((name) => provider + '-' + name),
         );
         assert(
           selectedCases.every((name) => names.includes(name)),
@@ -174,26 +177,65 @@ test(
         ['claude', ['--model', 'haiku']],
       ]) {
         if (process.env.ASW_LIVE_REX_STATES === '1') {
-          for (const scenario of cases) {
+          for (const scenario of provider === 'claude'
+            ? [...cases, 'effort', 'effort-fresh', 'effort-history']
+            : cases) {
             if (
               selectedCases &&
               !selectedCases.includes(provider + '-' + scenario)
             )
               continue;
-            await t.test(provider + ' ' + scenario, () =>
-              checkPicker({
+            await t.test(provider + ' ' + scenario, async () => {
+              let resume = [];
+              if (scenario === 'effort-history') {
+                const sessionId = require('node:crypto').randomUUID();
+                const child = owned.spawn(
+                  'claude',
+                  [
+                    '--model',
+                    'haiku',
+                    '--session-id',
+                    sessionId,
+                    '--tools',
+                    '',
+                    '-p',
+                    'Reply with the word green.',
+                  ],
+                  { ...options, cwd: repo },
+                );
+                await new Promise((resolve, reject) => {
+                  const timer = setTimeout(
+                    () => reject(Error('Disposable Haiku turn timed out')),
+                    45000,
+                  );
+                  child.once('exit', (code) => {
+                    clearTimeout(timer);
+                    if (code === 0) resolve();
+                    else reject(Error('Disposable Haiku turn failed'));
+                  });
+                });
+                resume = ['--resume', sessionId];
+              }
+              await checkPicker({
                 provider,
                 args:
-                  provider === 'claude' && scenario === 'queue'
-                    ? [...args, '--allowedTools', 'Bash(sleep 14)']
-                    : args,
+                  scenario === 'effort-fresh'
+                    ? []
+                    : scenario.startsWith('effort')
+                      ? ['--model', 'sonnet', '--effort', 'xhigh', ...resume]
+                      : provider === 'claude' &&
+                          ['queue', 'interrupt'].includes(scenario)
+                        ? [...args, '--allowedTools', 'Bash(sleep 14)']
+                        : args,
                 command,
                 repo,
                 owned,
-                large: true,
+                large:
+                  provider !== 'claude' ||
+                  !['effort', 'interrupt'].includes(scenario),
                 scenario,
-              }),
-            );
+              });
+            });
           }
           continue;
         }

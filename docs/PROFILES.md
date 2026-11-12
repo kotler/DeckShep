@@ -26,9 +26,9 @@ not steal selection. Focus tracking sends no terminal input.
 Ready-state Model, Effort, Permissions and Mode use native keyboard controls.
 The deck reads the focused view passively and leaves the subtitle blank until
 it can read the value. A press reads the relevant native picker before selecting a
-setting. Codex settings do not require a thread ID. The four Claude settings use the native-controls opt-in, foreground CLI registration,
-default keybindings and verified visible pane. Turn-specific Claude controls require hook identity. In Claude, Plan belongs
-to the permission-mode cycle, so Permissions and Mode each send one Shift+Tab.
+setting. Codex settings do not require a thread ID. The three Claude settings use the native-controls opt-in, foreground CLI registration,
+default keybindings and verified visible pane. Working Claude panes can also Interrupt without hooks. DeckShep rechecks the focused CLI’s busy timestamp and a visible Escape hint or working spinner before sending one Escape. Queue, Steer, and question or approval actions still require hook identity. In Claude, Plan belongs
+to the permission-mode cycle, so Permissions sends one Shift+Tab.
 The Codex Permissions key skips Full Access. If its confirmation is already
 open, pressing Permissions cancels it and continues the cycle.
 Neither the terminal title nor the status line is changed.
@@ -49,7 +49,7 @@ selected agent.
 | --- | --- | --- | --- | --- | --- |
 | Row 1 | Agent | Agent | Agent | Agent | Agent |
 | Row 2 | Next agent | Page | Collapse | | Attention |
-| Row 3, ready | Model | Effort | Permissions | Mode | Interrupt |
+| Row 3, ready | Model | Effort | Permissions | Mode (Codex only) | Interrupt |
 | Row 3, working | Steer | Queue | Permissions | | Interrupt |
 | Row 3, background | | | Permissions | | Stop |
 | Row 3, question | Up | Down | Confirm | Esc | Interrupt or Toggle |

@@ -168,21 +168,94 @@ test('Claude settings use the focused native picker without a hook identity', as
   expect(await labels(page, 2, 1)).toEqual(['Effort', 'high']);
   await command(page, 'press', 2, 2);
   expect(await labels(page, 2, 2)).toEqual(['Permissions', 'plan mode']);
+  expect(await labels(page, 2, 3)).toEqual([]);
+  expect(await labels(page, 2, 4)).toEqual(['Interrupt', 'not running']);
+  await command(page, 'press', 2, 4);
   await command(page, 'press', 2, 3);
   expect((await command(page, 'snapshot')).alerts).toEqual([]);
   expect(
     (await trace(page)).slice(1).map((x) => (x as string[]).at(-1)),
-  ).toEqual([
-    'alt+p',
-    'down',
-    's',
-    'alt+p',
-    'right',
-    's',
-    'shift+tab',
-    'shift+tab',
-  ]);
+  ).toEqual(['alt+p', 'down', 's', 'alt+p', 'right', 's', 'shift+tab']);
 });
+test('Claude Effort displays the native badge and cycles without hooks or a status line', async ({
+  page,
+}) => {
+  const value = scenario('keyboard-claude');
+  value.nativeEffort = 'visible';
+  delete value.agents[0].effort;
+  await command(page, 'setScenario', value);
+  await command(page, 'setPreferences', {
+    claudeEnabled: true,
+    allowClipboardFocus: true,
+  });
+  await command(page, 'advance', 2350);
+  await command(page, 'advance', 350);
+  expect(await labels(page, 2, 1)).toEqual(['Effort', 'medium']);
+  for (const level of ['high', 'low', 'medium']) {
+    await command(page, 'press', 2, 1);
+    await command(page, 'advance', 3000);
+    expect(await labels(page, 2, 1)).toEqual(['Effort', level + '?']);
+  }
+  value.nativeEffort = 'hidden';
+  value.agents[0].pid++;
+  await command(page, 'setScenario', value);
+  await command(page, 'advance', 2350);
+  await command(page, 'advance', 350);
+  expect(await labels(page, 2, 1)).toEqual(['Effort', 'Press', 'to cycle']);
+  await command(page, 'press', 2, 1);
+  await command(page, 'advance', 3000);
+  expect(await labels(page, 2, 1)).toEqual(['Effort', 'high?']);
+  expect((await command(page, 'snapshot')).alerts).toEqual([]);
+});
+test('Effort applies the highlighted value of an already-open native slider', async ({
+  page,
+}) => {
+  const value = scenario('keyboard-claude');
+  value.nativeEffort = 'slider';
+  value.agents[0].state = 'unknown';
+  await command(page, 'setScenario', value);
+  await command(page, 'setPreferences', {
+    claudeEnabled: true,
+    allowClipboardFocus: true,
+  });
+  await command(page, 'advance', 2350);
+  await command(page, 'advance', 350);
+  expect((await labels(page, 2, 1)).join(' ')).toBe('Apply effort high');
+  await command(page, 'press', 2, 1);
+  expect((await trace(page)).map((x) => (x as string[]).at(-1))).toEqual(['s']);
+  expect((await command(page, 'snapshot')).alerts).toEqual([]);
+});
+test('hook-free Claude shows only Interrupt while working and clears every control after closure', async ({
+  page,
+}) => {
+  const value = scenario('keyboard-claude');
+  value.agents[0].state = 'working';
+  await command(page, 'setScenario', value);
+  await command(page, 'setPreferences', {
+    allowClipboardFocus: true,
+    claudeEnabled: true,
+  });
+  await command(page, 'advance', 2350);
+  await command(page, 'advance', 350);
+  for (let col = 0; col < 4; col++)
+    expect(await labels(page, 2, col)).toEqual([]);
+  expect(await labels(page, 2, 4)).toEqual(['Interrupt', 'running']);
+  // Rex updates this timestamp even when Claude is still on the same turn.
+  value.agents[0].statusAt = 'refreshed';
+  await command(page, 'setScenario', value);
+  await command(page, 'press', 2, 4);
+  const sent = [['send-key', '-s', 'fixture', '-b', 'a', 'escape']];
+  expect(await trace(page)).toEqual(sent);
+  value.agents = [];
+  value.focused = 'shell';
+  await command(page, 'setScenario', value);
+  for (let col = 0; col < 5; col++) {
+    expect(await labels(page, 2, col)).toEqual([]);
+    await command(page, 'press', 2, col);
+  }
+  expect(await trace(page)).toEqual(sent);
+});
+
 test('one Escape interrupts the focused working Codex pane without a thread ID', async ({
   page,
 }) => {
@@ -471,7 +544,7 @@ test('revoking visible-pane consent refuses the next keyboard setting before inp
 }) => {
   await selected(page, 'keyboard-codex');
   await command(page, 'setPreferences', { allowClipboardFocus: false });
-  expect(await labels(page, 2, 0)).toEqual(['Select', 'agent']);
+  expect(await labels(page, 2, 0)).toEqual([]);
   await command(page, 'press', 2, 0);
   expect(await trace(page)).toEqual([focus()]);
   await command(page, 'press', 0, 0);
@@ -484,7 +557,7 @@ test('revoking visible-pane consent refuses the next keyboard setting before inp
   expect(await trace(page)).toEqual([focus(), focus()]);
 });
 
-test('fresh Claude keyboard controls follow the first matching idle status record', async ({
+test('fresh Claude keyboard controls can use the registered idle composer before the first Rex status record', async ({
   page,
 }) => {
   const value = scenario('keyboard-claude');
@@ -511,16 +584,20 @@ test('fresh Claude keyboard controls follow the first matching idle status recor
     await command(page, 'advance', 2350);
     const hasRecord = records.length > 0;
     expect(await labels(page, 0, 0)).toContain(hasRecord ? 'Ready' : 'Unknown');
-    if (!hasRecord)
-      expect((await labels(page, 2, 2)).join(' ')).toBe('Claude Code Preview');
     const headings = [];
     for (let col = 0; col < 4; col++)
       headings.push((await labels(page, 2, col))[0]);
-    expect(headings).toEqual(
-      hasRecord
-        ? ['Model', 'Effort', 'Permissions', 'Mode']
-        : ['Check Rex', undefined, 'Claude', undefined],
-    );
+    expect(headings).toEqual(['Model', 'Effort', 'Permissions', undefined]);
+    await command(page, 'advance', 350);
+    await command(page, 'press', 2, 2);
+    expect((await trace(page)).at(-1)).toEqual([
+      'send-key',
+      '-s',
+      'fixture',
+      '-b',
+      'a',
+      'shift+tab',
+    ]);
   }
 });
 

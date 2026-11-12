@@ -2,6 +2,20 @@ import type { KeyboardView as View } from '../../domain/backend';
 const { configurationView } = require('./cycle');
 const { composer } = require('./controls');
 
+const composerBorder = /^[─━]{12,}(?:\s+.*\s+[─━]+)?\s*$/;
+export function nativeEffort(view: View) {
+  configurationView(view);
+  const lines = view.text.split('\n');
+  const lower = lines.findLastIndex((line) => composerBorder.test(line.trim()));
+  const upper = lines
+    .slice(0, lower)
+    .findLastIndex((line) => composerBorder.test(line.trim()));
+  const badge = lines.slice(0, upper).findLast((line) => line.trim());
+  return /^\s*[○◯◐◑◒◓◔◕◉●◎]\s+(low|medium|high|xhigh|max)\s*·\s*\/effort\s*$/i
+    .exec(badge || '')?.[1]
+    .toLowerCase();
+}
+
 /** Claude exposes Plan as a permission mode on the same Shift+Tab cycle. */
 export function claudeFooter(view: View) {
   configurationView(view);
@@ -24,7 +38,7 @@ export function claudeFooter(view: View) {
     );
   return {
     model: explicit?.[1]?.trim() || (setting && setting[1] + ' ' + setting[2]),
-    effort: explicit?.[2] || setting?.[3],
+    effort: nativeEffort(view) || explicit?.[2] || setting?.[3],
     permissions: badge?.[1],
     plan: badge?.[1],
   };

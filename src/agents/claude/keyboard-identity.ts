@@ -27,6 +27,7 @@ export async function claudeKeyboardIdentity(
   inspect = registeredProcess,
   directory = process.env.CLAUDE_CONFIG_DIR ||
     path.join(os.homedir(), '.claude'),
+  surface?: 'effort-slider',
 ): Promise<string> {
   const fail = () => Error('Check Claude CLI');
   if (
@@ -75,6 +76,23 @@ export async function claudeKeyboardIdentity(
         record.procStart.trim().replace(/\s+/g, ' ') !== fact.startedAt
       )
         throw fail();
+      // Rex refreshes its report while Claude is still on the same turn.
+      // Claude's own transition to busy identifies this interruptible interval.
+      if (
+        (agent.state === 'unknown' || surface === 'effort-slider') &&
+        record.status !== 'idle' &&
+        !(surface === 'effort-slider' && record.status === 'waiting')
+      )
+        throw fail();
+      const working = agent.state === 'working';
+      if (
+        working &&
+        (record.status !== 'busy' ||
+          !Number.isSafeInteger(record.statusUpdatedAt) ||
+          record.statusUpdatedAt <= 0 ||
+          record.statusUpdatedAt > Date.now())
+      )
+        throw fail();
       return createHash('sha256')
         .update(
           JSON.stringify([
@@ -84,6 +102,7 @@ export async function claudeKeyboardIdentity(
             fact.version,
             directory,
             record.sessionId,
+            ...(working ? [record.statusUpdatedAt] : []),
           ]),
         )
         .digest('hex');

@@ -11,6 +11,8 @@
   },
   "scripts": {
     "test": "node --import tsx --test",
+    "test:hooks": "node --import tsx --test tests/unit/claude-hooks-only.test.js tests/unit/claude-controls.test.js tests/unit/codex-hook*.test.js tests/integration/codex-hook-controls.test.js",
+    "test:no-hooks": "node --import tsx --test tests/unit/claude-pane-picker.test.js tests/unit/rex-keyboard-settings.test.js tests/integration/new-agent-selection.test.js",
     "test:golden": "node --import tsx --test tests/integration/golden.test.js",
     "test:distribution": "node --import tsx --test tests/integration/distribution.test.js",
     "test:coverage": "node scripts/tool.mjs c8 node --import tsx --test",

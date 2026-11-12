@@ -1731,7 +1731,7 @@
       "alert": false
     },
     {
-      "action": "claudeModeInfo",
+      "action": "none",
       "dispatch": [],
       "backend": [],
       "outcome": "ok",
@@ -1739,12 +1739,7 @@
     },
     {
       "action": "interrupt",
-      "dispatch": [
-        {
-          "method": "interrupt",
-          "args": []
-        }
-      ],
+      "dispatch": [],
       "backend": [],
       "outcome": "ok",
       "alert": false
@@ -2875,7 +2870,7 @@
       "alert": false
     },
     {
-      "action": "claudeModeInfo",
+      "action": "none",
       "dispatch": [],
       "backend": [],
       "outcome": "ok",
@@ -2883,12 +2878,7 @@
     },
     {
       "action": "interrupt",
-      "dispatch": [
-        {
-          "method": "interrupt",
-          "args": []
-        }
-      ],
+      "dispatch": [],
       "backend": [],
       "outcome": "ok",
       "alert": false
@@ -3063,7 +3053,7 @@
       "alert": false
     },
     {
-      "action": "claudeModeInfo",
+      "action": "none",
       "dispatch": [],
       "backend": [],
       "outcome": "ok",
@@ -3071,12 +3061,7 @@
     },
     {
       "action": "interrupt",
-      "dispatch": [
-        {
-          "method": "interrupt",
-          "args": []
-        }
-      ],
+      "dispatch": [],
       "backend": [],
       "outcome": "ok",
       "alert": false
@@ -4933,7 +4918,7 @@
       "alert": false
     },
     {
-      "action": "claudeModeInfo",
+      "action": "none",
       "dispatch": [],
       "backend": [],
       "outcome": "ok",
@@ -4941,12 +4926,7 @@
     },
     {
       "action": "interrupt",
-      "dispatch": [
-        {
-          "method": "interrupt",
-          "args": []
-        }
-      ],
+      "dispatch": [],
       "backend": [],
       "outcome": "ok",
       "alert": false
@@ -6140,7 +6120,7 @@
       "alert": false
     },
     {
-      "action": "claudeModeInfo",
+      "action": "none",
       "dispatch": [],
       "backend": [],
       "outcome": "ok",
@@ -6148,12 +6128,7 @@
     },
     {
       "action": "interrupt",
-      "dispatch": [
-        {
-          "method": "interrupt",
-          "args": []
-        }
-      ],
+      "dispatch": [],
       "backend": [],
       "outcome": "ok",
       "alert": false
@@ -6342,7 +6317,7 @@
       "alert": false
     },
     {
-      "action": "claudeModeInfo",
+      "action": "none",
       "dispatch": [],
       "backend": [],
       "outcome": "ok",
@@ -6350,12 +6325,7 @@
     },
     {
       "action": "interrupt",
-      "dispatch": [
-        {
-          "method": "interrupt",
-          "args": []
-        }
-      ],
+      "dispatch": [],
       "backend": [],
       "outcome": "ok",
       "alert": false

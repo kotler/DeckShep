@@ -8,11 +8,35 @@ export interface RexBlockReply {
   content?: string;
   modes?: ({ number?: number; set?: boolean } | null)[];
 }
+// Rex text includes placeholders as ordinary characters. Corroborate the
+// complete suffix with the VT styling on the same visible prompt. An actual
+// draft at column 3 can have precisely the same wording in normal intensity.
+function dimmedCursorSuffix(vt: string, text: string, cursor: RegExpExecArray) {
+  const lines = text.split('\n');
+  const row = Number(cursor[1]) - 1;
+  const line = lines[row]?.trimEnd();
+  if (
+    Number(cursor[2]) !== 3 ||
+    !line ||
+    !/^❯[ \u00a0]\S/.test(line) ||
+    lines.slice(row + 1).some((value) => value.includes('❯'))
+  )
+    return false;
+  const native = vt.split('\n').findLast((value) => value.includes('❯'));
+  if (!native) return false;
+  // Only a single faint run followed by a reset is a hint. Preserve every
+  // other style, cursor movement and mixed-intensity suffix as unverified.
+  return (
+    native.replace(/\r$/, '') ===
+    line.slice(0, 2) + '\x1b[0m\x1b[2m' + line.slice(2) + '\x1b[0m'
+  );
+}
 /** Bind the plain text and cursor to the same native frame; return no scrollback. */
 export async function stableViewport(
   target: TargetRef,
   run: (args: string[]) => Promise<RexBlockReply | null | undefined>,
   screen: () => Promise<string>,
+  frameIdentity?: (vt: string, text: string) => string,
 ): Promise<KeyboardView> {
   const args = [
     'block',
@@ -52,13 +76,26 @@ export async function stableViewport(
   }
   const text = await screen(),
     after = await run(args);
-  if (after?.id || after?.content !== before.content)
+  const original = frameIdentity
+    ? frameIdentity(before.content, text)
+    : before.content;
+  if (
+    after?.id ||
+    typeof after?.content !== 'string' ||
+    original !==
+      (frameIdentity ? frameIdentity(after.content, text) : after.content)
+  )
     throw Error('Rex view changed');
   return {
     text,
+    ...(target.app === 'claude-code' &&
+    cursor &&
+    dimmedCursorSuffix(before.content, text, cursor)
+      ? { dimmedCursorSuffix: true as const }
+      : {}),
     cursor: cursor
       ? { row: Number(cursor[1]), column: Number(cursor[2]) }
       : null,
-    hash: createHash('sha256').update(before.content).digest('hex'),
+    hash: createHash('sha256').update(original).digest('hex'),
   };
 }

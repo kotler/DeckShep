@@ -898,12 +898,18 @@ class ClaudeControls {
     }
     this.b.draft = null;
   }
+  private async interruptVisible(agent: any) {
+    const rex = agent.backend !== 'herdr';
+    const { text } = await this.view(agent);
+    return (
+      /\besc to interrupt\b/i.test(text) ||
+      (rex && require('./interrupt-cue').hasClaudeInterruptCue(text))
+    );
+  }
   async interrupt() {
     const a: any = await this.selected();
     if (a.state !== 'working' || !a.runId) throw Error('Claude is not running');
-    const view: any = await this.view(a);
-    if (!/\besc to interrupt\b/i.test(view.text))
-      throw Error('Claude interrupt hint unavailable');
+    if (!(await this.interruptVisible(a))) throw Error('Check Claude activity');
     const identity: string = a.nativeIdentity + '|' + a.runId;
     if (this.submissions.has('interrupt:' + identity))
       throw Error('Interrupt already requested');
@@ -911,7 +917,7 @@ class ClaudeControls {
     this.assert(a, fresh);
     if (fresh.state !== 'working' || fresh.runId !== a.runId)
       throw Error('Claude turn ended');
-    if (!/\besc to interrupt\b/i.test((await this.view(fresh)).text))
+    if (!(await this.interruptVisible(fresh)))
       throw Error('Claude interrupt context changed');
     this.submissions.set('interrupt:' + identity, this.now());
     this.b.draft = null;

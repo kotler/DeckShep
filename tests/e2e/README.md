@@ -83,3 +83,5 @@ active-turn read are substituted here. The Rex integration tests separately
 exercise the real Bridge/footer/active-turn guards with synthetic transport
 replies. Neither level proves that an installed agent currently has the required
 footer, metadata hooks or control consent.
+
+The startup baseline leaves all five contextual keys blank until Rex has a selected agent. Closing the selected pane clears that row as well.

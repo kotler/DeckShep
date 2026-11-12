@@ -9,8 +9,14 @@ import {
 import {
   cycleClaudeKeyboard,
   readClaudeSettings,
+  requireClaudeReady,
 } from '../agents/claude/keyboard-settings';
-import { claudeFooter } from '../agents/claude/keyboard-mode';
+import {
+  effortFrameIdentity,
+  highlightedEffort,
+} from '../agents/claude/effort-slider';
+import { hasClaudeInterruptCue } from '../agents/claude/interrupt-cue';
+import { claudeFooter, nativeEffort } from '../agents/claude/keyboard-mode';
 import { setTimeout as pause } from 'node:timers/promises';
 const { assertContext } = require('../guards/context');
 
@@ -41,8 +47,37 @@ export async function observeSettings(b: any, agent: AgentSnapshot) {
       try {
         state.process = await b.inspectClaudeKeyboard(agent);
       } catch {}
+      if (agent.state === 'working') return state;
     }
-    const view = await b.readKeyboardView(agent);
+    const view = await b.readKeyboardView(
+      agent,
+      agent.app === 'claude-code' ? effortFrameIdentity : undefined,
+    );
+    if (agent.app === 'claude-code') {
+      const level = highlightedEffort(view);
+      if (level) {
+        const process = await b.inspectClaudeKeyboard(
+          agent,
+          undefined,
+          undefined,
+          'effort-slider',
+        );
+        return {
+          process,
+          viewHash: view.hash,
+          effort: level,
+          effortSlider: true,
+        };
+      }
+    }
+    if (
+      agent.app === 'claude-code' &&
+      agent.state === 'unknown' &&
+      state.process
+    ) {
+      requireClaudeReady(view, agent);
+      state.idleComposer = true;
+    }
     state.viewHash = view.hash;
     Object.assign(
       state,
@@ -63,7 +98,6 @@ export async function performRexKeyboard(b: any, display: any) {
   const { target, action } = display;
   const claude = target?.app === 'claude-code';
   const interrupt =
-    !claude &&
     action === 'interrupt' &&
     target?.state === 'working' &&
     !target.chatId &&
@@ -81,7 +115,7 @@ export async function performRexKeyboard(b: any, display: any) {
   if (!b.config.allowClipboardFocus)
     throw Error('Enable visible-pane checks first');
   if (!target.rexSettings?.process) throw Error('Check focused pane');
-  async function check(visible = false) {
+  async function check(visible = false, slider = false) {
     b.assertDeliveryVisible();
     if (
       b.config.backend !== 'rex' ||
@@ -110,32 +144,84 @@ export async function performRexKeyboard(b: any, display: any) {
       a.cwd !== target.cwd ||
       a.window !== target.window ||
       (interrupt
-        ? a.state !== 'working' || a.statusAt !== target.statusAt
-        : !['idle', 'done', 'error'].includes(a.state)) ||
+        ? a.state !== 'working' ||
+          !a.statusAt ||
+          (!claude && a.statusAt !== target.statusAt)
+        : !['idle', 'done', 'error'].includes(a.state) &&
+          !(
+            claude &&
+            a.state === 'unknown' &&
+            (target.rexSettings.idleComposer ||
+              (slider &&
+                action === 'effort' &&
+                target.rexSettings.effortSlider))
+          )) ||
       (claude
-        ? await b.inspectClaudeKeyboard(a)
+        ? await b.inspectClaudeKeyboard(
+            a,
+            undefined,
+            undefined,
+            slider ? 'effort-slider' : undefined,
+          )
         : processKey(await b.inspectKeyboardProcess(a.pid), a.pid)) !==
         target.rexSettings.process
     )
       throw Error('Agent pane changed');
     return a;
   }
-  const read = async (): Promise<View> => b.readKeyboardView(await check());
-  if (interrupt) {
-    const a = await check(true);
-    // A running timer can repaint between the two frame reads. Retry only
-    // the observation, and recheck the originally captured run each time.
+  let initialLevel: string | undefined;
+  const frameIdentity =
+    claude && action === 'effort'
+      ? (vt: string, text: string) =>
+          effortFrameIdentity(vt, text, initialLevel)
+      : undefined;
+  async function read(slider = false, visible = false): Promise<View> {
     for (let attempt = 0; ; attempt++) {
+      const pane = await check(visible, slider);
       try {
-        if (!hasInterruptHint(await read()))
-          throw Error('No Esc hint in Codex');
-        break;
+        return await b.readKeyboardView(pane, frameIdentity);
       } catch (error) {
-        if (attempt >= 2 || (error as Error).message !== 'Rex view changed')
+        // Claude may still be painting the slider. Retry a torn observation
+        // only; a complete frame with a different digest still rejects input.
+        if (
+          !frameIdentity ||
+          attempt >= 3 ||
+          (error as Error).message !== 'Rex view changed'
+        )
           throw error;
+        await pause(50);
       }
     }
-    await check();
+  }
+  if (interrupt) {
+    const a = await check(true);
+    if (claude) {
+      const key = 'rex-interrupt:' + target.rexSettings.process;
+      if (b.claude.submissions.has(key))
+        throw Error('Interrupt already requested');
+      // The spinner repaints continuously. Verify the native hint independently
+      // on both reads and bracket them with the same busy CLI registration.
+      if (
+        !hasClaudeInterruptCue(await b.readKeyboardText(a)) ||
+        !hasClaudeInterruptCue(await b.readKeyboardText(await check()))
+      )
+        throw Error('Check Claude activity');
+      await check(true);
+      b.claude.submissions.set(key, Date.now());
+    } else {
+      // A running timer can repaint between frames. Retry only the observation.
+      for (let attempt = 0; ; attempt++) {
+        try {
+          if (!hasInterruptHint(await read()))
+            throw Error('No Esc hint in Codex');
+          break;
+        } catch (error) {
+          if (attempt >= 2 || (error as Error).message !== 'Rex view changed')
+            throw error;
+        }
+      }
+      await check();
+    }
     await b.run(
       ['send-key', '-s', a.session, '-b', a.block, 'escape'],
       undefined,
@@ -143,8 +229,16 @@ export async function performRexKeyboard(b: any, display: any) {
     );
     return;
   }
-  async function change(view: View, key: string, paste = false) {
-    const a = await check();
+  async function change(
+    view: View,
+    key: string,
+    paste = false,
+    surface?: 'open-slider' | 'slider',
+  ) {
+    // Only the dedicated parser requests slider keys after verifying its marker
+    // and session-only footer. Opening the command still requires idle proof.
+    const inSlider = surface === 'slider';
+    const a = await check(false, inSlider);
     if (
       paste &&
       !(await b.method(a, 'modes')).modes?.some(
@@ -152,8 +246,7 @@ export async function performRexKeyboard(b: any, display: any) {
       )
     )
       throw Error('Paste unavailable');
-    const visible = await check(true);
-    if ((await b.readKeyboardView(visible)).hash !== view.hash)
+    if ((await read(inSlider, true)).hash !== view.hash)
       throw Error('Agent view changed');
     await b.run(
       [
@@ -169,19 +262,28 @@ export async function performRexKeyboard(b: any, display: any) {
     );
     // Poll for a repaint, never retry the write.
     for (let i = 0; i < 5; i++) {
-      const next = await read();
+      const next = await read(surface !== undefined);
       if (next.hash !== view.hash || (i === 4 && claude && key === 'right'))
         return next;
       if (i < 4) await pause(45);
     }
     throw Error('Check native UI');
   }
-  const initial = await read();
+  const initial = await read(
+    claude && action === 'effort' && target.rexSettings.effortSlider === true,
+  );
   if (
     !target.rexSettings.viewHash ||
     initial.hash !== target.rexSettings.viewHash
   )
     throw Error('Agent view changed');
+  if (frameIdentity) {
+    try {
+      initialLevel = nativeEffort(initial);
+    } catch {
+      /* The native model picker may already be open. */
+    }
+  }
   if (claude) return cycleClaudeKeyboard(initial, change, action, target);
   return cycleCodexSetting(
     {

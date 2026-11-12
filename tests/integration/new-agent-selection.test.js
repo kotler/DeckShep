@@ -18,6 +18,10 @@ test('manual Rex selection, a shell, and closing the active tab move or clear th
   await h.api.refresh();
   assert.deepEqual(dots(), []);
   assert.equal(h.api.bridge.lastTarget, null);
+  for (let column = 0; column < 5; column++) {
+    assert.equal(h.api.keys.get('2,' + column).presented.action, 'none');
+    await h.press(2, column);
+  }
   h.native('a');
   h.setLive(h.live.filter((agent) => agent.block !== 'b'));
   await h.api.refresh();

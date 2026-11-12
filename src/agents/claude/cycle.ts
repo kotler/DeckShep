@@ -202,6 +202,7 @@ function nextModel(p: any, current: any) {
 function configurationView(
   view: {
     text: string;
+    dimmedCursorSuffix?: true;
     hash: string;
     cursor?: {
       row: number;
@@ -233,8 +234,17 @@ function configurationView(
       )
   )
     throw Error('Claude idle configuration view unavailable');
+  const hint =
+    view.dimmedCursorSuffix &&
+    lower === upper + 2 &&
+    view.cursor?.row === upper + 2 &&
+    view.cursor?.column === 3 &&
+    /^❯[ \u00a0]Try (?:"[^"\p{C}]{1,200}"|“[^”\p{C}]{1,200}”)\s*$/u.test(
+      lines[upper + 1],
+    );
   if (
     requireEmpty &&
+    !hint &&
     lines
       .slice(upper + 1, lower)
       .join('\n')

@@ -529,14 +529,20 @@ class Bridge {
     // Rex acknowledged a focus request. Only a visible-pane read may move the dot.
     if (this.config.bringToFront !== false) await this.activate();
   }
-  readKeyboardView(target: AgentSnapshot) {
+  readKeyboardText(target: AgentSnapshot): Promise<string> {
+    return new (require('../agents/codex/setup-presets').Setup)(this).screen(
+      target,
+    );
+  }
+  readKeyboardView(
+    target: AgentSnapshot,
+    frameIdentity?: (vt: string, text: string) => string,
+  ) {
     return require('../terminals/rex/viewport').stableViewport(
       target,
       this.run,
-      () =>
-        new (require('../agents/codex/setup-presets').Setup)(this).screen(
-          target,
-        ),
+      () => this.readKeyboardText(target),
+      frameIdentity,
     );
   }
   async readPane(target: import('../domain/types').TargetRef) {

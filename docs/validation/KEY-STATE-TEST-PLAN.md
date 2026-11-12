@@ -1,5 +1,7 @@
 # Key-state test plan (Stream Deck MK.2, Rex profile)
 
+Run `npm run test:no-hooks` for the native-pane controls and `npm run test:hooks` for lifecycle-bound controls. The virtual deck also checks that closing the last selected Rex agent clears every key in row 3.
+
 Written 2026-11-11 against commit `30ccde2`. The physical MK.2 Result cells are open. Section 11 records the separate disposable Rex runs. Expectations are taken from the code
 (`src/domain/layout.ts`, `src/app/key-face.ts`, `src/app/controller.ts`,
 `src/app/session.ts`), not from hardware.
@@ -75,7 +77,7 @@ last segment of the working directory.
 | A10 | Agent's pane closed or agent exited | Plain ring, `Closed`, dark; K8 shows the gap | Nothing sent; alert mark | The old name or status staying on the key | |
 | A11 | Quit Rex | Every row-1 key: ring with slash, `Rex offline` | Nothing sent | Stale agent names; any dot | |
 | A12 | Click a different agent pane in Rex with the mouse | Dot moves to that agent within one refresh (about 2 s) | n/a | Dot staying on the old agent; two dots | |
-| A13 | Click a shell pane in Rex | No dot anywhere; row 3 shows `Select agent` | n/a | Dot on the last agent | |
+| A13 | Click a shell pane in Rex | No dot anywhere; all five row-3 keys are blank | n/a | Dot on the last agent | |
 | A14 | Start a new agent while five slots are full | Existing keys do not move; K7 Page appears | n/a | Agents reshuffling between slots | |
 | A15 | Start an agent in the background (not focused) | New key appears; dot does not move | n/a | Selection jumping to the new agent | |
 
@@ -117,7 +119,7 @@ before release. Check exactly one focus operation for K6 and zero for K7.
 | C5 | Question | `Up` | `Down` | `Confirm`, `Enter` | `Esc`, `question` | `Interrupt`, `not running`, grey | Model/Effort; any key greyed among K11-K14 | |
 | C6 | Approval | `Up`, `choice` | `Down`, `choice` | `Confirm`, `highlighted` | `Esc`, `choice` | `Interrupt`, grey | The option text being accepted without a press | |
 | C7 | Unknown / not signed in | `Check Rex` (+ `Sign in`) | Blank | `Permissions`, grey | Blank | `Interrupt`, grey | Any live control | |
-| C8 | No agent selected (shell pane) | `Select` / `agent` | Blank | `Permissions`, grey | Blank | `Interrupt`, grey | Any live control | |
+| C8 | No agent selected (shell pane) | Blank | Blank | Blank | Blank | Blank | Any live control | |
 
 In C1 the second line is read passively from the focused pane. With
 visible-pane checks off (V0) the value line stays empty.
@@ -143,18 +145,18 @@ visible-pane checks off (V0) the value line stays empty.
 ## 7. Row 3 with a Claude agent selected (K11-K15)
 
 In the Rex profile Claude has two ways to become controllable. **Keyboard**
-(V2): the four idle settings keys work from the foreground process and Claude's
-own CLI registration, with no hooks. **Hooks** (V3): turn-specific keys (Steer,
-Queue, question and approval keys, Interrupt) need a SessionStart or
+(V2): the three idle settings keys work from the foreground process and Claude's
+own CLI registration, with no hooks. Interrupt uses the same registration’s busy timestamp and a visible Escape hint or working spinner. **Hooks** (V3): turn-specific keys (Steer,
+Queue, question and approval keys) need a SessionStart or
 UserPromptSubmit event for this session.
 
 | ID | Agent state / variant | K11 | K12 | K13 | K14 | K15 | Must not | Result |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | D1 | Just opened, no prompt sent yet (any variant) | See I1: record what you get | | | | | | |
-| D2 | Idle, V0 or V1 (controls off) | `Check Rex`, `Enable Claude` | Blank | `Claude Code`, `Enable controls` | Blank | `Interrupt`, grey | Any live control; any key sent | |
-| D3 | Idle, V2, pane focused | `Model` + value | `Effort` + value | `Permissions` + value | `Mode` + value | `Interrupt`, grey | `Check Rex`; `Enable Claude` | |
-| D4 | Idle, V2, custom `keybindings.json` present | `Check Rex` (second line may be empty) | Blank | `Claude Code`, `Preview` | Blank | `Interrupt`, grey | Any live control | |
-| D5 | Working, V2 without hooks | `Check Rex` | Blank | `Claude Code`, `Preview` | Blank | `Interrupt`, grey | Steer/Queue live; Escape sent | |
+| D2 | Idle, V0 or V1 (controls off) | `Check Rex`, `Enable Claude` | Blank | Blank | Blank | Blank | Any live control; any key sent | |
+| D3 | Idle, V2, pane focused | `Model` + value | `Effort` + value | `Permissions` + value | Blank | `Interrupt`, `not running`, grey | `Check Rex`; `Enable Claude` | |
+| D4 | Idle, V2, custom `keybindings.json` present | `Check Rex` (second line may be empty) | Blank | Blank | Blank | Blank | Any live control | |
+| D5 | Working, V2 without hooks, busy CLI registration verified | Blank | Blank | Blank | Blank | `Interrupt`, `running`, red | Repeated Escape or delivery after focus or busy timestamp changes | |
 | D6 | Working, V3 | `Steer`, `typed text` | `Queue`, `typed text` | `Claude Code`, `Preview` | Blank | `Interrupt`, `running`, red | Model/Effort | |
 | D7 | Question, single choice, V3 | `Up` | `Down` | `Confirm`, `Enter` | `Esc`, `question` | `Interrupt`, grey | Toggle | |
 | D8 | Question, multi-select, V3 | `Up` | `Down` | `Review`, `answers` | `Esc`, `question` | `Toggle`, `Space` | Confirm submitting before Review | |
@@ -167,13 +169,13 @@ UserPromptSubmit event for this session.
 | ID | Precondition | Press | Expected result | Must not | Result |
 | --- | --- | --- | --- | --- | --- |
 | D12 | D3, empty prompt | K11 Model | Native picker opens, next concrete model selected, applied with `s` (this session only) | Enter (saves a default); typed draft lost; an inference request | |
-| D13 | D3, empty prompt | K12 Effort | Next effort level, wrapping to Low at the top | Change persisting to a new session | |
+| D13 | D3, empty prompt, no hooks or status line. Run once immediately after a default launch and again in a chat with a previous reply. | K12 Effort | The slider opens, advances once, and closes. The key shows the new level (with a trailing `?` if Claude hides the badge). Repeat from Max to confirm Low. | Immediate warning, slider left open, repeated input, or a change to the default for new sessions | |
 | D14 | D3, empty prompt | K13 Permissions | One Shift+Tab step of Claude's permission-mode cycle | Accepting an extra confirmation (it stays open for you) | |
-| D15 | D3, empty prompt | K14 Mode | One Shift+Tab step | Two steps | |
+| D15 | D3, empty prompt | K14 (blank) | No input | Any mode change | |
 | D16 | D3, text typed in the prompt | K13 or K14 | Refused: `Unavailable` + reason | Shift+Tab sent over a draft | |
 | D17 | D2 | K11, K13 | Nothing: these are information keys | An alert; any key sent | |
 | D18 | D6, text typed | K11 Steer / K12 Queue | Steer sends now (Ctrl+X Ctrl+S path); Queue sends Ctrl+X Enter | Sending when the composer is not the recognised bordered one | |
-| D19 | D6 | K15 Interrupt | One Escape, only while the interrupt hint is visible | A second Escape in the same turn | |
+| D19 | D5 or D6 | K15 Interrupt | One Escape, only with a verified working cue | A second Escape in the same turn | |
 | D20 | D8 | K15 Toggle | Space toggles the highlighted checkbox | Submit | |
 | D21 | D11 | K13 Confirm | Accepts the highlighted native choice | Acting after the dialog was redrawn (must refuse) | |
 
@@ -206,21 +208,10 @@ Use these fixture cases to distinguish where an action failed:
 
 ### I1. Claude keys do nothing right after opening the Claude CLI
 
-What the code does today (read, not reproduced):
-
-1. An agent's state comes from Rex's program-status records for that process
-   (`src/app/session.ts` `agent()`, `src/domain/identity.ts` `state()`). With no
-   record yet, the state is `unknown`.
-2. The passive settings read that makes Claude's idle keys live only runs when
-   the state is idle, done or error (`src/app/controller.ts`
-   `observeFocusedSettings`).
-3. Without that read or hook proof, `modeOf` (`src/domain/layout.ts`) returns
-   `unknown`, so row 3 is `Check Rex` / blank / `Claude Code` / blank / grey
-   Interrupt, and those presses are deliberate no-ops.
-
-So if a freshly opened Claude has no status record until its first turn, the
-agent key says `Unknown` and row 3 is dead until you send one prompt. That
-is one explanation for the report. The following checks capture the symptom and test that explanation.
+Row 1 follows Rex program-status reports. Before the first report it can say
+`Unknown`. In V2, the three settings keys can already operate if the verified
+CLI registration says idle and the visible pane shows an empty Claude composer.
+A draft, unreadable pane, or unverified registration does not establish readiness.
 
 | ID | Step | Record | Result |
 | --- | --- | --- | --- |
@@ -234,7 +225,7 @@ An `Unknown` → `Ready` transition after a prompt establishes the symptom. In
 V3 the prompt can also produce a UserPromptSubmit hook event. To isolate the
 status record, compare two fixture runs with identical foreground identity,
 idle pane, consent and hook proof. Supply no Rex status record in the first
-and an idle record in the second. Compare the row-1 status and the four row-3
+and an idle record in the second. Compare the row-1 status and the three row-3
 settings keys separately. If I1a already shows `Ready` while the keys are
 inactive, record the K11 second line and inspector message.
 

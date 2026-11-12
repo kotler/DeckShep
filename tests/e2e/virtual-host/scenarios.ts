@@ -26,6 +26,7 @@ export interface Scenario {
   focused: string;
   offline?: boolean;
   keyboard?: boolean;
+  nativeEffort?: 'visible' | 'hidden' | 'slider';
   slots?: { session: string; block: string }[];
   app?: { panes: AppPaneStatus[]; selected: AppPaneRef | null; epoch: number };
 }

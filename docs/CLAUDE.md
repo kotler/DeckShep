@@ -13,17 +13,17 @@ Claude and Codex share discovery, stable slots, bank cycling, Next agent, Collap
 | Model / Effort | One-press session-only cycles | One-press session-only cycles |
 | Native question / approval navigation and Confirm / Esc | Guarded native keys | Guarded native keys, pane must be at bottom |
 | Multiple-select question | Toggle for verified checkbox layouts; Home Review then Submit | Same |
-| Interrupt | One Escape, current lifecycle and visible interrupt-hint checks | Same; scoped to explicit pane |
+| Interrupt | One Escape, verified working CLI registration or hook lifecycle, and visible interrupt-hint checks | Same; scoped to explicit pane |
 | Review / Tests / Continue and guarded Send | Implemented for recognized composer | Unavailable; cursor API missing |
 | Queue / Steer | Ctrl+X Enter queues; Ctrl+X Ctrl+S sends now | Unavailable; cursor API missing |
-| Permission modes / Plan | Permissions and Mode each advance one native Shift+Tab step | Keyboard only |
+| Permission modes / Plan | Permissions advances one native Shift+Tab step | Keyboard only |
 | Stop background tasks/terminals | Not implemented for Claude | Not implemented for Claude |
 
-**Model** and **Effort** now cycle directly from Home and show the current value. Model cycles the available concrete models in the native picker’s primary list, skipping Default duplicates and More models. It retains effort where the next model supports it. Effort advances through the native levels and wraps at the upper bound to Low, respecting native caps. Rex can verify these four idle settings from the foreground native Claude process and its own interactive CLI registration. Enable visible-pane verification and Claude native controls in the Rex profile. DeckShep metadata hooks remain optional for these settings and are required for turn-specific actions.
+**Model** and **Effort** now cycle directly from Home and show the current value. Model cycles the available concrete models in the native picker’s primary list, skipping Default duplicates and More models. It retains effort where the next model supports it. On Rex, when Claude shows its native effort badge above the composer, the Effort key displays that level directly. A press opens the built-in `/effort` slider, moves to the next level offered by the current model, applies it to this session with `s`, and checks the resulting badge when visible. If the slider is already open, **Apply effort** shows the highlighted level and applies it with one press. When Claude hides the badge, a trailing `?` marks the last observed level for that focused CLI. If no level has been observed yet, the key shows **Press to cycle**. This works without a configured status line. A configured footer that supplies effort without a native badge continues to use the model picker. Effort advances through the native levels and wraps at the upper bound to Low, respecting native caps. Rex can verify these three idle settings from the foreground native Claude process and its own interactive CLI registration. Enable visible-pane verification and Claude native controls in the Rex profile. DeckShep metadata hooks remain optional for these settings and enable Queue, Steer and native question or approval controls. Interrupt can also use the focused CLI’s busy registration and native Escape hint or working spinner, with an empty composer.
 
 A press opens the native picker, verifies the selection, changes it and uses Claude’s visible `s` action to apply only to the current session. It never sends Enter to save a default. The Rex pane picker requires an empty prompt and default keybindings. The hook-bound path preserves typed drafts; Herdr’s text-only view is used only for this non-submitting configuration shortcut. Unknown dialogs, changed lists, focus/session changes, unsupported bindings and unverified results stop the operation. Credit/consent prompts are never accepted automatically. No inference request is sent by a configuration cycle.
 
-In Rex, Permissions and Mode use Claude’s own permission-mode cycle, which includes Plan and may include Accept edits, Bypass and Auto. Each press advances once from a verified empty composer. An extra confirmation stays open for the user. Herdr Mode remains informational.
+In Rex, Permissions uses Claude’s own permission-mode cycle, which includes Plan and may include Accept edits, Bypass and Auto. Each press advances once from a verified empty composer. An extra confirmation stays open for the user.
 
 ## Optional setup for later live validation
 
@@ -70,7 +70,7 @@ Questions and approvals require the matching hook request and a recognized nativ
 
 ## Hooks-only mode
 
-Turn-specific controls use hooks-only mode on setups without the legacy DeckShep status line. For these controls, each refresh and press checks the following:
+Hook-bound turn controls use hooks-only mode on setups without the legacy DeckShep status line. For these controls, each refresh and press checks the following:
 
 - **Process proof:** the pane's foreground process is the recorded PID, with the same start time, native executable and version it had when the record was written.
 - **Lifecycle proof:** the record's root session was established for this process by a SessionStart or UserPromptSubmit hook. There must be no SessionEnd and no lost-event marker since then. `/clear`, `/resume` and restarts start another session or generation, which re-binds the key identity and refuses older presses.

@@ -37,3 +37,5 @@ justification in the PR; never update snapshots merely to make a refactor pass.
 The fixtures in `../backends/` were copied from the corresponding baseline
 regression tests. The Claude cycle fixture additionally records transport calls
 before dispatching its synthetic native state changes.
+
+Claude’s ready, done and error layouts leave the former Mode slot blank. Permissions covers its mode cycle. The matching press baselines expect no input from that slot or the grey, idle Interrupt key.

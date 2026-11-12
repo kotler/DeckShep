@@ -186,7 +186,7 @@ test('mixed agents', async () => {
   h.tick();
   assert.equal(h.action(1, 3), 'none');
   assert.equal(h.action(2, 2), 'claudeInfo');
-  assert.equal(h.action(2, 3), 'claudeModeInfo');
+  assert.equal(h.action(2, 3), 'none');
   assert(h.image(0, 1).includes('claude-watermark'));
   assert(!h.image(0, 1).includes('agent-watermark'));
   assert(h.image(2, 0).includes('Sonnet'));

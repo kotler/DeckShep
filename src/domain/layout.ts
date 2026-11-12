@@ -15,6 +15,15 @@ export function isBackground(agent: AgentSnapshot | null | undefined) {
 }
 export function modeOf(agent: AgentSnapshot | null | undefined) {
   if (
+    agent?.app === 'claude-code' &&
+    agent.backend !== 'herdr' &&
+    agent.state === 'unknown' &&
+    !agent.chatId &&
+    agent.rexSettings?.idleComposer &&
+    agent.rexSettings.process
+  )
+    return 'ready';
+  if (
     !agent ||
     !['codex', 'claude-code'].includes(agent.app) ||
     (agent.backend === 'herdr' && agent.nativeVerified === false) ||
@@ -22,7 +31,8 @@ export function modeOf(agent: AgentSnapshot | null | undefined) {
       !(
         agent.backend !== 'herdr' &&
         agent.rexSettings?.process &&
-        ['idle', 'done', 'error'].includes(agent.state)
+        (['idle', 'done', 'error'].includes(agent.state) ||
+          (agent.state === 'working' && !!agent.statusAt && !agent.chatId))
       ) &&
       (!agent.nativeVerified || !agent.claudeControlsEnabled))
   )
@@ -39,6 +49,13 @@ export function homeRow(
   agent: AgentSnapshot | null | undefined,
   capabilities?: ReadonlySet<BackendCapability> | undefined,
 ) {
+  if (
+    agent?.app === 'claude-code' &&
+    ['unknown', 'idle', 'done', 'error'].includes(agent.state) &&
+    agent.rexSettings?.effortSlider &&
+    agent.rexSettings.process
+  )
+    return ['none', 'effort', 'none', 'none', 'none'];
   const settingsAction =
     agent?.app === 'claude-code' ? 'claudeInfo' : 'permissions';
   if (agent?.state === 'blocked' && ['auth', 'form'].includes(agent.kind ?? ''))
@@ -49,12 +66,12 @@ export function homeRow(
         'model',
         'effort',
         agent?.rexSettings ? 'permissions' : settingsAction,
-        agent?.app === 'claude-code' && !agent?.rexSettings
-          ? 'claudeModeInfo'
-          : 'plan',
+        agent?.app === 'claude-code' ? 'none' : 'plan',
         'interrupt',
       ];
     case 'working':
+      if (agent?.app === 'claude-code' && agent.rexSettings && !agent.chatId)
+        return ['none', 'none', 'none', 'none', 'interrupt'];
       return (
         capabilities
           ? !capabilities.has('composerCursor')
@@ -84,6 +101,8 @@ export function homeRow(
       ];
     case 'unknown':
     default:
+      if (agent?.app === 'claude-code' && agent.rexSettings && !agent.chatId)
+        return ['status', 'none', 'none', 'none', 'none'];
       return ['status', 'none', settingsAction, 'none', 'interrupt'];
   }
 }

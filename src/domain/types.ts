@@ -36,6 +36,9 @@ export interface AgentSnapshot extends TargetRef {
   /** Display-only title read from Rex, independent of provider metadata. */
   terminalTitle?: string;
   rexSettings?: {
+    effortHidden?: boolean;
+    effortSlider?: boolean;
+    idleComposer?: boolean;
     viewHash?: string;
     process?: string;
     model?: string | null;

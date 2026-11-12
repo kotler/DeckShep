@@ -6,7 +6,7 @@ This beta targets **Codex CLI on a 15-key Stream Deck MK.2**. The first release 
 
 ## Claude and mixed-agent development preview
 
-The 1.4.0 development build includes experimental Claude Code support and mixed Claude/Codex banks. Claude controls are off by default; isolated native validation passed, with physical validation still in progress. Model and Effort now cycle directly from Home, with session-only changes. Claude controls use hooks only; DeckShep never changes your Claude Code or Codex status line. See [Claude setup, capabilities and limits](docs/CLAUDE.md). The published 1.2.1 beta and its existing hardware results remain the release baseline.
+The 1.4.0 development build includes experimental Claude Code support and mixed Claude/Codex banks. Claude controls are off by default; isolated native validation passed, with physical validation still in progress. Model and Effort now cycle directly from Home, with session-only changes. In Rex, Claude settings and working Interrupt can use the focused native CLI without hooks. Queue and choice controls use optional hooks. DeckShep never changes your Claude Code or Codex status line. See [Claude setup, capabilities and limits](docs/CLAUDE.md). The published 1.2.1 beta and its existing hardware results remain the release baseline.
 
 ## Get started
 
@@ -57,7 +57,7 @@ the previous agent and **Page** for the previous page; see the
 | Component   | Verified scope                                                   | Unverified versions                                                |
 | ----------- | ---------------------------------------------------------------- | ------------------------------------------------------------------ |
 | Codex CLI   | Any release (validated on 0.166.0 / 0.167.0)                     | Controls disabled when the daemon reports no version               |
-| Claude Code | Any native release, opt-in preview (hooks only)                  | Native controls disabled for non-native installs                   |
+| Claude Code | Any native release, opt-in preview                               | Native controls disabled for non-native installs                   |
 | Herdr TUI   | Not in the first release; source preview for 0.9.5 / protocol 22 | Session refused                                                    |
 | Herdr App   | Not in the first release; experimental source preview            | Production build records empty; [preview setup](docs/HERDR-APP.md) |
 

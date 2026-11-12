@@ -57,6 +57,7 @@ class ScenarioSession extends Bridge {
       startedAt: '1.000001',
       image: 'a'.repeat(64),
     });
+    this.readKeyboardText = async () => keyboard.view().text;
     this.readKeyboardView = async () => {
       if (!current.keyboard) throw Error('Fixture screen unavailable');
       return keyboard.view();
@@ -191,9 +192,16 @@ async function command(message: Record<string, unknown>): Promise<void> {
       revision++;
       keyboard = new KeyboardScreen();
       keyboard.showShortcutRow = current.keyboard === true;
-      if (current.keyboard && current.agents[0]?.app === 'claude-code')
+      if (current.keyboard && current.agents[0]?.app === 'claude-code') {
         keyboard = new ClaudeKeyboardScreen();
-      else if (current.keyboard && current.agents[0]?.state === 'working')
+        keyboard.nativeEffort = !!current.nativeEffort;
+        keyboard.hideBadge = current.nativeEffort === 'hidden';
+        if (current.nativeEffort === 'slider') {
+          keyboard.slider = true;
+          keyboard.effort = 2;
+        }
+        keyboard.working = current.agents[0].state === 'working';
+      } else if (current.keyboard && current.agents[0]?.state === 'working')
         keyboard.surface = 'working';
       for (const timer of timers) if (timer.period === 2000) timer.callback();
     } else if (message.command === 'advance') {

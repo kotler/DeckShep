@@ -453,6 +453,7 @@ function createApplication(dependencies: Record<string, any>) {
         return override;
       }
       const { column: c, row: r } = k.coordinates;
+      if (scope === 'rex' && !offline && r === 2 && !selected()) return 'none';
       return r === 0
         ? 'agent:' + c
         : C.layout(
@@ -755,6 +756,7 @@ function createApplication(dependencies: Record<string, any>) {
           pending: boolean;
           values: any;
           readAt: number;
+          lastEffort?: { process: string; label: string };
         }
       | undefined;
     function observeFocusedSettings(source: any, agent: any) {
@@ -765,7 +767,11 @@ function createApplication(dependencies: Record<string, any>) {
         !live?.rexSettings ||
         !(
           ['idle', 'done', 'error'].includes(agent.state) ||
-          (agent.app === 'codex' && agent.state === 'working')
+          (agent.app === 'claude-code' &&
+            agent.state === 'unknown' &&
+            !live.chatId) ||
+          (agent.state === 'working' &&
+            ['codex', 'claude-code'].includes(agent.app))
         )
       ) {
         settingsRead = undefined;
@@ -775,10 +781,10 @@ function createApplication(dependencies: Record<string, any>) {
         settingsRead?.source !== source ||
         !sameNavigationTarget(settingsRead?.target, agent) ||
         settingsRead?.target.cwd !== agent.cwd ||
-        ((agent.state === 'working' ||
-          settingsRead?.target.state === 'working') &&
-          (agent.state !== settingsRead?.target.state ||
-            agent.statusAt !== settingsRead?.target.statusAt))
+        settingsRead?.target.state !== agent.state ||
+        (agent.app === 'codex' &&
+          agent.state === 'working' &&
+          agent.statusAt !== settingsRead?.target.statusAt)
       )
         settingsRead = {
           source,
@@ -819,6 +825,25 @@ function createApplication(dependencies: Record<string, any>) {
               for (const field of ['model', 'effort', 'permissions', 'plan'])
                 values[field] = record.values[field];
             } else if (values.viewHash) record.readAt = clock();
+            if (agent.app === 'claude-code') {
+              if (
+                !values.process ||
+                values.process !== record.lastEffort?.process
+              )
+                record.lastEffort = undefined;
+              if (
+                values.process &&
+                values.viewHash &&
+                values.effort &&
+                values.effortHidden === false
+              )
+                record.lastEffort = {
+                  process: values.process,
+                  label: values.effort,
+                };
+              if (values.effortHidden && record.lastEffort)
+                values.effort = record.lastEffort.label + '?';
+            }
             record.values = values;
             current.rexSettings = values;
             render();
@@ -1035,6 +1060,12 @@ function createApplication(dependencies: Record<string, any>) {
         )
           assertVerifiedControl(bridge.delivery.backend, display);
         if (
+          a === 'interrupt' &&
+          display.target?.app === 'claude-code' &&
+          C.modeOf(display.target) === 'ready'
+        )
+          return;
+        if (
           display.target?.rexSettings &&
           scope === 'rex' &&
           (rexSettingsAction(a) ||
@@ -1044,7 +1075,8 @@ function createApplication(dependencies: Record<string, any>) {
           (display.target.app === 'codex' ||
             (display.target.app === 'claude-code' &&
               display.target.rexSettings.process &&
-              rexSettingsAction(a)))
+              (rexSettingsAction(a) ||
+                (a === 'interrupt' && !display.target.chatId))))
         ) {
           result = await performRexKeyboard(bridge, display);
         } else if (
@@ -1060,6 +1092,20 @@ function createApplication(dependencies: Record<string, any>) {
           result = await bridge.withContext(display, () => perform(a, display));
         } else result = await perform(a, display);
         guards.postflight(display);
+        if (
+          settingsRead &&
+          display.target?.app === 'claude-code' &&
+          sameNavigationTarget(settingsRead.target, display.target) &&
+          settingsRead.values.process &&
+          settingsRead.values.process === display.target.rexSettings?.process
+        ) {
+          if (a === 'effort' && result?.label)
+            settingsRead.lastEffort = {
+              process: settingsRead.values.process,
+              label: result.label,
+            };
+          if (a === 'model') settingsRead.lastEffort = undefined;
+        }
         completed = true;
         k.feedback = null;
         if (result)

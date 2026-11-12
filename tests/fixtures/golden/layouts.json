@@ -149,7 +149,7 @@
     "model",
     "effort",
     "claudeInfo",
-    "claudeModeInfo",
+    "none",
     "interrupt"
   ],
   "rex/claude-code/working/Home": [
@@ -251,7 +251,7 @@
     "model",
     "effort",
     "claudeInfo",
-    "claudeModeInfo",
+    "none",
     "interrupt"
   ],
   "rex/claude-code/error/Home": [
@@ -268,7 +268,7 @@
     "model",
     "effort",
     "claudeInfo",
-    "claudeModeInfo",
+    "none",
     "interrupt"
   ],
   "herdr/codex/ready/Home": [
@@ -421,7 +421,7 @@
     "model",
     "effort",
     "claudeInfo",
-    "claudeModeInfo",
+    "none",
     "interrupt"
   ],
   "herdr/claude-code/working/Home": [
@@ -523,7 +523,7 @@
     "model",
     "effort",
     "claudeInfo",
-    "claudeModeInfo",
+    "none",
     "interrupt"
   ],
   "herdr/claude-code/error/Home": [
@@ -540,7 +540,7 @@
     "model",
     "effort",
     "claudeInfo",
-    "claudeModeInfo",
+    "none",
     "interrupt"
   ]
 }

@@ -1,6 +1,7 @@
 import type { KeyboardView as View } from '../../domain/backend';
 import type { AgentSnapshot } from '../../domain/types';
-import { claudeFooter } from './keyboard-mode';
+import { cycleEffortSlider, applyHighlightedEffort } from './effort-slider';
+import { claudeFooter, nativeEffort } from './keyboard-mode';
 const { picker, configurationView, levels } = require('./cycle');
 const { composer } = require('./controls');
 
@@ -15,7 +16,8 @@ function currentRow(menu: ReturnType<typeof picker>) {
 export function readClaudeSettings(view: View) {
   // A completed picker heading may remain in terminal history above the prompt.
   try {
-    return claudeFooter(view);
+    const settings = claudeFooter(view);
+    return { ...settings, effortHidden: !settings.effort };
   } catch {
     /* Inspect the bottommost picker. */
   }
@@ -27,7 +29,7 @@ export function readClaudeSettings(view: View) {
   };
 }
 
-function ready(view: View, target: AgentSnapshot) {
+export function requireClaudeReady(view: View, target: AgentSnapshot) {
   composer(view.text, view.cursor, target, { allowEmpty: true });
   configurationView(view, { requireEmpty: true });
 }
@@ -71,15 +73,25 @@ function clippedModelPicker(before: View, after: View) {
 
 export async function cycleClaudeKeyboard(
   initial: View,
-  key: (view: View, key: string) => Promise<View>,
+  key: (
+    view: View,
+    key: string,
+    paste?: boolean,
+    surface?: 'open-slider' | 'slider',
+  ) => Promise<View>,
   action: string,
   target: AgentSnapshot,
 ) {
   let view = initial;
+  if (action === 'effort' && target.rexSettings?.effortSlider) {
+    const { label, after } = await applyHighlightedEffort(initial, key);
+    requireClaudeReady(after, target);
+    return { label };
+  }
   if (action === 'permissions' || action === 'plan') {
-    ready(view, target);
+    requireClaudeReady(view, target);
     const after = await key(view, 'shift+tab');
-    ready(after, target);
+    requireClaudeReady(after, target);
     return { label: claudeFooter(after).permissions || '' };
   }
   if (action !== 'model' && action !== 'effort') throw Error('Unknown setting');
@@ -87,13 +99,23 @@ export async function cycleClaudeKeyboard(
   try {
     menu = picker(view, true);
   } catch {
-    ready(view, target);
+    requireClaudeReady(view, target);
+    const currentEffort = nativeEffort(view);
+    if (action === 'effort' && (currentEffort || !claudeFooter(view).effort)) {
+      const { label, after } = await cycleEffortSlider(
+        view,
+        currentEffort,
+        key,
+      );
+      requireClaudeReady(after, target);
+      return { label };
+    }
     view = await key(view, 'alt+p');
     try {
       menu = picker(view, true);
     } catch (error) {
       if (!clippedModelPicker(initial, view)) throw error;
-      ready(await key(view, 'escape'), target);
+      requireClaudeReady(await key(view, 'escape'), target);
       throw Object.assign(
         Error(
           'Claude’s model list was clipped. Enlarge the Rex pane and press the key again.',
@@ -157,6 +179,6 @@ export async function cycleClaudeKeyboard(
     if (!levels.includes(menu.effort)) throw Error('Check effort');
   }
   const label = action === 'model' ? menu.selected.name : menu.effort;
-  ready(await key(view, 's'), target);
+  requireClaudeReady(await key(view, 's'), target);
   return { label };
 }

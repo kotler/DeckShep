@@ -38,6 +38,7 @@ export interface PaneView {
   cursor?: { row: number; column: number } | null;
 }
 export interface KeyboardView extends PaneView {
+  dimmedCursorSuffix?: true;
   hash: string;
   cursor: { row: number; column: number } | null;
 }
