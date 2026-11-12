@@ -13,6 +13,33 @@ const UUID: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' =
   '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const pause: (ms: number) => Promise<any> = (ms: number) =>
   new Promise((resolve: (value: any) => void) => setTimeout(resolve, ms));
+/** Every app-server method this client may send, with the parameters it
+ * uses, and the one notification it reads. `npm run compat:codex` checks this
+ * against the schema of the installed CLI, because the protocol is
+ * experimental and changes between releases. */
+const DAEMON_CONTRACT: Readonly<Record<string, readonly string[]>> =
+  Object.freeze({
+    initialize: ['clientInfo', 'capabilities'],
+    'thread/loaded/list': ['limit', 'cursor'],
+    'thread/read': ['threadId', 'includeTurns'],
+    'thread/turns/list': ['threadId', 'limit', 'sortDirection', 'itemsView'],
+    'thread/resume': ['threadId', 'excludeTurns'],
+    'model/list': ['limit', 'includeHidden', 'cursor'],
+    'thread/settings/update': [
+      'threadId',
+      'model',
+      'effort',
+      'approvalsReviewer',
+    ],
+    'thread/backgroundTerminals/list': ['threadId', 'limit', 'cursor'],
+    'thread/backgroundTerminals/terminate': ['threadId', 'processId'],
+  });
+const DAEMON_METHODS: readonly string[] = Object.freeze(
+  Object.keys(DAEMON_CONTRACT),
+);
+const DAEMON_NOTIFICATIONS: readonly string[] = Object.freeze([
+  'thread/settings/updated',
+]);
 /** The daemon must report a release version (x.y.z) in its user agent. Any
  * release is accepted; no Codex version is pinned in source (owner decision,
  * 2026-11-10). Each control still checks its own native contract per press. */
@@ -378,19 +405,7 @@ class DaemonRpc {
     this.ws.send(JSON.stringify({ method: 'initialized', params: {} }));
   }
   request(method: string, params: any, beforeWrite?: () => void) {
-    if (
-      ![
-        'initialize',
-        'thread/loaded/list',
-        'thread/read',
-        'thread/turns/list',
-        'thread/resume',
-        'model/list',
-        'thread/settings/update',
-        'thread/backgroundTerminals/list',
-        'thread/backgroundTerminals/terminate',
-      ].includes(method)
-    )
+    if (!DAEMON_METHODS.includes(method))
       return Promise.reject(Error('Unsupported daemon method'));
     if (method.startsWith('thread/backgroundTerminals/')) {
       const keys: string = Object.keys(params || {})
@@ -933,6 +948,9 @@ class DaemonControls {
 module.exports = {
   DaemonControls,
   DaemonRpc,
+  DAEMON_CONTRACT,
+  DAEMON_METHODS,
+  DAEMON_NOTIFICATIONS,
   socketFor,
   knownServerVersion,
   socketFromListing,

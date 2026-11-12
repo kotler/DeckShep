@@ -45,11 +45,15 @@ export interface AgentSnapshot extends TargetRef {
     effort?: string;
     permissions?: string;
     plan?: string;
+    /** Display only: why the passive read verified nothing. */
+    why?: import('./blockers').ControlBlocker;
   };
   kind?: 'question' | 'permission' | 'auth' | 'form' | null;
   statusAt?: string;
   composerSupported?: boolean;
   nativeVerified?: boolean;
+  /** Claude Code release number read from the native install path. */
+  cliVersion?: string;
   nativeError?: string;
   /** Rex Codex: the pane's own footer shows no session ID (read-only check). */
   footerMissing?: boolean;

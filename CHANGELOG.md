@@ -33,8 +33,22 @@ preview artifacts use `-beta.N` release tags.
 - Pass host events and frames between the Stream Deck adapter and the controller
   as typed objects, without a JSON and schema round trip per frame.
 
+- Name the reason on the status key when the selected agent's controls are
+  unavailable, instead of a bare "Check Rex": for example "Enable checks",
+  "Custom keys", "Not at prompt" or "No status yet". The setup checklist adds
+  one line explaining it.
+- Report the Claude Code release in the setup checklist and warn when it is
+  different from the tested releases (2.1.319 and 2.1.322). Nothing is disabled; no
+  version is pinned.
+- The Claude information key now reads "Enable keys" when Claude controls are
+  off; "Enable controls" did not fit and was cut.
+
 ### Fixed
 
+- Keep the agent row for one cycle when a single Rex call times out, instead of
+  flashing "Rex offline". A second timeout in a row, or any refused or
+  malformed reply, still shows offline at once, and every press still makes its
+  own fresh reads.
 - Restore the clipboard when the optional visible-pane check times out after Rex
   has already copied a pane ID. Another app's clipboard change is still never
   overwritten.

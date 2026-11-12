@@ -66,6 +66,7 @@ const { CodexProvider } = require('../agents/codex/provider.ts');
 const { ClaudeProvider } = require('../agents/claude/provider.ts');
 import { keyFace } from './key-face';
 import { holdActionOf } from '../domain/layout';
+import { controlBlocker } from '../domain/blockers';
 import { createPressGestures } from './press-gesture';
 import type { HostFrame } from './host-frame';
 import type { FaceAgent, FaceMode } from './key-face';
@@ -895,6 +896,7 @@ function createApplication(dependencies: Record<string, any>) {
         if (bridge.claude) bridge.claude.picker = null;
       }
     }
+    let discoveryMisses = 0;
     async function refresh(forceMetadata: any = false) {
       if (busy || actionBusy || setupBusy) return;
       busy = true;
@@ -905,12 +907,26 @@ function createApplication(dependencies: Record<string, any>) {
       try {
         loadConfig();
         await bridge.discover({ allowMissingForeground: scope === 'rex' });
+        discoveryMisses = 0;
         await followRexSelection();
         offline =
           scope === 'herdr-app' &&
           !bridge.delivery.backend.capabilities.has('discover');
         void refreshMetadata(forceMetadata);
-      } catch {
+      } catch (error: unknown) {
+        // One timed-out Rex read must not blank the agent row. Keep the last
+        // discovery for a single cycle. Nothing is trusted from it: every
+        // press still makes its own fresh reads and is refused if Rex does
+        // not answer. A second miss in a row, or any other failure (refused,
+        // missing, malformed), shows offline at once.
+        if (
+          scope === 'rex' &&
+          !offline &&
+          (error as { code?: unknown })?.code === 'REX_TIMEOUT' &&
+          discoveryMisses++ === 0 &&
+          bridge.agents?.length
+        )
+          return;
         offline = true;
         bridge.agents = [];
         if (scope === 'rex') {
@@ -1260,6 +1276,13 @@ function createApplication(dependencies: Record<string, any>) {
       if (e.payload?.kind === 'doctor') {
         const checks = await (dependencies.diagnostics || diagnostics)({
           selected: selected(),
+          blocker:
+            scope === 'rex'
+              ? controlBlocker(selected(), {
+                  visibleChecks: config.allowClipboardFocus === true,
+                  claudeEnabled: config.claude?.enabled === true,
+                })
+              : null,
           online: !offline,
           model: e.payload.model,
           herdr: scope === 'herdr',

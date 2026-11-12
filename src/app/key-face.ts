@@ -2,6 +2,7 @@ import type { AgentSnapshot, Config } from '../domain/types';
 import type { AgentFaceState, KeySpec } from '../render/spec';
 import type { AttentionKind } from '../domain/navigation';
 import { rexSettingsAction } from './rex-keyboard-settings';
+import { BLOCKER_TEXT, controlBlocker } from '../domain/blockers';
 
 const {
   agentLines,
@@ -37,6 +38,7 @@ export interface FaceConfig {
   animation: Config['animation'];
   appearance?: { style?: string };
   claude?: { enabled?: boolean };
+  allowClipboardFocus?: boolean;
 }
 
 /** A transient overlay set by a press: `feedback` replaces, `notice` confirms. */
@@ -263,12 +265,27 @@ function agentFace(input: KeyFaceInput): {
   };
 }
 
-function statusLines({ target, bridge, backendName }: KeyFaceInput): string[] {
+function statusLines({
+  target,
+  bridge,
+  backendName,
+  config,
+  scope,
+}: KeyFaceInput): string[] {
   if (!target) return [bridge.selectionNotice ? 'Reselect' : 'Select', 'agent'];
   if (target.state === 'blocked') {
     if (target.kind === 'form') return ['Answer in', backendName];
     if (target.kind === 'auth') return ['Open browser'];
   }
+  // Name the one thing to fix instead of a bare "Check Rex".
+  const blocker =
+    scope === 'rex'
+      ? controlBlocker(target as AgentSnapshot, {
+          visibleChecks: config.allowClipboardFocus === true,
+          claudeEnabled: config.claude?.enabled === true,
+        })
+      : null;
+  if (blocker) return ['Check ' + backendName, BLOCKER_TEXT[blocker].caption];
   const detail =
     target.app === 'claude-code'
       ? target.claudeError ||
@@ -345,7 +362,7 @@ function controlLines(input: KeyFaceInput): Record<string, string[]> {
       config.claude?.enabled
         ? 'Preview'
         : input.scope === 'rex'
-          ? 'Enable controls'
+          ? 'Enable keys'
           : 'Set up hooks',
     ],
     claudeModeInfo: modeLines(bridge),

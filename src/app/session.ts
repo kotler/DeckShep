@@ -25,7 +25,16 @@ function identify(p: any) {
     (/\/claude\/versions\/\d+\.\d+\.\d+$/.test(f.path || '') &&
       (/^claude(?:-|$)/.test(f.name) || f.name === n))
   )
-    return { app: 'claude-code', pid: f.pid, name: f.name, cwd: f.cwd };
+    return {
+      app: 'claude-code',
+      pid: f.pid,
+      name: f.name,
+      cwd: f.cwd,
+      // The release number only; the install path is never kept.
+      ...(/\/claude\/versions\/(\d+\.\d+\.\d+)$/.test(f.path || '')
+        ? { cliVersion: /(\d+\.\d+\.\d+)$/.exec(f.path)![1] }
+        : {}),
+    };
   if (
     ['node', 'bun'].includes(n) &&
     /\/(?:@anthropic-ai\/claude-code\/cli\.js|@openai\/codex\/bin\/codex\.js)$/.test(

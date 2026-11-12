@@ -10,6 +10,15 @@ This is a manual plan for the owner's own deck and sessions. It needs real Rex,
 Codex and Claude sessions, so an agent must not run it without explicit current
 authorization (see `AGENTS.md`). Use disposable chats in a scratch repository.
 
+Row 3 of this plan also exists in executable form with synthetic agents:
+`tests/integration/key-state-matrix.test.js` checks what each provider, state
+and setup shows and maps to, and which presses send nothing;
+`tests/integration/guard-random-walk.test.js` checks the same guards over
+seeded random orders of events. Those pass on fixtures and say nothing about
+hardware. When the status key says `Check Rex`, its second line names the
+reason (`Enable Claude`, `Enable checks`, `Custom keys`, `CLI unverified`,
+`Pane unreadable`, `Not at prompt`, `No status yet`).
+
 For every key and state it gives three things:
 
 - **Shows**: what the key must display.
@@ -155,7 +164,7 @@ UserPromptSubmit event for this session.
 | D1 | Just opened, no prompt sent yet (any variant) | See I1: record what you get | | | | | | |
 | D2 | Idle, V0 or V1 (controls off) | `Check Rex`, `Enable Claude` | Blank | Blank | Blank | Blank | Any live control; any key sent | |
 | D3 | Idle, V2, pane focused | `Model` + value | `Effort` + value | `Permissions` + value | Blank | `Interrupt`, `not running`, grey | `Check Rex`; `Enable Claude` | |
-| D4 | Idle, V2, custom `keybindings.json` present | `Check Rex` (second line may be empty) | Blank | Blank | Blank | Blank | Any live control | |
+| D4 | Idle, V2, custom `keybindings.json` present | `Check Rex`, `Custom keys` | Blank | Blank | Blank | Blank | Any live control | |
 | D5 | Working, V2 without hooks, busy CLI registration verified | Blank | Blank | Blank | Blank | `Interrupt`, `running`, red | Repeated Escape or delivery after focus or busy timestamp changes | |
 | D6 | Working, V3 | `Steer`, `typed text` | `Queue`, `typed text` | `Claude Code`, `Preview` | Blank | `Interrupt`, `running`, red | Model/Effort | |
 | D7 | Question, single choice, V3 | `Up` | `Down` | `Confirm`, `Enter` | `Esc`, `question` | `Interrupt`, grey | Toggle | |

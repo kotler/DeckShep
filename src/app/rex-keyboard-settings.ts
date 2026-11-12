@@ -32,9 +32,15 @@ function processKey(
 /** Display-only observation; never turn a pane PID into a Codex thread ID. */
 export async function observeSettings(b: any, agent: AgentSnapshot) {
   const state: NonNullable<AgentSnapshot['rexSettings']> = {};
+  // Which step was running when the read stopped; shown on the key as the
+  // reason. It never grants or refuses input.
+  let step: 'process' | 'view' | 'prompt' | 'parse' = 'process';
   try {
     if (agent.app === 'codex') {
-      if (!b.config.controlVerified?.codex) return state;
+      if (!b.config.controlVerified?.codex) {
+        state.why = 'codex-unverified';
+        return state;
+      }
       state.process = processKey(
         await b.inspectKeyboardProcess(agent.pid),
         agent.pid,
@@ -46,9 +52,15 @@ export async function observeSettings(b: any, agent: AgentSnapshot) {
       // Legacy hook-bound settings can still display their verified footer.
       try {
         state.process = await b.inspectClaudeKeyboard(agent);
-      } catch {}
+      } catch (error) {
+        state.why =
+          (error as Error)?.message === 'Custom Claude keys'
+            ? 'custom-keys'
+            : 'cli-unverified';
+      }
       if (agent.state === 'working') return state;
     }
+    step = 'view';
     const view = await b.readKeyboardView(
       agent,
       agent.app === 'claude-code' ? effortFrameIdentity : undefined,
@@ -75,9 +87,11 @@ export async function observeSettings(b: any, agent: AgentSnapshot) {
       agent.state === 'unknown' &&
       state.process
     ) {
+      step = 'prompt';
       requireClaudeReady(view, agent);
       state.idleComposer = true;
     }
+    step = 'parse';
     state.viewHash = view.hash;
     Object.assign(
       state,
@@ -89,6 +103,8 @@ export async function observeSettings(b: any, agent: AgentSnapshot) {
     );
   } catch {
     /* A hidden field or unfamiliar view is unknown. */
+    if (step === 'view') state.why ??= 'view-unreadable';
+    if (step === 'prompt') state.why ??= 'not-at-prompt';
   }
   return state;
 }

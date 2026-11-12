@@ -6,6 +6,11 @@ import { parse } from '../schemas';
 import { exec } from '../platform/exec';
 import { discoverRex, pluginDirectory } from '../platform/paths';
 import { readRexApi } from '../terminals/rex/diagnostics';
+import { blockerHelp, type ControlBlocker } from '../domain/blockers';
+import {
+  claudeVersionNote,
+  claudeVersionStatus,
+} from '../agents/claude/tested-range';
 const configure = require('../agents/claude/configure');
 export interface Check {
   id: string;
@@ -365,6 +370,7 @@ export async function diagnostics({
   rex = discoverRex,
   version = rexVersion,
   api = readRexApi,
+  blocker = null,
   rexPath,
   paths = setupPaths(),
   online = false,
@@ -381,6 +387,8 @@ export async function diagnostics({
   online?: boolean;
   /** Herdr is outside the Rex-only release; only its own profile probes it. */
   herdr?: boolean;
+  /** Why the selected agent's row 3 keys are unavailable, when known. */
+  blocker?: ControlBlocker | null;
 } = {}): Promise<Check[]> {
   const checks: Check[] = [
     {
@@ -457,6 +465,18 @@ export async function diagnostics({
         ? 'Claude identity and native version verified'
         : 'Native Claude Code required; preview the optional hooks below',
   });
+  if (blocker)
+    checks.push({
+      id: 'controls',
+      ok: false,
+      reason: blockerHelp(blocker, herdr ? 'Herdr' : 'Rex'),
+    });
+  if (selected?.app === 'claude-code' && selected.cliVersion !== undefined)
+    checks.push({
+      id: 'claude-version',
+      ok: claudeVersionStatus(selected.cliVersion) === 'tested',
+      reason: claudeVersionNote(selected.cliVersion),
+    });
   let hooks = false,
     wrapper = false;
   try {

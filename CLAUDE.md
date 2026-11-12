@@ -26,6 +26,7 @@ npm run lint && npm run format:check       # golden JSON must stay byte-stable
 npm run deps                               # dependency-cruiser layer rules
 npm run knip                               # unused files/deps; confirm with rg before deleting
 npm run version:check && npm run compatibility:check
+npm run compat:codex                       # installed Codex still offers every app-server method in use
 npm run build                              # or: npm run build -- --universal (never installs/restarts)
 npm run test:bundled                       # tests against the built bundle
 npm run package                            # validate/pack/audit locally; never uploads

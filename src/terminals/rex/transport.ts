@@ -18,6 +18,8 @@ const defaultPorts: TransportPorts = {
   now: Date.now,
   directory: pluginDirectory,
 };
+/** Marks a Rex CLI call that timed out, as opposed to one that was refused. */
+export const SLOW = Object.freeze({ code: 'REX_TIMEOUT' });
 export class RexTransport {
   #cached?: { key: string; until: number; value: Promise<RexInstallation> };
   constructor(
@@ -50,17 +52,23 @@ export class RexTransport {
   ): Promise<unknown> {
     const { binary } = await this.installation();
     beforeIO();
+    let slow = false;
     const output = (
-      await this.ports.execute(
-        binary,
-        ['--autostart=false', '--timeout', '2s', ...args],
-        {
+      await this.ports
+        .execute(binary, ['--autostart=false', '--timeout', '2s', ...args], {
           timeout: 3500,
           maxBuffer: 2e6,
           input,
           message: 'Rex command failed',
-        },
-      )
+          onFailure: (failure) => {
+            slow = failure.kind === 'timeout';
+          },
+        })
+        .catch((error: unknown) => {
+          // A timeout is the one failure that can be momentary. Mark it so the
+          // display may keep its last discovery for a cycle; input never does.
+          throw slow ? Object.assign(Error('Rex command failed'), SLOW) : error;
+        })
     ).trim();
     if (!output) return null;
     // Non-JSON CLI acknowledgements are plain text; malformed JSON is refused.
