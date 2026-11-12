@@ -340,13 +340,15 @@ test('both Ready keys report the native manual mode badge after exactly one pres
   }
 });
 
-test('without hooks or a status line, Interrupt needs the same working pane and current native hint at delivery', async () => {
+test('without hooks, Interrupt needs the same working pane and current native hint at delivery', async () => {
   const border = '─'.repeat(32);
   const hint =
     '⏵⏵ accept edits on (shift+tab to cycle) · esc to interrupt · ← for agents';
   const working = [border, '❯ ', border, hint].join('\n');
   for (const race of [
     'none',
+    'custom status',
+    'status only',
     'hint',
     'history',
     'draft',
@@ -381,6 +383,12 @@ test('without hooks or a status line, Interrupt needs the same working pane and 
         if (race === 'history')
           return hint + '\n' + working.replace(hint, '? for shortcuts');
         if (race === 'draft') return working.replace('❯ ', '❯ draft');
+        if (race === 'custom status' || race === 'status only')
+          return working.replace(
+            hint,
+            'Haiku 4.5 | project | branch | context 12%\n' +
+              (race === 'custom status' ? hint : '? for shortcuts'),
+          );
         return reads === 2 && race === 'hint'
           ? working.replace(hint, '? for shortcuts')
           : working;
@@ -393,13 +401,13 @@ test('without hooks or a status line, Interrupt needs the same working pane and 
     const target = { ...source, rexSettings: await observeSettings(b, source) };
     const press = () =>
       performRexKeyboard(b, { scope: 'rex', action: 'interrupt', target });
-    if (race === 'none') await press();
+    if (race === 'none' || race === 'custom status') await press();
     else await assert.rejects(press);
     if (race === 'none' || race === 'uncertain')
       await assert.rejects(press, /already requested/);
     assert.deepEqual(
       writes,
-      ['none', 'uncertain'].includes(race) ? ['escape'] : [],
+      ['none', 'custom status', 'uncertain'].includes(race) ? ['escape'] : [],
       race,
     );
   }
@@ -438,6 +446,21 @@ test('an empty composer with the current Claude spinner can interrupt when short
     [...lines, border, '❯ ', border, footer].join('\n');
   const spinning = '✻ Thinking… (3s · ↓ 40 tokens)';
   assert(hasClaudeInterruptCue(pane([spinning])));
+  const custom = 'Haiku 4.5 | esc to interrupt | branch | context 12%';
+  const generating =
+    'Haiku 4.5 | project | branch\n⏵⏵ accept edits on (shift+tab to cycle) · ← for agents';
+  assert(
+    hasClaudeInterruptCue(pane([spinning, '● high · /effort'], generating)),
+  );
+  assert(hasClaudeInterruptCue(pane([spinning], generating)));
+  assert(!hasClaudeInterruptCue(pane([], generating)));
+  assert(
+    hasClaudeInterruptCue(pane([spinning], custom + '\n⏵⏵ accept edits on')),
+  );
+  assert(!hasClaudeInterruptCue(pane([], custom)));
+  assert(
+    !hasClaudeInterruptCue(pane([spinning], custom + '\nEnter to confirm')),
+  );
   assert(hasClaudeInterruptCue(pane(['✳ Working…', ''], '? for shortcuts')));
   assert(!hasClaudeInterruptCue(pane([spinning, 'A response has finished.'])));
   assert(

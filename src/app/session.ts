@@ -217,10 +217,20 @@ class Bridge {
   method(t: any, m: any) {
     return this.run(['block', 'call', '-s', t.session, '-b', t.block, m]);
   }
-  async agent(t: any, terminalOnly = false) {
+  async agent(t: any, terminalOnly = false, allowMissingForeground = false) {
     let p: any = await this.method(t, 'process');
-    if (!p || !Object.hasOwn(p, 'foreground'))
+    if (!p || !Object.hasOwn(p, 'foreground')) {
+      // A listed pane may have no process report yet. Display refresh can
+      // omit it; targeted operations and slot removal need complete proof.
+      if (
+        allowMissingForeground &&
+        p &&
+        typeof p === 'object' &&
+        !Array.isArray(p)
+      )
+        return null;
       throw Error('Incomplete terminal process metadata');
+    }
     const processIdentity = require('../platform/rex-process');
     if (processIdentity.candidate(p.foreground)) {
       const before: any = p.foreground;
@@ -265,7 +275,7 @@ class Bridge {
       ? this.claude.enrich(agent)
       : agent;
   }
-  async discover() {
+  async discover({ allowMissingForeground = false } = {}) {
     const client: any = await this.client(),
       listing: any = await this.run(['ls', '--json']);
     const agents: any[] = [],
@@ -309,7 +319,7 @@ class Bridge {
               window: w.window_id,
               block: b.block_id,
             };
-            const a: any = await this.agent(t, true);
+            const a: any = await this.agent(t, true, allowMissingForeground);
             if (a) {
               try {
                 const title = await this.method(t, 'title');

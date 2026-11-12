@@ -1,4 +1,9 @@
-/** Recognize the native working footer with no configured Claude status line. */
+const spinner =
+  /^[✢✳✶✻✽·]\s+([\p{L}][\p{L} '-]{0,48})…(?:\s+\([^()\n]{1,100}\))?$/u;
+const shortcut =
+  /^(?:[◐◑◒◓]\s+\S+\s*·\s*\/[\w-]+|●\s+(?:low|medium|high|xhigh|max)\s*·\s*\/effort)$/u;
+
+/** Recognize the native working cues around Claude's empty composer. */
 export function hasClaudeInterruptCue(text: string) {
   const lines = text.trimEnd().split('\n');
   const lower = lines.findLastIndex((line) =>
@@ -9,10 +14,19 @@ export function hasClaudeInterruptCue(text: string) {
     .findLastIndex((line) => /^[─━]{12,}\s*$/.test(line.trim()));
   if (upper < 0 || lower !== upper + 2 || !/^\s*❯\s*$/.test(lines[upper + 1]))
     return false;
-  const footer = lines
+  const footerRows = lines
     .slice(lower + 1)
-    .join(' ')
-    .trim();
+    .map((line) => line.trim())
+    .filter(Boolean);
+  // A model / project / branch / usage status line can sit between the
+  // composer and native shortcuts. Its content is never an interrupt cue.
+  if (
+    /^(?:Claude\s+)?(?:Haiku|Sonnet|Opus|Fable)\s+\d+(?:\.\d+)+\s*\|[^|\n]+\|[^|\n]+(?:\|[^|\n]*\d+%)?$/i.test(
+      footerRows[0] || '',
+    )
+  )
+    footerRows.shift();
+  const footer = footerRows.join(' ');
   const hints = footer.split(/\s*·\s*/).map((part) => part.trim());
   const badge =
     /^(?:⏵⏵|⏸|◯|○|●)\s*(?:accept edits|plan mode|bypass permissions|auto mode|manual mode|default mode)(?: on)?(?:\s*\(shift\+tab to cycle\))?$/i;
@@ -35,9 +49,29 @@ export function hasClaudeInterruptCue(text: string) {
     .filter(Boolean);
   let activity = above.pop() || '';
   // A compact native indicator and slash-command shortcut may share this area.
-  if (/^[◐◑◒◓]\s+\S+\s*·\s*\/[\w-]+$/u.test(activity))
-    activity = above.pop() || '';
-  return /^[✢✳✶✻✽·]\s+[\p{L}][\p{L} '-]{0,48}…(?:\s+\([^()\n]{1,100}\))?$/u.test(
-    activity,
+  if (shortcut.test(activity)) activity = above.pop() || '';
+  return spinner.test(activity);
+}
+
+/** Compare repaints only on the native activity row above an empty composer. */
+export function interruptFrameIdentity(vt: string, text: string) {
+  if (!hasClaudeInterruptCue(text)) return vt;
+  const rows = vt.split('\n');
+  const plain = rows.map((row) =>
+    row
+      .replace(/\x1b\[[\d;]*m/g, '')
+      .replace(/\x1b\[\d+C/g, ' ')
+      .trim(),
   );
+  const prompt = plain.findLastIndex((row) => /^❯\s*$/.test(row));
+  if (prompt < 2 || !/^[─━]{12,}$/.test(plain[prompt - 1])) return vt;
+  let i = prompt - 2;
+  while (i >= 0 && !plain[i]) i--;
+  if (shortcut.test(plain[i] || '')) {
+    i--;
+    while (i >= 0 && !plain[i]) i--;
+  }
+  const activity = spinner.exec(plain[i] || '');
+  if (activity) rows[i] = '✻ ' + activity[1] + '…';
+  return rows.join('\n');
 }

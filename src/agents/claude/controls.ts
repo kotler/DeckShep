@@ -357,7 +357,11 @@ class ClaudeControls {
     while (this.submissions.size > 256)
       this.submissions.delete(this.submissions.keys().next().value);
   }
-  async view(a: any, connection?: any) {
+  async view(
+    a: any,
+    connection?: any,
+    frameIdentity?: (vt: string, text: string) => string,
+  ) {
     if (this.viewReader) return this.viewReader(a);
     if (a.backend === 'herdr') {
       const read: (rpc: Record<string, any>) => Promise<
@@ -427,7 +431,9 @@ class ClaudeControls {
         this.b,
       ).screen(a),
       after: any = await this.b.run(args);
-    if (after?.id || hash(before.content) !== hash(after?.content || ''))
+    const digest = (vt: string) =>
+      hash(frameIdentity ? frameIdentity(vt, text) : vt);
+    if (after?.id || digest(before.content) !== digest(after?.content || ''))
       throw Error('Claude view changed');
     return {
       text,
@@ -900,11 +906,37 @@ class ClaudeControls {
   }
   private async interruptVisible(agent: any) {
     const rex = agent.backend !== 'herdr';
-    const { text } = await this.view(agent);
-    return (
-      /\besc to interrupt\b/i.test(text) ||
-      (rex && require('./interrupt-cue').hasClaudeInterruptCue(text))
-    );
+    const {
+      interruptFrameIdentity,
+      hasClaudeInterruptCue,
+    } = require('./interrupt-cue');
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const { text } = await this.view(
+          agent,
+          undefined,
+          rex ? interruptFrameIdentity : undefined,
+        );
+        if (attempt) return hasClaudeInterruptCue(text);
+        return (
+          /\besc to interrupt\b/i.test(text) ||
+          (rex && hasClaudeInterruptCue(text))
+        );
+      } catch (error) {
+        // Tool progress may refresh alongside the spinner. Retry only the read,
+        // after checking that this press still owns the same working turn.
+        if (
+          !rex ||
+          attempt >= 2 ||
+          (error as Error).message !== 'Claude view changed'
+        )
+          throw error;
+        const fresh = await this.b.checked(agent);
+        this.assert(agent, fresh);
+        if (fresh.state !== 'working' || fresh.runId !== agent.runId)
+          throw Error('Claude turn ended');
+      }
+    }
   }
   async interrupt() {
     const a: any = await this.selected();

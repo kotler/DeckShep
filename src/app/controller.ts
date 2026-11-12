@@ -904,7 +904,7 @@ function createApplication(dependencies: Record<string, any>) {
       });
       try {
         loadConfig();
-        await bridge.discover();
+        await bridge.discover({ allowMissingForeground: scope === 'rex' });
         await followRexSelection();
         offline =
           scope === 'herdr-app' &&

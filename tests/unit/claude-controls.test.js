@@ -159,6 +159,45 @@ test('a fresh hook-bound Claude turn interrupts once without a status line', asy
   );
 });
 
+test('hook-bound Interrupt tolerates spinner repaints but refuses a changed composer', async () => {
+  const f = fixture(true);
+  Object.assign(f.r, {
+    establishedBy: 'UserPromptSubmit',
+    establishedAt: 9999,
+    state: 'working',
+  });
+  f.state.workingHint = false;
+  delete f.controls.viewReader;
+  let reads = 0,
+    changeComposer = true;
+  const transport = f.b.run;
+  f.b.method = async () => ({ rows: 4 });
+  f.b.run = async (args, ...rest) => {
+    if (args[0] !== 'block') return transport(args, ...rest);
+    const vt = JSON.parse(args.at(-1)).format === 'vt';
+    const second = vt && ++reads % 2 === 0;
+    const spinner = second ? '✳ Thinking… (4s)' : '✻ Thinking… (3s)';
+    const text = f.text().replace('Claude session', spinner);
+    return {
+      content: vt
+        ? (second && changeComposer ? text.replace('❯ ', '❯ x') : text) +
+          '\x1b[3;3H'
+        : text,
+    };
+  };
+  await assert.rejects(
+    f.invoke('interrupt', () => f.b.interrupt()),
+    /view changed/,
+  );
+  assert.equal(f.calls.length, 0);
+  changeComposer = false;
+  await f.invoke('interrupt', () => f.b.interrupt());
+  assert.deepEqual(
+    f.calls.map((c) => c.args.at(-1)),
+    ['escape'],
+  );
+});
+
 test('claude controls', async () => {
   const approvalPanel =
     '────────────────────────\n Bash command\n /usr/bin/printf TEST_ONLY\n Do you want to proceed?\n ❯ 1. Yes\n   2. No\n Esc to cancel · Tab to amend';

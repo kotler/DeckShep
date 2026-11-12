@@ -105,6 +105,7 @@ test('lifecycle', async () => {
           {
             blocks: [
               { block_id: 'b', creator_name: 'com.superlogical.terminal' },
+              { block_id: 'live', creator_name: 'com.superlogical.terminal' },
             ],
           },
         ],
@@ -135,7 +136,19 @@ test('lifecycle', async () => {
             : broken === 'blocks'
               ? { windows: [{ window_id: 'w', layers: [{}] }] }
               : full;
-      if (args.at(-1) === 'process') return {};
+      if (args.at(-1) === 'process') {
+        if (args.includes('live'))
+          return {
+            foreground: {
+              pid: 42,
+              user_id: process.getuid(),
+              name: 'claude',
+              path: '/fixture/claude',
+              cwd: '/project',
+            },
+          };
+        return {};
+      }
       throw Error('Unexpected call');
     });
     b.slots = [{ session: 's', block: 'existing' }];
@@ -143,6 +156,21 @@ test('lifecycle', async () => {
     await assert.rejects(() => b.collapse());
     assert.deepEqual(b.slots, [{ session: 's', block: 'existing' }]);
     assert.equal(b.draft, draft);
+    if (broken === 'process') {
+      const agents = await b.discover({ allowMissingForeground: true });
+      assert.deepEqual(
+        agents.map((a) => a.block),
+        ['live'],
+      );
+      assert.deepEqual(
+        b.navigationAgents.map((a) => a.block),
+        ['live'],
+      );
+      await assert.rejects(
+        () => b.agent({ session: 's', block: 'b' }, true),
+        /Incomplete terminal process/,
+      );
+    }
   }
   console.log(
     'PASS thirteen-agent banks, closure gaps, stale slot presses, Collapse/clamping, replacement identity, empty bank and partial-discovery preservation',
