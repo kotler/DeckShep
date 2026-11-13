@@ -134,7 +134,11 @@ test('Codex settings use keyboard macros in the selected pane without thread met
   page,
 }) => {
   await selected(page, 'keyboard-codex');
-  expect(await labels(page, 2, 2)).toEqual(['Permissions', 'Press', 'to cycle']);
+  expect(await labels(page, 2, 2)).toEqual([
+    'Permissions',
+    'Press',
+    'to cycle',
+  ]);
   expect(await labels(page, 2, 3)).toEqual(['Mode', '']);
   expect(await labels(page, 2, 0)).toEqual(['Model', 'GPT-6-Sol']);
   await command(page, 'press', 2, 1);
