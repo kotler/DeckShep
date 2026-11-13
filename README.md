@@ -110,4 +110,6 @@ The beta has been exercised against live CLIs in Rex and on the MK.2. Physical c
 
 ## License and attribution
 
+The icons on the top-row agent keys come from LobeHub’s MIT-licensed Lobe Icons collection. Each icon identifies which agent is running in the corresponding Rex pane: Codex CLI or Claude Code. The Codex and Claude marks belong to OpenAI and Anthropic, respectively. [Lobe Icons](https://github.com/lobehub/lobe-icons)
+
 DeckShep is licensed under Apache-2.0. The DeckShep name and branding are reserved. DeckShep is independent of OpenAI, Anthropic, Elgato, Rex, and Herdr. [License](LICENSE) · [Notice](NOTICE) · [Trademarks](TRADEMARKS.md) · [Third-party notices](THIRD-PARTY-NOTICES.md)
