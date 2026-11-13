@@ -1,0 +1,29 @@
+# Herdr desktop support on the Rex key map
+
+Research notes for the November 12, 2026 brainstorm. The target is a user who runs local Codex CLI and Claude Code sessions in Herdr App and already knows the 15-key Rex layout. Rex is the only backend in the public package. The milestones below are proposals for the experimental profile.
+
+## What the deck can offer
+
+| Rex experience | Evidence for Herdr App | Proposed next step |
+| --- | --- | --- |
+| Five agent tiles with names and state | The App view already renders five slots, recognizes Codex and Claude, and labels working, waiting, error and done states. It also displays ordinary terminals. | Populate the agent row from local panes with an identified provider. Preserve slots as panes come and go. An unknown status can display as unknown. |
+| Tap a tile or Next to visit an agent | The owner reported both worked on a physical deck against signed App 0.1.14. Revoking focus consent stopped the request. The deck tracks its own selection and the App's reported selection separately. | Reuse the guarded request for the exact pane shown at key-down. Show an acknowledgement as “Focus requested.” |
+| Page, Collapse and Attention | The App has local banking and gap removal. Its default layout puts those keys in different positions from Rex. The App mapping has no Attention action. | Match the Rex row positions and visibility rules. Rank another waiting, errored or done agent from fresh App state and use the existing selection path. Verify the target still qualifies at press time. Backward holds need a separate gesture change in App scope. |
+| Ready Codex settings | Experimental code can change Model, Effort and Permissions through the Codex daemon. It checks the selected pane, ready state, process and chat before writing. The private focus walkthrough exercised none of these writes. | First establish that the App pane belongs to the configured core. Then evaluate these three settings on an isolated pair with two Codex sessions, including sessions in the same directory. Investigate Mode against its own provider operation. |
+| Interrupt a turn or Stop a background task | Core can interrupt a terminal. Rex's buttons refer to a particular provider turn or a particular chat's background work. | Investigate provider-addressed operations once pane-to-chat identity is established. Check that a turn ending or a replacement turn beginning invalidates a pending press. |
+| Steer and Queue | Rex acts on text already in the agent's composer. Core's send operation submits supplied text. The reviewed App integration has no verified composer cursor. | Require a fresh composer read, cursor and turn identity, plus the distinct delivery semantics of each action. |
+| Claude settings, question and approval keys | Herdr can report that an agent is blocked. That is enough to navigate to it. A permission prompt, a question and a replacement dialog can all have that same state. | Reuse Claude's opt-in provider checks. For keyboard actions, establish who owns the keyboard and compare the current dialog and selection with those rendered for the press. Evaluate each Codex question or approval action under its own provider checks as well. |
+
+The existing behavior is documented in the [Rex key map](../../README.md#using-the-deck), the [Herdr App view](../../src/app/herdr-app-view.ts), its [controller](../../src/app/herdr-app-controller.ts), the [Codex settings implementation](../../src/app/herdr-app-codex.ts) and the [signed build walkthrough](../validation/2026-11-08-herdr-app-release-calibration.md).
+
+## What upstream exposes
+
+The App serves a control socket for a window under its App home. Its status reply includes the current space, tab, selected pane, floats and overlays. Its listing describes the layout. These fields answer which pane the App shows. A modal can own the keyboard while that pane remains selected. The upstream branch inspected declares App version 0.1.15. The physical walkthrough recorded by DeckShep applies to the reviewed signed 0.1.14 build. [App control socket](https://raw.githubusercontent.com/herdrdev/herdr-app/master/src/control.rs) · [Window status implementation](https://raw.githubusercontent.com/herdrdev/herdr-app/master/src/window.rs) · [Upstream version](https://raw.githubusercontent.com/herdrdev/herdr-app/master/Cargo.toml)
+
+Herdr Core owns terminal records and exposes read, send, keys and interrupt operations. A local address such as `t7` is scoped to a core. If the App shows `t7` from one core and DeckShep reads `t7` from another, DeckShep could verify a real Codex chat and still change the wrong session. Matching names, working directories and ready states cannot resolve that ambiguity. The next technical investigation is whether a supported App interface can identify its active core connection and invalidate that identity on reconnect. [Core API schema](https://raw.githubusercontent.com/herdrdev/herdr-core/master/schema/hc.openrpc.json) · [DeckShep's version-specific source review](../adr/0007-herdr-app-0.1.14-source-review.md)
+
+## First milestone
+
+With one waiting Claude pane and one working Codex pane, the user can see both agents on row one, press Attention and see Herdr select the waiting pane. Page and Collapse appear only when useful. This workflow uses local App observations and a separately consented focus request. Provider hooks and daemon access are unnecessary for it.
+
+For a later settings milestone, deliberately select a different core containing the same terminal address. The press must refuse before any daemon write. For a later approval milestone, replace the dialog or open an overlay between rendering and pressing Confirm. The press must refuse before terminal delivery. These are proposed acceptance checks. This research used repository and upstream sources and historical validation records.
