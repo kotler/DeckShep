@@ -4,7 +4,7 @@ DeckShep puts the Codex CLI and Claude Code sessions you already run in Rex on y
 
 ![DeckShep’s virtual Rex profile with two Codex sessions, a white dot on the selected agent, and ready-state controls along the bottom row](tests/e2e/__screenshots__/idle-darwin.png)
 
-**Beta scope.** Rex on macOS is the only backend tested with either CLI and the only profile included in the beta package. Claude Code controls are an opt-in preview. Herdr TUI and Herdr App are both works in progress. Public beta distribution is pending.
+**Beta scope.** Rex on macOS is the only backend tested with either CLI and the only profile included in the beta package. Herdr TUI and Herdr App are both works in progress. Public beta distribution is pending.
 
 ## Get started
 
