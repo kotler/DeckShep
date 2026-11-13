@@ -185,6 +185,24 @@ function dialog(view: string, type: any) {
     hash: hash(view),
   };
 }
+function workingComposerFrame(vt: string, text: string) {
+  const cursor = /\x1b\[(\d+);(\d+)H$/.exec(vt);
+  const row = Number(cursor?.[1]) - 1;
+  const lines = text.split('\n'),
+    rows = vt.split('\n');
+  if (
+    !cursor ||
+    /--\s*NORMAL\s*--/.test(text) ||
+    rows.length !== lines.length ||
+    !/^❯[ \u00a0]/.test(lines[row] || '') ||
+    !/^[─━]{12,}\s*$/.test(lines[row - 1] || '') ||
+    !/^[─━]{12,}\s*$/.test(lines[row + 1] || '')
+  )
+    return vt;
+  const border = rows[row - 1]?.replace(/\x1b\[[\d;]*m/g, '').trim();
+  if (!border || border !== lines[row - 1].trim()) return vt;
+  return rows.slice(row - 1).join('\n');
+}
 function composer(
   view: string,
   cursor: any,
@@ -783,7 +801,13 @@ class ClaudeControls {
   }
   async readComposer(a: any, options: Record<string, any> | undefined = {}) {
     if (a.backend === 'herdr') throw Error('Use the Herdr keyboard');
-    const view: any = await this.view(a);
+    // While output streams, compare the complete bordered input and footer.
+    // The working-turn and visible-pane checks bracket each composer read.
+    const view: any = await this.view(
+      a,
+      undefined,
+      a.state === 'working' ? workingComposerFrame : undefined,
+    );
     return composer(view.text, view.cursor, a, options);
   }
   async key(a: any, ...keys: any[]) {

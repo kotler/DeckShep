@@ -1,5 +1,7 @@
 # Refactor implementation status
 
+> Historical checkpoint for the foundation refactor. Current release scope, identity and outstanding verification are tracked in the [Rex beta plan](REX-BETA-PLAN.md).
+
 Source baseline: plugin 1.3.4 / `v1.3.4-pre-refactor`. Work remains on
 `refactor/v2-foundation`; no main merge, push, installation or release publication
 was performed. Display names, plugin/action UUIDs, existing profile/page IDs,

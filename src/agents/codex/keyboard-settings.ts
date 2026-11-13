@@ -44,7 +44,12 @@ const modelField = new RegExp(
 );
 function readModelField(line: string) {
   if (!/^ {2,}\S/.test(line)) return;
-  const match = modelField.exec(line.trim());
+  // The hook-free setup puts a session UUID before the model. Skip only that
+  // complete field so a later title or directory cannot become the model.
+  const fields = line
+    .trim()
+    .replace(/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\s*·\s*/i, '');
+  const match = modelField.exec(fields);
   if (!match || match[1].includes('·')) return;
   return {
     model: match[1],
@@ -142,11 +147,60 @@ export function hasInterruptHint(view: View) {
     lines[i] ?? '',
   );
 }
+/** Streaming hides the timer. Compare only frames with an empty, cursor-bound
+ * composer and a native model footer. Keep no reply text beyond this press. */
+export function streamingSurface(view: View) {
+  const row = (view.cursor?.row ?? 0) - 1;
+  const lines = view.text.split('\n');
+  if (
+    view.cursor?.column !== 3 ||
+    !/^› (?:Ask Codex to do anything)?\s*$/.test(lines[row] ?? '')
+  )
+    return null;
+  const composer = prompt(view);
+  if (!singleLine(composer) || !readModelField(composer.footer[0] || ''))
+    return null;
+  const output = lines
+    .slice(0, row)
+    .map((line) => line.trimEnd())
+    .join('\n')
+    .trimEnd();
+  if (
+    !output ||
+    /(?:back to bottom|esc to dismiss|esc to cancel)/i.test(
+      output.split('\n').at(-1) || '',
+    )
+  )
+    return null;
+  return { output, footer: composer.footer.join('\n') };
+}
+
+type StreamSurface = NonNullable<ReturnType<typeof streamingSurface>>;
+export function outputAdvanced(before: StreamSurface, after: StreamSurface) {
+  if (after.footer !== before.footer) return false;
+  // Keep an overlap when new lines push the top of the visible pane away.
+  // Match at a line boundary; an unrelated rewrite is not progress.
+  if (after.output.startsWith(before.output))
+    return !!after.output.slice(before.output.length).trim();
+  const previous = before.output.split('\n');
+  const current = after.output.split('\n');
+  let pinned = 0;
+  while (pinned < previous.length && previous[pinned] === current[pinned])
+    pinned++;
+  const scrolling = current.slice(pinned).join('\n');
+  for (let skipped = pinned + 1; skipped <= previous.length - 2; skipped++) {
+    const overlap = previous.slice(skipped).join('\n');
+    if (overlap.trim() && scrolling.startsWith(overlap))
+      return !!scrolling.slice(overlap.length).trim();
+  }
+  return false;
+}
 type Row = {
   number: number;
   name: string;
   selected: boolean;
   current: boolean;
+  default: boolean;
 };
 function menu(view: View) {
   const lines = view.text
@@ -176,6 +230,7 @@ function menu(view: View) {
       name: label.replace(/\s+\((current|default)\)/g, ''),
       selected: !!m[1],
       current: label.includes('(current)'),
+      default: label.includes('(default)'),
     });
   }
   const selected = rows.filter((r) => r.selected);
@@ -223,8 +278,21 @@ async function move(port: KeyboardPort, m: Menu, target: Row) {
   if (m.selected.name !== target.name) throw Error('Picker changed');
   return m;
 }
+// Only the initial reasoning picker reached through the verified current model
+// can use its selected default when the CLI omits the current marker.
+function initialEffort(m: Menu) {
+  if (
+    !m.rows.some((r) => r.current) &&
+    m.selected.default &&
+    m.rows.filter((r) => r.default).length === 1 &&
+    m.title.startsWith('Select Reasoning Level for ') &&
+    new RegExp('^' + levelPattern + '$', 'i').test(m.selected.name)
+  )
+    return m.selected;
+  return current(m);
+}
 function nextRow(m: Menu, rows: Row[]) {
-  const cur = current(m),
+  const cur = initialEffort(m),
     i = rows.findIndex((r) => r.number === cur.number);
   if (i < 0 || rows.length < 2) throw Error('No next setting');
   if (i === rows.length - 1 && (m.moreBelow || m.rows[0].number !== 1))
@@ -383,7 +451,7 @@ export async function cycleCodexSetting(port: KeyboardPort, kind: Kind) {
       normalize('Select Reasoning Level for ' + original)
     )
       throw Error('Check reasoning');
-    settings.effort = normalize(current(effortMenu).name);
+    settings.effort = normalize(initialEffort(effortMenu).name);
     m = menu(await port.key(effortMenu.view, 'escape'));
     if (m.title !== 'Select Model and Effort' || current(m).name !== original)
       throw Error('Model list changed');

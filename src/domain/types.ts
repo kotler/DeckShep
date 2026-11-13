@@ -37,9 +37,11 @@ export interface AgentSnapshot extends TargetRef {
   terminalTitle?: string;
   rexSettings?: {
     effortHidden?: boolean;
+    permissionsHidden?: boolean;
     effortSlider?: boolean;
     idleComposer?: boolean;
     viewHash?: string;
+    idleEffortHash?: string;
     process?: string;
     model?: string | null;
     effort?: string;

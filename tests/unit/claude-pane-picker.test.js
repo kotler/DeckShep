@@ -629,6 +629,48 @@ test('Effort retries a torn slider observation without repeating a write', async
   assert.deepEqual(writes, ['/effort', 'enter', 'right', 's']);
 });
 
+test('Effort waits for the slider after Enter repaints the command before opening the dialog', async () => {
+  const screen = new ClaudeKeyboardScreen();
+  screen.nativeEffort = true;
+  const writes = [];
+  let commandView;
+  let opening = false;
+  const b = {
+    config: {
+      backend: 'rex',
+      allowClipboardFocus: true,
+      claude: { enabled: true },
+    },
+    agent: async () => agent,
+    focused: async () => agent,
+    assertDeliveryVisible() {},
+    inspectClaudeKeyboard: async () => 'registered',
+    method: async () => ({ modes: [{ number: 2004, set: true }] }),
+    readKeyboardView: async () => {
+      if (opening) {
+        opening = false;
+        return { ...commandView, hash: 'command-repaint' };
+      }
+      return screen.view();
+    },
+    run: async (args, input) => {
+      const key = input ? input.slice(6, -6) : args.at(-1);
+      if (key === 'enter') {
+        commandView = screen.view();
+        opening = true;
+      }
+      writes.push(key);
+      screen.send(key);
+    },
+  };
+  const target = { ...agent, rexSettings: await observeSettings(b, agent) };
+  assert.deepEqual(
+    await performRexKeyboard(b, { scope: 'rex', action: 'effort', target }),
+    { label: 'high' },
+  );
+  assert.deepEqual(writes, ['/effort', 'enter', 'right', 's']);
+});
+
 test('Effort from an empty Claude prompt with a dim Try hint, including identical draft text at the same cursor', async () => {
   const { stableViewport } = require('../../src/terminals/rex/viewport');
   const hint = 'Try "edit <filepath> to..."';

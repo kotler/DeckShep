@@ -114,6 +114,62 @@ const shimmer = new RegExp(
     '(?=\\x1b\\[0m|\\x1b\\[\\d+C|\\r?$)',
 );
 
+export function idleEffortIdentity(vt: string, text: string) {
+  // The idle badge appears a frame after the model picker closes. Keep the
+  // cursor, borders, prompt and history byte-exact. Only its reserved line
+  // and the optional navigation hint may repaint during the transition.
+  const cursor = /\x1b\[(\d+);3H$/.exec(vt);
+  if (!cursor) return vt;
+  const row = Number(cursor[1]) - 1;
+  const lines = text.split('\n'),
+    rows = vt.split('\n');
+  if (
+    !/^❯[ \u00a0]*$/.test(lines[row] || '') ||
+    !/^[─━]{12,}\s*$/.test(lines[row - 1] || '') ||
+    !/^[─━]{12,}\s*$/.test(lines[row + 1] || '')
+  )
+    return vt;
+  const index = row - 2;
+  const badge = /^[○◯◐◑◒◓◔◕◉●◎] (low|medium|high|xhigh|max) · \/effort$/;
+  const modelNotice =
+    /^Model set to [a-z][a-z0-9 .-]{0,40} \(claude-[a-z0-9.-]+\) for this session only$/i;
+  const plainText = lines[index]?.trim() || '';
+  if (
+    !badge.test(plainText) &&
+    !modelNotice.test(plainText) &&
+    plainText !== ''
+  )
+    return vt;
+  const rendered = (rows[index] || '')
+    .replace(/\x1b\[[\d;]*m/g, '')
+    .replace(/\x1b\[(\d{1,3})C/g, (_, width: string) =>
+      ' '.repeat(Number(width)),
+    )
+    .trim();
+  if (plainText !== rendered) return vt;
+  // The same startup timer removes the optional agent-navigation hint.
+  const hintRow = row + 2;
+  const hint = (lines[hintRow] || '').trim();
+  const permission =
+    /^([⏵⏸◯○●]+\s+(?:manual mode|auto mode|plan mode|accept edits|bypass permissions|default mode)(?: on)?(?: \(shift\+tab to cycle\))?(?: · \? for shortcuts)?)(?: · ← for agents)?$/i.exec(
+      hint,
+    );
+  if (permission) {
+    const painted = (rows[hintRow] || '')
+      .replace(/\x1b\[[\d;]*m/g, '')
+      .replace(/\x1b\[(\d{1,3})C/g, (_, width: string) =>
+        ' '.repeat(Number(width)),
+      )
+      .trimEnd();
+    const visible = painted.replace(/\x1b\[\d+;\d+H$/, '').trim();
+    if (visible === hint)
+      rows[hintRow] =
+        permission[1] + (hintRow === rows.length - 1 ? cursor[0] : '');
+  }
+  rows[index] = '<effort-badge>';
+  return rows.join('\n');
+}
+
 export function effortFrameIdentity(
   vt: string,
   text: string,

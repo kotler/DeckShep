@@ -4,7 +4,10 @@ const shortcut =
   /^(?:[◐◑◒◓]\s+\S+\s*·\s*\/[\w-]+|●\s+(?:low|medium|high|xhigh|max)\s*·\s*\/effort)$/u;
 
 /** Recognize the native working cues around Claude's empty composer. */
-export function hasClaudeInterruptCue(text: string) {
+export function hasClaudeInterruptCue(
+  text: string,
+  evidence?: 'verified-busy-registration',
+) {
   const lines = text.trimEnd().split('\n');
   const lower = lines.findLastIndex((line) =>
     /^[─━]{12,}\s*$/.test(line.trim()),
@@ -41,6 +44,14 @@ export function hasClaudeInterruptCue(text: string) {
     return false;
   if (hints.some((part) => /^esc to interrupt$/i.test(part))) return true;
 
+  // During streaming the spinner can disappear. Only the Rex caller that
+  // revalidates the rendered busy registration may use the normal mode footer.
+  if (
+    evidence === 'verified-busy-registration' &&
+    hints.some((part) => badge.test(part))
+  )
+    return true;
+
   // Claude may hide shortcut hints. Its active spinner sits immediately above
   // the composer. Never search the transcript for an earlier activity line.
   const above = lines
@@ -72,6 +83,9 @@ export function interruptFrameIdentity(vt: string, text: string) {
     while (i >= 0 && !plain[i]) i--;
   }
   const activity = spinner.exec(plain[i] || '');
-  if (activity) rows[i] = '✻ ' + activity[1] + '…';
-  return rows.join('\n');
+  if (!activity) return vt;
+  rows[i] = '✻ ' + activity[1] + '…';
+  // Tool progress above the native spinner repaints independently. Compare
+  // the verified cue, its screen position, the complete composer and footer.
+  return i + ':' + rows.slice(i).join('\n');
 }

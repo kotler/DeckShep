@@ -556,12 +556,16 @@ class Bridge {
   readKeyboardView(
     target: AgentSnapshot,
     frameIdentity?: (vt: string, text: string) => string,
+    atomicComposer = false,
+    idleEffortIdentity?: (vt: string, text: string) => string,
   ) {
     return require('../terminals/rex/viewport').stableViewport(
       target,
       this.run,
       () => this.readKeyboardText(target),
       frameIdentity,
+      atomicComposer,
+      idleEffortIdentity,
     );
   }
   async readPane(target: import('../domain/types').TargetRef) {

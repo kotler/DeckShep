@@ -4,6 +4,8 @@ import type { AgentSnapshot } from '../domain/types';
 import {
   cycleCodexSetting,
   hasInterruptHint,
+  streamingSurface,
+  outputAdvanced,
   readCodexSettings,
 } from '../agents/codex/keyboard-settings';
 import {
@@ -12,6 +14,7 @@ import {
   requireClaudeReady,
 } from '../agents/claude/keyboard-settings';
 import {
+  idleEffortIdentity,
   effortFrameIdentity,
   highlightedEffort,
 } from '../agents/claude/effort-slider';
@@ -64,6 +67,8 @@ export async function observeSettings(b: any, agent: AgentSnapshot) {
     const view = await b.readKeyboardView(
       agent,
       agent.app === 'claude-code' ? effortFrameIdentity : undefined,
+      false,
+      agent.app === 'claude-code' ? idleEffortIdentity : undefined,
     );
     if (agent.app === 'claude-code') {
       const level = highlightedEffort(view);
@@ -93,6 +98,7 @@ export async function observeSettings(b: any, agent: AgentSnapshot) {
     }
     step = 'parse';
     state.viewHash = view.hash;
+    if (view.idleEffortHash) state.idleEffortHash = view.idleEffortHash;
     Object.assign(
       state,
       agent.app === 'codex'
@@ -101,6 +107,8 @@ export async function observeSettings(b: any, agent: AgentSnapshot) {
           ? readClaudeSettings(view)
           : claudeFooter(view),
     );
+    if (agent.app === 'codex' && !state.permissions && view.cursor)
+      state.permissionsHidden = true;
   } catch {
     /* A hidden field or unfamiliar view is unknown. */
     if (step === 'view') state.why ??= 'view-unreadable';
@@ -195,12 +203,17 @@ export async function performRexKeyboard(b: any, display: any) {
     for (let attempt = 0; ; attempt++) {
       const pane = await check(visible, slider);
       try {
-        return await b.readKeyboardView(pane, frameIdentity);
+        return await b.readKeyboardView(
+          pane,
+          frameIdentity,
+          !claude && interrupt,
+          claude && action === 'effort' ? idleEffortIdentity : undefined,
+        );
       } catch (error) {
         // Claude may still be painting the slider. Retry a torn observation
         // only; a complete frame with a different digest still rejects input.
         if (
-          !frameIdentity ||
+          !(claude && frameIdentity) ||
           attempt >= 3 ||
           (error as Error).message !== 'Rex view changed'
         )
@@ -215,11 +228,17 @@ export async function performRexKeyboard(b: any, display: any) {
       const key = 'rex-interrupt:' + target.rexSettings.process;
       if (b.claude.submissions.has(key))
         throw Error('Interrupt already requested');
-      // The spinner repaints continuously. Verify the native hint independently
-      // on both reads and bracket them with the same busy CLI registration.
+      // Bracket both composer reads with the same working pane and busy CLI
+      // registration. Streaming can hide the spinner while the mode stays visible.
       if (
-        !hasClaudeInterruptCue(await b.readKeyboardText(a)) ||
-        !hasClaudeInterruptCue(await b.readKeyboardText(await check()))
+        !hasClaudeInterruptCue(
+          await b.readKeyboardText(a),
+          'verified-busy-registration',
+        ) ||
+        !hasClaudeInterruptCue(
+          await b.readKeyboardText(await check()),
+          'verified-busy-registration',
+        )
       )
         throw Error('Check Claude activity');
       await check(true);
@@ -228,15 +247,36 @@ export async function performRexKeyboard(b: any, display: any) {
       // A running timer can repaint between frames. Retry only the observation.
       for (let attempt = 0; ; attempt++) {
         try {
-          if (!hasInterruptHint(await read()))
-            throw Error('No Esc hint in Codex');
+          let view = await read();
+          // A visible shortcut can disappear between paint and press. Confirm
+          // the current surface in a second self-contained snapshot.
+          if (hasInterruptHint(view)) view = await read();
+          if (!hasInterruptHint(view)) {
+            const before = streamingSurface(view);
+            if (!before) throw Error('No Esc hint in Codex');
+            // The CLI flushes chunks in bursts. A stationary sample is
+            // inconclusive; an altered composer, footer or turn is a refusal.
+            for (let sample = 0; sample < 4; sample++) {
+              await pause(150);
+              const next = await read();
+              if (hasInterruptHint(next)) break;
+              const after = streamingSurface(next);
+              if (!after || after.footer !== before.footer)
+                throw Error('Check composer; Codex prompt or footer changed');
+              if (outputAdvanced(before, after)) break;
+              if (before.output !== after.output)
+                throw Error('View redrawn; Codex reply overlap was lost');
+              if (sample === 3)
+                throw Error('Output paused; Codex reply stayed unchanged');
+            }
+          }
           break;
         } catch (error) {
           if (attempt >= 2 || (error as Error).message !== 'Rex view changed')
             throw error;
         }
       }
-      await check();
+      await check(true);
     }
     await b.run(
       ['send-key', '-s', a.session, '-b', a.block, 'escape'],
@@ -244,6 +284,26 @@ export async function performRexKeyboard(b: any, display: any) {
       target,
     );
     return;
+  }
+  function sameIdleEffort(
+    view: View,
+    observedHash: string | undefined,
+    expectedLevel: string | undefined,
+  ) {
+    if (
+      !claude ||
+      action !== 'effort' ||
+      !observedHash ||
+      !expectedLevel ||
+      view.idleEffortHash !== observedHash
+    )
+      return false;
+    requireClaudeReady(view, target);
+    const level = nativeEffort(view);
+    if (level) return level === expectedLevel.replace(/\?$/, '');
+    // Only a disappearance is equivalent here. A new model notice belongs to
+    // another settings operation and must invalidate the previously shown key.
+    return !view.text.split('\n')[(view.cursor?.row ?? 0) - 3]?.trim();
   }
   async function change(
     view: View,
@@ -262,7 +322,19 @@ export async function performRexKeyboard(b: any, display: any) {
       )
     )
       throw Error('Paste unavailable');
-    if ((await read(inSlider, true)).hash !== view.hash)
+    const current = await read(inSlider, true);
+    if (
+      current.hash !== view.hash &&
+      !(
+        paste &&
+        key === '/effort' &&
+        sameIdleEffort(
+          current,
+          view.idleEffortHash,
+          nativeEffort(view) || target.rexSettings.effort,
+        )
+      )
+    )
       throw Error('Agent view changed');
     await b.run(
       [
@@ -277,8 +349,16 @@ export async function performRexKeyboard(b: any, display: any) {
       target,
     );
     // Poll for a repaint, never retry the write.
-    for (let i = 0; i < 5; i++) {
+    const polls = surface === 'open-slider' ? 12 : 5;
+    for (let i = 0; i < polls; i++) {
       const next = await read(surface !== undefined);
+      // Enter can repaint the command before the modal has finished opening.
+      // Wait only for a verified slider; never repeat Enter on that repaint.
+      if (surface === 'open-slider' && !highlightedEffort(next)) {
+        if (i + 1 === polls) throw Error('Check effort slider');
+        await pause(60);
+        continue;
+      }
       if (next.hash !== view.hash || (i === 4 && claude && key === 'right'))
         return next;
       if (i < 4) await pause(45);
@@ -290,7 +370,12 @@ export async function performRexKeyboard(b: any, display: any) {
   );
   if (
     !target.rexSettings.viewHash ||
-    initial.hash !== target.rexSettings.viewHash
+    (initial.hash !== target.rexSettings.viewHash &&
+      !sameIdleEffort(
+        initial,
+        target.rexSettings.idleEffortHash,
+        target.rexSettings.effort,
+      ))
   )
     throw Error('Agent view changed');
   if (frameIdentity) {

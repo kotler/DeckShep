@@ -558,6 +558,13 @@ function createApplication(dependencies: Record<string, any>) {
       emit('setImage', ctx, { image, target: 0 });
       if (first) emit('setTitle', ctx, { title: '', target: 0 });
     }
+    function hydrateMetadata(agents: AgentSnapshot[]) {
+      try {
+        metadata.hydrate(agents);
+      } catch {
+        /* Provider captions cannot interrupt Rex navigation rendering. */
+      }
+    }
     function render() {
       if (scope === 'rex' && busy) return; // Publish discovery and display selection together.
       if (
@@ -570,11 +577,7 @@ function createApplication(dependencies: Record<string, any>) {
         }
         return;
       }
-      try {
-        metadata.hydrate(bridge.agents || []);
-      } catch {
-        /* Provider captions cannot interrupt Rex navigation rendering. */
-      }
+      hydrateMetadata(bridge.agents || []);
       const now: number = clock(),
         target: AgentSnapshot | undefined = selected(),
         mode: FaceMode = C.modeOf(target),
@@ -757,6 +760,8 @@ function createApplication(dependencies: Record<string, any>) {
           pending: boolean;
           values: any;
           readAt: number;
+          chatId?: string | null;
+          lastPermissions?: { process: string; label: string };
           lastEffort?: { process: string; label: string };
         }
       | undefined;
@@ -778,11 +783,15 @@ function createApplication(dependencies: Record<string, any>) {
         settingsRead = undefined;
         return;
       }
+      // Discovery returns a fresh pane before render restores cached Codex
+      // metadata. Compare the same identity at both ends of the poll.
+      if (agent.app === 'codex') hydrateMetadata([live]);
       if (
         settingsRead?.source !== source ||
         !sameNavigationTarget(settingsRead?.target, agent) ||
         settingsRead?.target.cwd !== agent.cwd ||
         settingsRead?.target.state !== agent.state ||
+        (agent.app === 'codex' && live.chatId !== settingsRead?.chatId) ||
         (agent.app === 'codex' &&
           agent.state === 'working' &&
           agent.statusAt !== settingsRead?.target.statusAt)
@@ -790,6 +799,7 @@ function createApplication(dependencies: Record<string, any>) {
         settingsRead = {
           source,
           target: agent,
+          chatId: live.chatId,
           pending: false,
           values: {},
           readAt: 0,
@@ -799,7 +809,7 @@ function createApplication(dependencies: Record<string, any>) {
       if (record.pending) return;
       record.pending = true;
       // A slow or missing provider frame must not delay the dot or row 2.
-      void observeSettings(source, agent)
+      return observeSettings(source, agent)
         .then((values: any) => {
           if (
             settingsRead !== record ||
@@ -814,6 +824,19 @@ function createApplication(dependencies: Record<string, any>) {
               sameNavigationTarget(item, agent) && item.cwd === agent.cwd,
           );
           if (current) {
+            if (agent.app === 'codex') {
+              if (record.lastPermissions?.process !== values.process)
+                record.lastPermissions = undefined;
+              if (values.viewHash && values.process) {
+                if (values.permissions)
+                  record.lastPermissions = {
+                    process: values.process,
+                    label: values.permissions,
+                  };
+                else if (record.lastPermissions)
+                  values.permissions = record.lastPermissions.label + '?';
+              }
+            }
             // A transient repaint may lose the frame, but should not blank a
             // known caption between polls. Never retain a hash or grant input
             // from this display-only grace period, or cross a process change.
@@ -825,6 +848,7 @@ function createApplication(dependencies: Record<string, any>) {
             ) {
               for (const field of ['model', 'effort', 'permissions', 'plan'])
                 values[field] = record.values[field];
+              values.permissionsHidden = record.values.permissionsHidden;
             } else if (values.viewHash) record.readAt = clock();
             if (agent.app === 'claude-code') {
               if (
@@ -854,7 +878,7 @@ function createApplication(dependencies: Record<string, any>) {
           record.pending = false;
         });
     }
-    async function followRexSelection() {
+    async function followRexSelection(waitForSettings: boolean) {
       if (scope !== 'rex') return;
       if (!config.allowClipboardFocus) {
         settingsRead = undefined;
@@ -884,7 +908,8 @@ function createApplication(dependencies: Record<string, any>) {
           );
           if (slot >= 0) bank = Math.floor(slot / 5);
         }
-        observeFocusedSettings(source, agent);
+        const observation = observeFocusedSettings(source, agent);
+        if (waitForSettings) await observation;
       } catch {
         if (source !== bridge) return;
         settingsRead = undefined;
@@ -897,7 +922,10 @@ function createApplication(dependencies: Record<string, any>) {
       }
     }
     let discoveryMisses = 0;
-    async function refresh(forceMetadata: any = false) {
+    async function refresh(
+      forceMetadata: any = false,
+      waitForSettings = false,
+    ) {
       if (busy || actionBusy || setupBusy) return;
       busy = true;
       let finish!: () => void;
@@ -908,11 +936,19 @@ function createApplication(dependencies: Record<string, any>) {
         loadConfig();
         await bridge.discover({ allowMissingForeground: scope === 'rex' });
         discoveryMisses = 0;
-        await followRexSelection();
+        await followRexSelection(waitForSettings);
         offline =
           scope === 'herdr-app' &&
           !bridge.delivery.backend.capabilities.has('discover');
-        void refreshMetadata(forceMetadata);
+        const metadataUpdate = refreshMetadata(forceMetadata);
+        // Discovery publishes a provider-free pane. For an already hook-bound
+        // selection, finish verifying its identity before repainting row three.
+        if (
+          waitForSettings ||
+          (bridge.lastTarget?.app === 'claude-code' &&
+            bridge.lastTarget.nativeIdentity)
+        )
+          await metadataUpdate;
       } catch (error: unknown) {
         // One timed-out Rex read must not blank the agent row. Keep the last
         // discovery for a single cycle. Nothing is trusted from it: every
@@ -1050,6 +1086,7 @@ function createApplication(dependencies: Record<string, any>) {
       const a: any = display.action;
       if (informationalActions.has(a)) return;
       let completed: boolean = false;
+      let refreshSettings = false;
       actionBusy = true;
       activePress = { ctx, display };
       try {
@@ -1120,7 +1157,56 @@ function createApplication(dependencies: Record<string, any>) {
               process: settingsRead.values.process,
               label: result.label,
             };
-          if (a === 'model') settingsRead.lastEffort = undefined;
+          if (a === 'model')
+            settingsRead.lastEffort = result?.appliedEffort
+              ? {
+                  process: settingsRead.values.process,
+                  label: result.appliedEffort,
+                }
+              : undefined;
+          if (a === 'model' || a === 'effort') {
+            // A poll begun before the picker closed must not publish its old
+            // digest for the next key. Keep only the process-bound effort hint.
+            settingsRead = {
+              ...settingsRead,
+              values: {},
+              readAt: 0,
+              pending: false,
+            };
+            refreshSettings = true;
+          }
+        }
+        if (
+          a === 'permissions' &&
+          display.target?.app === 'codex' &&
+          result?.label &&
+          settingsRead?.values.process &&
+          settingsRead.values.process === display.target.rexSettings?.process &&
+          sameNavigationTarget(settingsRead.target, display.target) &&
+          settingsRead.chatId === display.target.chatId
+        ) {
+          // Ignore any passive picker read begun before the new selection.
+          settingsRead = {
+            ...settingsRead,
+            pending: false,
+            lastPermissions: {
+              process: settingsRead.values.process,
+              label: result.label,
+            },
+          };
+        }
+        if (
+          display.target?.app === 'codex' &&
+          rexSettingsAction(a) &&
+          settingsRead
+        ) {
+          settingsRead = {
+            ...settingsRead,
+            pending: false,
+            values: {},
+            readAt: 0,
+          };
+          refreshSettings = true;
         }
         completed = true;
         k.feedback = null;
@@ -1199,7 +1285,7 @@ function createApplication(dependencies: Record<string, any>) {
           void refresh();
         }
         render();
-      } else await refresh(true);
+      } else await refresh(true, refreshSettings);
       render();
     }
     async function initialize() {

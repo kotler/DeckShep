@@ -1,6 +1,7 @@
 > Historical foundation plan. The owner approved a prelaunch identity reset on
 > 2026-11-08. Its old UUID/path freeze is superseded by [the current DeckShep
-> identity contract](../IDENTITY.md); all safety and consent rules still apply.
+> identity contract](../IDENTITY.md). For current work use the [Rex beta plan](REX-BETA-PLAN.md)
+> and [standing instructions](../../AGENTS.md). The original phases and baseline IDs below document the earlier implementation.
 
 # Agent Switchboard refactor plan (v2 foundation)
 

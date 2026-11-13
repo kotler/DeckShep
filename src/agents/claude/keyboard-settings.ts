@@ -179,6 +179,11 @@ export async function cycleClaudeKeyboard(
     if (!levels.includes(menu.effort)) throw Error('Check effort');
   }
   const label = action === 'model' ? menu.selected.name : menu.effort;
-  requireClaudeReady(await key(view, 's'), target);
+  const after = await key(view, 's');
+  requireClaudeReady(after, target);
+  if (action === 'model') {
+    const settings = claudeFooter(after);
+    return { label, appliedEffort: settings.effort || menu.effort };
+  }
   return { label };
 }

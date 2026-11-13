@@ -1,5 +1,7 @@
 # Herdr App (desktop) as the primary first-release backend
 
+> Historical Herdr App proposal. The first public beta now ships only Rex. Use the [Rex beta plan](REX-BETA-PLAN.md) for release work and the [private preview guide](../HERDR-APP-LIVE-PREVIEW.md) for experimental Herdr testing.
+
 Current checkpoint (2026-11-08): signed release calibration and the private live
 Stream Deck focus walkthrough passed. The owner also confirmed revoked-consent
 refusal. See the [release validation record](../validation/2026-11-08-herdr-app-release-calibration.md)

@@ -1,5 +1,7 @@
 # No status-line changes: hooks-only Claude mode and read-only Codex footer
 
+> Historical implementation plan. DeckShep still preserves user status lines. Claude now supports hook-free Rex controls as well as optional hook-backed controls. See the [current Claude guide](../CLAUDE.md) for the requirements of each action.
+
 Status: approved hand-off, 2026-11-08. Owner rule: **DeckShep must never change a
 Claude Code or Codex status line.** Claude native controls move to a hooks-only
 mode; Codex footer setup becomes read-only.

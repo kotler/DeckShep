@@ -1,5 +1,7 @@
 # Beta verification gates
 
+Use the [current Rex beta plan](plans/REX-BETA-PLAN.md) for the verification order and the [Rex walkthrough](validation/2026-11-11-rex-beta-walkthrough.md) for per-control results.
+
 Current setup and control limits are in [Installation](INSTALL.md), [Herdr](HERDR.md),
 [Claude](CLAUDE.md) and [Compatibility](COMPATIBILITY.md).
 

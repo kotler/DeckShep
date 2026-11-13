@@ -103,6 +103,28 @@ test('footer and picker follow the displayed model names across catalog changes'
     assert.equal(screen.effort, 1);
   }
 });
+test('session-ID-first Codex footer keeps Model and Effort visible and usable', async () => {
+  const { screen, port } = fixture();
+  const original = screen.view.bind(screen);
+  const id = '00000000-0000-4000-8000-000000000001';
+  screen.showShortcutRow = true;
+  screen.view = () => {
+    const view = original();
+    if (screen.surface === 'idle')
+      view.text = view.text.replace('  GPT-', '  ' + id + ' · GPT-');
+    return view;
+  };
+  const settings = () => readCodexSettings(screen.view());
+  assert.equal(settings().model, screen.models[0]);
+  assert.equal(settings().effort, 'high');
+  await cycleCodexSetting(port, 'model');
+  assert.equal(settings().model, screen.models[1]);
+  await cycleCodexSetting(port, 'effort');
+  assert.equal(settings().effort, 'xhigh');
+  const malformed = screen.view();
+  malformed.text = malformed.text.replace(id, 'project name');
+  assert.equal(readCodexSettings(malformed).model, undefined);
+});
 test('Permissions skips Full Access, wraps, and recovers from its old confirmation', async () => {
   const { screen, port } = fixture();
   await cycleCodexSetting(port, 'permissions');
@@ -347,6 +369,7 @@ test('unbound Interrupt requires fresh working evidence and sends Escape at most
   for (const race of [
     'ok',
     'repaint',
+    'hint then draft',
     'time',
     'process',
     'focus',
@@ -392,6 +415,8 @@ test('unbound Interrupt requires fresh working evidence and sends Escape at most
         if (race === 'repaint' && frames++ === 0)
           throw Error('Rex view changed');
         const v = screen.view();
+        if (race === 'hint then draft' && frames++ > 0)
+          v.text = v.text.replace('Ask Codex to do anything', 'unfinished');
         if (race === 'hint')
           v.text = v.text.replace('esc to interrupt', 'esc to dismiss');
         if (race === 'history') {
@@ -416,4 +441,289 @@ test('unbound Interrupt requires fresh working evidence and sends Escape at most
       ['ok', 'repaint', 'uncertain'].includes(race) ? ['escape'] : [],
     );
   }
+});
+
+test('Codex streaming Interrupt requires advancing output at the verified composer', async () => {
+  const target = {
+    app: 'codex',
+    name: 'codex',
+    pid: 44,
+    cwd: '/fixture',
+    session: 's',
+    window: 'w',
+    block: 'a',
+    state: 'working',
+    statusAt: 'run-1',
+    rexSettings: { process: 'start:image' },
+  };
+  for (const scenario of [
+    'growing',
+    'scrolled',
+    'pinned header',
+    'chunk delay',
+    'unrelated repaint',
+    'repainting moving prompt',
+    'repainting output',
+    'repainting draft',
+    'repainting footer',
+    'repainting cursor',
+    'static',
+    'draft',
+    'dialog',
+    'focus',
+    'turn',
+  ]) {
+    const inputs = [];
+    let frames = 0;
+    const bridge = {
+      config: {
+        backend: 'rex',
+        allowClipboardFocus: true,
+        controlVerified: { codex: true },
+      },
+      assertDeliveryVisible() {},
+      inspectKeyboardProcess: async () => ({
+        pid: 44,
+        codex: true,
+        startedAt: 'start',
+        image: 'image',
+      }),
+      focused: async () =>
+        scenario === 'focus' && frames ? { ...target, block: 'other' } : target,
+      agent: async () =>
+        scenario === 'turn' && frames
+          ? { ...target, statusAt: 'run-2' }
+          : target,
+      readKeyboardView: async (_, frameIdentity, atomicComposer) => {
+        const later = frames++ > 0;
+        const lines = ['previous line', 'first number', 'second number'];
+        if (
+          later &&
+          scenario !== 'static' &&
+          (scenario !== 'chunk delay' || frames >= 3)
+        )
+          lines.push('third number');
+        if (scenario === 'pinned header') {
+          if (later) lines.shift();
+          lines.unshift('Pinned title');
+        }
+        if (later && scenario === 'unrelated repaint')
+          lines.splice(
+            0,
+            lines.length,
+            'unrelated menu title',
+            'unrelated content',
+          );
+        if (later && scenario === 'scrolled') lines.shift();
+        lines.push(
+          '',
+          scenario === 'draft' ? '› unfinished' : '› ',
+          '',
+          '  GPT-6-Luna low · project',
+        );
+        if (scenario === 'dialog') lines.push('  Enter to confirm');
+        if (scenario.startsWith('repainting')) {
+          const {
+            stableViewport,
+          } = require('../../src/terminals/rex/viewport');
+          const row = lines.indexOf('') + 2;
+          const text = lines.join('\n');
+          const vt =
+            text
+              .replace(
+                'previous line',
+                '\x1b]8;;https://example.invalid\x1b\\previous line\x1b]8;;\x1b\\',
+              )
+              .replace('› ', '\x1b[12X\x1b[1m›\x1b[0m ') +
+            '\x1b[' +
+            row +
+            ';3H';
+          let after = vt.replace('second number', 'second number updated');
+          if (scenario === 'repainting moving prompt')
+            after = vt
+              .replace(
+                later ? 'third number' : 'second number',
+                later
+                  ? 'third number\nfourth number'
+                  : 'second number\nthird number',
+              )
+              .replace('[' + row + ';3H', '[' + (row + 1) + ';3H');
+          if (scenario === 'repainting draft')
+            after = after.replace('›\x1b[0m ', '›\x1b[0m draft');
+          if (scenario === 'repainting cursor')
+            after = after.replace(';3H', ';4H');
+          if (scenario === 'repainting footer')
+            after = after.replace('low · project', 'high · project');
+          // The composer can move between consecutive native snapshots. No
+          // independent plain-text read can be paired with a live cursor.
+          const content = later ? after : vt;
+          return stableViewport(
+            target,
+            async () => ({ content }),
+            async () => {
+              throw Error('separate screen read while streaming');
+            },
+            frameIdentity,
+            atomicComposer,
+          );
+        }
+        return {
+          text: lines.join('\n'),
+          cursor: { row: lines.indexOf('') + 2, column: 3 },
+          hash: String(frames),
+        };
+      },
+      run: async (args) => inputs.push(args.at(-1)),
+    };
+    const press = performRexKeyboard(bridge, {
+      scope: 'rex',
+      action: 'interrupt',
+      target,
+    });
+    if (
+      [
+        'growing',
+        'scrolled',
+        'pinned header',
+        'chunk delay',
+        'repainting moving prompt',
+        'repainting output',
+      ].includes(scenario)
+    )
+      await press;
+    else await assert.rejects(press);
+    assert.deepEqual(
+      inputs,
+      [
+        'growing',
+        'scrolled',
+        'pinned header',
+        'chunk delay',
+        'repainting moving prompt',
+        'repainting output',
+      ].includes(scenario)
+        ? ['escape']
+        : [],
+      scenario,
+    );
+  }
+});
+
+test('Rex working status and the same busy Claude session allow one streaming Interrupt', async () => {
+  const border = '─'.repeat(60);
+  const footer = '⏵⏵ auto mode on (shift+tab to cycle)';
+  const text = [
+    'streamed output',
+    border,
+    '❯ ',
+    border,
+    'Opus 5.5 | project | main | ctx 5%',
+    footer,
+  ].join('\n');
+  const target = {
+    app: 'claude-code',
+    session: 's',
+    window: 'w',
+    block: 'a',
+    pid: 44,
+    cwd: '/fixture',
+    state: 'working',
+    statusAt: 'now',
+    rexSettings: { process: 'busy-1' },
+  };
+  for (const scenario of [
+    'streaming',
+    'spinner disappears',
+    'draft',
+    'approval',
+    'done',
+    'replacement',
+    'focus',
+  ]) {
+    const inputs = [];
+    let checks = 0;
+    const streamingFrames = [
+      text.replace('streamed output', '✻ Thinking…'),
+      text.replace('streamed output', 'first line\nsecond line'),
+    ];
+    const bridge = {
+      config: {
+        backend: 'rex',
+        allowClipboardFocus: true,
+        claude: { enabled: true },
+      },
+      claude: { submissions: new Map() },
+      assertDeliveryVisible() {},
+      focused: async () =>
+        scenario === 'focus' && checks ? { ...target, block: 'other' } : target,
+      agent: async () =>
+        scenario === 'done' ? { ...target, state: 'done' } : target,
+      inspectClaudeKeyboard: async () =>
+        ++checks > 1 && scenario === 'replacement' ? 'busy-2' : 'busy-1',
+      readKeyboardText: async () => {
+        if (scenario === 'spinner disappears') return streamingFrames.shift();
+        if (scenario === 'draft') return text.replace('❯ ', '❯ unfinished');
+        if (scenario === 'approval') return text + '\nEnter to confirm';
+        return text;
+      },
+      run: async (args) => inputs.push(args.at(-1)),
+    };
+    const press = () =>
+      performRexKeyboard(bridge, { scope: 'rex', action: 'interrupt', target });
+    const shouldInterrupt =
+      scenario === 'streaming' || scenario === 'spinner disappears';
+    if (shouldInterrupt) {
+      await press();
+      if (scenario === 'spinner disappears')
+        assert.equal(streamingFrames.length, 0);
+      await assert.rejects(press, /already requested/);
+    } else await assert.rejects(press);
+    assert.deepEqual(inputs, shouldInterrupt ? ['escape'] : [], scenario);
+  }
+});
+
+test('first reasoning picker can identify a single highlighted default when current is omitted', async () => {
+  for (const duplicate of [false, true]) {
+    const { screen, port } = fixture();
+    const key = async (before, value) => {
+      const view = await port.key(before, value);
+      if (screen.surface === 'levels') {
+        view.text = view.text.replace('(current)', '(default)');
+        if (duplicate)
+          view.text = view.text.replace('1. Low', '1. Low (default)');
+      }
+      return view;
+    };
+    const cycle = cycleCodexSetting({ ...port, key }, 'effort');
+    if (duplicate) await assert.rejects(cycle, /Current setting unclear/);
+    else {
+      await cycle;
+      assert.equal(screen.effort, 2);
+    }
+  }
+});
+
+test('Claude model notice and effort badge share only the reserved empty-composer row', () => {
+  const {
+    idleEffortIdentity,
+  } = require('../../src/agents/claude/effort-slider');
+  const frame = (notice, draft = '', history = 'history') => {
+    const text = [
+      history,
+      notice,
+      '─'.repeat(20),
+      '❯ ' + draft,
+      '─'.repeat(20),
+      '',
+    ].join('\n');
+    const vt = text + '\x1b[4;3H';
+    return idleEffortIdentity(vt, text);
+  };
+  const before = frame(
+    'Model set to sonnet (claude-sonnet-5-5) for this session only',
+  );
+  assert.equal(before, frame('● high · /effort'));
+  assert.notEqual(before, frame('● high · /effort', 'typed'));
+  assert.notEqual(before, frame('● high · /effort', '', 'different history'));
+  assert.notEqual(before, frame('another notice'));
 });

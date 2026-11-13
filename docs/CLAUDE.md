@@ -1,6 +1,6 @@
-# Claude Code and mixed agent banks (development preview)
+# Claude Code controls and optional hooks
 
-Implemented on `codex/claude-mixed-agent-support`, version **1.3.4**. At the November 7, 2026 checkpoint, physical Model/Effort cycles passed in Rex and Herdr; Herdr single-choice and Deny/Allow once/Esc approval checks passed. Native multi-select Toggle/Review/Submit passed through the API, with the physical check still pending. Claude running/Zoom controls and Rex question/approval/submission checks remain pending. The earlier Codex hardware results do not validate these new Claude paths.
+For the Rex beta, the ready row offers Model, Effort, Permissions and Interrupt. Permissions includes Plan. The physical layout and working-state actions are described in the [key map](PROFILES.md).
 
 Claude and Codex share discovery, stable slots, bank cycling, Next agent, Collapse, selection dots and project/status labels within the chosen controller. Selecting an agent changes the contextual controls for its provider. Each controller still connects to its own Rex or explicit Herdr session; this does not aggregate Rex and Herdr into one bank.
 
@@ -8,13 +8,13 @@ Claude and Codex share discovery, stable slots, bank cycling, Next agent, Collap
 
 | Feature | Claude in Rex | Claude in Herdr |
 | --- | --- | --- |
-| Discovery, selection, banks, Next agent, Collapse, Zoom | Implemented | Implemented |
+| Discovery, selection, banks, Next agent, Collapse | Implemented | Implemented |
 | Session identity, title, model and effort | Optional local metadata integration | Same integration; independent of Codex title matching |
 | Model / Effort | One-press session-only cycles | One-press session-only cycles |
 | Native question / approval navigation and Confirm / Esc | Guarded native keys | Guarded native keys, pane must be at bottom |
 | Multiple-select question | Toggle for verified checkbox layouts; Home Review then Submit | Same |
 | Interrupt | One Escape, verified working CLI registration or hook lifecycle, and visible interrupt-hint checks | Same; scoped to explicit pane |
-| Review / Tests / Continue and guarded Send | Implemented for recognized composer | Unavailable; cursor API missing |
+| Review / Tests / Continue and Send | Use the keyboard on the current layout | Use the keyboard |
 | Queue / Steer | Ctrl+X Enter queues; Ctrl+X Ctrl+S sends now | Unavailable; cursor API missing |
 | Permission modes / Plan | Permissions advances one native Shift+Tab step | Keyboard only |
 | Stop background tasks/terminals | Not implemented for Claude | Not implemented for Claude |
@@ -111,7 +111,7 @@ Removal deletes only exact owned hook commands. It restores the saved original s
 
 ## Automated coverage and remaining gates
 
-Five added regression groups cover metadata privacy and lifecycle ordering; PID/start/version/session isolation; subagent refusal; private records; setup/upgrade/removal and preservation; guarded picker/session-only apply; staged/edited/uncertain Send; Claude-specific Queue/Send-now; question/approval changes and checkbox toggles; mixed banks, Collapse and replacement processes; provider-specific artwork/captions and Codex-cache isolation; and scoped Herdr keys with no composer writes. The full suite has **36 groups**, plus eight distribution tests, including separate-profile routing and preference migration.
+Five added regression groups cover metadata privacy and lifecycle ordering; PID/start/version/session isolation; subagent refusal; private records; setup/upgrade/removal and preservation; guarded picker/session-only apply; staged/edited/uncertain Send; Claude-specific Queue/Send-now; question/approval changes and checkbox toggles; mixed banks, Collapse and replacement processes; provider-specific artwork/captions and Codex-cache isolation; and scoped Herdr keys with no composer writes. The November 7 baseline counted 36 groups plus eight distribution tests.
 
 Before enabling by default or merging to a release: validate hook ancestry/file-watcher behavior with the native installer, the hooks-only fields and flows, legacy status-line restore and live renames, the exact native modal/composer layouts, default and customized keybindings, permission/checkbox prompts, session-only model/effort persistence, draft/queue semantics, focus changes, restart/reconnect and physical mixed-bank navigation. Only the checks explicitly recorded here are validated; other native and physical paths remain pending.
 
@@ -119,7 +119,4 @@ References: [Claude hooks](https://code.claude.com/docs/en/hooks), [status-line 
 
 ## Validation record
 
-See [the November 7 local validation record](validation/2026-11-07-claude.md) for
-passed physical/API checks and observed latency. Physical multi-select,
-running/Zoom, Rex submission paths and approval responsiveness remain pending;
-[the beta checklist](BETA-CHECKLIST.md) tracks the release gates.
+The [November 7 Claude record](validation/2026-11-07-claude.md) covers early physical and API checks. The [Rex beta walkthrough](validation/2026-11-11-rex-beta-walkthrough.md) records later hook-free and hook-backed results, including a physical Claude Interrupt. The [beta checklist](BETA-CHECKLIST.md) tracks outstanding hardware cases.

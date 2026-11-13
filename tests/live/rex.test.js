@@ -78,20 +78,29 @@ test(
     run('/usr/bin/git', ['init', '--quiet', repo], options);
     const providers = process.env.ASW_LIVE_REX_PROVIDERS === '1';
     let hookPlugin;
-    if (providers && process.env.ASW_LIVE_REX_CLAUDE_HOOKS === '1') {
+    const claudeHooks = process.env.ASW_LIVE_REX_CLAUDE_HOOKS === '1';
+    const codexHooks = process.env.ASW_LIVE_REX_CODEX_HOOKS === '1';
+    if (providers && (claudeHooks || codexHooks)) {
       hookPlugin = path.join(directory, 'com.kotl3r.deckshep.sdPlugin');
       fs.cpSync(path.resolve('dist/com.kotl3r.deckshep.sdPlugin'), hookPlugin, {
         recursive: true,
       });
-      run(
-        process.execPath,
-        [path.join(hookPlugin, 'configure-claude.js'), '--apply'],
-        options,
-      );
-      assert.equal(
-        require('../../src/agents/claude/state').setupMode(hookPlugin),
-        'hooks',
-      );
+      for (const [provider, enabled] of [
+        ['claude', claudeHooks],
+        ['codex', codexHooks],
+      ]) {
+        if (enabled)
+          run(
+            process.execPath,
+            [path.join(hookPlugin, 'configure-' + provider + '.js'), '--apply'],
+            options,
+          );
+      }
+      if (claudeHooks)
+        assert.equal(
+          require('../../src/agents/claude/state').setupMode(hookPlugin),
+          'hooks',
+        );
     }
     if (providers && process.env.ASW_LIVE_AUTH === 'signed-in') {
       const verify = signedInCredentials(options.env);
@@ -175,12 +184,13 @@ test(
     );
     if (providers) {
       const cases = ['permissions', 'plan', 'interrupt', 'queue', 'choice'];
+      if (process.env.ASW_LIVE_REX_BROWSER === '1') cases.push('browser-ready');
       const selectedCases = process.env.ASW_LIVE_REX_CASES?.split(',');
       if (selectedCases) {
         const names = ['codex', 'claude'].flatMap((provider) =>
           (provider === 'claude'
             ? [...cases, 'effort', 'effort-fresh', 'effort-history']
-            : cases
+            : [...cases, 'interrupt-stream', 'interrupt-stream-early']
           ).map((name) => provider + '-' + name),
         );
         assert(
@@ -195,7 +205,7 @@ test(
         if (process.env.ASW_LIVE_REX_STATES === '1') {
           for (const scenario of provider === 'claude'
             ? [...cases, 'effort', 'effort-fresh', 'effort-history']
-            : cases) {
+            : [...cases, 'interrupt-stream', 'interrupt-stream-early']) {
             if (
               selectedCases &&
               !selectedCases.includes(provider + '-' + scenario)
@@ -233,7 +243,10 @@ test(
                 resume = ['--resume', sessionId];
               }
               await checkPicker({
-                hookPlugin,
+                hookPlugin:
+                  provider === 'claude' && !claudeHooks
+                    ? undefined
+                    : hookPlugin,
                 provider,
                 args:
                   scenario === 'effort-fresh'

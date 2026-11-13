@@ -411,7 +411,11 @@ function controlFace(input: KeyFaceInput): { lines: string[]; color: string } {
     const settings = target.rexSettings as Record<string, unknown>;
     const value =
       settings[action] ||
-      (action === 'effort' && settings.effortHidden && settings.process
+      (((action === 'effort' && settings.effortHidden) ||
+        (action === 'permissions' &&
+          target.app === 'codex' &&
+          settings.permissionsHidden)) &&
+      settings.process
         ? 'Press to cycle'
         : '');
     lines = [REX_HEADINGS[action], clean(value)];

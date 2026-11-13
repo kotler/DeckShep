@@ -51,6 +51,10 @@ preview artifacts use `-beta.N` release tags.
 
 ### Fixed
 
+- Fix keyboard Interrupt in Rex when Claude Code or Codex is streaming a reply
+  and the usual Escape hint disappears. Codex now reads the prompt and cursor
+  together as new output scrolls. Claude checks the selected session's busy
+  registration and the visible composer before sending Escape.
 - Keep the agent row for one cycle when a single Rex call times out, instead of
   flashing "Rex offline". A second timeout in a row, or any refused or
   malformed reply, still shows offline at once, and every press still makes its

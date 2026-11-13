@@ -11,6 +11,8 @@ async function checkPicker({
   scenario,
   hookPlugin,
 }) {
+  const streamAtLaunch =
+    provider === 'codex' && scenario?.startsWith('interrupt-stream');
   const { stableViewport } = require('../../src/terminals/rex/viewport');
   const { Setup } = require('../../src/agents/codex/setup-presets');
   const {
@@ -36,6 +38,11 @@ async function checkPicker({
     '--',
     provider,
     ...args,
+    ...(streamAtLaunch
+      ? [
+          'Without tools, write 500 lines. Each line must say CALIBRATION followed by its number.',
+        ]
+      : []),
     ...(sessionId ? ['--session-id', sessionId] : []),
   ]);
   const topology = JSON.parse(
@@ -251,15 +258,118 @@ async function checkPicker({
     }
     throw Error('Expected empty composer');
   }
-  const view = await read();
-  if (/sign in|log in|login method|select a login/i.test(view.text))
-    throw Error('Private provider requires sign-in');
-  if (/trust.*(folder|directory)|trust this workspace/i.test(view.text))
-    throw Error('Private repository trust prompt');
-  await assertEmpty(view);
+  let view = streamAtLaunch ? undefined : await read();
+  if (view) {
+    if (/sign in|log in|login method|select a login/i.test(view.text))
+      throw Error('Private provider requires sign-in');
+    if (/trust.*(folder|directory)|trust this workspace/i.test(view.text))
+      throw Error('Private repository trust prompt');
+    if (
+      provider === 'codex' &&
+      process.env.ASW_LIVE_REX_CODEX_HOOKS === '1' &&
+      view.text.includes('Hooks need review')
+    ) {
+      const fs = require('node:fs'),
+        path = require('node:path');
+      const root = path.dirname(repo);
+      assert.equal(hookPlugin, path.join(root, 'com.kotl3r.deckshep.sdPlugin'));
+      const quote = (value) => "'" + value.replace(/'/g, "'\\''") + "'";
+      const expected =
+        quote(process.execPath) +
+        ' ' +
+        quote(path.join(hookPlugin, 'codex-hook.js'));
+      const { hooks } = JSON.parse(
+        fs.readFileSync(path.join(root, 'home/.codex/hooks.json'), 'utf8'),
+      );
+      assert.deepEqual(Object.keys(hooks).sort(), [
+        'SessionEnd',
+        'SessionStart',
+        'UserPromptSubmit',
+      ]);
+      for (const entries of Object.values(hooks))
+        assert.deepEqual(entries, [
+          {
+            hooks: [
+              { type: 'command', command: expected, timeout: 5, async: false },
+            ],
+          },
+        ]);
+      assert(
+        /3 hooks are new or changed/.test(view.text) &&
+          /› 1\. Review hooks/.test(view.text),
+      );
+      const highlighted = await deliver(view, 'send-key', 'down');
+      assert(/› 2\. Trust all and continue/.test(highlighted.text));
+      await deliver(highlighted, 'send-key', 'enter');
+      // SessionStart preceded the trust decision. The first real prompt
+      // supplies UserPromptSubmit in the newly trusted disposable home.
+      await delay(1500);
+      const ready = await read();
+      await assertEmpty(ready);
+      const typed = await deliver(ready, 'send', 'Reply only with OK.');
+      assert(
+        typed.text
+          .split('\n')
+          .some((line) => /^› Reply only with OK\.\s*$/.test(line)),
+      );
+      await deliver(typed, 'send-key', 'enter', false);
+      const until = Date.now() + 45000;
+      while (Date.now() < until) {
+        const output = await setup.screen(target);
+        if (/^\s*(?:•\s*)?OK[.!]?\s*$/im.test(output)) break;
+        await delay(250);
+      }
+      await delay(1500);
+      view = await read();
+    }
+    await assertEmpty(view);
+    if (provider === 'codex' && process.env.ASW_LIVE_REX_CODEX_HOOKS === '1') {
+      const fs = require('node:fs'),
+        path = require('node:path');
+      const {
+        hookRecord,
+        digest,
+      } = require('../../src/agents/codex/hook-contract');
+      const dir = path.join(hookPlugin, 'state/codex');
+      const reports = fs
+        .readdirSync(dir)
+        .filter((name) => /^\d+-[a-f0-9-]{36}\.json$/.test(name))
+        .map((name) =>
+          hookRecord.parse(
+            require('../../src/agents/codex/hook-files').readPrivate(
+              path.join(dir, name),
+            ),
+          ),
+        );
+      assert(
+        reports.some(
+          (r) =>
+            r.block === block &&
+            r.session === topology.session_id &&
+            r.cwdHash === digest(repo) &&
+            !r.ended,
+        ),
+        'Expected a live Codex hook report for this disposable pane',
+      );
+    }
+  }
+  const pressDeck = (action) =>
+    require('./rex-browser-deck.cjs').checkBrowserDeck({
+      provider,
+      action,
+      topology,
+      block,
+      repo,
+      command,
+      assertOwnedPane,
+      read,
+      hookPlugin,
+    });
+  if (scenario === 'browser-ready') return pressDeck('ready');
   if (scenario)
     return require('./rex-states.cjs').checkState({
       scenario,
+      pressDeck,
       provider,
       target,
       read,

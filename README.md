@@ -62,6 +62,7 @@ node "$plugin_dir/configure-codex.js" --apply
 
 Review and trust the DeckShep entries in Codex's `/hooks` menu. After a fresh session event, select the agent and click **Check selected Codex agent** in the key inspector. A verified binding shows **hook identity**. [Codex hook setup and removal](docs/CODEX-HOOKS.md)
 
+- [Documentation index](docs/README.md) · [Current Rex beta plan](docs/plans/REX-BETA-PLAN.md)
 - [Release readiness](docs/RELEASE-READINESS.md) · [Marketplace draft](docs/MARKETPLACE.md)
 - [Switching profiles](docs/PROFILES.md)
 - [Rex setup](docs/INSTALL.md)

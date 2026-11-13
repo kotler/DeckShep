@@ -86,6 +86,7 @@ function runningDelay(pid, owned) {
 
 async function checkState({
   scenario,
+  pressDeck,
   provider,
   target,
   read,
@@ -102,6 +103,8 @@ async function checkState({
   repo,
 }) {
   const codex = provider === 'codex';
+  const streaming =
+    scenario === 'interrupt-stream' || scenario === 'interrupt-stream-early';
   if (!codex && scenario === 'plan') {
     // Reproduce the first refresh before Rex has published an idle record.
     const {
@@ -179,7 +182,8 @@ async function checkState({
   async function prompt(text) {
     const view = await read();
     await assertEmpty(view);
-    await deliver(await type(view, text), 'send-key', 'enter', false);
+    const typed = await type(view, text);
+    await deliver(typed, 'send-key', 'enter', false);
   }
   if (scenario.startsWith('effort')) {
     // Exercise the first press at startup and subsequent presses after badge expiry.
@@ -261,18 +265,25 @@ async function checkState({
       menu,
       'Provider did not present the native Red/Blue choice',
     );
-    const next = await key(view, 'down');
+    if (!codex && !hookPlugin && process.env.ASW_LIVE_REX_BROWSER === '1')
+      return pressDeck('unbound-choice');
+    const choose = async (before, value, button) => {
+      if (process.env.ASW_LIVE_REX_BROWSER !== '1') return key(before, value);
+      await pressDeck(button);
+      return read();
+    };
+    const next = await choose(view, 'down', 'down');
     assert(
       menu(next) && /[❯›>]\s*(?:\d+[.)]\s*)?Blue\b/i.test(next.text),
       'Blue highlight unconfirmed',
     );
-    const after = await key(next, 'enter');
+    const after = await choose(next, 'enter', 'confirm');
     if (
       !codex &&
       /Submit answers/i.test(after.text) &&
       dialog(after.text, 'question').review
     )
-      await key(after, 'enter');
+      await choose(after, 'enter', 'submit');
     const done = await waitFor(
       (v) => !menu(v) && /^\s*(?:[●•⏺]\s*)?Blue[.!]?\s*$/im.test(v.text),
       'Provider did not acknowledge the selected choice',
@@ -280,11 +291,12 @@ async function checkState({
     await assertEmpty(done);
     return;
   }
-  await prompt(
-    !codex && scenario === 'interrupt'
-      ? 'Run sleep 14, then say done.'
-      : 'First run sleep 14. Then answer 123 times 17. Complete this request before answering any queued follow-up.',
-  );
+  if (!streaming)
+    await prompt(
+      !codex && scenario === 'interrupt'
+        ? 'Run sleep 14, then say done.'
+        : 'First run sleep 14. Then answer 123 times 17. Complete this request before answering any queued follow-up.',
+    );
   const activity = /esc to interrupt/i;
   const queueText = 'After the first answer, give the product of 239 and 31.';
   async function workingScreen(expected) {
@@ -327,18 +339,50 @@ async function checkState({
         /Ready to submit your answers/i.test(last) +
         ', first=' +
         /2,?091/.test(last) +
+        ', streamMarkers=' +
+        (last.match(/CALIBRATION +\d+/gi) || []).length +
+        ', errorIndicator=' +
+        /■|error|failed|quota|unavailable|limit reached/i.test(last) +
+        ', promptStillTyped=' +
+        /^› Without tools/m.test(last) +
         ', second=' +
         /7,?409/.test(last) +
         ')',
     );
   }
   await until(
-    () => workingScreen(''),
+    streaming
+      ? async () => {
+          const display = await screen();
+          if (
+            /API Error|usage limit|out of usage|failed to connect|failed to refresh|reconnecting|invalid.*token|stream disconnected|connection closed|error sending request|sign in again|not available|not supported/i.test(
+              display,
+            )
+          )
+            throw Error(
+              'Disposable Codex reported a provider or connection error',
+            );
+          if (
+            /weekly limit|try again at|insufficient_quota|exceeded|quota|credit balance|rate.limit|unauthorized|refresh token|requires.*model|problem running/i.test(
+              display,
+            )
+          )
+            throw Error('Disposable Codex reported a usage or sign-in problem');
+          if (scenario === 'interrupt-stream-early')
+            return /CALIBRATION +\d+[^\n]*\n[^\n]*CALIBRATION +\d+/i.test(
+              display,
+            );
+          return /CALIBRATION +(?:[89]\d|[1-4]\d\d)\b[^\n]*\n[^\n]*CALIBRATION +\d+/i.test(
+            display,
+          );
+        }
+      : () => workingScreen(''),
     'Working cue with empty composer was not observed',
   );
-  if (scenario === 'interrupt') {
-    assert(await workingScreen(''));
-    if (codex) writeOwned('send-key', 'escape');
+  if (scenario === 'interrupt' || streaming) {
+    if (!streaming) assert(await workingScreen(''));
+    if (process.env.ASW_LIVE_REX_BROWSER === '1') await pressDeck('interrupt');
+    else if (codex && !streaming) writeOwned('send-key', 'escape');
     else {
       const { Bridge } = require('../../src/app/session');
       const {
@@ -349,10 +393,12 @@ async function checkState({
         claudeKeyboardIdentity,
       } = require('../../src/agents/claude/keyboard-identity');
       const path = require('node:path');
+      let escapes = 0;
       const bridge = new Bridge(
         {
           backend: 'rex',
           claude: { enabled: true },
+          controlVerified: { codex: true },
           allowClipboardFocus: true,
           statusMaxAgeMs: 86400000,
         },
@@ -366,6 +412,7 @@ async function checkState({
             target.block,
             'escape',
           ]);
+          assert.equal(++escapes, 1, 'Only one Escape per physical action');
           writeOwned('send-key', 'escape');
         },
       );
@@ -382,7 +429,7 @@ async function checkState({
           undefined,
           path.join(path.dirname(repo), 'home/.claude'),
         );
-      if (hookPlugin) {
+      if (!codex && hookPlugin) {
         const state = require('../../src/agents/claude/state');
         const { ClaudeControls } = require('../../src/agents/claude/controls');
         bridge.claude = new ClaudeControls(bridge, {
@@ -393,23 +440,43 @@ async function checkState({
       }
       // Validate the spinner-only recognizer against the native screen even
       // when this CLI also prints the optional footer shortcut.
-      const {
-        hasClaudeInterruptCue,
-      } = require('../../src/agents/claude/interrupt-cue');
-      const observed = (await screen())
-        .replace(/(?:·\s*)?esc to interrupt\s*(?:·\s*)?/gi, ' · ')
-        .replace(/^\s*·\s*$/gm, '');
-      assert(
-        hasClaudeInterruptCue(observed),
-        'Native spinner must independently confirm activity',
-      );
+      if (codex) {
+        const {
+          inspectProcess,
+        } = require('../../src/agents/codex/hook-process');
+        const { exec } = require('../../src/platform/exec');
+        bridge.inspectKeyboardProcess = (currentPid) => {
+          assert.equal(currentPid, pid);
+          owned.assert(pid);
+          return inspectProcess(pid, (_file, args, options) =>
+            exec(
+              path.resolve(
+                'dist/com.kotl3r.deckshep.sdPlugin/bin/codex-hook-process',
+              ),
+              args,
+              options,
+            ),
+          );
+        };
+      } else {
+        const {
+          hasClaudeInterruptCue,
+        } = require('../../src/agents/claude/interrupt-cue');
+        const observed = (await screen())
+          .replace(/(?:·\s*)?esc to interrupt\s*(?:·\s*)?/gi, ' · ')
+          .replace(/^\s*·\s*$/gm, '');
+        assert(
+          hasClaudeInterruptCue(observed),
+          'Native spinner must independently confirm activity',
+        );
+      }
       const active = await bridge.focused();
       assert.equal(
         active.state,
         'working',
         'Rex must identify the current working state',
       );
-      if (hookPlugin) {
+      if (!codex && hookPlugin) {
         assert(active.nativeVerified && active.claudeControlsEnabled);
         const context = require('../../src/guards/context');
         await bridge.withContext(
@@ -424,7 +491,7 @@ async function checkState({
         active.rexSettings = await observeSettings(bridge, active);
         assert(
           active.rexSettings.process,
-          'Expected fresh Claude CLI registration',
+          'Expected verified provider process',
         );
         await performRexKeyboard(bridge, {
           action: 'interrupt',
@@ -432,6 +499,7 @@ async function checkState({
           target: active,
         });
       }
+      assert.equal(escapes, 1);
     }
     await until(async () => {
       const text = await screen();
@@ -448,7 +516,10 @@ async function checkState({
     'Typed text in a working composer unconfirmed',
   );
   assert(await workingScreen(queueText));
-  writeOwned('send-key', ...(codex ? ['tab'] : runningKeys('queue')));
+  if (!codex && !hookPlugin && process.env.ASW_LIVE_REX_BROWSER === '1')
+    return pressDeck('unbound-queue');
+  if (process.env.ASW_LIVE_REX_BROWSER === '1') await pressDeck('queue');
+  else writeOwned('send-key', ...(codex ? ['tab'] : runningKeys('queue')));
   await until(async () => {
     const text = await screen();
     if (!codex) {
