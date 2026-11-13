@@ -1,6 +1,6 @@
 # DeckShep support
 
-Use GitHub Issues for beta support and ordinary bug reports. While the repository is private, only people with repository access can use the tracker. [DeckShep Issues](https://github.com/kotler/DeckShep/issues)
+Use GitHub Issues for beta support and ordinary bug reports. Anyone can read the tracker. Sign in to GitHub to file an issue. [DeckShep Issues](https://github.com/kotler/DeckShep/issues)
 
 For a suspected vulnerability or guard bypass, follow the [private security reporting instructions](../SECURITY.md).
 

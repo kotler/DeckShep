@@ -19,9 +19,9 @@
   "support": {
     "issues": {
       "url": "https://github.com/kotler/DeckShep/issues",
-      "ownerVerified": false,
-      "reviewedAt": null,
-      "evidence": null
+      "ownerVerified": true,
+      "reviewedAt": "2026-11-12",
+      "evidence": "docs/validation/2026-11-12-rex-beta-execution.md"
     }
   }
 }

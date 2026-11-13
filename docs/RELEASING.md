@@ -38,8 +38,7 @@ notices. Nothing installs or uploads. Universal output does not prove Intel exec
 ## Reviewed public distributions
 
 `npm run release:check` must pass against exact-version evidence in
-`release/readiness.json`; see [RELEASE-READINESS.md](RELEASE-READINESS.md). It is
-expected to fail until the approved Issues tracker is verified as publicly accessible.
+`release/readiness.json`; see [RELEASE-READINESS.md](RELEASE-READINESS.md). The evidence includes signed-out access to the public Issues tracker.
 Never mark records verified just to make a release job pass.
 
 Once reviewed, `npm run package -- --release --tag v1.4.0 --require-clean` is the

@@ -74,4 +74,4 @@ The MK.2 showed “Press to cycle” flickering on the prior candidate. A contro
 
 On November 12, 2026, the owner approved the existing validation for DeckShep 1.4.0 with Rex on the 15-key MK.2. The evidence includes the physical checks above and browser-driven checks with disposable Codex CLI and Claude Code sessions. Independent clean-Mac installation and Intel execution remain unverified. Herdr TUI and Herdr App remain outside this beta.
 
-The owner selected kotler/DeckShep Issues as the sole channel for ordinary beta support. GitHub reported Issues enabled on the private repository. A signed-out request to the Issues URL returned HTTP 404. Public access verification remains pending.
+The owner selected kotler/DeckShep Issues as the sole channel for ordinary beta support. GitHub reported Issues enabled on the private repository. A signed-out request to the Issues URL returned HTTP 404. On November 12, 2026, after the owner authorized making the repository public, GitHub reported public visibility with Issues enabled. A signed-out GET returned HTTP 200 at https://github.com/kotler/DeckShep/issues with the page title “Issues · kotler/DeckShep · GitHub”.

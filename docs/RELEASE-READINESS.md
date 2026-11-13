@@ -38,7 +38,7 @@ these passed from fixtures or a universal build. The first release ships only
 the Rex profile; Herdr gates are deferred with it.
 
 The owner approved launch validation for the 1.4.0 Rex beta and selected
-`kotler/DeckShep` Issues. Signed-out access is pending. Before publication,
+`kotler/DeckShep` Issues. Signed-out access was verified on November 12, 2026. Before publishing a release,
 the owner must enable private vulnerability reporting, review the snapshot audit
 and downloaded artifact, and authorize publication separately. GitHub Releases
 and a **free** Marketplace listing are the intended channels. Marketplace AI-use
