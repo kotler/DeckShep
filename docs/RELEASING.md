@@ -39,7 +39,7 @@ notices. Nothing installs or uploads. Universal output does not prove Intel exec
 
 `npm run release:check` must pass against exact-version evidence in
 `release/readiness.json`; see [RELEASE-READINESS.md](RELEASE-READINESS.md). It is
-expected to fail while launch validation and public support channels are pending.
+expected to fail until the approved Issues tracker is verified as publicly accessible.
 Never mark records verified just to make a release job pass.
 
 Once reviewed, `npm run package -- --release --tag v1.4.0 --require-clean` is the

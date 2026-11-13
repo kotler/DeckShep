@@ -1,16 +1,8 @@
 # DeckShep support
 
-Public channels are pending owner verification:
+Use GitHub Issues for beta support and ordinary bug reports. While the repository is private, only people with repository access can use the tracker. [DeckShep Issues](https://github.com/kotler/DeckShep/issues)
 
-- GitHub Issues: `https://github.com/OWNER/REPOSITORY/issues`
-- Support email: `SUPPORT_EMAIL_NOT_VERIFIED`
-
-These are placeholders, not working contact details. The public support destination has
-not been verified. The release check rejects these values until the owner
-confirms the actual Issues destination and an active mailbox with review
-evidence. Do not use the owner's personal email or advertise proposed aliases.
-For vulnerabilities or potential guard bypasses, use the private reporting route
-in [SECURITY.md](../SECURITY.md), rather than a public issue.
+For a suspected vulnerability or guard bypass, follow the [private security reporting instructions](../SECURITY.md).
 
 ## Reporting an ordinary issue
 

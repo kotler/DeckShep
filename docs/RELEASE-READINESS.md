@@ -19,14 +19,13 @@ complete based on fixture results, a draft or an unanswered request.
   as **pending**. MIT covers the SVG code; it does not grant provider trademarks.
 - Launch validation must name this version and have an owner-verified review,
   calendar date and a nonempty, repository-local evidence file.
-- The public GitHub Issues URL and active support email each need owner
-  verification, review date and local evidence. Placeholder values fail.
-  Do not publish an address until the owner has confirmed it works.
+- GitHub Issues is the sole public beta support channel. Record the approved URL,
+  review date and local evidence after verifying the tracker opens while signed out.
 
 Evidence paths must resolve to regular files inside the repository without
 symlinks. Record only privacy-safe summaries, not credentials, private mail or
 terminal transcripts. The gate checks records mechanically; it does not establish
-legal clearance, actual mailbox operation or completion of physical testing.
+legal clearance or completion of physical testing.
 Marketplace eligibility is reviewed separately. Provider trademark permission is still pending when it passes.
 
 ## Open validation and distribution work
@@ -38,8 +37,9 @@ execution, optional signing/notarization and cleanup fingerprints. Do not claim
 these passed from fixtures or a universal build. The first release ships only
 the Rex profile; Herdr gates are deferred with it.
 
-Public Issues and email remain unverified. The owner must choose the new public
-repository, enable private vulnerability reporting, review the snapshot audit
+The owner approved launch validation for the 1.4.0 Rex beta and selected
+`kotler/DeckShep` Issues. Signed-out access is pending. Before publication,
+the owner must enable private vulnerability reporting, review the snapshot audit
 and downloaded artifact, and authorize publication separately. GitHub Releases
 and a **free** Marketplace listing are the intended channels. Marketplace AI-use
 disclosure, eligibility, public support/privacy URLs and final media still need

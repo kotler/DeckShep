@@ -90,13 +90,6 @@ function issuesUrl(value) {
     !match.slice(1).some((part) => placeholders.includes(part.toUpperCase()))
   );
 }
-function email(value) {
-  return (
-    typeof value === 'string' &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) &&
-    !/@(?:example\.(?:com|test)|.*\.invalid)$/i.test(value)
-  );
-}
 export function releaseReadinessFailures(directory = root) {
   let record, pkg;
   try {
@@ -130,11 +123,6 @@ export function releaseReadinessFailures(directory = root) {
     !reviewed(directory, record.support?.issues)
   )
     failures.push('Owner-verified public GitHub Issues channel pending');
-  if (
-    !email(record.support?.email?.address) ||
-    !reviewed(directory, record.support?.email)
-  )
-    failures.push('Owner-verified active support email pending');
   return failures;
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

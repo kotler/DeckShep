@@ -64,7 +64,6 @@ test('release gate requires exact version, Apache hash, LobeHub provenance and v
         url: 'https://github.com/fixture-maintainer/deckshep/issues',
         ...review,
       },
-      email: { address: 'support@fixture-domain.test', ...review },
     },
   };
   const check = () => {
@@ -94,12 +93,11 @@ test('release gate requires exact version, Apache hash, LobeHub provenance and v
   assert(check().some((s) => s.includes('Issues')));
   record.support.issues.url =
     'https://github.com/fixture-maintainer/deckshep/issues';
-  record.support.email.address = 'SUPPORT_EMAIL_NOT_VERIFIED';
-  assert(check().some((s) => s.includes('email')));
-  record.support.email.address = 'support@fixture-domain.test';
-  record.support.email.ownerVerified = false;
-  assert(check().some((s) => s.includes('email')));
-  record.support.email.ownerVerified = true;
+  record.support.issues.ownerVerified = false;
+  assert.deepEqual(check(), [
+    'Owner-verified public GitHub Issues channel pending',
+  ]);
+  record.support.issues.ownerVerified = true;
   record.launchValidation.evidence = '../outside';
   assert(check().some((s) => s.includes('launch-validation')));
   fs.symlinkSync(
