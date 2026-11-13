@@ -4,7 +4,7 @@ DeckShep puts the Codex CLI and Claude Code sessions you already run in Rex on y
 
 ![DeckShep’s virtual Rex profile with two Codex sessions, a white dot on the selected agent, and ready-state controls along the bottom row](tests/e2e/__screenshots__/idle-darwin.png)
 
-**Beta scope.** Rex on macOS is the only backend tested with either CLI and the only profile included in the beta package. Herdr TUI and Herdr App are both works in progress. Public beta distribution is pending.
+**Beta scope.** Rex on macOS is the only backend tested with either CLI and the only profile included in the public beta. Herdr TUI and Herdr App are both works in progress.
 
 ## Get started
 
@@ -12,7 +12,11 @@ You’ll need Rex, Codex CLI or native Claude Code, the Elgato Stream Deck app, 
 
 ### Install the plugin
 
-If you have a beta ZIP from the maintainer, extract it, double-click `com.kotl3r.deckshep.streamDeckPlugin`, and accept the bundled **Rex** profile. If you customized an earlier installation, back it up before upgrading. [Upgrade and restore instructions](docs/INSTALL.md#upgrading-a-customized-deckshep-installation)
+If you customized an earlier installation, back it up before upgrading. [Upgrade and restore instructions](docs/INSTALL.md#upgrading-a-customized-deckshep-installation)
+
+1. [Download DeckShep 1.4.0 Rex beta 1 for macOS (ZIP)](https://github.com/kotler/DeckShep/releases/download/v1.4.0-beta.1/deckshep-1.4.0-beta.1-macos.zip).
+2. Extract the ZIP and double-click `com.kotl3r.deckshep.streamDeckPlugin`.
+3. Accept the bundled **Rex** profile in the Stream Deck app.
 
 <details>
 <summary>Install from a source checkout</summary>
