@@ -59,7 +59,9 @@ plus PID ownership proof; Herdr App `ASW_LIVE_HERDR_APP=1` /
 `ASW_LIVE_HERDR_APP_RELEASE=1`). Never start, stop, attach to or send input to
 the developer's existing Rex, Herdr, Codex daemon or agents. Fixture tests may
 only touch their own process and private temp sockets and files. Historical
-validation logs are evidence, not permission to rerun anything.
+validation logs are evidence, not permission to rerun anything. The separately
+authorized `npm run test:e2e:herdr-app-live` uses the reviewed signed pair.
+See `tests/e2e/README.md` for its artifact input and invocation.
 
 ## Architecture
 

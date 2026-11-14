@@ -25,6 +25,7 @@
         "tests/live/app-calibration/release-preview-backend.cjs",
         "tests/e2e/virtual-deck/app.js",
         "tests/e2e/*.spec.ts",
+        "tests/live/playwright/{navigation.spec.js,playwright.config.ts}",
         "playwright.config.ts",
         "src/plugin/host-socket.mts"
       ],

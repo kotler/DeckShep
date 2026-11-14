@@ -15,7 +15,12 @@ const {
 
 /** Test bundle only. Production audit rejects this marker; no config/env knob
  * can select this factory in a normal build. Lease is issued by the owned runner. */
-function hardwareBackend(root, record, helperSha256) {
+function hardwareBackend(
+  root,
+  record,
+  helperSha256,
+  home = path.join(root, 'session/app'),
+) {
   function read(name) {
     const directory = fs.lstatSync(root),
       file = path.join(root, name),
@@ -40,7 +45,6 @@ function hardwareBackend(root, record, helperSha256) {
     recordCount: 1,
     helperAvailable: () => appPeerHelperAvailable(),
     create(config, authority) {
-      const home = path.join(root, 'session/app');
       if (config.herdrApp?.home !== home) throw Error('App unavailable');
       const lease = read('lease.json'),
         original = JSON.stringify(lease);

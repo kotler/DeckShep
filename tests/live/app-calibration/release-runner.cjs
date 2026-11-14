@@ -101,6 +101,7 @@ async function runReleaseCalibration(
               '-O2',
               '-Wall',
               '-Werror',
+              ...(effects.navigation ? ['-DDECKSHEP_NAVIGATION'] : []),
               path.join(__dirname, 'release-cat-shell.c'),
               '-o',
               catShell,
@@ -148,7 +149,10 @@ async function runReleaseCalibration(
           if (hash(fs.readFileSync(catShell)) !== catShellSha256)
             throw Error('Release shell changed');
           if (effects.afterScenarios) await effects.afterScenarios(run);
-          await releaseScenarios(run);
+          if (effects.navigation) {
+            run.phase = 'playwright-navigation';
+            await effects.navigation(run);
+          } else await releaseScenarios(run);
           run.artifacts.verifyTrees();
           feed.assertClean();
         },

@@ -200,6 +200,10 @@ class VirtualHost {
 
 export async function prepareVirtualHost({
   fixture = 'tests/integration/host/dependencies.ts',
+  peerHelper,
+}: {
+  fixture?: string;
+  peerHelper?: { file: string; sha256: string };
 } = {}): Promise<VirtualHost> {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'deckshep-host-'));
   const host = new VirtualHost(directory);
@@ -211,11 +215,18 @@ export async function prepareVirtualHost({
         path.join(host.plugin, name),
         { recursive: true },
       );
+    if (peerHelper) {
+      fs.copyFileSync(
+        peerHelper.file,
+        path.join(host.plugin, 'bin/herdr-app-peer'),
+        fs.constants.COPYFILE_EXCL,
+      );
+    }
     const { bundle } = await import('../../../scripts/bundle.mjs');
     await bundle(
       path.resolve('src/plugin/entry.mts'),
       path.join(host.plugin, 'bin/plugin.js'),
-      { fixture: path.resolve(fixture) },
+      { fixture: path.resolve(fixture), peerHelperSha256: peerHelper?.sha256 },
     );
     return host;
   } catch (error) {

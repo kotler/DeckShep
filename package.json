@@ -41,6 +41,7 @@
     "compat:codex": "node --import tsx scripts/codex-protocol.mjs",
     "poc:rex-hook": "node --import tsx scripts/poc-rex-hook.mjs",
     "test:e2e": "node scripts/tool.mjs @playwright/test test",
+    "test:e2e:herdr-app-live": "node scripts/tool.mjs @playwright/test test --config tests/live/playwright/playwright.config.ts",
     "test:e2e:update": "node scripts/tool.mjs @playwright/test test --update-snapshots",
     "e2e:install": "node scripts/tool.mjs @playwright/test install --only-shell chromium"
   },

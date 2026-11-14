@@ -11,12 +11,17 @@ export class VirtualDeck {
   private pauseFrom = 0;
   private readonly hidden = new Set<number>();
   private readonly settings = new Map<number, Record<string, unknown>>();
+  constructor(
+    private readonly prepareHost = () =>
+      prepareVirtualHost({
+        fixture: 'tests/e2e/virtual-host/scenario-dependencies.ts',
+      }),
+    private readonly initialProfile = 'rex',
+  ) {}
   async reset(): Promise<void> {
     await this.host?.stop();
-    this.host = await prepareVirtualHost({
-      fixture: 'tests/e2e/virtual-host/scenario-dependencies.ts',
-    });
-    this.profile = 'rex';
+    this.host = await this.prepareHost();
+    this.profile = this.initialProfile;
     this.name = 'idle-two-codex';
     this.time = 10000;
     this.paused = false;

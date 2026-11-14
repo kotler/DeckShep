@@ -95,3 +95,28 @@ replies. Neither level proves that an installed agent currently has the required
 footer, metadata hooks or control consent.
 
 The startup baseline leaves all five contextual keys blank until Rex has a selected agent. Closing the selected pane clears that row as well.
+
+## Live Herdr App navigation
+
+The separate `npm run test:e2e:herdr-app-live` suite runs the virtual deck
+against test-owned copies of the reviewed signed App 0.1.14 and Core 0.1.19.
+The release launcher verifies the copies, contains the updater and checks
+process and socket ownership. Its two calibration terminals stay plain.
+Two additional disposable programs emit fixed OSC 7501 reports for idle Codex
+and waiting Claude. Neither program uses a provider account.
+
+With current authorization for that pair, set the candidate path to the private
+folder containing the matching `release-candidate.json` and run:
+
+```sh
+ASW_LIVE=1 ASW_LIVE_AUTHORIZATION=test-owned-only \
+ASW_LIVE_HERDR_APP=1 ASW_LIVE_HERDR_APP_RELEASE=1 \
+ASW_HERDR_APP_RELEASE_ARTIFACTS=/absolute/path/to/reviewed-candidate \
+npm run test:e2e:herdr-app-live
+```
+
+Chromium clicks the virtual deck on a real clock. The test checks local
+selection, consented Next and Attention requests and consent revocation.
+An independent peer-verified App read checks which pane Herdr selected.
+A pass also requires verified cleanup and unchanged tracked settings.
+The ordinary Playwright suite keeps the synthetic stale-press and timing cases.
