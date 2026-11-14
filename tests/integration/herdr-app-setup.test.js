@@ -135,6 +135,7 @@ test('App setup/doctor reports profile consent and disabled build state without 
     homeConfigured: true,
     focusRequestEnabled: true,
     connected: true,
+    verifiedPeer: true,
   });
   assert(positive.every((check) => check.ok && check.reason.length <= 160));
   const negative = herdrAppChecks({

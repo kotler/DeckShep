@@ -24,7 +24,7 @@ const LOCAL = /^t[1-9][0-9]*$/;
 function clean(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
-/** Read-only herdr-core status for key labels. It brackets one `terminal.list`
+/** Read-only herdr-core status for the App inspector. It brackets one `terminal.list`
  * with `server.status` reads on one connection inside a fixed budget, keeps
  * only live local addresses and refuses duplicates instead of guessing. */
 export class AppCoreStatusReader implements AppCoreStatusPort {

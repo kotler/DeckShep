@@ -16,7 +16,7 @@ test('App selection and Next need separate consent and report requested rather t
   page,
 }) => {
   await app(page, false);
-  expect(await labels(page, 0, 1)).toContain('App reported');
+  expect(await labels(page, 0, 1)).toContain('Deck only');
   await command(page, 'press', 0, 1);
   expect(await trace(page)).toEqual([]);
   await command(page, 'setPreferences', { herdrAppFocusRequestEnabled: true });
@@ -31,9 +31,9 @@ test('App selection and Next need separate consent and report requested rather t
     'Not verified',
   ]);
   await command(page, 'advance', 2500);
-  expect(await labels(page, 0, 1)).toContain('Deck selected');
+  expect(await labels(page, 0, 1)).toContain('On deck');
   await command(page, 'advance', 350);
-  await command(page, 'press', 1, 1);
+  await command(page, 'press', 1, 0);
   expect(await trace(page)).toEqual([
     ['pane.focus', 'p2'],
     ['pane.focus', 'p3'],
@@ -46,7 +46,7 @@ test('App bank, closed slots and Collapse stay local and unsupported overrides c
   page,
 }) => {
   await app(page);
-  await command(page, 'press', 2, 0);
+  await command(page, 'press', 1, 1);
   expect(await labels(page, 0, 0)).toContain('Pane 6');
   const panes = [1, 2, 3, 4, 5, 7].map((number) => ({
     target: {
@@ -66,7 +66,8 @@ test('App bank, closed slots and Collapse stay local and unsupported overrides c
   });
   expect(await labels(page, 0, 0)).toContain('Closed pane');
   await command(page, 'press', 0, 0);
-  await command(page, 'press', 1, 0);
+  await command(page, 'advance', 350);
+  await command(page, 'press', 1, 2);
   expect(await labels(page, 0, 0)).toContain('Pane 7');
   for (const action of ['zoom', 'send', 'interrupt', 'approvalConfirm']) {
     await command(page, 'setKeySettings', 1, 3, { action });
@@ -94,3 +95,36 @@ test('switching away from a paused App request sends nothing to the old profile'
   await command(page, 'up', 0, 1);
   expect(await trace(page)).toEqual([]);
 });
+
+for (const consent of [false, true]) {
+  test(`Attention reveals a waiting Claude on the second bank (consent=${consent})`, async ({
+    page,
+  }) => {
+    await app(page, consent);
+    const panes = Array.from({ length: 6 }, (_, i) => ({
+      target: {
+        space: 's1',
+        tab: 'c1',
+        pane: 'p' + (i + 1),
+        terminal: 't' + (i + 1),
+      },
+      reportedApp: i === 5 ? 'claude-code' : 'codex',
+      reportedStatus: i === 5 ? 'blocked' : 'idle',
+      name: i === 5 ? 'Review' : 'Job ' + (i + 1),
+    }));
+    await command(page, 'setScenario', {
+      agents: [],
+      focused: '',
+      app: { panes, selected: panes[0].target, epoch: 1 },
+    });
+    await command(page, 'advance', 350);
+    expect(await labels(page, 1, 4)).toEqual([
+      'Attention',
+      'Review',
+      'waiting',
+    ]);
+    await command(page, 'press', 1, 4);
+    expect(await labels(page, 0, 0)).toContain('On deck');
+    expect(await trace(page)).toEqual(consent ? [['pane.focus', 'p6']] : []);
+  });
+}

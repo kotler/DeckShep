@@ -34,20 +34,33 @@ async function appControllerBackend(t) {
       name: 'Pane ' + index,
       sub_agents: [],
     });
+  let pauseListing,
+    dropReply = false;
   const peer = await fakeServer(
     t,
     (socket, request) => {
-      socket.end(
-        JSON.stringify(
-          request.ls
-            ? world
-            : request.status
-              ? status
-              : request.commands
-                ? commands
-                : { ok: true },
-        ) + '\n',
-      );
+      if (request.do && dropReply) {
+        dropReply = false;
+        socket.end();
+        return;
+      }
+      const reply = () =>
+        socket.end(
+          JSON.stringify(
+            request.ls
+              ? world
+              : request.status
+                ? status
+                : request.commands
+                  ? commands
+                  : { ok: true },
+          ) + '\n',
+        );
+      if (request.ls && pauseListing) {
+        const hold = pauseListing;
+        pauseListing = null;
+        hold(reply);
+      } else reply();
     },
     'herdr-app.sock',
   );
@@ -104,6 +117,13 @@ async function appControllerBackend(t) {
       return waiting;
     },
     release: () => release?.(),
+    pauseListing: () =>
+      new Promise((resolve) => {
+        pauseListing = resolve;
+      }),
+    dropFocusReply: () => {
+      dropReply = true;
+    },
   };
 }
 module.exports = { appControllerBackend };

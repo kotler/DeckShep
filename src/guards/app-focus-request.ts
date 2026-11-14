@@ -16,6 +16,20 @@ function validContext(
     context.page,
   ];
   return (
+    !!context.conditions &&
+    ['tile', 'next', 'attention', 'calibration'].includes(
+      context.conditions.action,
+    ) &&
+    typeof context.conditions.name === 'string' &&
+    typeof context.conditions.appSelection === 'string' &&
+    typeof context.conditions.effectiveSelection === 'string' &&
+    (context.conditions.action === 'calibration'
+      ? context.conditions.provider === null ||
+        typeof context.conditions.provider === 'string'
+      : ['codex', 'claude-code'].includes(context.conditions.provider ?? '')) &&
+    (context.conditions.action === 'attention'
+      ? ['waiting', 'error', 'done'].includes(context.conditions.reason ?? '')
+      : context.conditions.reason === null) &&
     context.scope === 'herdr-app' &&
     context.control === 'requestFocus' &&
     numbers.every((value) => Number.isSafeInteger(value) && value >= 0) &&
@@ -46,6 +60,7 @@ function identity(
     context.visibility,
     context.generation,
     context.backendKey,
+    context.conditions,
     context.page,
     context.stamp,
     context.armedAt,
@@ -86,6 +101,7 @@ export class AppFocusAuthority {
     return {
       context: Object.freeze({
         ...context,
+        conditions: Object.freeze({ ...context.conditions }),
         target: Object.freeze({ ...context.target }),
       }),
       check,

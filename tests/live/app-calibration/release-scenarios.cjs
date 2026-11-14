@@ -29,6 +29,14 @@ function requestClient(run, record = run.artifacts.manifest.appRecord) {
   const state = {
     scope: 'herdr-app',
     control: 'requestFocus',
+    conditions: {
+      action: 'calibration',
+      provider: 'codex',
+      name: '',
+      reason: null,
+      appSelection: '',
+      effectiveSelection: '',
+    },
     appearance: 1,
     visibility: 1,
     generation: 1,
@@ -59,9 +67,10 @@ function requestClient(run, record = run.artifacts.manifest.appRecord) {
     }),
   };
 }
-async function arm(client, target) {
+async function arm(client, pane) {
   Object.assign(client.state, {
-    target,
+    target: pane.target,
+    conditions: { ...client.state.conditions, provider: pane.reportedApp },
     armedAt: performance.now(),
     endpointGeneration: client.sender.generation,
     peerKey: client.sender.peerKey,
@@ -157,7 +166,7 @@ async function releaseScenarios(run) {
     const minimized = await client.sender.observe(run.signal);
     const request = await client.sender.deliver(
       { kind: 'requestFocus' },
-      await arm(client, minimized.panes[0].target),
+      await arm(client, minimized.panes[0]),
       run.signal,
     );
     if (request.status !== 'requested' || request.verifiedFocus !== false)
@@ -165,7 +174,7 @@ async function releaseScenarios(run) {
     result.minimizeAcknowledged = true;
     result.minimizedRequestAcknowledged = true;
     result.verifiedFocus = false;
-    const oldPermit = await arm(client, minimized.panes[0].target);
+    const oldPermit = await arm(client, minimized.panes[0]);
     run.phase = 'release-owned-restart';
     await restartApp(run);
     let oldBindingRefused = false;
@@ -209,7 +218,7 @@ async function releaseScenarios(run) {
       });
       const request = await fresh.sender.deliver(
         { kind: 'requestFocus' },
-        await arm(fresh, restored.panes[1].target),
+        await arm(fresh, restored.panes[1]),
         run.signal,
       );
       if (request.status !== 'requested' || request.verifiedFocus !== false)

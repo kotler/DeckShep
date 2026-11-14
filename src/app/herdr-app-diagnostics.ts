@@ -4,6 +4,7 @@ export interface AppDiagnosticState {
   homeConfigured?: boolean;
   focusRequestEnabled?: boolean;
   connected?: boolean;
+  verifiedPeer?: boolean;
 }
 /** Passive reporting only: never discovers processes, opens sockets or probes
  * the App. CLI callers leave profile-only preferences unknown. */
@@ -46,13 +47,15 @@ export function herdrAppChecks(state: AppDiagnosticState) {
     },
     {
       id: 'herdr-app-connection',
-      ok: state.connected === true,
+      ok: state.verifiedPeer === true,
       reason:
         state.connected === undefined
           ? 'App peer/build checks run only in the selected App profile'
-          : state.connected
+          : state.verifiedPeer
             ? 'App peer/build matched; pane state is App-reported'
-            : 'No matched App peer/build connection',
+            : state.connected
+              ? 'App observed; deck selection only'
+              : 'No matched App peer/build connection',
     },
     {
       id: 'herdr-app-input',

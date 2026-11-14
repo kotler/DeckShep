@@ -5,6 +5,8 @@ import {
 interface SetupState extends AppDiagnosticState {
   preferences: Record<string, unknown>;
   panes: number;
+  codex: number;
+  coreCount?: number;
   setupBusy: boolean;
   message: string;
 }
@@ -32,16 +34,17 @@ export function appInspectorRequest(
       backend: 'herdr-app',
       preferences: state.preferences,
       offline: !state.connected,
-      previewOnly: state.recordCount === 0,
+      previewOnly: !state.verifiedPeer,
       agents: state.panes,
-      codex: 0,
-      claude: 0,
+      codex: state.codex,
+      claude: state.panes - state.codex,
+      coreCount: state.coreCount,
       claudeIdentified: 0,
       metadata: 0,
       selected: null,
       verifiedFocus: false,
       focusRequestAvailable:
-        state.connected && state.focusRequestEnabled && state.recordCount > 0,
+        state.verifiedPeer === true && state.focusRequestEnabled === true,
       setupBusy: state.setupBusy,
       message: (message ?? state.message).slice(0, 160),
     });

@@ -66,7 +66,7 @@ const ATTENTION_RANK: Record<AttentionKind, number> = {
   done: 2,
 };
 
-function attentionKind(state: string): AttentionKind | null {
+export function attentionKind(state: string): AttentionKind | null {
   if (state === 'blocked') return 'waiting';
   if (state === 'error') return 'error';
   if (state === 'done') return 'done';

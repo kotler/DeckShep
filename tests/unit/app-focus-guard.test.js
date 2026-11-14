@@ -35,6 +35,7 @@ test('request permits and their final leases are single-use and cannot serve as 
   assert.throws(() => x.authority.begin(permit), /expired/);
   assert(Object.isFrozen(lease.context));
   assert(Object.isFrozen(lease.context.target));
+  assert(Object.isFrozen(lease.context.conditions));
   lease.consume(x.context.peerKey, x.context.recordKey, 1);
   lease.postflight();
   assert.throws(
@@ -62,6 +63,13 @@ test('request issue and final checks retain consent, visibility, setup, profile,
     ['recordKey', 'other'],
     ['target', { ...focusState().target, terminal: 't2' }],
     ['target', null],
+    ['conditions', null],
+    ['conditions', { ...focusState().conditions, provider: undefined }],
+    [
+      'conditions',
+      { ...focusState().conditions, action: 'attention', reason: null },
+    ],
+    ['conditions', { ...focusState().conditions, name: 'Changed' }],
   ]) {
     const x = fixture(),
       permit = x.authority.issue(x.context);

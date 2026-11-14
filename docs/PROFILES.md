@@ -40,6 +40,12 @@ removes closed slots after fresh Rex discovery. Missing titles fall back to the
 Rex session label or Codex/Claude Code. Row 3 keeps provider-specific settings,
 identity and input guards; provider details do not override the Rex agent bar.
 
+The experimental Herdr App profile uses the same agent and navigation positions.
+Tiles, Next and Attention select locally or request an App pane with verified
+build and consent. Page and Collapse act locally. App keys support taps only.
+Row three defaults to empty, and saved Model, Effort and Permissions overrides
+are inactive. [Herdr App guide](HERDR-APP.md)
+
 ## Key map (Stream Deck MK.2, 5×3)
 
 One page, no folders. Row 1 shows agents, row 2 navigates, row 3 controls the

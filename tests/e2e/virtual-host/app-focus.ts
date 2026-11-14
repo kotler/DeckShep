@@ -1,7 +1,7 @@
 // Bundle-only fixture. No native helper, process discovery or socket is used.
 import type { AppFocusBackendFactory } from '../../../src/app/herdr-app-backend';
 import type { Scenario } from './scenarios';
-import { paneKey } from '../../../src/app/herdr-app-view';
+import { matchesAppTarget } from '../../../src/domain/app-navigation';
 export function virtualAppFocus(
   get: () => Scenario,
   pause: () => Promise<void>,
@@ -42,11 +42,13 @@ export function virtualAppFocus(
           lease.check();
           await pause();
           if (
-            model().panes.filter(
-              (pane) => paneKey(pane.target) === paneKey(lease.context.target),
-            ).length !== 1
+            !matchesAppTarget(
+              await this.observe(),
+              lease.context.target,
+              lease.context.conditions,
+            )
           )
-            throw Error('Focus refused');
+            throw Error('Target changed');
           lease.consume(this.peerKey, this.recordKey, this.generation);
           process.send?.({
             kind: 'fixtureInput',

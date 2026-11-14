@@ -42,7 +42,7 @@ async function inspector(page: Page, replies = true, backend = 'herdr-app') {
   const frames: {
     event: string;
     context?: string;
-    payload?: { kind?: string };
+    payload?: { kind?: string; action?: string };
   }[] = [];
   let lastMessage = '';
   await page.routeWebSocket('ws://localhost:19191', (socket) => {
@@ -86,22 +86,26 @@ async function inspector(page: Page, replies = true, backend = 'herdr-app') {
     });
   });
   await page.goto('http://127.0.0.1:19190/inspector.html');
-  await page.evaluate(() =>
-    (window as any).connectElgatoStreamDeckSocket(
-      '19191',
-      'fixture-registration',
-      'registerPropertyInspector',
-      JSON.stringify({
-        application: { language: 'en', platform: 'mac', version: '6.8.0' },
-        devices: [{ id: 'fixture-device', type: 0 }],
-      }),
-      JSON.stringify({
-        action: 'com.kotl3r.deckshep.key',
-        context: 'fixture-action',
-        device: 'fixture-device',
-        payload: { settings: { profileScope: backend } },
-      }),
-    ),
+  await page.evaluate(
+    (scope) =>
+      (window as any).connectElgatoStreamDeckSocket(
+        '19191',
+        'fixture-registration',
+        'registerPropertyInspector',
+        JSON.stringify({
+          application: { language: 'en', platform: 'mac', version: '6.8.0' },
+          devices: [{ id: 'fixture-device', type: 0 }],
+        }),
+        JSON.stringify({
+          action: 'com.kotl3r.deckshep.key',
+          context: 'fixture-action',
+          device: 'fixture-device',
+          payload: {
+            settings: { profileScope: scope, action: 'model', other: 'keep' },
+          },
+        }),
+      ),
+    backend,
   );
   return frames;
 }
@@ -115,7 +119,7 @@ test('real pinned inspector library connects and Refresh status sends an App rea
   );
   const frames = await inspector(page);
   await expect(page.locator('#connection')).toHaveText(
-    '2 pane(s) · App-reported status',
+    '2 agents · App-reported status · deck selection only',
   );
   await page.locator('#refresh').click();
   await expect(page.locator('#message')).toHaveText('App status refreshed');
@@ -156,5 +160,30 @@ test('Rex footer-check result is visible after pressing its setup button', async
   await expect(page.locator('#message')).toBeInViewport();
   expect(frames.some((frame) => frame.payload?.kind === 'setupFooter')).toBe(
     true,
+  );
+});
+
+test('App key choices preserve scope and other settings when restoring the position default', async ({
+  page,
+}) => {
+  const frames = await inspector(page);
+  const action = page.locator('#action');
+  await expect(page.locator('#connection')).toContainText('2 agents');
+  await expect(action).toHaveValue('model');
+  await page.getByText('This key’s action', { exact: true }).click();
+  await action.selectOption('attention');
+  await action.selectOption('');
+  await expect
+    .poll(() => frames.filter((f) => f.event === 'setSettings').length)
+    .toBe(2);
+  expect(
+    frames
+      .filter((f) => f.event === 'setSettings')
+      .map((f) => [f.context, f.payload]),
+  ).toEqual(
+    ['attention', ''].map((value) => [
+      'fixture-registration',
+      { profileScope: 'herdr-app', action: value, other: 'keep' },
+    ]),
   );
 });

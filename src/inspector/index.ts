@@ -7,7 +7,7 @@ let filling = false;
 let socket: any,
   registration: any,
   actionContext: any,
-  keySettings: {} = {},
+  keySettings: Record<string, unknown> = {},
   shared: any = null,
   lastStatus: any;
 let refreshTimer: ReturnType<typeof setTimeout> | undefined;
@@ -136,14 +136,14 @@ function fill(status: any) {
   byId('connection').textContent = app
     ? status.offline
       ? 'Herdr App unavailable — check the selected instance'
-      : `${status.agents} pane(s) · App-reported status${status.previewOnly ? ' · deck selection only' : ''}`
+      : `${status.agents} agent${status.agents === 1 ? '' : 's'} · App-reported status${!status.focusRequestAvailable ? ' · deck selection only' : ''}${typeof status.coreCount === 'number' ? ' · Core terminals: ' + status.coreCount : ''}`
     : status.offline
       ? herdr
         ? 'Herdr unavailable — choose its running session socket'
         : 'Rex unavailable — open Rex and enable Remote Control'
       : `${status.agents} agent${status.agents === 1 ? '' : 's'} · ${status.metadata}/${status.codex} Codex${status.claude ? ' · ' + status.claudeIdentified + '/' + status.claude + ' Claude' : ''} chats identified`;
   byId('selection').textContent = app
-    ? 'Focus requests do not verify keyboard focus. Codex controls use its daemon; no keystrokes are sent.'
+    ? 'App reports pane selection. Focus requests do not verify keyboard focus. Provider settings are inactive.'
     : status.selectionNotice
       ? 'Selection changed. Select an agent on the deck.'
       : status.selected
@@ -171,11 +171,13 @@ function fill(status: any) {
   byId('herdrAppFocusRequestEnabled').disabled = !app || status.setupBusy;
   byId('herdrAppCoreSocketPath').disabled = !app || status.setupBusy;
   byId('herdrAppReadbackEnabled').disabled = !app || status.setupBusy;
-  byId('herdrAppInputEnabled').disabled = !app || status.setupBusy;
+  byId('herdrAppInputEnabled').disabled = true;
   for (const option of Array.from(byId('action').options))
     option.disabled =
       app &&
       ![
+        '',
+        'attention',
         'none',
         'collapse',
         'banknext',
@@ -332,6 +334,10 @@ byId('action').addEventListener('change', () =>
             'Before\n' + payload.before + '\nAfter\n' + payload.after;
           byId('claudeApply').disabled = false;
         }
+      }
+      if (message.event === 'didReceiveSettings' && message.payload?.settings) {
+        keySettings = message.payload.settings;
+        byId('action').value = String(keySettings.action || '');
       }
       if (message.event === 'didReceiveGlobalSettings') query();
     } catch {

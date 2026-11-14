@@ -45,7 +45,7 @@ Rex navigation integration tests; browser fixtures never probe a real provider.
 `herdr-app-panes` uses App pane records without synthetic provider PIDs/chat
 identity. Its request backend exists only in the substituted fixture bundle;
 no native helper/Swift build is needed. Set an absolute synthetic App home and
-`herdrAppFocusRequestEnabled` explicitly to exercise requests. Selection and Next
+`herdrAppFocusRequestEnabled` explicitly to exercise requests. Selection, Next and Attention
 trace only `['pane.focus', pane]`, return requested/not verified, and never change
 the model selection merely because a request was acknowledged. App banks and
 Collapse are local. The pause API also covers request-consent revocation and

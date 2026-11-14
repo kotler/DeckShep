@@ -21,7 +21,7 @@ export interface AppSelectionSnapshot {
 }
 
 /** Display-only facts a herdr-core listing reported for one local address.
- * They label a key; they never become a target, permit or provider identity. */
+ * Addresses are scoped to this Core. Navigation uses the separate App observation. */
 export interface AppCoreFacts {
   address: string;
   name: string | null;

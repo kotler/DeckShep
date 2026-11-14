@@ -1,3 +1,4 @@
+import type { AppTargetConditions } from './app-navigation';
 import type { AppPaneRef, AppSelectionSnapshot } from './app-selection';
 
 declare const requestPermit: unique symbol;
@@ -20,6 +21,7 @@ export interface AppFocusContext {
   peerKey: string;
   recordKey: string;
   target: AppPaneRef;
+  conditions: AppTargetConditions;
 }
 export interface AppFocusState extends Omit<
   AppFocusContext,

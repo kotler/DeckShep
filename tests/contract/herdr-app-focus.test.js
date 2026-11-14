@@ -20,6 +20,7 @@ test('guarded delivery writes one explicit pane request; acknowledgement never b
     sub_agents: [],
   });
   x.state.target = { space: 's1', tab: 'c1', pane: 'p2', terminal: 't2' };
+  x.state.conditions.provider = 'claude-code';
   const permit = x.permit();
   assert.deepEqual(await x.sender.deliver({ kind: 'requestFocus' }, permit), {
     status: 'requested',
@@ -180,7 +181,7 @@ test('revoked consent and changed visibility/context are refused both before dis
   assert.deepEqual(x.focusCalls(), []);
 });
 test('missing/remapped/remote targets and changed command contracts are refused before focus', async (t) => {
-  for (const mutate of [
+  for (const [index, mutate] of [
     (x) => {
       x.world.spaces[0].tabs[0].terminals[0].terminal = 't2';
     },
@@ -199,12 +200,14 @@ test('missing/remapped/remote targets and changed command contracts are refused 
     (x) => {
       x.commands.push(structuredClone(x.commands[0]));
     },
-  ]) {
+  ].entries()) {
     const x = await senderFixture(t);
     mutate(x);
     await assert.rejects(
       x.sender.deliver({ kind: 'requestFocus' }, x.permit()),
-      /refused/,
+      [/App view unavailable/, /Target changed/, /App view unavailable/][
+        index
+      ] ?? /refused/,
     );
     assert.deepEqual(x.focusCalls(), []);
   }
@@ -363,4 +366,58 @@ test('overlapping attempts burn their own permit, cancellation/expiry refuse, an
     /pending/,
   );
   await assert.rejects(x.sender.status(), /unavailable/);
+});
+
+test('plain-pane calibration requires exact nullable provider evidence and burns failed permits', async (t) => {
+  for (const value of [null, 'unknown', undefined]) {
+    const x = await senderFixture(t);
+    const pane = x.world.spaces[0].tabs[0].terminals[0];
+    pane.app = null;
+    const observed = await x.sender.observe();
+    x.state.conditions.provider = observed.panes[0].reportedApp;
+    const permit = x.permit();
+    pane.app = value;
+    const send = () => x.sender.deliver({ kind: 'requestFocus' }, permit);
+    if (value === null) await send();
+    else
+      await assert.rejects(
+        send,
+        value === undefined ? /App view unavailable/ : /Target changed/,
+      );
+    const count = x.peer.calls.length;
+    await assert.rejects(send, /expired/);
+    assert.equal(x.peer.calls.length, count);
+    assert.equal(x.focusCalls().length, value === null ? 1 : 0);
+  }
+});
+
+test('ordinary navigation accepts status changes but refuses changed provider or displayed name', async (t) => {
+  for (const action of ['tile', 'next']) {
+    for (const field of ['status', 'app', 'name']) {
+      const x = await senderFixture(t);
+      const terminals = x.world.spaces[0].tabs[0].terminals;
+      const second = { ...terminals[0], terminal: 't2', pane: 'p2' };
+      terminals.push(second);
+      x.state.target = { space: 's1', tab: 'c1', terminal: 't2', pane: 'p2' };
+      const key = JSON.stringify(['s1', 'c1', 'p1', 't1']);
+      x.state.conditions = {
+        action,
+        provider: 'codex',
+        name: 'codex',
+        reason: null,
+        appSelection: key,
+        effectiveSelection: key,
+      };
+      const permit = x.permit();
+      second[field] = {
+        status: 'working',
+        app: 'claude',
+        name: 'Replacement',
+      }[field];
+      const send = x.sender.deliver({ kind: 'requestFocus' }, permit);
+      if (field === 'status') await send;
+      else await assert.rejects(send, /Target changed/);
+      assert.equal(x.focusCalls().length, field === 'status' ? 1 : 0);
+    }
+  }
 });

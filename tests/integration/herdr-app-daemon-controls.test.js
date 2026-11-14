@@ -16,7 +16,7 @@ function setup({ state = 'idle' } = {}) {
     name: 'Pane ' + n,
   }));
   const runs = [];
-  let fail = null;
+
   const h = harness({
     experimentalHerdrApp: true,
     appSelectionReader: () => ({
@@ -48,14 +48,13 @@ function setup({ state = 'idle' } = {}) {
     }),
     appCodexControls: {
       async run(kind, core, address, guard) {
-        if (fail) fail();
         guard();
         runs.push([kind, address]);
         return { kind, label: kind === 'model' ? 'GPT 5.5' : 'high' };
       },
     },
   });
-  return { h, runs, panes, setFail: (f) => (fail = f) };
+  return { h, runs, panes };
 }
 async function preferences(h, patch) {
   h.socket.emit(
@@ -81,68 +80,43 @@ test('without an approved build App panes are discovered read-only and agent key
   h.tick(350);
   assert.doesNotMatch(frame(h, 'herdr-app:0,1'), /Preview only/);
   assert.match(frame(h, 'herdr-app:0,1'), /Pane 2/);
-  assert.match(frame(h, 'herdr-app:1,1'), /Deck only/);
-  assert.match(frame(h, 'herdr-app:1,2'), /Consent off/);
+  assert.match(frame(h, 'herdr-app:1,0'), /Deck only/);
+
   await h.profilePress('herdr-app', 0, 1);
   assert.deepEqual(h.controller('herdr-app').selected(), ref(2));
-  assert.match(frame(h, 'herdr-app:0,1'), />Deck selected</);
+  assert.match(frame(h, 'herdr-app:0,1'), />On deck</);
   await h.profilePress('herdr-app', 1, 2);
   assert.deepEqual(runs, [], 'controls stay inactive without input consent');
   assert.equal(h.calls.length, 0);
 });
-test('consented daemon controls act on the deck-selected ready Codex pane only', async () => {
-  const { h, runs, setFail } = setup();
+
+test('saved provider controls stay inactive through settings reload with every former opt-in enabled', async () => {
+  const { h, runs } = setup();
   await h.appear('herdr-app');
   await preferences(h, {
     herdrAppHome: '/fixture-app-home',
     herdrAppCoreSocketPath: '/private/core.sock',
     herdrAppReadbackEnabled: true,
     herdrAppInputEnabled: true,
+    herdrAppFocusRequestEnabled: true,
   });
-  h.tick(350);
-  await h.profilePress('herdr-app', 0, 1);
-  h.tick(350);
-  assert.match(frame(h, 'herdr-app:1,3'), />Codex<\/text><text[^>]*>daemon</);
-  await h.profilePress('herdr-app', 1, 3);
-  assert.deepEqual(runs, [['effort', 't2']]);
-  assert.match(frame(h, 'herdr-app:1,3'), /high/);
-  h.tick(2600);
-  h.controller('herdr-app').render();
-  setFail(() => {
-    throw Error('Pane, chat or daemon changed: /private/secret');
-  });
-  await h.profilePress('herdr-app', 1, 2);
-  assert.match(
-    frame(h, 'herdr-app:1,2'),
-    />Control<\/text><text[^>]*>refused</,
-  );
-  assert.doesNotMatch(frame(h, 'herdr-app:1,2'), /secret/);
-  setFail(null);
-  h.tick(2600);
-  await preferences(h, { herdrAppInputEnabled: false });
-  h.tick(350);
-  await h.profilePress('herdr-app', 1, 3);
-  assert.equal(runs.length, 1, 'revoked consent unmaps the control');
-  assert.equal(h.calls.length, 0);
-});
-test('blocked or working Codex panes show Answer in Herdr / Wait and never run controls', async () => {
-  for (const [state, text] of [
-    ['blocked', />Answer<\/text><text[^>]*>in Herdr</],
-    ['working', />Wait for<\/text><text[^>]*>ready</],
-  ]) {
-    const { h, runs } = setup({ state });
-    await h.appear('herdr-app');
-    await preferences(h, {
-      herdrAppHome: '/fixture-app-home',
-      herdrAppCoreSocketPath: '/private/core.sock',
-      herdrAppReadbackEnabled: true,
-      herdrAppInputEnabled: true,
-    });
+  const app = h.controller('herdr-app');
+  for (const action of ['model', 'effort', 'permissions']) {
+    h.socket.emit(
+      'message',
+      JSON.stringify({
+        event: 'didReceiveSettings',
+        context: 'herdr-app:0,1',
+        payload: { settings: { profileScope: 'herdr-app', action } },
+      }),
+    );
+    await h.api.settled();
+    const key = app.keys.get('herdr-app:0,1');
+    assert.equal(key.settings.action, action);
+    assert.equal(key.presented.action, 'none');
     h.tick(350);
     await h.profilePress('herdr-app', 0, 1);
-    h.tick(350);
-    assert.match(frame(h, 'herdr-app:1,2'), text);
-    await h.profilePress('herdr-app', 1, 2);
-    assert.deepEqual(runs, []);
   }
+  assert.deepEqual(runs, []);
+  assert.deepEqual(h.calls, []);
 });

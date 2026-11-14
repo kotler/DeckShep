@@ -1,23 +1,23 @@
 import { createHash } from 'node:crypto';
 import type { Config } from '../domain/types';
 import type { AppFocusPort, AppFocusState } from '../domain/app-focus-request';
-import type {
-  AppCoreSnapshot,
-  AppPaneRef,
-  AppSelectionSnapshot,
-} from '../domain/app-selection';
+import type { AppPaneRef, AppSelectionSnapshot } from '../domain/app-selection';
 import type { AppCoreStatusPort } from '../terminals/herdr-app/core-status';
 import { AppFocusAuthority } from '../guards/app-focus-request';
 import type { AppFocusBackendFactory } from './herdr-app-backend';
 import { appInspectorRequest } from './herdr-app-inspector';
-import { AppCodexControls, type AppControlKind } from './herdr-app-codex';
+import type { FrameCache } from '../render/frame';
 import {
-  APP_CONTROLS,
-  appAction,
+  appRoster,
   appProvider,
-  appTile,
-  coreFacts,
+  destinationName,
+  matchesAppTarget,
   paneKey,
+  type AppTargetConditions,
+} from '../domain/app-navigation';
+import {
+  defaultAppAction,
+  appTile,
   type AppKey,
   type AppPresentation,
 } from './herdr-app-view';
@@ -27,7 +27,8 @@ interface Options {
   view(config: Config): Record<string, unknown>;
   save(patch: unknown): void;
   emit(event: string, context: string, payload: Record<string, unknown>): void;
-  svg(input: Record<string, unknown>): string;
+  frames: FrameCache;
+  queueStaleMs: number;
   clock(): number;
   nextGeneration(): number;
   enqueue(work: () => Promise<void>): void;
@@ -35,13 +36,25 @@ interface Options {
   backend: AppFocusBackendFactory;
   /** Read-only App selection used when no approved focus build exists. */
   reader?: (config: Config) => AppSelectionObserver;
-  codex?: AppCodexControls;
-  /** Optional read-only core labels; null when no socket is configured. */
+
+  /** Optional Core readback for the inspector. */
   core?: (config: Config) => AppCoreStatusPort | null;
 }
 export interface AppSelectionObserver {
-  observe(): Promise<AppSelectionSnapshot>;
+  observe(signal?: AbortSignal): Promise<AppSelectionSnapshot>;
   dispose(): void;
+}
+async function waitForPoll(poll: Promise<void>, signal: AbortSignal) {
+  let expire = () => {};
+  const deadline = new Promise<never>((_, reject) => {
+    expire = () => reject(Error('Request expired'));
+    signal.addEventListener('abort', expire, { once: true });
+  });
+  try {
+    await Promise.race([poll, deadline]);
+  } finally {
+    signal.removeEventListener('abort', expire);
+  }
 }
 function digest(value: unknown): string {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -59,15 +72,14 @@ export class HerdrAppController {
   #observer: AppSelectionObserver | null = null;
   #snapshot: AppSelectionSnapshot | null = null;
   #coreReader: AppCoreStatusPort | null = null;
-  readonly #codex: AppCodexControls;
-  #core: AppCoreSnapshot | null = null;
+  #roster = appRoster([], null, null);
+  #coreCount: number | undefined;
   #slots: AppPaneRef[] = [];
   #selection: AppPaneRef | null = null;
   #bank = 0;
-  #armedAt = 0;
-  #lastStamp = '';
-  #refreshing = false;
-  #active: { context: string; display: AppPresentation } | null = null;
+  #refreshing: Promise<void> | null = null;
+  #layoutStamp = '';
+  #active: string | null = null;
   #settingsError = false;
   #message = '';
   constructor(private readonly options: Options) {
@@ -75,8 +87,6 @@ export class HerdrAppController {
     this.#generation = options.nextGeneration();
     this.#backendKey = digest(this.#config.herdrApp);
     this.#authority = new AppFocusAuthority(() => this.#state(), options.clock);
-    this.#codex =
-      options.codex ?? new AppCodexControls({ config: () => this.#config });
   }
   get bridge() {
     return this;
@@ -124,170 +134,180 @@ export class HerdrAppController {
     return (
       !!this.#snapshot &&
       !!this.#port?.peerKey &&
+      this.#snapshot.endpointGeneration === this.#port.generation &&
       this.options.backend.recordCount > 0 &&
       this.options.backend.helperAvailable()
     );
   }
-  #stamp() {
-    return digest([
-      this.#generation,
-      this.#bank,
-      this.#port?.generation,
-      this.#port?.peerKey,
-      this.#port?.recordKey,
-      this.#snapshot,
-      this.#selection,
-      this.#slots,
-    ]);
+  #project() {
+    this.#roster = appRoster(this.#slots, this.#snapshot, this.selected());
+    this.#slots = this.#roster.slots;
+    this.#layoutStamp = digest(
+      this.#roster.entries.map((p) => paneKey(p?.target)),
+    );
+    this.setBank(this.#bank);
   }
   #focusConsented() {
     return (
-      this.#online() && this.#config.herdrApp?.focusRequestEnabled === true
+      this.#online() &&
+      this.options.config().herdrApp?.focusRequestEnabled === true
     );
   }
-  /** Daemon controls need input consent, core labels, daemon config and one
-   * deck/App-selected Codex pane that both App and core report as ready. */
-  #controls(config = this.#config): { allowed: Set<string>; reason: string } {
-    const none = (reason: string) => ({ allowed: new Set<string>(), reason });
-    if (config.herdrApp?.inputEnabled !== true) return none('Consent off');
-    if (!this.#coreAllowed(config) || !this.#coreReader?.terminal)
-      return none('Core off');
-    if (!config.daemonControls?.enabled) return none('Daemon off');
-    const selected = this.selected(),
-      pane = this.#snapshot?.panes.find(
-        (pane) => paneKey(pane.target) === paneKey(selected),
-      ),
-      facts = coreFacts(pane, this.#core);
-    if (!pane || !facts) return none('Select Codex');
-    if (appProvider(pane.reportedApp || facts.app) !== 'codex')
-      return none('Codex only');
-    const state = String(facts.state || pane.reportedStatus).toLowerCase();
-    if (state === 'blocked') return none('Answer in Herdr');
-    if (!['idle', 'done'].includes(state)) return none('Wait for ready');
-    const allowed = new Set<string>(['model', 'effort']);
-    if (config.daemonControls.permissionsEnabled) allowed.add('permissions');
-    return { allowed, reason: 'Reviewer off' };
+  #pane(action: string) {
+    if (action === 'next') return this.#roster.next;
+    if (action === 'attention') return this.#roster.attention?.agent;
+    if (/^agent:[0-4]$/.test(action))
+      return this.#roster.entries[this.#bank * 5 + Number(action.slice(6))];
+    return undefined;
   }
   mapping(key: AppKey) {
-    const action = appAction(key, {
-      select: !!this.#snapshot,
-      controls: this.#controls().allowed,
-    });
-    return (action === 'next' || action.startsWith('agent:')) &&
-      !this.#target(action)
-      ? 'none'
-      : action;
+    if (
+      !this.#snapshot ||
+      this.#settingsError ||
+      (key.notice &&
+        key.notice.until > this.options.clock() &&
+        key.notice.generation === this.#generation)
+    )
+      return 'none';
+    const action = defaultAppAction(key);
+    if (action === 'collapse')
+      return this.#slots.length > this.#roster.occupied.length
+        ? action
+        : 'none';
+    if (action === 'banknext') return this.#banks() > 1 ? action : 'none';
+    // The App cannot bind its pane to a Core connection (ADR 0007). Saved provider overrides stay inert.
+    return this.#pane(action) ? action : 'none';
   }
-  #target(action: string): AppPaneRef | null {
-    const panes = this.#snapshot?.panes ?? [];
-    if (action === 'next') {
-      const index = panes.findIndex(
-        (pane) => paneKey(pane.target) === paneKey(this.selected()),
-      );
-      return panes.length ? panes[(index + 1) % panes.length].target : null;
+  #presentation(key: AppKey, focus: boolean): AppPresentation {
+    const action = this.mapping(key),
+      pane = this.#pane(action);
+    const conditions: AppTargetConditions | null = pane
+      ? {
+          action: action === 'next' || action === 'attention' ? action : 'tile',
+          provider: appProvider(pane.reportedApp),
+          name: destinationName(pane),
+          reason: action === 'attention' ? this.#roster.attention.kind : null,
+          appSelection: action.startsWith('agent:')
+            ? ''
+            : paneKey(this.#snapshot?.selected),
+          effectiveSelection: action.startsWith('agent:')
+            ? ''
+            : paneKey(this.selected()),
+        }
+      : null;
+    const endpointGeneration = this.#snapshot?.endpointGeneration ?? 0;
+    const signature = JSON.stringify([
+      this.#generation,
+      endpointGeneration,
+      this.#port?.peerKey,
+      this.#port?.recordKey,
+      this.#backendKey,
+      this.#bank,
+      key.settings.action,
+      action,
+      conditions,
+      paneKey(pane?.target),
+      focus,
+      action === 'collapse' || action === 'banknext' ? this.#layoutStamp : null,
+    ]);
+    if (key.signature !== signature) {
+      key.signature = signature;
+      key.revision = (key.revision ?? 0) + 1;
     }
-    if (!/^agent:[0-4]$/.test(action)) return null;
-    const slot = this.#slots[this.#bank * 5 + Number(action.slice(6))];
-    return (
-      panes.find((pane) => paneKey(pane.target) === paneKey(slot ?? null))
-        ?.target ?? null
-    );
-  }
-  #presentation(key: AppKey): AppPresentation {
-    const action = this.mapping(key);
+    const stamp = String(key.revision);
     return {
       action,
       appearance: key.appearance,
       visibility: this.#visibility,
       generation: this.#generation,
       backendKey: this.#backendKey,
-      stamp: this.#stamp(),
-      armedAt: this.#armedAt,
-      target: structuredClone(this.#target(action)),
-      endpointGeneration: this.#port?.generation ?? 0,
+      stamp,
+      armedAt:
+        key.presented?.stamp === stamp
+          ? key.presented.armedAt
+          : this.options.clock() + 350,
+      conditions,
+      focus,
+      target: pane?.target ?? null,
+      endpointGeneration,
       peerKey: this.#port?.peerKey ?? '',
       recordKey: this.#port?.recordKey ?? '',
     };
   }
   #state(): AppFocusState {
-    const key = this.#active && this.keys.get(this.#active.context);
+    const key = this.#active && this.keys.get(this.#active);
+    const shown = key ? key.presented : undefined;
+    if (!shown?.conditions) throw Error('Focus refused');
     return {
+      ...shown,
+      conditions: shown.conditions,
       scope: 'herdr-app',
       control: 'requestFocus',
-      appearance: key?.appearance ?? 0,
-      visibility: this.#visibility,
-      generation: this.#generation,
-      backendKey: this.#backendKey,
       page: 0,
-      stamp: this.#stamp(),
-      armedAt: this.#armedAt,
-      endpointGeneration: this.#port?.generation ?? 0,
-      peerKey: this.#port?.peerKey ?? '',
-      recordKey: this.#port?.recordKey ?? '',
-      target: key ? this.#target(this.mapping(key)) : null,
-      visible: !!key,
+      visible: true,
       setupBusy: this.#settingsError,
-      focusRequestEnabled:
-        this.#config.herdrApp?.focusRequestEnabled === true && this.#online(),
+      focusRequestEnabled: this.#focusConsented(),
     };
   }
   render() {
-    const stamp = this.#stamp();
-    if (stamp !== this.#lastStamp) {
-      this.#lastStamp = stamp;
-      this.#armedAt = this.options.clock() + 350;
-    }
+    const focus = this.#focusConsented();
     for (const [context, key] of this.keys) {
-      const action = key.settings.action || `agent:${key.coordinates.column}`;
-      const slot =
-        this.#slots[this.#bank * 5 + Number(String(action).slice(6))];
-      const pane = this.#snapshot?.panes.find(
-        (pane) => paneKey(pane.target) === paneKey(slot ?? null),
-      );
-      key.presented = this.#presentation(key);
-      const image =
-        'data:image/svg+xml;base64,' +
-        Buffer.from(
-          this.options.svg(
-            appTile({
-              key,
-              pane,
-              slot,
-              selected: this.selected(),
-              deckSelected: this.#selection,
-              online: !!this.#snapshot,
-              consent: this.#focusConsented(),
-              mapped: key.presented.action,
-              reason: this.#controls().reason,
-              bank: this.#bank,
-              banks: this.#banks(),
-              now: this.options.clock(),
-              palette: this.#config.palette as Record<string, string>,
-              core: this.#coreAllowed() ? coreFacts(pane, this.#core) : null,
-            }),
-          ),
-        ).toString('base64');
-      if (image === key.lastImage) continue;
-      key.lastImage = image;
-      this.options.emit('setImage', context, { image, target: 0 });
+      if (
+        key.notice &&
+        (key.notice.generation !== this.#generation ||
+          key.notice.until <= this.options.clock())
+      )
+        delete key.notice;
+      const shown = (key.presented = this.#presentation(key, focus));
+      const action = defaultAppAction(key);
+      const spec = appTile({
+        key,
+        pane: this.#pane(action),
+        slot: action.startsWith('agent:')
+          ? this.#slots[this.#bank * 5 + Number(action.slice(6))]
+          : undefined,
+        selected: this.#snapshot?.selected ?? null,
+        deckSelected: this.#selection,
+        online: !!this.#snapshot,
+        consent: shown.focus,
+        mapped: shown.action,
+        reason: shown.conditions?.reason ?? undefined,
+        bank: this.#bank,
+        banks: this.#banks(),
+        now: this.options.clock(),
+        palette: this.#config.palette as Record<string, string>,
+        style: this.#config.appearance?.style,
+      });
+      const specKey = this.options.frames.key(spec);
+      if (key.specKey === specKey) continue;
+      key.specKey = specKey;
+      key.lastImage = this.options.frames.image(spec);
+      this.options.emit('setImage', context, {
+        image: key.lastImage,
+        target: 0,
+      });
       this.options.emit('setTitle', context, { title: '', target: 0 });
     }
   }
-  #stop(clearSlots = false) {
+  // Reads from a retired source may finish after a replacement opens. Only
+  // the current poll owns its completion callback and published roster.
+  #stop(retirePoll = true) {
+    if (retirePoll) this.#refreshing = null;
     this.#port?.dispose();
     this.#port = null;
     this.#observer?.dispose();
     this.#observer = null;
     this.#snapshot = null;
+    this.#message = '';
     this.#coreReader?.close();
     this.#coreReader = null;
-    this.#core = null;
+    this.#coreCount = undefined;
     this.#selection = null;
     this.#generation = this.options.nextGeneration();
-    if (clearSlots) {
-      this.#slots = [];
-      this.#bank = 0;
-    }
+    this.#slots = [];
+    this.#bank = 0;
+    this.#project();
+    this.render();
   }
   applySettings() {
     try {
@@ -295,13 +315,13 @@ export class HerdrAppController {
         key = digest(config.herdrApp);
       this.#settingsError = false;
       if (key !== this.#backendKey) {
-        this.#stop(true);
+        this.#stop();
         this.#backendKey = key;
       }
       this.#config = config;
     } catch {
       this.#settingsError = true;
-      this.#stop(true);
+      this.#stop();
     }
     this.render();
     if (this.keys.size) this.options.enqueue(() => this.refresh());
@@ -309,115 +329,97 @@ export class HerdrAppController {
   async initialize() {
     await this.refresh();
   }
-  async refresh() {
+  refresh(retryVerification = false): Promise<void> {
+    if (this.#refreshing) return this.#refreshing;
     if (
-      this.#refreshing ||
       this.#active ||
       !this.keys.size ||
-      this.#settingsError
+      this.#settingsError ||
+      !this.#config.herdrApp?.home
     )
-      return;
-    if (!this.#config.herdrApp?.home) {
+      return Promise.resolve();
+    const pending = this.#read(retryVerification).finally(() => {
+      if (this.#refreshing !== pending) return;
+      this.#refreshing = null;
       this.render();
-      return;
+    });
+    this.#refreshing = pending;
+    return pending;
+  }
+  #accept(snapshot: AppSelectionSnapshot) {
+    if (
+      this.#snapshot &&
+      this.#snapshot.endpointGeneration !== snapshot.endpointGeneration
+    ) {
+      this.#generation = this.options.nextGeneration();
+      this.#slots = [];
+      this.#bank = 0;
+      this.#selection = null;
     }
-    this.#refreshing = true;
-    const generation = this.#generation;
+    if (paneKey(this.#snapshot?.selected) !== paneKey(snapshot.selected))
+      this.#selection = null;
+    this.#snapshot = snapshot;
+    this.#project();
+    if (this.#selection && !this.#roster.live.has(paneKey(this.#selection))) {
+      this.#selection = null;
+      this.#project();
+    }
+  }
+  async #read(retryVerification: boolean) {
+    if (retryVerification && this.#observer && this.#focusCapable())
+      this.#stop(false);
+    if (this.#port && !this.#focusCapable()) this.#stop(false);
+    let generation = this.#generation;
     try {
-      // Owner amendment 2026-11-08: read-only discovery/status no longer needs
-      // an approved build. Focus requests still need the peer-verified port.
-      const source = this.#focusCapable()
-        ? (this.#port ??= this.options.backend.create(
+      if (!this.#observer && this.#focusCapable()) {
+        try {
+          const port = (this.#port ??= this.options.backend.create(
             this.#config,
             this.#authority,
-          ))
-        : this.options.reader
-          ? (this.#observer ??= this.options.reader(this.#config))
-          : null;
-      if (!source) return;
-      const snapshot = await source.observe();
-      if (
-        generation !== this.#generation ||
-        (source !== this.#port && source !== this.#observer) ||
-        !this.keys.size
-      )
-        return;
-      if (
-        paneKey(this.#snapshot?.selected ?? null) !== paneKey(snapshot.selected)
-      )
-        this.#selection = null;
-      this.#snapshot = structuredClone(snapshot);
-      for (const { target } of snapshot.panes)
-        if (!this.#slots.some((slot) => paneKey(slot) === paneKey(target)))
-          this.#slots.push(structuredClone(target));
-      if (
-        this.#selection &&
-        !snapshot.panes.some(
-          (pane) => paneKey(pane.target) === paneKey(this.#selection),
-        )
-      )
-        this.#selection = null;
-      this.setBank(this.#bank);
-      await this.#refreshCore(generation);
-    } catch {
-      if (generation === this.#generation) this.#stop();
-    } finally {
-      this.#refreshing = false;
+          ));
+          const snapshot = await port.observe();
+          if (generation !== this.#generation || this.#port !== port) return;
+          this.#accept(snapshot);
+          this.render();
+          await this.#refreshCore(this.#generation);
+          return;
+        } catch (error) {
+          if (generation !== this.#generation) return;
+          this.#stop(false);
+          generation = this.#generation;
+          // Only a fresh independent read can establish a local-only presentation.
+          if (
+            !(error instanceof Error) ||
+            !['App unavailable', 'Build mismatch', 'Peer unverified'].includes(
+              error.message,
+            )
+          )
+            return;
+        }
+      }
+      const reader = (this.#observer ??=
+        this.options.reader?.(this.#config) ?? null);
+      if (!reader) return;
+      const snapshot = await reader.observe();
+      if (generation !== this.#generation || reader !== this.#observer) return;
+      this.#accept(snapshot);
       this.render();
+      await this.#refreshCore(this.#generation);
+    } catch {
+      if (generation === this.#generation) this.#stop(false);
     }
   }
   /** Local deck selection only: no App request, focus claim or authority. */
   #select(display: AppPresentation) {
     if (!display.target) throw Error('Request stale');
     this.#selection = structuredClone(display.target);
-    this.#bank = Math.max(
-      0,
-      Math.floor(
-        this.#slots.findIndex(
-          (slot) => paneKey(slot) === paneKey(display.target),
-        ) / 5,
-      ),
+    this.#bank = Math.floor(
+      (this.#roster.indices.get(paneKey(display.target)) ?? 0) / 5,
     );
+    this.#project();
     this.#message = 'Deck selected; App focus unchanged';
   }
-  /** One daemon settings write per press. The guard re-runs every stale-press
-   * check and re-reads consent immediately before the write, so a revoked
-   * consent or changed deck refuses without waiting behind the event queue. */
-  async #control(context: string, key: AppKey, display: AppPresentation) {
-    const reader = this.#coreReader;
-    const target = this.selected();
-    if (
-      !reader?.terminal ||
-      !target ||
-      display.pressedAt === undefined ||
-      display.pressedAt < display.armedAt
-    )
-      throw Error('Request stale');
-    const port = { terminal: (address: string) => reader.terminal!(address) };
-    const guard = () => {
-      this.#assertShown(context, display);
-      if (!this.#controls(this.options.config()).allowed.has(display.action))
-        throw Error('Request stale');
-    };
-    guard();
-    const result = await this.#codex.run(
-      display.action as AppControlKind,
-      port,
-      target.terminal,
-      guard,
-    );
-    if (this.keys.get(context) === key)
-      key.notice = {
-        until: this.options.clock() + 2500,
-        message: String(result.label).slice(0, 15),
-        detail: 'Codex daemon',
-        error: false,
-        stamp: this.#stamp(),
-      };
-    this.#message = 'Codex setting changed through its daemon';
-  }
-  /** Core labels need the separate read-back consent and a configured socket,
-   * rechecked after the read so a revoked consent never displays its result. */
+  /** Only publish the Core count while its separate readback consent is current. */
   #coreAllowed(config = this.#config) {
     return (
       config.herdrApp?.readbackEnabled === true &&
@@ -428,7 +430,7 @@ export class HerdrAppController {
     if (!this.#coreAllowed() || !this.options.core) {
       this.#coreReader?.close();
       this.#coreReader = null;
-      this.#core = null;
+      this.#coreCount = undefined;
       return;
     }
     try {
@@ -440,12 +442,13 @@ export class HerdrAppController {
         reader === this.#coreReader &&
         this.#coreAllowed(this.options.config())
       )
-        this.#core = core;
+        this.#coreCount = core?.terminals.length;
     } catch {
-      // A failed core read only drops labels; App selection stays usable.
+      if (generation !== this.#generation) return;
+      // A failed Core read only drops inspector information.
       this.#coreReader?.close();
       this.#coreReader = null;
-      this.#core = null;
+      this.#coreCount = undefined;
     }
   }
   #assertShown(context: string, display: AppPresentation) {
@@ -454,11 +457,20 @@ export class HerdrAppController {
       !key ||
       display.setupBusy ||
       this.#settingsError ||
+      (this.#port &&
+        (this.#port.generation !== display.endpointGeneration ||
+          this.#port.peerKey !== display.peerKey ||
+          this.#port.recordKey !== display.recordKey)) ||
       display.appearance !== key.appearance ||
       display.visibility !== this.#visibility ||
       display.generation !== this.#generation ||
       display.backendKey !== this.#backendKey ||
-      display.stamp !== this.#stamp() ||
+      display.stamp !== key.presented?.stamp ||
+      display.pressedAt === undefined ||
+      display.pressedAt < display.armedAt ||
+      display.pressedAt > this.options.clock() ||
+      this.options.clock() - display.pressedAt > this.options.queueStaleMs ||
+      display.focus !== this.#focusConsented() ||
       display.action !== this.mapping(key)
     )
       throw Error('Request stale');
@@ -468,70 +480,107 @@ export class HerdrAppController {
     if (!key || this.#active) return;
     display ??= key.presented;
     if (!display || display.action === 'none') return;
-    this.#active = { context, display };
+    if (display.appearance !== key.appearance) return;
+    if (
+      display.pressedAt !== undefined &&
+      display.pressedAt < display.armedAt
+    ) {
+      this.options.emit('showAlert', context, {});
+      return;
+    }
+    this.#active = context;
     try {
       this.#assertShown(context, display);
+      if (display.pressedAt === undefined) throw Error('Request stale');
+      const remaining =
+        (display.focus && display.target ? 1000 : this.options.queueStaleMs) -
+        (this.options.clock() - display.pressedAt);
+      if (remaining <= 0) throw Error('Request expired');
+      const signal = AbortSignal.timeout(Math.ceil(remaining));
+      if (this.#refreshing) {
+        await waitForPoll(this.#refreshing, signal);
+        this.#assertShown(context, display);
+      }
       if (display.action === 'banknext')
         this.#bank = (this.#bank + 1) % this.#banks();
       else if (display.action === 'collapse') {
-        this.#slots = this.#slots.filter((slot) =>
-          this.#snapshot?.panes.some(
-            (pane) => paneKey(pane.target) === paneKey(slot),
-          ),
-        );
-        this.setBank(this.#bank);
-      } else if ((APP_CONTROLS as readonly string[]).includes(display.action))
-        await this.#control(context, key, display);
-      else if (!this.#focusConsented()) this.#select(display);
-      else {
-        if (!display.target || !this.#port || display.pressedAt === undefined)
-          throw Error('Focus refused');
-        const state = this.#state();
-        const permit = this.#authority.issue({
-          ...state,
-          ...display,
-          target: display.target,
-          pressedAt: display.pressedAt,
-          scope: 'herdr-app',
-          control: 'requestFocus',
-          page: 0,
-        });
-        await this.#port.deliver({ kind: 'requestFocus' }, permit);
-        this.#assertShown(context, display);
-        this.#selection = structuredClone(display.target);
-        this.#bank = Math.floor(
-          this.#slots.findIndex(
-            (slot) => paneKey(slot) === paneKey(display.target),
-          ) / 5,
-        );
-        key.notice = {
-          until: this.options.clock() + 2500,
-          message: 'Focus requested',
-          error: false,
-          stamp: this.#stamp(),
-        };
-        this.#message = 'Focus requested; keyboard focus is not verified';
+        this.#slots = this.#roster.occupied.map((p) => p.target);
+        this.#project();
+      } else {
+        if (!display.target || !display.conditions)
+          throw Error('Request stale');
+        if (display.focus) {
+          if (!this.#port) throw Error('Focus refused');
+          const permit = this.#authority.issue({
+            ...this.#state(),
+            ...display,
+            conditions: display.conditions,
+            target: display.target,
+            pressedAt: display.pressedAt,
+          });
+          await this.#port.deliver({ kind: 'requestFocus' }, permit, signal);
+          try {
+            this.#assertShown(context, display);
+          } catch {
+            throw Error('Focus uncertain');
+          }
+          this.#select(display);
+          key.notice = {
+            until: this.options.clock() + 2500,
+            message: 'Focus requested',
+            error: false,
+            generation: this.#generation,
+          };
+          this.#message = 'Focus requested; keyboard focus is not verified';
+        } else {
+          if (display.action === 'attention') {
+            const source = this.#port ?? this.#observer;
+            if (!source) throw Error('Request stale');
+            const fresh = await source.observe(signal).catch(() => {
+              throw Error('App view unavailable');
+            });
+            this.#assertShown(context, display);
+            if (source !== (this.#port ?? this.#observer) || signal.aborted)
+              throw Error('Request stale');
+            this.#accept(fresh);
+            this.render();
+            this.#assertShown(context, display);
+            if (!matchesAppTarget(fresh, display.target, display.conditions))
+              throw Error('Request stale');
+          }
+          this.#select(display);
+        }
       }
     } catch (error) {
+      const reason = error instanceof Error ? error.message : 'Focus refused';
+      const sameSource = display.generation === this.#generation;
+      if (
+        sameSource &&
+        (reason === 'App view unavailable' ||
+          (this.#port && this.#port.generation !== display.endpointGeneration))
+      )
+        this.#stop();
       const message =
-        error instanceof Error &&
-        ['Focus uncertain', 'Request stale', 'Request expired'].includes(
-          error.message,
-        )
-          ? error.message
-          : (APP_CONTROLS as readonly string[]).includes(display.action)
-            ? 'Control refused'
+        reason === 'Focus uncertain'
+          ? reason
+          : ['Request stale', 'Request expired', 'Target changed'].includes(
+                reason,
+              )
+            ? 'Press again'
             : 'Focus refused';
-      if (this.keys.get(context) === key) {
+      if (
+        this.keys.get(context) === key &&
+        (sameSource || reason === 'Focus uncertain')
+      ) {
         key.notice = {
           until: this.options.clock() + 2500,
           message,
           error: true,
-          stamp: this.#stamp(),
+          generation: this.#generation,
         };
         this.options.emit('showAlert', context, {});
       }
-      this.#message = message;
+      if (sameSource) this.#message = message;
     } finally {
       this.#active = null;
       this.render();
@@ -557,7 +606,7 @@ export class HerdrAppController {
     this.keys.delete(context);
     if (!this.keys.size) {
       this.#visibility++;
-      this.#stop(true);
+      this.#stop();
     }
   }
   async inspectorRequest(event: {
@@ -570,8 +619,8 @@ export class HerdrAppController {
       if (this.#refreshing || this.#active)
         this.#message = 'App status check already running';
       else {
-        await this.refresh();
-        this.#message = this.#online()
+        await this.refresh(true);
+        this.#message = this.#snapshot
           ? 'App status refreshed'
           : 'No matched App connection; check the instance and App home';
       }
@@ -583,7 +632,12 @@ export class HerdrAppController {
       save: this.options.save,
       state: () => ({
         preferences: this.options.view(this.#config),
-        panes: this.#snapshot?.panes.length ?? 0,
+        panes: this.#roster.occupied.length,
+        codex: this.#roster.occupied.filter(
+          (p) => appProvider(p.reportedApp) === 'codex',
+        ).length,
+        coreCount: this.#coreCount,
+        verifiedPeer: this.#online(),
         setupBusy: this.#settingsError,
         message: this.#message,
         helperAvailable: this.options.backend.helperAvailable(),

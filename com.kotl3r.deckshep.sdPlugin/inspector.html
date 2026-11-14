@@ -162,20 +162,18 @@
   <sdpi-checkbox
     id="herdrAppReadbackEnabled"
     disabled
-    label="Show herdr-core names and status"
+    label="Show Core terminal count in setup"
   ></sdpi-checkbox>
   <sdpi-checkbox
     id="herdrAppInputEnabled"
     disabled
-    label="Allow Codex model, effort and permission changes"
+    label="Provider controls (inactive)"
   ></sdpi-checkbox>
   <p class="note">
-    Selection and Next can request a pane. They do not verify keyboard focus or
-    allow typing. Core names are read-only labels, shown only when the core and
-    App agree. Codex controls change the selected chat through its daemon and
-    never type into the terminal. Zoom and terminal input remain unavailable.
-    Plain focus requests also need an approved App build; without one, selection
-    stays on the deck.
+    Agent keys, Next and Attention select an agent on the deck. An approved App
+    build and focus consent also allow one pane focus request. The App badge
+    follows the selection Herdr reports. Page and Collapse change the deck
+    layout.
   </p>
 </div>
 <p class="note">
@@ -284,11 +282,11 @@
   >
 </details>
 <p class="note">
-  Row 2 manages agents: Next agent, Page (groups of five), and Collapse (gaps).
-  Each appears only when needed. Row 3 follows the selected agent. Use the
-  keyboard for extra question navigation and prompt actions. In Rex, Permissions
-  cycles the native permission profiles; request Confirm acts only on the native
-  choice shown in Rex.
+  Next agent, Page, Collapse and Attention appear when available. Row 3 follows
+  the selected agent in Rex and Herdr TUI. Use the keyboard for extra question
+  navigation and prompt actions. In Rex, Permissions cycles the native
+  permission profiles; request Confirm acts only on the native choice shown in
+  Rex.
 </p>
 <script src="preferences.js"></script>
 <script src="inspector.js"></script>

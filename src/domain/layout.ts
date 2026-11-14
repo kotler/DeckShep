@@ -106,18 +106,18 @@ export function homeRow(
       return ['status', 'none', settingsAction, 'none', 'interrupt'];
   }
 }
+export const navigationRow = [
+  'next',
+  'banknext',
+  'collapse',
+  'none',
+  'attention',
+] as const;
 function rawLayout(
   agent: AgentSnapshot | null | undefined,
   capabilities?: ReadonlySet<BackendCapability> | undefined,
 ) {
-  return [
-    'next',
-    'banknext',
-    'collapse',
-    'none',
-    'attention',
-    ...homeRow(agent, capabilities),
-  ];
+  return [...navigationRow, ...homeRow(agent, capabilities)];
 }
 export function layout(
   _page: number,

@@ -1,15 +1,9 @@
 # Herdr App preview
 
-Herdr App remains an experimental preview. **No production App build is approved**,
-so discovery and focus requests stay inactive even when consent is enabled.
-Default builds still contain the existing Rex/Herdr profiles and v2 preferences;
-the App profile requires the explicitly enabled experimental build flag.
-
-The intended first-release scope is App-reported pane status and plain focus
-requests through selection/Next, with local banks and Collapse. Requests do not
-verify OS or keyboard focus and never authorize typing. Zoom, contextual input
-and provider controls remain disabled. The repository's
-`docs/plans/HERDR-APP-PLAN.md` records the implementation and promotion gates.
+The experimental App profile lists local Codex and Claude agents reported by
+Herdr. A validated App connection enables deck-local navigation. Plain focus
+requests additionally require an approved App build and explicit consent. The
+production build record list is empty. Release packages include only Rex.
 
 ## Profile setup
 
@@ -30,16 +24,24 @@ hooks. Removing DeckShep removes its helper; see [Uninstall](UNINSTALL.md).
 
 ## Reading the deck
 
-- **App reported** describes pane status/model information, not a verified
-  Codex chat or Claude process identity.
-- **Focus requested / Not verified** means the request was acknowledged.
-  It does not claim the pane received the keyboard.
-- **Deck selected** marks the local selection used by Next. An acknowledged
-  request can leave the App's model selection unchanged.
-- **Focus uncertain** means the request may have been dispatched. There is no
-  retry or automatic undo.
-- Closed slots send nothing; Collapse removes them locally. Banks only change
-  the displayed group. Unsupported per-key input overrides stay inactive.
+- Each bank shows up to five agent tiles in stable slot order. **Deck only**
+  selects locally. **Request only** offers a plain App focus request. The dot
+  marks Herdr’s reported selection. **On deck** marks your local choice until
+  Herdr reports a selection change.
+- Row two holds **Next agent**, **Page**, **Collapse**, an empty key and
+  **Attention**. Next visits agents across banks. Page changes banks locally.
+  Collapse clears closed slots. Attention visits another waiting agent first,
+  then an errored agent, then a finished agent. Ties follow tile order.
+- **Focus requested** acknowledges the request. Herdr's next selection report
+  determines the dot. **Focus uncertain** means a write may have reached Herdr.
+  DeckShep sends each request once. **Press again** asks you to check the
+  newly displayed destination.
+- The optional Core readback shows a separate terminal count in setup.
+  Agent names and status on the keys come from the App.
+- On upgrade, Model, Effort and Permissions become inactive, including saved
+  overrides and former opt-ins. The profile retains the saved preferences and
+  actions. Choose **Position default** in the inspector to restore a key’s
+  navigation assignment. Row three defaults to empty.
 
 ## Doctor
 

@@ -34,9 +34,10 @@ function requireCommand(commands, name, fields) {
   )
     throw Error('Calibration command mismatch');
 }
-function capture(state, sender, target, now) {
+function capture(state, sender, pane, now) {
   Object.assign(state, {
-    target,
+    target: pane.target,
+    conditions: { ...state.conditions, provider: pane.reportedApp },
     endpointGeneration: sender.generation,
     peerKey: sender.peerKey,
     recordKey: sender.recordKey,
@@ -73,6 +74,14 @@ async function calibrate(
   const state = {
       scope: 'herdr-app',
       control: 'requestFocus',
+      conditions: {
+        action: 'calibration',
+        provider: 'codex',
+        name: '',
+        reason: null,
+        appSelection: '',
+        effectiveSelection: '',
+      },
       appearance: 1,
       visibility: 1,
       generation: 1,
@@ -135,7 +144,7 @@ async function calibrate(
     // Each request gets its own 350 ms arming interval and one-use permit.
     for (const pane of snapshot.panes) {
       gate.progress = 'scenarios.focus.arm.' + (requests.length + 1);
-      capture(state, sender, pane.target, now);
+      capture(state, sender, pane, now);
       const captured = { ...structuredClone(state), pressedAt: now() + 10000 };
       let refused = false;
       try {
@@ -190,7 +199,7 @@ async function calibrate(
         gate,
       );
     }
-    capture(state, sender, snapshot.panes[0].target, now);
+    capture(state, sender, snapshot.panes[0], now);
     gate.progress = 'scenarios.stale-generation';
     await delay(350);
     const stale = authority.issue({
@@ -202,7 +211,7 @@ async function calibrate(
       () => sender.deliver({ kind: 'requestFocus' }, stale),
       gate,
     );
-    capture(state, sender, snapshot.panes[0].target, now);
+    capture(state, sender, snapshot.panes[0], now);
     gate.progress = 'scenarios.revoked-consent';
     await delay(350);
     const revoked = authority.issue({

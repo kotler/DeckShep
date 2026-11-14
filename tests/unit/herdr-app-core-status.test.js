@@ -3,7 +3,6 @@ const assert = require('node:assert/strict');
 const {
   AppCoreStatusReader,
 } = require('../../src/terminals/herdr-app/core-status');
-const { coreFacts } = require('../../src/app/herdr-app-view');
 const f = require('../fixtures/backends/herdr-app/index.cjs');
 
 function fakeCore(terminals, overrides = {}) {
@@ -84,38 +83,4 @@ test('core reader refuses restarted cores, duplicate addresses and expired budge
     /expired/,
   );
   assert.throws(() => new AppCoreStatusReader(hung.client, 5000), /limit/);
-});
-test('core facts label a pane only for one agreeing address', () => {
-  const pane = {
-    target: { space: 's', tab: 'b', pane: 'p1', terminal: 't1' },
-    reportedApp: 'codex',
-    reportedStatus: 'working',
-    name: null,
-  };
-  const facts = (state, app, address = 't1') => ({
-    address,
-    name: null,
-    title: null,
-    state,
-    app,
-    statusTitle: 'Title',
-    kind: null,
-  });
-  const core = (...terminals) => ({
-    provenance: 'core-listing',
-    coreId: 'c',
-    terminals,
-  });
-  assert.equal(
-    coreFacts(pane, core(facts('working', 'codex'))).statusTitle,
-    'Title',
-  );
-  assert.equal(coreFacts(pane, core(facts('idle', 'codex'))), null);
-  assert.equal(coreFacts(pane, core(facts('working', 'claude'))), null);
-  assert.equal(coreFacts(pane, core(facts('working', 'codex', 't2'))), null);
-  assert.equal(
-    coreFacts(pane, core(facts('working', 'codex'), facts('working', 'codex'))),
-    null,
-  );
-  assert.equal(coreFacts(pane, null), null);
 });

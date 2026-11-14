@@ -1,26 +1,26 @@
-import type {
-  AppCoreFacts,
-  AppCoreSnapshot,
-  AppPaneRef,
-  AppPaneStatus,
-} from '../domain/app-selection';
-export function paneKey(target: AppPaneRef | null): string {
-  return target
-    ? JSON.stringify([target.space, target.tab, target.pane, target.terminal])
-    : '';
-}
+import type { AppPaneRef, AppPaneStatus } from '../domain/app-selection';
+import {
+  appProvider,
+  paneKey,
+  destinationName,
+  type AppTargetConditions,
+} from '../domain/app-navigation';
+import { navigationRow } from '../domain/layout';
+import type { KeySpec, AgentFaceState } from '../render/spec';
 export interface AppKey {
   settings: Record<string, unknown>;
   coordinates: { row: number; column: number };
   appearance: number;
   presented?: AppPresentation;
   lastImage?: string;
+  specKey?: string;
+  revision?: number;
+  signature?: string;
   notice?: {
     until: number;
     message: string;
-    detail?: string;
     error: boolean;
-    stamp: string;
+    generation: number;
   };
 }
 export interface AppPresentation {
@@ -35,38 +35,28 @@ export interface AppPresentation {
   peerKey: string;
   recordKey: string;
   target: AppPaneRef | null;
+  conditions: AppTargetConditions | null;
+  focus: boolean;
   pressedAt?: number;
   setupBusy?: boolean;
 }
-/** Daemon-only Codex controls (owner amendment 2026-11-08); no keystrokes. */
-export const APP_CONTROLS = ['model', 'effort', 'permissions'] as const;
 export function defaultAppAction(key: AppKey): string {
   const { row, column } = key.coordinates;
   if (key.settings.action) return String(key.settings.action);
   if (row === 0) return `agent:${column}`;
-  if (row === 1) return ['collapse', 'next', ...APP_CONTROLS][column] ?? 'none';
-  return row === 2 && column === 0 ? 'banknext' : 'none';
-}
-/** `select` means App panes were discovered; deck selection is local unless a
- * separately consented, peer-verified focus request is available. */
-export function appAction(
-  key: AppKey,
-  options: { select: boolean; controls: ReadonlySet<string> },
-): string {
-  const action = defaultAppAction(key);
-  if (['collapse', 'banknext'].includes(action)) return action;
-  if (action === 'next' || /^agent:[0-4]$/.test(action))
-    return options.select ? action : 'none';
-  return options.controls.has(action) ? action : 'none';
+  return row === 1 ? (navigationRow[column] ?? 'none') : 'none';
 }
 /** App-reported words only pick a colour/label; they never arm a control. */
-const APP_STATES: Record<string, { palette: string; label: string }> = {
-  idle: { palette: 'ready', label: 'READY' },
-  ready: { palette: 'ready', label: 'READY' },
-  working: { palette: 'working', label: 'WORKING' },
-  done: { palette: 'done', label: 'COMPLETE' },
-  blocked: { palette: 'blocked', label: 'WAIT INPUT' },
-  error: { palette: 'error', label: 'ERROR' },
+const APP_STATES: Record<
+  string,
+  { palette: string; label: string; shape: AgentFaceState }
+> = {
+  idle: { palette: 'ready', label: 'Ready', shape: 'ready' },
+  ready: { palette: 'ready', label: 'Ready', shape: 'ready' },
+  working: { palette: 'working', label: 'Working', shape: 'working' },
+  done: { palette: 'done', label: 'Done', shape: 'done' },
+  blocked: { palette: 'blocked', label: 'Waiting', shape: 'question' },
+  error: { palette: 'error', label: 'Error', shape: 'error' },
 };
 const FALLBACK_COLORS: Record<string, string> = {
   ready: '#167348',
@@ -76,12 +66,6 @@ const FALLBACK_COLORS: Record<string, string> = {
   error: '#a32f46',
   unknown: '#42475a',
 };
-export function appProvider(reported: string | null | undefined) {
-  const value = String(reported || '').toLowerCase();
-  if (value === 'codex') return 'codex';
-  if (value === 'claude' || value === 'claude-code') return 'claude-code';
-  return null;
-}
 export function appState(
   reported: string | null | undefined,
   palette: Record<string, string> = {},
@@ -89,42 +73,10 @@ export function appState(
   const state = APP_STATES[String(reported || '').toLowerCase()];
   const key = state?.palette || 'unknown';
   return {
-    label: state?.label || 'UNKNOWN',
+    label: state?.label || 'Unknown',
+    shape: state?.shape ?? 'unknown',
     color: palette[key] || FALLBACK_COLORS[key],
   };
-}
-const norm = (value: string | null | undefined) =>
-  String(value || '').toLowerCase();
-/** A core address is unique only within its core and the App may mirror a
- * different one, so facts label a pane only when the address is unique and
- * every word both sides report agrees. Any disagreement keeps App-only text. */
-export function coreFacts(
-  pane: AppPaneStatus | undefined,
-  core: AppCoreSnapshot | null | undefined,
-): AppCoreFacts | null {
-  if (!pane || !core) return null;
-  const matches = core.terminals.filter(
-    (facts) => facts.address === pane.target.terminal,
-  );
-  if (matches.length !== 1) return null;
-  const [facts] = matches;
-  if (
-    pane.reportedStatus &&
-    facts.state &&
-    norm(pane.reportedStatus) !== norm(facts.state)
-  )
-    return null;
-  if (
-    pane.reportedApp &&
-    facts.app &&
-    norm(pane.reportedApp) !== norm(facts.app)
-  )
-    return null;
-  return facts;
-}
-function stateLabel(state: { label: string }, kind: string | null) {
-  if (state.label !== 'WAIT INPUT') return state.label;
-  return norm(kind) === 'permission' ? 'CHOICE' : state.label;
 }
 const { ellipsize } = require('../domain/labels') as {
   ellipsize(text: string, width?: number, fontSize?: number): string;
@@ -133,11 +85,6 @@ const { ellipsize } = require('../domain/labels') as {
 function appName(value: string): string {
   return ellipsize(value, 120, 26);
 }
-function short(value: string): string {
-  return value
-    .replace(/[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g, '')
-    .slice(0, 15);
-}
 export function appTile(input: {
   key: AppKey;
   pane?: AppPaneStatus;
@@ -145,100 +92,86 @@ export function appTile(input: {
   selected: AppPaneRef | null;
   deckSelected: AppPaneRef | null;
   online: boolean;
-  /** Focus requests are available and consented; otherwise selection is local. */
   consent: boolean;
-  /** Mapped action and why an inactive control is unavailable. */
   mapped?: string;
   reason?: string;
   bank: number;
   banks: number;
   now: number;
   palette?: Record<string, string>;
-  core?: AppCoreFacts | null;
-}) {
+  style?: string;
+}): KeySpec {
   const { key, pane, slot } = input;
-  if (
-    key.notice &&
-    key.notice.until > input.now &&
-    key.notice.stamp === key.presented?.stamp
-  )
+  const base: KeySpec = {
+    icon: 'blank',
+    lines: [],
+    color: '#38414b',
+    pulse: 0,
+    accent: '#485066',
+    badge: '',
+    agent: false,
+    textOnly: false,
+    style: input.style || 'signal',
+  };
+  if (key.notice && key.notice.until > input.now)
     return {
-      icon: 'blank',
+      ...base,
       lines: key.notice.error
         ? ['Unavailable', key.notice.message]
-        : [key.notice.message, key.notice.detail || 'Not verified'],
-      color: key.notice.error ? '#893748' : '#38414b',
+        : [key.notice.message, 'Not verified'],
+      color: key.notice.error ? '#893748' : base.color,
     };
   const action = defaultAppAction(key);
   if (/^agent:[0-4]$/.test(action)) {
-    const facts = input.core ?? null;
-    const provider = appProvider(pane?.reportedApp || facts?.app);
-    const state = appState(pane?.reportedStatus || facts?.state, input.palette);
+    const provider = appProvider(pane?.reportedApp);
+    const state = appState(pane?.reportedStatus, input.palette);
     return {
+      ...base,
       agent: true,
       icon: pane ? provider || 'blank' : 'empty',
       lines: pane
         ? [
-            appName(
-              facts?.statusTitle ||
-                facts?.name ||
-                pane.name ||
-                facts?.title ||
-                provider ||
-                pane.reportedApp ||
-                'Terminal',
-            ),
-            stateLabel(state, facts?.kind ?? null),
+            appName(destinationName(pane)),
             paneKey(pane.target) === paneKey(input.deckSelected)
-              ? 'Deck selected'
-              : 'App reported',
+              ? 'On deck'
+              : input.consent
+                ? 'Request only'
+                : 'Deck only',
+            state.label,
           ]
         : slot
-          ? ['Closed pane', 'Collapse clears']
-          : ['Herdr App', input.online ? 'No pane' : 'Unavailable'],
-      color: pane ? state.color : '#38414b',
+          ? ['Closed pane', 'Collapse']
+          : ['Herdr App', input.online ? 'No agent' : 'Unavailable'],
+      color: pane ? state.color : base.color,
+      state: pane ? state.shape : slot ? 'closed' : 'empty',
       badge:
         pane && paneKey(pane.target) === paneKey(input.selected)
           ? 'selected'
-          : undefined,
+          : '',
     };
   }
+  if (input.mapped === 'none') return base;
   if (action === 'collapse')
-    return {
-      icon: 'collapse',
-      lines: ['Collapse', 'Closed slots'],
-      color: '#38414b',
-    };
+    return { ...base, icon: 'collapse', lines: ['Collapse'] };
   if (action === 'banknext')
     return {
+      ...base,
       icon: 'next',
-      lines: ['Pane bank', `${input.bank + 1}/${input.banks}`],
-      color: '#38414b',
+      lines: ['Page', `${input.bank + 1}/${input.banks}`],
     };
-  if (action === 'next')
+  if ((action === 'attention' || action === 'next') && pane)
     return {
-      icon: 'next',
-      lines: ['Next pane', input.consent ? 'Request only' : 'Deck only'],
-      color: '#38414b',
-    };
-  if ((APP_CONTROLS as readonly string[]).includes(action)) {
-    const title =
-      action === 'model'
-        ? 'Model'
-        : action === 'effort'
-          ? 'Effort'
-          : 'Reviewer';
-    const active = input.mapped === action;
-    return {
+      ...base,
       icon: action,
-      lines: [title, active ? 'Codex daemon' : input.reason || 'Unavailable'],
-      color: active ? '#233a50' : '#38414b',
-      accent: active ? '#b16bf2' : '#485066',
+      lines: [
+        action === 'next' ? 'Next agent' : 'Attention',
+        appName(destinationName(pane)),
+        action === 'attention'
+          ? input.reason || ''
+          : input.consent
+            ? 'Request only'
+            : 'Deck only',
+      ],
     };
-  }
-  return {
-    icon: 'blank',
-    lines: ['Herdr keyboard', 'Input disabled'],
-    color: '#38414b',
-  };
+  return base;
 }

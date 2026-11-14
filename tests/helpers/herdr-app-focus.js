@@ -65,6 +65,14 @@ function focusState() {
   return {
     scope: 'herdr-app',
     control: 'requestFocus',
+    conditions: {
+      action: 'calibration',
+      provider: 'codex',
+      name: '',
+      reason: null,
+      appSelection: '',
+      effectiveSelection: '',
+    },
     appearance: 1,
     visibility: 1,
     generation: 1,

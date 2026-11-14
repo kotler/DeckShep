@@ -2,7 +2,7 @@ import type {
   AppFocusPermit,
   AppFocusLease,
 } from '../../domain/app-focus-request';
-import type { AppPaneRef } from '../../domain/app-selection';
+import { matchesAppTarget } from '../../domain/app-navigation';
 import { AppFocusAuthority } from '../../guards/app-focus-request';
 import { parse, validate, type Boundary, type schemas } from '../../schemas';
 import type { z } from 'zod';
@@ -22,11 +22,6 @@ type Request =
   | { ls: true }
   | { commands: true }
   | { do: 'pane.focus'; args: { pane: string } };
-function sameTarget(left: AppPaneRef, right: AppPaneRef): boolean {
-  return ['space', 'tab', 'pane', 'terminal'].every(
-    (key) => left[key as keyof AppPaneRef] === right[key as keyof AppPaneRef],
-  );
-}
 function assertCommand(value: Data<'herdrAppCommands'>): void {
   const commands = value.filter((command) => command.name === 'pane.focus');
   if (
@@ -190,14 +185,18 @@ export class GuardedAppFocusSender {
       this.#assertLease(lease);
       assertCommand(await this.commands(bounded));
       this.#assertLease(lease);
-      const snapshot = await this.observe(bounded);
+      const snapshot = await this.observe(bounded).catch(() => {
+        throw Error('App view unavailable');
+      });
       this.#assertLease(lease);
       if (
-        snapshot.panes.filter(({ target }) =>
-          sameTarget(target, lease.context.target),
-        ).length !== 1
+        !matchesAppTarget(
+          snapshot,
+          lease.context.target,
+          lease.context.conditions,
+        )
       )
-        throw Error('Request stale');
+        throw Error('Target changed');
       const reply = await this.#exchange(
         { do: 'pane.focus', args: { pane: lease.context.target.pane } },
         'herdrAppFocusReply',
@@ -210,7 +209,18 @@ export class GuardedAppFocusSender {
       if (!('ok' in reply)) throw Error();
       lease.postflight();
       return { status: 'requested' as const, verifiedFocus: false as const };
-    } catch {
+    } catch (error) {
+      if (
+        !dispatched &&
+        error instanceof Error &&
+        [
+          'Target changed',
+          'App view unavailable',
+          'Request stale',
+          'Request expired',
+        ].includes(error.message)
+      )
+        throw error;
       throw Error(dispatched ? 'Focus uncertain' : 'Focus refused');
     } finally {
       this.#delivering = false;
@@ -249,6 +259,7 @@ export class GuardedAppFocusSender {
     const channel = new AppFocusConnection(this.#file, bounded);
     this.#active.add(channel);
     let peer: AppPeerConnection | undefined;
+    let leaseFailure: unknown;
     try {
       await channel.open();
       peer = await this.#verifier.open(
@@ -272,7 +283,8 @@ export class GuardedAppFocusSender {
         channel.socket.write(JSON.stringify(request) + '\n', (error) => {
           if (error) channel.fail();
         });
-      } catch {
+      } catch (error) {
+        leaseFailure = error;
         channel.fail();
       }
       const line = await response;
@@ -283,6 +295,13 @@ export class GuardedAppFocusSender {
       binding.assertUnchanged();
       return result;
     } catch {
+      if (
+        leaseFailure instanceof Error &&
+        ['Request stale', 'Request expired', 'Focus refused'].includes(
+          leaseFailure.message,
+        )
+      )
+        throw leaseFailure;
       this.#binding = null;
       this.#generation++;
       throw Error('App unavailable');

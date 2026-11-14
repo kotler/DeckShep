@@ -131,3 +131,43 @@ test('preferences', async () => {
     'PASS shared preferences, prompt validation, no policy fields, explicit clipboard opt-in, diagnostics without focus queries, setup consent and config preservation',
   );
 });
+
+test('a host settings event accepts the explicit App rollback and preserves both release profile preferences', async () => {
+  const {
+    preferenceCodec,
+    rollbackV2,
+  } = require('../../src/app/experimental-preferences');
+  const codec = preferenceCodec(true);
+  const before = P.store({
+    version: 2,
+    revision: 7,
+    shared: { animationEnabled: false },
+    profiles: {
+      rex: { allowClipboardFocus: true },
+      herdr: { herdrTitleIdentity: true },
+    },
+  });
+  const app = codec.update(codec.store(before), 'herdr-app', {
+    herdrAppHome: '/fixture/home',
+    herdrAppInputEnabled: true,
+    herdrAppFocusRequestEnabled: true,
+  });
+  const restored = rollbackV2(app);
+  const h = harness();
+  await h.appear('herdr');
+  h.socket.emit(
+    'message',
+    JSON.stringify({
+      event: 'didReceiveGlobalSettings',
+      payload: { settings: restored },
+    }),
+  );
+  await h.api.settled();
+  for (const scope of ['rex', 'herdr']) {
+    const expected = P.profileConfig(defaults, before, scope);
+    assert.deepEqual(
+      P.view(h.controller(scope).bridge.config),
+      P.view(expected),
+    );
+  }
+});

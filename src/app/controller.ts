@@ -218,7 +218,8 @@ function createApplication(dependencies: Record<string, any>) {
                   applyAllSettings();
                 },
                 emit,
-                svg,
+                frames,
+                queueStaleMs: QUEUE_STALE_MS,
                 clock: focusClock,
                 nextGeneration: () => ++sequence,
                 enqueue: (work: () => Promise<void>) => {
@@ -226,7 +227,6 @@ function createApplication(dependencies: Record<string, any>) {
                 },
                 settled,
                 backend: dependencies.appFocusBackend || appFocusBackend,
-                codex: dependencies.appCodexControls,
                 reader:
                   dependencies.appSelectionReader ||
                   ((config: Config) => {
@@ -235,7 +235,7 @@ function createApplication(dependencies: Record<string, any>) {
                     });
                     const reader = new AppSelectionReader(client);
                     return {
-                      observe: () => reader.read(),
+                      observe: (signal?: AbortSignal) => reader.read(signal),
                       dispose: () => client.dispose(),
                     };
                   }),
