@@ -22,6 +22,8 @@ export interface AppFocusContext {
   recordKey: string;
   target: AppPaneRef;
   conditions: AppTargetConditions;
+  /** Stable slot order at key-down, including gaps, for Next and Attention. */
+  slotOrder?: readonly AppPaneRef[];
 }
 export interface AppFocusState extends Omit<
   AppFocusContext,
@@ -49,6 +51,7 @@ export interface AppFocusPort {
     permit: AppFocusPermit,
     signal?: AbortSignal,
   ): Promise<{
+    preflight: AppSelectionSnapshot;
     status: 'requested';
     verifiedFocus: false;
   }>;

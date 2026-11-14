@@ -141,3 +141,19 @@ test('expiry and consent are rechecked after dispatch without granting a second 
   y.state.focusRequestEnabled = false;
   assert.throws(() => other.postflight(), /refused/);
 });
+
+test('a ranked permit obtains an immutable copy of the controller slot order', () => {
+  const x = fixture();
+  const first = { ...x.state.target },
+    second = { ...first, pane: 'p2', terminal: 't2' };
+  x.state.conditions.action = 'next';
+  x.context.conditions = { ...x.state.conditions };
+  assert.throws(() => x.authority.issue(x.context), /stale/);
+  x.state.slotOrder = [first, second];
+  x.context.slotOrder = [second, first];
+  const permit = x.authority.issue(x.context);
+  const lease = x.authority.begin(permit);
+  assert.deepEqual(lease.context.slotOrder, [first, second]);
+  assert(Object.isFrozen(lease.context.slotOrder));
+  assert(Object.isFrozen(lease.context.slotOrder[0]));
+});

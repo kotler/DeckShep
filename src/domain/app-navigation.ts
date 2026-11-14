@@ -3,11 +3,7 @@ import type {
   AppPaneStatus,
   AppSelectionSnapshot,
 } from './app-selection';
-import {
-  attentionCandidates,
-  attentionKind,
-  type AttentionKind,
-} from './navigation';
+import { attentionCandidates, type AttentionKind } from './navigation';
 
 export function paneKey(target: AppPaneRef | null | undefined): string {
   return target
@@ -83,6 +79,7 @@ export function matchesAppTarget(
   snapshot: AppSelectionSnapshot,
   target: AppPaneRef,
   c: AppTargetConditions,
+  slotOrder?: readonly AppPaneRef[],
 ): boolean {
   const targetKey = paneKey(target);
   const matches = snapshot.panes.filter((p) => paneKey(p.target) === targetKey);
@@ -95,29 +92,23 @@ export function matchesAppTarget(
     destinationName(p) !== c.name
   )
     return false;
-  if (c.action !== 'tile') {
-    if (paneKey(snapshot.selected) !== c.appSelection) return false;
-    // A removed local choice changes the start of Next and the exclusion for Attention.
-    if (
-      c.effectiveSelection !== c.appSelection &&
-      !snapshot.panes.some(
-        (p) =>
-          appProvider(p.reportedApp) &&
-          paneKey(p.target) === c.effectiveSelection,
-      )
-    )
-      return false;
-  }
-  if (c.action === 'next') {
-    return (
-      c.effectiveSelection !== targetKey &&
-      snapshot.panes.filter((p) => appProvider(p.reportedApp)).length >= 2
-    );
-  }
+  if (c.action === 'tile') return true;
+  if (!slotOrder || paneKey(snapshot.selected) !== c.appSelection) return false;
+  // Restore the start and stable order that produced the displayed action.
+  // A shell may be the App selection even though it has no agent tile.
+  const start =
+    c.effectiveSelection === c.appSelection
+      ? snapshot.selected
+      : snapshot.panes.find(
+          (p) =>
+            appProvider(p.reportedApp) &&
+            paneKey(p.target) === c.effectiveSelection,
+        )?.target;
+  if (start === undefined) return false;
+  const fresh = appRoster(slotOrder, snapshot, start);
+  if (c.action === 'next') return paneKey(fresh.next?.target) === targetKey;
   return (
-    c.action !== 'attention' ||
-    (c.effectiveSelection !== paneKey(target) &&
-      c.reason !== null &&
-      c.reason === attentionKind(p.reportedStatus?.toLowerCase() || ''))
+    fresh.attention?.kind === c.reason &&
+    paneKey(fresh.attention?.agent.target) === targetKey
   );
 }

@@ -41,11 +41,13 @@ export function virtualAppFocus(
             throw Error('Focus refused');
           lease.check();
           await pause();
+          const preflight = await this.observe();
           if (
             !matchesAppTarget(
-              await this.observe(),
+              preflight,
               lease.context.target,
               lease.context.conditions,
+              lease.context.slotOrder,
             )
           )
             throw Error('Target changed');
@@ -56,7 +58,7 @@ export function virtualAppFocus(
           });
           // An acknowledgement deliberately leaves model selection unchanged.
           lease.postflight();
-          return { status: 'requested', verifiedFocus: false };
+          return { status: 'requested', verifiedFocus: false, preflight };
         },
         dispose() {
           disposed = true;

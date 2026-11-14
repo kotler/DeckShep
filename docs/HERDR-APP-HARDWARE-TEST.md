@@ -33,18 +33,27 @@ supplies the isolated environment and proves ownership.
    It never adopts an installed App or existing terminal.
 3. Open a Herdr App key's setup panel. Set App home to
    `<test-folder>/session/app` explicitly; profile preferences do not inherit
-   the build's home default. Enable **Allow plain focus requests** yourself and refresh
-   status. Consent remains off in the prepared config. Read-back, input and
-   Claude consent are not needed.
-4. Confirm two local pane tiles appear. Select each, wait for the arming delay,
-   and try selection/Next. Visually check the private App displays the intended
-   pane. Check local banks/Collapse; revoke request consent and confirm presses
-   refuse. Record actual physical-deck behavior: model feedback does not prove
-   keyboard focus.
+   the build's home default. Refresh status. Read-back and provider consent are
+   unnecessary for this check.
+4. Confirm the inspector reports a connected App and zero agents. The two
+   plain terminals exercise the launcher's request calibration. Neither
+   terminal occupies an agent tile, so Next and Attention are empty.
 5. Press **Enter in the launcher's Terminal** before closing its App window.
    It revokes the lease, stops only its proven owned processes and reports
    cleanup/settings results. Requests become unavailable when its heartbeat
    stops. Never retry a request reported as uncertain.
+
+### Agent navigation checks
+
+The Playwright virtual deck exercises agent tiles, Next and Attention using
+App-reported Codex and Claude panes. Run
+`npm run test:e2e -- tests/e2e/herdr-app.spec.ts` for the automated walkthrough.
+For a separately authorized physical navigation run, use a private fixture
+that reports at least two recognized agents. With focus consent off, selecting
+an agent changes the deck marker. With a matched build and consent on, a press
+requests its pane. Compare the App badge with the pane Herdr reports. Revoking
+consent restores deck-local selection after a fresh observation and arming.
+[Virtual deck fixtures](../tests/e2e/README.md)
 
 Only status/model selection and plain focus requests are supported. Zoom,
 typing, provider controls, clipboard checks, hooks and Herdr mod installation

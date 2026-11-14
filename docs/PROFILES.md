@@ -75,11 +75,11 @@ key-down. Both gestures use the state the key showed when you pressed it, and a
 press that waits more than two seconds behind other work is refused with
 "Press again".
 
-**Attention** stays blank until another agent is waiting on a question or
+In Rex and Herdr TUI, **Attention** stays blank until another agent is waiting on a question or
 approval, has an error, or has finished, in that order of priority. It shows the
 kind and the count, including agents on other pages. Pressing it focuses the
 first such agent exactly as its own agent key would and moves the page to it.
-Holds and Attention are not offered in the experimental Herdr App profile.
+In Herdr App, tap Attention to select its displayed agent locally or request its pane when verified focus is enabled. Herdr App has no hold actions.
 
 Each agent key pairs its colour with a shape beside the status word: disc Ready,
 triangle Working, half disc Bg task, `?` Asking, `!` Approve, check Done, cross
@@ -102,5 +102,5 @@ See [uninstall instructions](UNINSTALL.md) to remove either profile or the share
 The explicitly enabled experimental build can add the already-reserved **Herdr App**
 profile. Default builds contain only Rex. Its home and plain-focus-request
 consent are independent; no migration grants consent. App-reported panes and deck
-selection are separate from provider/chat identity. Production request records
-are empty, so its controls stay inactive. See [App setup](HERDR-APP.md).
+selection are separate from provider/chat identity. A validated App view enables local navigation. Plain focus requests require explicit
+consent and a matching build record. The production record list is empty. See [App setup](HERDR-APP.md).

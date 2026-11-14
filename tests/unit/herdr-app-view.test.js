@@ -123,3 +123,51 @@ test('reconciliation reads each retained reference a bounded number of times as 
   assert(small >= 64);
   assert(large <= 2 * small && large < 128 * 4);
 });
+
+test('App navigation preserves mode, destination, reason and state at legible sizes in both styles', () => {
+  const { svg } = require('../../src/render/visuals');
+  const pane = {
+    target,
+    name: 'Job',
+    reportedApp: 'codex',
+    reportedStatus: 'done',
+  };
+  for (const style of ['classic', 'signal']) {
+    for (const consent of [false, true]) {
+      const selected = svg(
+        tile(pane, { style, consent, selected: target, deckSelected: target }),
+      );
+      const attention = svg(
+        tile(pane, {
+          style,
+          consent,
+          key: { coordinates: { row: 1, column: 4 }, settings: {} },
+          mapped: 'attention',
+          reason: 'done',
+        }),
+      );
+      const waiting = svg(
+        tile(
+          { ...pane, reportedStatus: 'blocked' },
+          { style, consent, deckSelected: target },
+        ),
+      );
+      assert.match(waiting, /id="state-question"/);
+      for (const face of [selected, attention, waiting]) {
+        assert.match(face, />Job</);
+        assert.match(face, consent ? />Request</ : />Deck only</);
+        assert(
+          [...face.matchAll(/font-size="(\d+)"/g)].every(
+            ([, size]) => Number(size) >= 20,
+          ),
+        );
+      }
+      assert.match(selected, />On deck</);
+      assert.match(selected, /id="state-done"/);
+      assert.match(selected, /id="selected-agent"/);
+      assert.match(attention, />Attention</);
+      assert.match(attention, />done</);
+      assert.match(attention, /M12 7v6/);
+    }
+  }
+});

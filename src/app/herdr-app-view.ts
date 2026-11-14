@@ -36,6 +36,7 @@ export interface AppPresentation {
   recordKey: string;
   target: AppPaneRef | null;
   conditions: AppTargetConditions | null;
+  slotOrder?: readonly AppPaneRef[];
   focus: boolean;
   pressedAt?: number;
   setupBusy?: boolean;
@@ -103,6 +104,7 @@ export function appTile(input: {
 }): KeySpec {
   const { key, pane, slot } = input;
   const base: KeySpec = {
+    appNavigation: true,
     icon: 'blank',
     lines: [],
     color: '#38414b',
@@ -128,6 +130,12 @@ export function appTile(input: {
     return {
       ...base,
       agent: true,
+      modeCaption:
+        pane && paneKey(pane.target) === paneKey(input.deckSelected)
+          ? input.consent
+            ? 'Request'
+            : 'Deck only'
+          : undefined,
       icon: pane ? provider || 'blank' : 'empty',
       lines: pane
         ? [
@@ -163,6 +171,12 @@ export function appTile(input: {
     return {
       ...base,
       icon: action,
+      modeCaption:
+        action === 'attention'
+          ? input.consent
+            ? 'Request'
+            : 'Deck only'
+          : undefined,
       lines: [
         action === 'next' ? 'Next agent' : 'Attention',
         appName(destinationName(pane)),

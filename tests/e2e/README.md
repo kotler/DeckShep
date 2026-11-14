@@ -42,6 +42,16 @@ agent selection, Next, Page and Collapse using synthetic terminal titles/status.
 The production Bridge/provider-failure boundary is covered separately by the
 Rex navigation integration tests; browser fixtures never probe a real provider.
 
+To run just the automated Herdr App navigation walkthrough from the repository root:
+
+```sh
+npm run test:e2e -- tests/e2e/herdr-app.spec.ts
+```
+
+Playwright clicks virtual keys, checks the displayed mode and selection, and
+compares the recorded focus requests with the expected panes. It also pauses a
+press between key-down and dispatch to exercise changes in rank or App selection.
+
 `herdr-app-panes` uses App pane records without synthetic provider PIDs/chat
 identity. Its request backend exists only in the substituted fixture bundle;
 no native helper/Swift build is needed. Set an absolute synthetic App home and

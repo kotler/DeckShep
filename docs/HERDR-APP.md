@@ -32,8 +32,11 @@ hooks. Removing DeckShep removes its helper; see [Uninstall](UNINSTALL.md).
   **Attention**. Next visits agents across banks. Page changes banks locally.
   Collapse clears closed slots. Attention visits another waiting agent first,
   then an errored agent, then a finished agent. Ties follow tile order.
-- **Focus requested** acknowledges the request. Herdr's next selection report
-  determines the dot. **Focus uncertain** means a write may have reached Herdr.
+- On Attention and the locally selected tile, **Deck only** or **Request**
+  above the destination shows what the next tap can do.
+- **Focus requested** acknowledges the request. The dot follows the latest
+  validated App selection, including the one read just before the request.
+  **Focus uncertain** means a write may have reached Herdr.
   DeckShep sends each request once. **Press again** asks you to check the
   newly displayed destination.
 - The optional Core readback shows a separate terminal count in setup.

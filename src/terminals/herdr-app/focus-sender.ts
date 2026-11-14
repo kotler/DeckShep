@@ -185,7 +185,9 @@ export class GuardedAppFocusSender {
       this.#assertLease(lease);
       assertCommand(await this.commands(bounded));
       this.#assertLease(lease);
-      const snapshot = await this.observe(bounded).catch(() => {
+      const snapshot = await this.observe(bounded).catch((error) => {
+        if (error instanceof Error && error.message === 'App read expired')
+          throw error;
         throw Error('App view unavailable');
       });
       this.#assertLease(lease);
@@ -194,6 +196,7 @@ export class GuardedAppFocusSender {
           snapshot,
           lease.context.target,
           lease.context.conditions,
+          lease.context.slotOrder,
         )
       )
         throw Error('Target changed');
@@ -208,14 +211,25 @@ export class GuardedAppFocusSender {
       );
       if (!('ok' in reply)) throw Error();
       lease.postflight();
-      return { status: 'requested' as const, verifiedFocus: false as const };
+      return {
+        status: 'requested' as const,
+        verifiedFocus: false as const,
+        preflight: snapshot,
+      };
     } catch (error) {
+      if (
+        !dispatched &&
+        bounded.aborted &&
+        bounded.reason?.name === 'TimeoutError'
+      )
+        throw Error('Request expired');
       if (
         !dispatched &&
         error instanceof Error &&
         [
           'Target changed',
           'App view unavailable',
+          'App read expired',
           'Request stale',
           'Request expired',
         ].includes(error.message)

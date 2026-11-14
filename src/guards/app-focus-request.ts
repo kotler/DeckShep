@@ -82,9 +82,18 @@ export class AppFocusAuthority {
     private readonly now: () => number = () => performance.now(),
   ) {}
   issue(context: AppFocusContext): AppFocusPermit {
-    this.assertCurrent(context);
+    const current = this.assertCurrent(context);
+    // Revisions bind the displayed action. Only the controller supplies the
+    // stable order used to re-resolve that action on the sender's fresh view.
+    const slotOrder = current.slotOrder;
+    if (
+      (context.conditions.action === 'next' ||
+        context.conditions.action === 'attention') &&
+      !slotOrder?.length
+    )
+      throw Error('Request stale');
     const permit = Object.freeze({}) as AppFocusPermit;
-    this.#permits.set(permit, structuredClone(context));
+    this.#permits.set(permit, structuredClone({ ...context, slotOrder }));
     return permit;
   }
   begin(permit: AppFocusPermit): AppFocusLease {
@@ -102,6 +111,9 @@ export class AppFocusAuthority {
       context: Object.freeze({
         ...context,
         conditions: Object.freeze({ ...context.conditions }),
+        slotOrder:
+          context.slotOrder &&
+          Object.freeze(context.slotOrder.map((ref) => Object.freeze(ref))),
         target: Object.freeze({ ...context.target }),
       }),
       check,
@@ -121,7 +133,7 @@ export class AppFocusAuthority {
       },
     };
   }
-  private assertCurrent(context: AppFocusContext): void {
+  private assertCurrent(context: AppFocusContext): AppFocusState {
     const current = this.current(),
       now = this.now();
     if (
@@ -140,5 +152,6 @@ export class AppFocusAuthority {
       now - context.pressedAt >= 1000
     )
       throw Error('Request expired');
+    return current;
   }
 }

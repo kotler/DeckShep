@@ -646,3 +646,141 @@ test('a lost reply after Attention dispatch shows uncertainty and a repeated pre
   await h.profilePress('herdr-app', 1, 4);
   assert.equal(peer.inputs().length, 1);
 });
+
+for (const focus of [false, true]) {
+  test(`a waiting agent overtaking a done agent expires Attention (focus=${focus})`, async (t) => {
+    const { h, app, peer } = await fixture(t);
+    const terms = peer.world.spaces[0].tabs[0].terminals;
+    terms[1].status = 'done';
+    await preferences(h, { herdrAppFocusRequestEnabled: focus });
+    await app.refresh();
+    h.tick(350);
+    terms[2].status = 'blocked';
+    await h.profilePress('herdr-app', 1, 4);
+    assert.equal(app.selected().pane, 'p1');
+    assert.deepEqual(peer.inputs(), []);
+    assert.match(frame(h, 'herdr-app:1,4'), /Press again/);
+  });
+}
+test('verified Next checks a restored stable slot and tolerates reordered wire listings', async (t) => {
+  const { h, app, peer } = await fixture(t);
+  await preferences(h, { herdrAppFocusRequestEnabled: true });
+  const terms = peer.world.spaces[0].tabs[0].terminals;
+  const [missing] = terms.splice(1, 1);
+  await app.refresh();
+  h.tick(350);
+  assert.equal(app.keys.get('herdr-app:1,0').presented.target.pane, 'p3');
+  terms.push(missing);
+  await h.profilePress('herdr-app', 1, 0);
+  assert.match(frame(h, 'herdr-app:1,0'), /Press again/);
+  assert.deepEqual(peer.inputs(), []);
+  h.tick(2500);
+  await app.refresh();
+  h.tick(350);
+  const paused = peer.pauseListing(),
+    poll = app.refresh(),
+    release = await paused;
+  const press = h.profilePress('herdr-app', 1, 0);
+  terms.reverse();
+  release();
+  await poll;
+  await press;
+  assert.deepEqual(peer.inputs(), [{ do: 'pane.focus', args: { pane: 'p2' } }]);
+});
+test('helper loss disarms the old verified roster until an independent local observation completes', async (t) => {
+  const view = observerFixture();
+  let opens = 0;
+  const { h, app, peer } = await fixture(t, {
+    appSelectionReader: () => {
+      opens++;
+      return view.reader();
+    },
+  });
+  await preferences(h, { herdrAppFocusRequestEnabled: true });
+  peer.backend.helperAvailable = () => false;
+  app.render();
+  h.tick(350);
+  await h.profilePress('herdr-app', 0, 1);
+  assert.equal(opens, 0);
+  assert.equal(app.selected(), null);
+  assert.equal(app.keys.get('herdr-app:0,1').presented.action, 'none');
+  const release = view.pause(),
+    pending = app.refresh();
+  await h.profilePress('herdr-app', 0, 1);
+  assert.equal(opens, 1);
+  assert.equal(app.selected(), null);
+  release();
+  await pending;
+  h.tick(350);
+  await h.profilePress('herdr-app', 0, 1);
+  assert.equal(app.selected().pane, 'p2');
+  assert.match(frame(h, 'herdr-app:0,1'), /Deck only/);
+  assert.deepEqual(peer.inputs(), []);
+});
+test('verified Attention can finish while an optional Core count remains pending', async (t) => {
+  const gate = Promise.withResolvers();
+  let reads = 0;
+  const { h, app, peer } = await fixture(t, {
+    appCoreStatus: () => ({
+      async read() {
+        reads++;
+        await gate.promise;
+        return { terminals: [] };
+      },
+      close() {},
+    }),
+  });
+  peer.world.spaces[0].tabs[0].terminals[1].status = 'blocked';
+  try {
+    await preferences(h, {
+      herdrAppFocusRequestEnabled: true,
+      herdrAppReadbackEnabled: true,
+      herdrAppCoreSocketPath: '/fixture/core',
+    });
+    await app.refresh();
+    h.tick(350);
+    await h.profilePress('herdr-app', 1, 4);
+    assert.equal(reads, 1);
+    assert.equal(app.selected().pane, 'p2');
+    assert.equal(peer.inputs().length, 1);
+  } finally {
+    gate.resolve();
+  }
+});
+test('the tile acknowledgement reconciles its preflight App selection before recording the deck choice', async (t) => {
+  const { h, app, peer } = await fixture(t);
+  await preferences(h, { herdrAppFocusRequestEnabled: true });
+  h.tick(350);
+  Object.assign(peer.status, { focused_pane: 'p3', agent: 't3' });
+  await h.profilePress('herdr-app', 0, 1);
+  assert.doesNotMatch(frame(h, 'herdr-app:0,0'), /id="selected-agent"/);
+  assert.match(frame(h, 'herdr-app:0,2'), /id="selected-agent"/);
+  await app.refresh();
+  assert.equal(app.selected().pane, 'p2');
+});
+for (const during of ['poll', 'preflight']) {
+  test(`a verified press deadline during an outstanding ${during} shows Press again without dispatch`, async (t) => {
+    const { h, app, peer } = await fixture(t);
+    peer.world.spaces[0].tabs[0].terminals[1].status = 'blocked';
+    await preferences(h, { herdrAppFocusRequestEnabled: true });
+    h.tick(350);
+    // Leave less than the App reader's own one-second budget on the original press.
+    const key = app.keys.get('herdr-app:1,4'),
+      capture = { ...key.presented, pressedAt: h.tick(0) };
+    h.tick(800);
+    const paused = peer.pauseListing();
+    const poll = during === 'poll' ? app.refresh() : undefined;
+    if (poll) await paused;
+    const press = app.press('herdr-app:1,4', capture);
+    const release = await paused;
+    try {
+      await press;
+      assert.equal(key.notice?.message, 'Press again');
+      assert.deepEqual(peer.inputs(), []);
+      if (poll) assert.equal(app.selected().pane, 'p1');
+    } finally {
+      release();
+      await poll;
+    }
+  });
+}

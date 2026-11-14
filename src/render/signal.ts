@@ -73,6 +73,9 @@ interface SignalInput {
   codexMark: string;
   claudeMark: string;
   busyRing?: string;
+  modeCaption?: 'Deck only' | 'Request';
+  appNavigation?: boolean;
+  classic?: boolean;
   legacyPaths: Record<string, string>;
 }
 const glyphs: Record<string, string> = Object.fromEntries(
@@ -209,7 +212,11 @@ const RING = 'fill="none" stroke="white" stroke-width="3"';
 const STROKE =
   'fill="none" stroke="white" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"';
 /** Shape-coded state glyph in a 24x24 box; every state has a unique shape. */
-function stateShape(state: AgentFaceState, knockout: string): string {
+function stateShape(
+  state: AgentFaceState,
+  knockout: string,
+  appNavigation: boolean,
+): string {
   switch (state) {
     case 'ready':
       return `<circle cx="12" cy="12" r="10.5" ${WHITE}/>`;
@@ -218,6 +225,8 @@ function stateShape(state: AgentFaceState, knockout: string): string {
     case 'background':
       return `<circle cx="12" cy="12" r="9" ${RING}/><path d="M12 4.5a7.5 7.5 0 0 0 0 15Z" ${WHITE}/>`;
     case 'question':
+      if (appNavigation)
+        return `<circle cx="12" cy="12" r="10" ${RING}/><path d="M9 9a3 3 0 1 1 4.4 2.7c-1.4.8-1.4 1.7-1.4 2.4" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.2" ${WHITE}/>`;
       return `<circle cx="12" cy="12" r="10" ${RING}/><text x="12" y="17.6" fill="white" text-anchor="middle" font-family="Arial" font-size="16" font-weight="bold">?</text>`;
     case 'approval':
       return `<path d="M12 2.5 22 21H2Z" ${WHITE} stroke="white" stroke-width="3" stroke-linejoin="round"/><path d="M12 9v5.5" fill="none" stroke="${knockout}" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="18" r="1.5" fill="${knockout}"/>`;
@@ -240,8 +249,9 @@ function stateGlyph(
   x: number,
   y: number,
   knockout: string,
+  appNavigation: boolean,
 ): string {
-  return `<g id="state-${state}" transform="translate(${x} ${y})">${stateShape(state, knockout)}</g>`;
+  return `<g id="state-${state}" transform="translate(${x} ${y})">${stateShape(state, knockout, appNavigation)}</g>`;
 }
 function signalSvg({
   icon,
@@ -259,6 +269,9 @@ function signalSvg({
   claudeMark,
   legacyPaths,
   busyRing = '',
+  modeCaption,
+  appNavigation = false,
+  classic = false,
 }: SignalInput) {
   const empty: boolean = agent && icon === 'empty',
     fill: string = agent && !empty ? color : '#252a39';
@@ -353,9 +366,9 @@ function signalSvg({
     .join('');
   const stateMark: string =
     state && stateRow
-      ? stateGlyph(state, 12, (ys[2] ?? 124) - 20, color)
+      ? stateGlyph(state, 12, (ys[2] ?? 124) - 20, color, appNavigation)
       : state && topGlyph
-        ? stateGlyph(state, 60, 20, color)
+        ? stateGlyph(state, 60, 20, color, appNavigation)
         : '';
   const rail: string =
     !agent && !(icon === 'blank' && visible.length === 0)
@@ -365,7 +378,11 @@ function signalSvg({
     hold && !agent
       ? `<g id="hold-hint"><path d="M126 2H142V18Z" fill="${accent}"/></g>`
       : '';
-  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144" height="144" viewBox="0 0 144 144"><defs><linearGradient id="surface" x2="1" y2="1"><stop stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient><clipPath id="key"><rect x="2" y="2" width="140" height="140" rx="14"/></clipPath></defs><g clip-path="url(#key)"><rect x="2" y="2" width="140" height="140" fill="url(#surface)"/>${agent && !empty ? `<rect x="2" y="2" width="140" height="140" fill="white" opacity="${Math.max(0, Math.min(0.22, pulse))}"/>` : ''}${watermark}${!textOnly && !empty ? glyph : ''}${rail}${tick}</g>${stateMark}${text}${badge === 'selected' ? '<g id="selected-agent"><circle cx="123" cy="19" r="6" fill="white"/></g>' : ''}${busyRing}</svg>`;
+  const mode = modeCaption
+    ? `<text id="navigation-mode" x="${agent ? 106 : 134}" y="26" text-anchor="end" fill="white" font-family="Arial" font-size="20">${modeCaption}</text>`
+    : '';
+  const surface = classic ? color : 'url(#surface)';
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144" height="144" viewBox="0 0 144 144"><defs><linearGradient id="surface" x2="1" y2="1"><stop stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient><clipPath id="key"><rect x="2" y="2" width="140" height="140" rx="14"/></clipPath></defs><g clip-path="url(#key)"><rect x="2" y="2" width="140" height="140" fill="${surface}"/>${agent && !empty ? `<rect x="2" y="2" width="140" height="140" fill="white" opacity="${Math.max(0, Math.min(0.22, pulse))}"/>` : ''}${watermark}${!textOnly && !empty ? glyph : ''}${rail}${tick}</g>${stateMark}${text}${mode}${badge === 'selected' ? '<g id="selected-agent"><circle cx="123" cy="19" r="6" fill="white"/></g>' : ''}${busyRing}</svg>`;
 }
 module.exports = { signalSvg, controlAccent };
 

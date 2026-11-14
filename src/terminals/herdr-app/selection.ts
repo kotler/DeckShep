@@ -153,6 +153,10 @@ export class AppSelectionReader {
         selected: selectedPane(world, after, panes),
         verifiedFocus: false,
       };
+    } catch (error) {
+      if (bounded.aborted && bounded.reason?.name === 'TimeoutError')
+        throw Error('App read expired');
+      throw error;
     } finally {
       this.#pending = false;
     }

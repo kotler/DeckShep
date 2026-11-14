@@ -74,6 +74,7 @@ export class HerdrAppController {
   #coreReader: AppCoreStatusPort | null = null;
   #roster = appRoster([], null, null);
   #coreCount: number | undefined;
+  #coreReading: AppCoreStatusPort | null = null;
   #slots: AppPaneRef[] = [];
   #selection: AppPaneRef | null = null;
   #bank = 0;
@@ -227,6 +228,8 @@ export class HerdrAppController {
           ? key.presented.armedAt
           : this.options.clock() + 350,
       conditions,
+      slotOrder:
+        action === 'next' || action === 'attention' ? this.#slots : undefined,
       focus,
       target: pane?.target ?? null,
       endpointGeneration,
@@ -250,7 +253,15 @@ export class HerdrAppController {
     };
   }
   render() {
-    const focus = this.#focusConsented();
+    // Retire the source before a render can turn a verified tile into a local one.
+    if (this.#snapshot && this.#port && !this.#online()) {
+      this.#stop();
+      return;
+    }
+    const focus =
+      !!this.#snapshot &&
+      !!this.#port &&
+      this.options.config().herdrApp?.focusRequestEnabled === true;
     for (const [context, key] of this.keys) {
       if (
         key.notice &&
@@ -301,6 +312,7 @@ export class HerdrAppController {
     this.#message = '';
     this.#coreReader?.close();
     this.#coreReader = null;
+    this.#coreReading = null;
     this.#coreCount = undefined;
     this.#selection = null;
     this.#generation = this.options.nextGeneration();
@@ -381,7 +393,8 @@ export class HerdrAppController {
           if (generation !== this.#generation || this.#port !== port) return;
           this.#accept(snapshot);
           this.render();
-          await this.#refreshCore(this.#generation);
+          if (this.#snapshot === snapshot)
+            void this.#refreshCore(this.#generation);
           return;
         } catch (error) {
           if (generation !== this.#generation) return;
@@ -404,7 +417,7 @@ export class HerdrAppController {
       if (generation !== this.#generation || reader !== this.#observer) return;
       this.#accept(snapshot);
       this.render();
-      await this.#refreshCore(this.#generation);
+      void this.#refreshCore(this.#generation);
     } catch {
       if (generation === this.#generation) this.#stop(false);
     }
@@ -433,26 +446,32 @@ export class HerdrAppController {
       this.#coreCount = undefined;
       return;
     }
+    if (this.#coreReading) return;
+    let reader: AppCoreStatusPort | null = null;
     try {
-      this.#coreReader ??= this.options.core(this.#config);
-      const reader = this.#coreReader,
-        core = reader ? await reader.read() : null;
+      reader = this.#coreReader ??= this.options.core(this.#config);
+      if (!reader) return;
+      this.#coreReading = reader;
+      const core = await reader.read();
       if (
         generation === this.#generation &&
         reader === this.#coreReader &&
         this.#coreAllowed(this.options.config())
       )
-        this.#coreCount = core?.terminals.length;
+        this.#coreCount = core.terminals.length;
     } catch {
-      if (generation !== this.#generation) return;
-      // A failed Core read only drops inspector information.
-      this.#coreReader?.close();
+      if (generation !== this.#generation || reader !== this.#coreReader)
+        return;
+      reader?.close();
       this.#coreReader = null;
       this.#coreCount = undefined;
+    } finally {
+      if (reader === this.#coreReading) this.#coreReading = null;
     }
   }
   #assertShown(context: string, display: AppPresentation) {
     const key = this.keys.get(context);
+    if (this.#port && !this.#online()) throw Error('Request stale');
     if (
       !key ||
       display.setupBusy ||
@@ -518,12 +537,19 @@ export class HerdrAppController {
             target: display.target,
             pressedAt: display.pressedAt,
           });
-          await this.#port.deliver({ kind: 'requestFocus' }, permit, signal);
+          const { preflight } = await this.#port.deliver(
+            { kind: 'requestFocus' },
+            permit,
+            signal,
+          );
           try {
             this.#assertShown(context, display);
+            if (preflight.endpointGeneration !== display.endpointGeneration)
+              throw Error('Request stale');
           } catch {
             throw Error('Focus uncertain');
           }
+          this.#accept(preflight);
           this.#select(display);
           key.notice = {
             until: this.options.clock() + 2500,
@@ -536,7 +562,12 @@ export class HerdrAppController {
           if (display.action === 'attention') {
             const source = this.#port ?? this.#observer;
             if (!source) throw Error('Request stale');
-            const fresh = await source.observe(signal).catch(() => {
+            const fresh = await source.observe(signal).catch((error) => {
+              if (
+                signal.aborted ||
+                (error instanceof Error && error.message === 'App read expired')
+              )
+                throw Error('App read expired');
               throw Error('App view unavailable');
             });
             this.#assertShown(context, display);
@@ -545,7 +576,14 @@ export class HerdrAppController {
             this.#accept(fresh);
             this.render();
             this.#assertShown(context, display);
-            if (!matchesAppTarget(fresh, display.target, display.conditions))
+            if (
+              !matchesAppTarget(
+                fresh,
+                display.target,
+                display.conditions,
+                display.slotOrder,
+              )
+            )
               throw Error('Request stale');
           }
           this.#select(display);
@@ -557,15 +595,19 @@ export class HerdrAppController {
       if (
         sameSource &&
         (reason === 'App view unavailable' ||
+          reason === 'App read expired' ||
           (this.#port && this.#port.generation !== display.endpointGeneration))
       )
         this.#stop();
       const message =
         reason === 'Focus uncertain'
           ? reason
-          : ['Request stale', 'Request expired', 'Target changed'].includes(
-                reason,
-              )
+          : [
+                'Request stale',
+                'Request expired',
+                'App read expired',
+                'Target changed',
+              ].includes(reason)
             ? 'Press again'
             : 'Focus refused';
       if (

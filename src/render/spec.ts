@@ -28,6 +28,10 @@ export interface KeySpec {
   style: string;
   textOnly: boolean;
   agent: boolean;
+  /** App navigation needs the same legible layout for classic and Signal surfaces. */
+  appNavigation?: boolean;
+  /** Mode caption above the destination when all three main lines are occupied. */
+  modeCaption?: 'Deck only' | 'Request';
   /** Wave 2: agent keys show a shape-coded state glyph. */
   state?: AgentFaceState;
   /** Wave 2: unavailable control, drawn with dimmed text and rail. */

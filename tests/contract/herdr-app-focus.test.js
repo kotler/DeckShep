@@ -22,7 +22,12 @@ test('guarded delivery writes one explicit pane request; acknowledgement never b
   x.state.target = { space: 's1', tab: 'c1', pane: 'p2', terminal: 't2' };
   x.state.conditions.provider = 'claude-code';
   const permit = x.permit();
-  assert.deepEqual(await x.sender.deliver({ kind: 'requestFocus' }, permit), {
+  const { preflight, ...reply } = await x.sender.deliver(
+    { kind: 'requestFocus' },
+    permit,
+  );
+  assert.equal(preflight.selected.pane, 'p1');
+  assert.deepEqual(reply, {
     status: 'requested',
     verifiedFocus: false,
   });
@@ -400,6 +405,7 @@ test('ordinary navigation accepts status changes but refuses changed provider or
       terminals.push(second);
       x.state.target = { space: 's1', tab: 'c1', terminal: 't2', pane: 'p2' };
       const key = JSON.stringify(['s1', 'c1', 'p1', 't1']);
+      x.state.slotOrder = (await x.sender.observe()).panes.map((p) => p.target);
       x.state.conditions = {
         action,
         provider: 'codex',
