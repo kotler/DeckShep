@@ -107,6 +107,17 @@ export function ellipsize(
   }
   return result + '…';
 }
+export function agentTileLines(
+  title: string,
+  folder: string | undefined,
+  status: string,
+) {
+  return [
+    ellipsize(title, 120, 26),
+    ellipsize(folder || 'No folder', 120, 22),
+    status,
+  ];
+}
 export function agentLines(
   agent: AgentSnapshot,
   aliases: Record<string, string | undefined> = {},
@@ -121,17 +132,13 @@ export function agentLines(
         error: 'Error',
         unknown: 'Unknown',
       }[agent.state] || 'Unknown';
-  return [
-    ellipsize(
-      aliases[agent.block] ||
-        agent.chatName ||
-        (agent.app === 'codex' ? 'Unnamed' : 'Untitled'),
-      120,
-      26,
-    ),
-    ellipsize(agent.project || 'No folder', 120, 22),
+  return agentTileLines(
+    aliases[agent.block] ||
+      agent.chatName ||
+      (agent.app === 'codex' ? 'Unnamed' : 'Untitled'),
+    agent.project,
     status,
-  ];
+  );
 }
 export function shortModel(model: unknown) {
   return clean(model)

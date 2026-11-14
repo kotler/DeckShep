@@ -18,19 +18,47 @@ test('clicking virtual deck keys switches from local selection to a consented fo
   await app(page, false);
   const second = page.getByTestId('key-0-1');
   await second.click();
-  await expect(second).toHaveAccessibleName(/On deck.*Deck only/);
+  await expect(second).toHaveAccessibleName(
+    /^Pane 2 · DeckShep · Ready · On deck$/,
+  );
   expect(await trace(page)).toEqual([]);
 
   await page.getByRole('button', { name: 'Enable fixture consent' }).click();
   const next = page.getByTestId('key-1-0');
-  await expect(next).toHaveAccessibleName(/Next agent.*Request only/);
+  await expect(next).toHaveAccessibleName(/^Next agent · Pane 2$/);
+  await expect(second).toHaveAccessibleName(/^Pane 2 · DeckShep · Ready$/);
   await command(page, 'advance', 350);
   await expect(next).toHaveAccessibleName(/Next agent.*Pane 2/);
   await next.click();
-  await expect(next).toHaveAccessibleName(/Focus.*requested.*Not verified/);
+  await expect(next).toHaveAccessibleName(/Next agent.*Pane 3/);
   expect(await trace(page)).toEqual([['pane.focus', 'p2']]);
+  await command(page, 'advance', 350);
+  await next.click();
+  await expect(next).toHaveAccessibleName(/Next agent.*Pane 4/);
+  expect(await trace(page)).toEqual([
+    ['pane.focus', 'p2'],
+    ['pane.focus', 'p3'],
+  ]);
 });
-test('App selection and Next need separate consent and report requested rather than verified focus', async ({
+test('rapid Next and Page presses leave the new destination visible without a warning', async ({
+  page,
+}) => {
+  await app(page);
+  for (const col of [0, 1]) {
+    await command(page, 'advance', 350);
+    const accepted = await command(page, 'press', 1, col);
+    await command(page, 'advance', 349);
+    const repeat = await command(page, 'press', 1, col);
+    expect(repeat.alerts).toEqual(accepted.alerts);
+    expect(repeat.refusals).toEqual(accepted.refusals);
+    expect(repeat.trace).toEqual(accepted.trace);
+    expect(repeat.keys[5 + col].labels).toEqual(accepted.keys[5 + col].labels);
+    await command(page, 'advance', 1);
+    const next = await command(page, 'press', 1, col);
+    expect(next.keys[5 + col].labels).not.toEqual(repeat.keys[5 + col].labels);
+  }
+});
+test('App tile acknowledgement keeps its name and status visible with a separate selection marker', async ({
   page,
 }) => {
   await app(page, false);
@@ -44,12 +72,15 @@ test('App selection and Next need separate consent and report requested rather t
   await command(page, 'press', 0, 1);
   expect(await trace(page)).toEqual([['pane.focus', 'p2']]);
   expect(await labels(page, 0, 1)).toEqual([
-    'Focus',
-    'requested',
-    'Not verified',
+    'Pane 2',
+    'DeckShep',
+    'Ready',
+    'On deck',
   ]);
-  await command(page, 'advance', 2500);
-  expect(await labels(page, 0, 1)).toContain('On deck');
+  await expect(page.getByTestId('key-0-1')).toHaveAttribute(
+    'data-selected',
+    'false',
+  );
   await command(page, 'advance', 350);
   await command(page, 'press', 1, 0);
   expect(await trace(page)).toEqual([
@@ -140,12 +171,16 @@ for (const consent of [false, true]) {
       'Attention',
       'Review',
       'waiting',
-      consent ? 'Request' : 'Deck only',
+      ...(consent ? [] : ['Deck only']),
     ]);
     await command(page, 'press', 1, 4);
-    expect(await labels(page, 0, 0)).toEqual(
-      expect.arrayContaining(['On deck', consent ? 'Request' : 'Deck only']),
-    );
+    expect(await labels(page, 0, 0)).toEqual([
+      'Review',
+      'No folder',
+      'Waiting',
+      'On deck',
+    ]);
+    expect(await labels(page, 1, 4)).toEqual([]);
     expect(await trace(page)).toEqual(consent ? [['pane.focus', 'p6']] : []);
   });
 }
@@ -165,6 +200,68 @@ function world(panes: ReturnType<typeof pane>[], selected = 1) {
     app: { epoch: 1, panes, selected: pane(selected).target },
   };
 }
+test('Model identifies the App target while browsing another bank and follows App selection and state', async ({
+  page,
+}) => {
+  await app(page, false);
+  const panes = Array.from({ length: 7 }, (_, i) => pane(i + 1));
+  await command(page, 'setScenario', world(panes));
+  const model = page.getByTestId('key-2-0');
+  await expect(model).toHaveAccessibleName('Model · 1 · Pane 1');
+  await command(page, 'press', 1, 1);
+  await command(page, 'advance', 350);
+  await command(page, 'press', 0, 0);
+  await expect(page.getByTestId('key-0-0')).toHaveAccessibleName(
+    /Pane 6.*On deck/,
+  );
+  await expect(model).toHaveAccessibleName('Model · 1 · Pane 1');
+  await model.click();
+  expect(await trace(page)).toEqual([]);
+
+  await command(page, 'setScenario', world(panes, 7));
+  await expect(page.getByTestId('key-0-1')).toHaveAccessibleName(/Pane 7/);
+  await expect(model).toHaveAccessibleName('Model · 7 · Pane 7');
+  await command(page, 'advance', 350);
+  await command(page, 'press', 1, 1);
+  await command(page, 'setScenario', world(panes, 7));
+  await expect(page.getByTestId('key-0-0')).toHaveAccessibleName(/Pane 1/);
+  await expect(model).toHaveAccessibleName('Model · 7 · Pane 7');
+  for (const status of ['working', 'blocked']) {
+    await command(
+      page,
+      'setScenario',
+      world([...panes.slice(0, 6), pane(7, status)], 7),
+    );
+    await expect(model).toHaveAccessibleName('Empty key');
+  }
+  await command(page, 'setScenario', world(panes.slice(0, 6), 7));
+  await expect(model).toHaveAccessibleName('Empty key');
+  expect(await trace(page)).toEqual([]);
+});
+test('Next refuses a pane closed mid-press and Collapse restores its slot for the surviving agent', async ({
+  page,
+}) => {
+  await app(page);
+  await command(page, 'setScenario', world([pane(1), pane(2), pane(3)]));
+  await command(page, 'advance', 350);
+  const next = page.getByTestId('key-1-0');
+  await expect(next).toHaveAccessibleName(/Next agent.*Pane 2/);
+  await command(page, 'pauseFocus');
+  await command(page, 'down', 1, 0);
+  await command(page, 'setScenario', world([pane(1), pane(3)]));
+  await command(page, 'up', 1, 0);
+  expect(await trace(page)).toEqual([]);
+  await expect(page.getByTestId('key-0-1')).toHaveAccessibleName(/Closed pane/);
+  const collapse = page.getByTestId('key-1-2');
+  await expect(collapse).toHaveAccessibleName(/Collapse/);
+  await command(page, 'advance', 350);
+  await collapse.click();
+  await expect(page.getByTestId('key-0-1')).toHaveAccessibleName(/Pane 3/);
+  await command(page, 'advance', 350);
+  await next.click();
+  await expect(next).toHaveAccessibleName(/Next agent.*Pane 1/);
+  expect(await trace(page)).toEqual([['pane.focus', 'p3']]);
+});
 test('two plain calibration terminals leave all five agent tiles, Next and Attention inactive', async ({
   page,
 }) => {
@@ -232,6 +329,6 @@ test('a fresh tile preflight updates the App dot independently of the acknowledg
   await command(page, 'setScenario', changed);
   await command(page, 'advance', 2500);
   expect(await labels(page, 0, 1)).toEqual(
-    expect.arrayContaining(['On deck', 'Request']),
+    expect.arrayContaining(['On deck', 'Ready']),
   );
 });

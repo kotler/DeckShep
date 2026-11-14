@@ -1,7 +1,12 @@
 import { createHash } from 'node:crypto';
 import type { Config } from '../domain/types';
 import type { AppFocusPort, AppFocusState } from '../domain/app-focus-request';
+import { AppTargetChanged } from '../domain/app-focus-request';
 import type { AppPaneRef, AppSelectionSnapshot } from '../domain/app-selection';
+import {
+  projectAppControls,
+  type AppControlProjection,
+} from '../domain/app-controls';
 import type { AppCoreStatusPort } from '../terminals/herdr-app/core-status';
 import { AppFocusAuthority } from '../guards/app-focus-request';
 import type { AppFocusBackendFactory } from './herdr-app-backend';
@@ -59,6 +64,16 @@ async function waitForPoll(poll: Promise<void>, signal: AbortSignal) {
 function digest(value: unknown): string {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
 }
+function changingView(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    [
+      'App selection changed',
+      'App selection ambiguous',
+      'App view unavailable',
+    ].includes(error.message)
+  );
+}
 /** App panes never enter provider-bound AgentSnapshot or the legacy dispatcher. */
 export class HerdrAppController {
   readonly keys = new Map<string, AppKey>();
@@ -71,11 +86,13 @@ export class HerdrAppController {
   #port: AppFocusPort | null = null;
   #observer: AppSelectionObserver | null = null;
   #snapshot: AppSelectionSnapshot | null = null;
+  #controls: AppControlProjection | null = null;
   #coreReader: AppCoreStatusPort | null = null;
   #roster = appRoster([], null, null);
   #coreCount: number | undefined;
   #coreReading: AppCoreStatusPort | null = null;
   #slots: AppPaneRef[] = [];
+  #slotEpoch = 0;
   #selection: AppPaneRef | null = null;
   #bank = 0;
   #refreshing: Promise<void> | null = null;
@@ -206,6 +223,7 @@ export class HerdrAppController {
       this.#bank,
       key.settings.action,
       action,
+      defaultAppAction(key) === 'model' ? this.#controls?.revision : null,
       conditions,
       paneKey(pane?.target),
       focus,
@@ -274,14 +292,20 @@ export class HerdrAppController {
       const spec = appTile({
         key,
         pane: this.#pane(action),
-        slot: action.startsWith('agent:')
-          ? this.#slots[this.#bank * 5 + Number(action.slice(6))]
-          : undefined,
+        slot:
+          this.#snapshot && action.startsWith('agent:')
+            ? this.#slots[this.#bank * 5 + Number(action.slice(6))]
+            : undefined,
         selected: this.#snapshot?.selected ?? null,
         deckSelected: this.#selection,
         online: !!this.#snapshot,
+        viewChanging: !this.#snapshot && this.#slotEpoch > 0,
         consent: shown.focus,
         mapped: shown.action,
+        controls: this.#controls,
+        controlSlot: this.#controls?.pane
+          ? this.#roster.indices.get(paneKey(this.#controls.pane.target))
+          : undefined,
         reason: shown.conditions?.reason ?? undefined,
         bank: this.#bank,
         banks: this.#banks(),
@@ -309,6 +333,7 @@ export class HerdrAppController {
     this.#observer?.dispose();
     this.#observer = null;
     this.#snapshot = null;
+    this.#controls = null;
     this.#message = '';
     this.#coreReader?.close();
     this.#coreReader = null;
@@ -317,6 +342,7 @@ export class HerdrAppController {
     this.#selection = null;
     this.#generation = this.options.nextGeneration();
     this.#slots = [];
+    this.#slotEpoch = 0;
     this.#bank = 0;
     this.#project();
     this.render();
@@ -359,10 +385,7 @@ export class HerdrAppController {
     return pending;
   }
   #accept(snapshot: AppSelectionSnapshot) {
-    if (
-      this.#snapshot &&
-      this.#snapshot.endpointGeneration !== snapshot.endpointGeneration
-    ) {
+    if (this.#slotEpoch && this.#slotEpoch !== snapshot.endpointGeneration) {
       this.#generation = this.options.nextGeneration();
       this.#slots = [];
       this.#bank = 0;
@@ -371,11 +394,32 @@ export class HerdrAppController {
     if (paneKey(this.#snapshot?.selected) !== paneKey(snapshot.selected))
       this.#selection = null;
     this.#snapshot = snapshot;
+    this.#slotEpoch = snapshot.endpointGeneration;
     this.#project();
     if (this.#selection && !this.#roster.live.has(paneKey(this.#selection))) {
       this.#selection = null;
       this.#project();
     }
+    const { controls, reveal } = projectAppControls(
+      this.#controls,
+      snapshot,
+      `${this.#generation}:${snapshot.endpointGeneration}`,
+    );
+    this.#controls = controls;
+    if (reveal) {
+      const index = this.#roster.indices.get(paneKey(reveal));
+      if (index !== undefined) this.setBank(Math.floor(index / 5));
+    }
+  }
+  // A pane can close between status and ls. Disarm the whole presentation,
+  // but keep the slot order for the next valid observation of this source.
+  #suspendView() {
+    this.#snapshot = null;
+    this.#controls = null;
+    this.#selection = null;
+    this.#generation = this.options.nextGeneration();
+    this.#project();
+    this.render();
   }
   async #read(retryVerification: boolean) {
     if (retryVerification && this.#observer && this.#focusCapable())
@@ -398,6 +442,14 @@ export class HerdrAppController {
           return;
         } catch (error) {
           if (generation !== this.#generation) return;
+          if (
+            changingView(error) &&
+            this.#port?.peerKey &&
+            this.#port.generation === this.#slotEpoch
+          ) {
+            this.#suspendView();
+            return;
+          }
           this.#stop(false);
           generation = this.#generation;
           // Only a fresh independent read can establish a local-only presentation.
@@ -418,8 +470,10 @@ export class HerdrAppController {
       this.#accept(snapshot);
       this.render();
       void this.#refreshCore(this.#generation);
-    } catch {
-      if (generation === this.#generation) this.#stop(false);
+    } catch (error) {
+      if (generation !== this.#generation) return;
+      if (this.#observer && changingView(error)) this.#suspendView();
+      else this.#stop(false);
     }
   }
   /** Local deck selection only: no App request, focus claim or authority. */
@@ -500,11 +554,13 @@ export class HerdrAppController {
     display ??= key.presented;
     if (!display || display.action === 'none') return;
     if (display.appearance !== key.appearance) return;
+    const pagingOrCycling =
+      display.action === 'next' || display.action === 'banknext';
     if (
       display.pressedAt !== undefined &&
       display.pressedAt < display.armedAt
     ) {
-      this.options.emit('showAlert', context, {});
+      if (!pagingOrCycling) this.options.emit('showAlert', context, {});
       return;
     }
     this.#active = context;
@@ -551,41 +607,33 @@ export class HerdrAppController {
           }
           this.#accept(preflight);
           this.#select(display);
-          key.notice = {
-            until: this.options.clock() + 2500,
-            message: 'Focus requested',
-            error: false,
-            generation: this.#generation,
-          };
           this.#message = 'Focus requested; keyboard focus is not verified';
         } else {
-          if (display.action === 'attention') {
-            const source = this.#port ?? this.#observer;
-            if (!source) throw Error('Request stale');
-            const fresh = await source.observe(signal).catch((error) => {
-              if (
-                signal.aborted ||
-                (error instanceof Error && error.message === 'App read expired')
-              )
-                throw Error('App read expired');
-              throw Error('App view unavailable');
-            });
-            this.#assertShown(context, display);
-            if (source !== (this.#port ?? this.#observer) || signal.aborted)
-              throw Error('Request stale');
-            this.#accept(fresh);
-            this.render();
-            this.#assertShown(context, display);
+          const source = this.#port ?? this.#observer;
+          if (!source) throw Error('Request stale');
+          const fresh = await source.observe(signal).catch((error) => {
             if (
-              !matchesAppTarget(
-                fresh,
-                display.target,
-                display.conditions,
-                display.slotOrder,
-              )
+              signal.aborted ||
+              (error instanceof Error && error.message === 'App read expired')
             )
-              throw Error('Request stale');
-          }
+              throw Error('App read expired');
+            throw Error('App view unavailable');
+          });
+          this.#assertShown(context, display);
+          if (source !== (this.#port ?? this.#observer) || signal.aborted)
+            throw Error('Request stale');
+          this.#accept(fresh);
+          this.render();
+          this.#assertShown(context, display);
+          if (
+            !matchesAppTarget(
+              fresh,
+              display.target,
+              display.conditions,
+              display.slotOrder,
+            )
+          )
+            throw Error('Request stale');
           this.#select(display);
         }
       }
@@ -594,11 +642,19 @@ export class HerdrAppController {
       const sameSource = display.generation === this.#generation;
       if (
         sameSource &&
-        (reason === 'App view unavailable' ||
-          reason === 'App read expired' ||
+        error instanceof AppTargetChanged &&
+        this.#online() &&
+        error.snapshot.endpointGeneration === display.endpointGeneration
+      )
+        this.#accept(error.snapshot);
+      if (
+        sameSource &&
+        (reason === 'App read expired' ||
           (this.#port && this.#port.generation !== display.endpointGeneration))
       )
         this.#stop();
+      else if (sameSource && reason === 'App view unavailable')
+        this.#suspendView();
       const message =
         reason === 'Focus uncertain'
           ? reason
@@ -615,12 +671,16 @@ export class HerdrAppController {
         (sameSource || reason === 'Focus uncertain')
       ) {
         key.notice = {
-          until: this.options.clock() + 2500,
+          until:
+            this.options.clock() +
+            (display.action === 'next' && message === 'Press again'
+              ? 350
+              : 2500),
           message,
-          error: true,
           generation: this.#generation,
         };
-        this.options.emit('showAlert', context, {});
+        if (!pagingOrCycling || message !== 'Press again')
+          this.options.emit('showAlert', context, {});
       }
       if (sameSource) this.#message = message;
     } finally {

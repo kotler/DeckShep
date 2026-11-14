@@ -2,6 +2,7 @@
 import type { AppFocusBackendFactory } from '../../../src/app/herdr-app-backend';
 import type { Scenario } from './scenarios';
 import { matchesAppTarget } from '../../../src/domain/app-navigation';
+import { AppTargetChanged } from '../../../src/domain/app-focus-request';
 export function virtualAppFocus(
   get: () => Scenario,
   pause: () => Promise<void>,
@@ -50,7 +51,7 @@ export function virtualAppFocus(
               lease.context.slotOrder,
             )
           )
-            throw Error('Target changed');
+            throw new AppTargetChanged(preflight);
           lease.consume(this.peerKey, this.recordKey, this.generation);
           process.send?.({
             kind: 'fixtureInput',

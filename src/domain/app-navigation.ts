@@ -15,8 +15,21 @@ export function appProvider(raw: string | null | undefined) {
   if (value === 'codex') return 'codex';
   return value === 'claude' || value === 'claude-code' ? 'claude-code' : null;
 }
-export function destinationName(pane: AppPaneStatus) {
-  return pane.name || appProvider(pane.reportedApp) || 'Terminal';
+export function destinationName(pane: AppPaneStatus): string {
+  const provider = appProvider(pane.reportedApp);
+  return (
+    pane.name ||
+    (provider === 'claude-code'
+      ? 'Claude Code'
+      : provider === 'codex'
+        ? 'Codex'
+        : 'Terminal')
+  );
+}
+function isAgent(pane: AppPaneStatus): boolean {
+  // Herdr retains the previous app name after a terminal stops reporting an
+  // agent. Its null status distinguishes that shell from a live, idle agent.
+  return !!pane.reportedStatus && !!appProvider(pane.reportedApp);
 }
 
 /** Reconcile the complete validated App observation in stable physical slot order. */
@@ -29,7 +42,7 @@ export function appRoster(
   const indices = new Map(slots.map((slot, i) => [paneKey(slot), i]));
   const live = new Map<string, AppPaneStatus>();
   for (const pane of snapshot?.panes ?? []) {
-    if (!appProvider(pane.reportedApp)) continue;
+    if (!isAgent(pane)) continue;
     const key = paneKey(pane.target);
     live.set(key, pane);
     if (!indices.has(key)) {
@@ -87,7 +100,7 @@ export function matchesAppTarget(
   const [p] = matches;
   if (c.action === 'calibration') return p.reportedApp === c.provider;
   if (
-    !appProvider(p.reportedApp) ||
+    !isAgent(p) ||
     appProvider(p.reportedApp) !== c.provider ||
     destinationName(p) !== c.name
   )
@@ -100,9 +113,7 @@ export function matchesAppTarget(
     c.effectiveSelection === c.appSelection
       ? snapshot.selected
       : snapshot.panes.find(
-          (p) =>
-            appProvider(p.reportedApp) &&
-            paneKey(p.target) === c.effectiveSelection,
+          (p) => isAgent(p) && paneKey(p.target) === c.effectiveSelection,
         )?.target;
   if (start === undefined) return false;
   const fresh = appRoster(slotOrder, snapshot, start);

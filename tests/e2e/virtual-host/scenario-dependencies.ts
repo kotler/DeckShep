@@ -203,7 +203,7 @@ async function command(message: Record<string, unknown>): Promise<void> {
         keyboard.working = current.agents[0].state === 'working';
       } else if (current.keyboard && current.agents[0]?.state === 'working')
         keyboard.surface = 'working';
-      for (const timer of timers) if (timer.period === 2000) timer.callback();
+      for (const timer of timers) if (timer.period !== 250) timer.callback();
     } else if (message.command === 'advance') {
       const amount = Number(message.value);
       if (!Number.isFinite(amount) || amount < 0 || amount > 86400000)

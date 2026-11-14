@@ -116,7 +116,20 @@ npm run test:e2e:herdr-app-live
 ```
 
 Chromium clicks the virtual deck on a real clock. The test checks local
-selection, consented Next and Attention requests and consent revocation.
+selection, consented Next and Attention requests and consent revocation. It
+also compiles a disposable Cocoa editor/input observer and verifies that
+informational Model follows the App selection while that editor retains
+keyboard focus. Its input counter must remain zero. The editor is registered
+with the launcher's owned-process cleanup and uses the private test HOME.
 An independent peer-verified App read checks which pane Herdr selected.
 A pass also requires verified cleanup and unchanged tracked settings.
-The ordinary Playwright suite keeps the synthetic stale-press and timing cases.
+Live browser artifacts use `test-results-live/`, separate from synthetic runs.
+The ordinary Playwright suite keeps the synthetic stale-press and timing cases
+and tests the off-bank Model cue, inert presses, selection following and state
+retirement. No screenshots or golden fixtures need regeneration for these
+dedicated assertions.
+
+The OSC programs are status fixtures, not Codex or Claude CLI sessions. This
+live run validates App navigation and passive control projection. It cannot
+qualify a Model setting mutation. Both active candidates remain gated by the
+[native Model validation runbook](../../docs/plans/herdr-app-agent-controls/native-model-validation.md).

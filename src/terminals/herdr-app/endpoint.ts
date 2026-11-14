@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 export interface AppHomeOptions {
   appHome?: string;
@@ -37,18 +38,31 @@ export interface SocketEndpoint {
   file: string;
   identity: string;
 }
-export interface SocketPolicy {
-  /** herdr-core creates its socket 0755 inside an owner-only folder. Owner
-   * approval 2026-11-08: for the core only, an owned 0700 parent is enough,
-   * because connecting needs search access to that folder. App sockets stay
-   * strict: a recreated App socket with broader mode must still refuse. */
-  ownerOnlyParentSuffices?: boolean;
+// macOS ACLs can grant search access even when the directory mode is 0700.
+// Cache only a successful check. ACL edits change ctime and replacement
+// changes the inode, so ordinary roster polls need no additional process.
+let checkedAppDirectory = '';
+function privateAppDirectory(file: string, directory: fs.BigIntStats): boolean {
+  if ((directory.mode & 0o7777n) !== 0o700n) return false;
+  if (process.platform !== 'darwin') return true;
+  const identity = [directory.dev, directory.ino, directory.ctimeNs].join(':');
+  if (checkedAppDirectory === identity) return true;
+  const listing = execFileSync('/bin/ls', ['-lde', file], {
+    encoding: 'utf8',
+    stdio: 'pipe',
+    env: { LC_ALL: 'C' },
+    timeout: 250,
+    maxBuffer: 8192,
+  }).trimEnd();
+  if (!/^drwx------[@ ]/.test(listing) || listing.includes('\n')) return false;
+  checkedAppDirectory = identity;
+  return true;
 }
 /** Reject links in every component, not just the socket or its immediate parent.
  * Keep filesystem errors private: their messages contain the selected home. */
 export function inspectSocket(
   value: string,
-  policy: SocketPolicy = {},
+  policy: 'private' | 'app' | 'core' = 'private',
 ): SocketEndpoint {
   try {
     const file = absolute(value),
@@ -59,17 +73,24 @@ export function inspectSocket(
       current = path.join(current, component);
       if (fs.lstatSync(current).isSymbolicLink()) throw Error();
     }
-    const directory = fs.lstatSync(path.dirname(file)),
+    const parent = path.dirname(file),
+      directory = fs.lstatSync(parent, { bigint: true }),
       socket = fs.lstatSync(file);
     if (
       !directory.isDirectory() ||
-      directory.uid !== uid ||
-      directory.mode & 0o077 ||
+      directory.uid !== BigInt(uid) ||
+      directory.mode & 0o077n ||
       !socket.isSocket() ||
       socket.uid !== uid ||
-      (!policy.ownerOnlyParentSuffices && socket.mode & 0o077) ||
-      // Even with an owner-only parent, a group/world-writable socket refuses.
-      socket.mode & 0o022
+      socket.mode & 0o022 ||
+      (socket.mode & 0o077 &&
+        policy !== 'core' &&
+        !(
+          policy === 'app' &&
+          (socket.mode & 0o7777) === 0o755 &&
+          socket.nlink === 1 &&
+          privateAppDirectory(parent, directory)
+        ))
     )
       throw Error();
     return {

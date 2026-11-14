@@ -19,8 +19,9 @@ off, Next made no change and the UI displayed Consent off. See the
 3. Explicitly check **Allow plain focus requests** to use pane selection/Next.
    The final guard test left this unchecked. Fresh configurations remain off.
 4. Wait at least half a second after appearing/changing context before pressing.
-   Select a pane or press Next. The feedback says **Focus requested**; it does
-   not establish keyboard focus. Never retry a request reported as uncertain.
+   Select a pane or press Next. **On deck** marks the local choice above its title.
+   The white dot follows the selection Herdr reports. Attention shows the next
+   eligible agent or clears. Never retry a request reported as uncertain.
 5. Uncheck the consent to stop requests. Local banks and Collapse remain local.
 
 Zoom, terminal reads, typing, provider controls, clipboard access, hooks and mods
@@ -33,9 +34,10 @@ queried.
 
 Unknown/changed App builds, a replaced peer/socket, unsupported topology,
 overlays, revoked consent and stale presses refuse. The App
-home and socket must both be owner-owned, non-symlink and owner-only. The owner
-approved tightening the current pair to 0700; a recreated socket may need the
-same deliberate setup again. The preview does not silently change permissions.
+home and socket must belong to the current user, with no symlinks in the path.
+When Herdr recreates a socket with mode `0755`, DeckShep accepts it inside a
+`0700` App home with no macOS ACL, provided the socket has a single link.
+DeckShep rechecks the endpoint before using it and leaves permissions as created.
 
 The Applications directory itself was not changed. The narrow runtime exception
 accepts only the canonical root/admin system container with the reviewed mode

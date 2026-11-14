@@ -55,6 +55,30 @@ test('the production request allowlist is empty and refuses before probing any p
   await assert.rejects(verifier.verify({}, 'endpoint'), /Peer unverified/);
   assert.equal(calls, 0);
 });
+test('warm navigation reuses inspected build bytes and detects later changes before accepting the peer', async (t) => {
+  const x = fixtureBuild(t);
+  let decodes = 0,
+    probes = 0;
+  const verifier = new AppPeerVerifier(
+    async () => {
+      probes++;
+      return x.evidence;
+    },
+    [x.record],
+    async (bytes) => {
+      decodes++;
+      return x.decoder(bytes);
+    },
+  );
+  await verifier.verify({}, 'endpoint');
+  await verifier.verify({}, 'endpoint');
+  assert.equal(decodes, 1);
+  assert.equal(probes, 4);
+  fs.appendFileSync(x.executable, 'changed');
+  await assert.rejects(verifier.verify({}, 'endpoint'), /Peer unverified/);
+  await assert.rejects(verifier.verify({}, 'endpoint'), /Peer unverified/);
+  assert.equal(decodes, 2);
+});
 test('changed build, hashes, signature or record ambiguity never satisfy a request record', async (t) => {
   const x = fixtureBuild(t);
   for (const field of [

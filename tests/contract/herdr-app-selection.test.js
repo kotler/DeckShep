@@ -39,6 +39,7 @@ function target() {
 
 test('selection feedback retains App provenance without inventing process identity or carrying private source fields', async () => {
   const x = fixture();
+  x.world.spaces[0].folder = '/private/synthetic/DeckShep/';
   x.world.spaces[0].tabs[0].terminals[0].cwd = '/private/synthetic';
   const snapshot = await x.reader.read();
   assert.deepEqual(x.calls, ['status', 'ls', 'status']);
@@ -48,6 +49,7 @@ test('selection feedback retains App provenance without inventing process identi
     panes: [
       {
         target: target(),
+        folderName: 'DeckShep',
         reportedApp: 'codex',
         reportedStatus: 'idle',
         name: null,
@@ -117,6 +119,25 @@ test('remote records are excluded and remote selection is refused even when its 
     change(y);
     await assert.rejects(y.reader.read(), /App selection/);
   }
+});
+test('a focused shell and a separate shown agent retain the actual focused pane', async () => {
+  const x = fixture();
+  const terms = x.world.spaces[0].tabs[0].terminals;
+  terms.push({ ...terms[0], pane: 'p2', terminal: 't2' });
+  terms[0].status = null;
+  x.before.agent = x.after.agent = 't2';
+  const view = await x.reader.read();
+  assert.deepEqual(view.selected, target());
+  assert.equal(view.panes.length, 2);
+  x.before.agent = x.after.agent = 't3';
+  await assert.rejects(x.reader.read(), /ambiguous/);
+});
+test('an empty active space after its final tab closes has no selection', async () => {
+  const x = fixture();
+  x.world.spaces[0].tabs = [];
+  for (const status of [x.before, x.after])
+    Object.assign(status, { tab: null, focused_pane: null, agent: null });
+  assert.equal((await x.reader.read()).selected, null);
 });
 
 test('status changes, unknown/null panes and swapped shown agents cannot count as selection feedback', async () => {

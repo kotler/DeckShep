@@ -29,20 +29,20 @@ test('App pane tiles use the shared status palette, provider icon and agent layo
     reportedApp: 'codex',
     reportedStatus: 'working',
     name: 'Fix tests',
+    folderName: 'DeckShep',
   });
   assert.equal(shown.agent, true);
   assert.equal(shown.icon, 'codex');
   assert.equal(shown.color, palette.working);
-  assert.deepEqual(shown.lines, ['Fix tests', 'Request only', 'Working']);
-  assert.equal(
-    tile({
-      target,
-      reportedApp: 'claude',
-      reportedStatus: 'blocked',
-      name: null,
-    }).icon,
-    'claude-code',
-  );
+  assert.deepEqual(shown.lines, ['Fix tests', 'DeckShep', 'Working']);
+  const unnamed = tile({
+    target,
+    reportedApp: 'claude',
+    reportedStatus: 'blocked',
+    name: null,
+  });
+  assert.equal(unnamed.icon, 'claude-code');
+  assert.deepEqual(unnamed.lines, ['Claude …', 'No folder', 'Waiting']);
 });
 test('unknown App words fall back to neutral visuals and never invent a provider', () => {
   assert.equal(appProvider('my-agent'), null);
@@ -84,7 +84,11 @@ test('stable slots retain gaps, ignore a selected shell and rank completed agent
   const project = (previous, listing, start = selected) =>
     appRoster(previous, { panes: listing, selected }, start);
   const first = project([], panes);
-  assert.equal(first.slots.length, 6);
+  assert.equal(first.slots.length, 5);
+  assert(
+    !first.slots.includes(panes[2].target),
+    'a retained provider with null status is a shell',
+  );
   assert.equal(first.next, panes[1]);
   assert.equal(first.attention.agent, panes[3]);
   const reversed = project(first.slots, panes.toReversed(), panes[3].target);
@@ -92,7 +96,7 @@ test('stable slots retain gaps, ignore a selected shell and rank completed agent
   assert.deepEqual(reversed.slots, first.slots);
   const last = project(first.slots, panes.slice(0, 3));
   assert.equal(last.attention.kind, 'done');
-  assert.equal(last.entries[5], undefined);
+  assert.equal(last.entries[4], undefined);
 });
 test('reconciliation reads each retained reference a bounded number of times as closed slots accumulate', () => {
   const { appRoster } = require('../../src/domain/app-navigation');
@@ -155,7 +159,9 @@ test('App navigation preserves mode, destination, reason and state at legible si
       assert.match(waiting, /id="state-question"/);
       for (const face of [selected, attention, waiting]) {
         assert.match(face, />Job</);
-        assert.match(face, consent ? />Request</ : />Deck only</);
+        assert.doesNotMatch(face, />Request(?: only)?</);
+        if (face === attention && !consent) assert.match(face, />Deck only</);
+        else assert.doesNotMatch(face, />Deck only</);
         assert(
           [...face.matchAll(/font-size="(\d+)"/g)].every(
             ([, size]) => Number(size) >= 20,
@@ -170,4 +176,49 @@ test('App navigation preserves mode, destination, reason and state at legible si
       assert.match(attention, /M12 7v6/);
     }
   }
+});
+
+test('informational Model keeps a compact target cue legible in both styles and ignores provider overrides elsewhere', () => {
+  const { projectAppControls } = require('../../src/domain/app-controls');
+  const { svg } = require('../../src/render/visuals');
+  const { controls } = projectAppControls(
+    null,
+    {
+      selected: target,
+      panes: [
+        { target, name: 'Fix', reportedApp: 'codex', reportedStatus: 'idle' },
+      ],
+    },
+    'source',
+  );
+  for (const style of ['classic', 'signal']) {
+    const shown = tile(undefined, {
+      key: { settings: {}, coordinates: { row: 2, column: 0 } },
+      controls,
+      controlSlot: 5,
+      mapped: 'none',
+      style,
+    });
+    assert.deepEqual(shown.lines, ['Model', '6 · Fix']);
+    assert.equal(shown.dim, true);
+    const image = svg(shown);
+    assert.match(image, />Model</);
+    assert.match(image, />6 · Fix</);
+    assert(
+      [...image.matchAll(/font-size="(\d+)"/g)].every(
+        ([, size]) => Number(size) >= 20,
+      ),
+    );
+  }
+  assert.deepEqual(
+    tile(undefined, {
+      key: {
+        settings: { action: 'model' },
+        coordinates: { row: 1, column: 3 },
+      },
+      controls,
+      mapped: 'none',
+    }).lines,
+    [],
+  );
 });

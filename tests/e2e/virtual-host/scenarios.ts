@@ -75,6 +75,7 @@ export function scenario(input: ScenarioName | Scenario): Scenario {
       reportedApp: index === 1 ? 'claude-code' : 'codex',
       reportedStatus: index === 0 ? 'working' : 'idle',
       name: 'Pane ' + (index + 1),
+      folderName: 'DeckShep',
     }));
     return {
       agents: [],

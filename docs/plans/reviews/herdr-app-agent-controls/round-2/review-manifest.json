@@ -1,0 +1,232 @@
+{
+  "target": "/Users/everettkotler/Workspace/DeckShep/docs/plans/HERDR-APP-AGENT-CONTROLS-DESIGN.md",
+  "sha256": "5bdce7254aa05b505cd69eee53cc3cd9175694b3f8afe4272d8beb8d5efbef3b",
+  "snapshot": "reviewed-design.md",
+  "featureRange": [1, 158],
+  "detailedRange": [159, 620],
+  "date": "2026-11-14",
+  "mode": "fresh five-stage consolidated review plus independent G01\u2013G11 verification",
+  "localContext": [
+    "/Users/everettkotler/Workspace/DeckShep/AGENTS.md",
+    "/Users/everettkotler/Workspace/DeckShep/docs/HERDR-APP.md",
+    "/Users/everettkotler/Workspace/DeckShep/docs/PROFILES.md",
+    "/Users/everettkotler/Workspace/DeckShep/docs/adr/0002-guard-pipeline-and-single-deliver.md",
+    "/Users/everettkotler/Workspace/DeckShep/docs/adr/0007-herdr-app-0.1.14-source-review.md",
+    "/Users/everettkotler/Workspace/DeckShep/docs/plans/herdr-app-agent-controls/concepts_brief.md",
+    "/Users/everettkotler/Workspace/DeckShep/docs/plans/herdr-app-agent-controls/delivery_evaluation.md",
+    "/Users/everettkotler/Workspace/DeckShep/docs/plans/reviews/herdr-app-agent-controls/round-2/herdr-core-README.md",
+    "/Users/everettkotler/Workspace/DeckShep/docs/plans/reviews/herdr-app-agent-controls/round-2/herdr-core-input.txt",
+    "/Users/everettkotler/Workspace/DeckShep/src/agents/codex/daemon.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/agents/codex/keyboard-settings.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/app/controller.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/app/delivery.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/app/herdr-app-codex.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/app/herdr-app-controller.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/app/herdr-app-diagnostics.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/app/herdr-app-inspector.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/app/herdr-app-view.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/domain/app-selection.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/domain/backend.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/domain/capabilities.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/domain/layout.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/domain/types.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/guards/pipeline.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/guards/verified-control.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/inspector/index.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/schemas/herdr-app.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/schemas/index.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/terminals/contract/backend.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/terminals/herdr-app/core-status.ts",
+    "/Users/everettkotler/Workspace/DeckShep/src/terminals/herdr-app/selection.ts",
+    "/Users/everettkotler/Workspace/DeckShep/tests/e2e/README.md",
+    "/Users/everettkotler/Workspace/DeckShep/tests/e2e/herdr-app.spec.ts",
+    "/Users/everettkotler/Workspace/DeckShep/tests/e2e/virtual-host/deck.ts",
+    "/Users/everettkotler/Workspace/DeckShep/tests/e2e/virtual-host/scenario-dependencies.ts",
+    "/Users/everettkotler/Workspace/DeckShep/tests/e2e/virtual-host/scenarios.ts",
+    "/Users/everettkotler/Workspace/DeckShep/tests/helpers/keyboard-screen.ts",
+    "/Users/everettkotler/Workspace/DeckShep/tests/helpers/plugin-harness.js",
+    "/Users/everettkotler/Workspace/DeckShep/tests/integration/daemon-controls.test.js",
+    "/Users/everettkotler/Workspace/DeckShep/tests/integration/delivery.test.js",
+    "/Users/everettkotler/Workspace/DeckShep/tests/integration/herdr-app-controller.test.js",
+    "/Users/everettkotler/Workspace/DeckShep/tests/integration/herdr-app-daemon-controls.test.js",
+    "/Users/everettkotler/Workspace/DeckShep/tests/integration/inspector.test.js",
+    "/Users/everettkotler/Workspace/DeckShep/tests/integration/verified-controls.test.js",
+    "/Users/everettkotler/Workspace/DeckShep/tests/unit/herdr-app-schemas.test.js",
+    "/Users/everettkotler/Workspace/DeckShep/tests/unit/herdr-app-view.test.js",
+    "/Users/everettkotler/Workspace/DeckShep/tests/unit/rex-keyboard-settings.test.js"
+  ],
+  "historicalReviewContext": [
+    "/Users/everettkotler/Workspace/DeckShep/docs/plans/reviews/herdr-app-agent-controls/consolidated_review_report.md",
+    "/Users/everettkotler/Workspace/DeckShep/docs/plans/reviews/herdr-app-agent-controls/goldfish_review_report.md"
+  ],
+  "contextSha256": {
+    "/Users/everettkotler/Workspace/DeckShep/AGENTS.md": "02805ccfd3b806c3efea6fc4dcd76fc96ec11ce0489f7dded0c2c9be14599fee",
+    "/Users/everettkotler/Workspace/DeckShep/docs/HERDR-APP.md": "f1b792085260b2708fde26dd9eb1c6bcaa3a4b12fca1d72f3844eaa4cae88ee0",
+    "/Users/everettkotler/Workspace/DeckShep/docs/PROFILES.md": "cb2d696899c33d3a210b4c6b717c1a458b3bfa929017f7db730c4b3344117cbc",
+    "/Users/everettkotler/Workspace/DeckShep/docs/adr/0002-guard-pipeline-and-single-deliver.md": "fe7c51d9fc6ebc37989024357b2145a7253dfe9051da2d25246ab7888ea91183",
+    "/Users/everettkotler/Workspace/DeckShep/docs/adr/0007-herdr-app-0.1.14-source-review.md": "40772221f72b838a6f8593f91f9587e37d0c6a4601e1929b83643199665ef755",
+    "/Users/everettkotler/Workspace/DeckShep/docs/plans/herdr-app-agent-controls/concepts_brief.md": "c62ab52d5a8b7bafc10219419ce50f0ec220bedb6f28044ec93f398873b8dfb2",
+    "/Users/everettkotler/Workspace/DeckShep/docs/plans/herdr-app-agent-controls/delivery_evaluation.md": "e1332925240c5ca6ca0690547685b207d4635e5e41d756cfe2c82448aa0470ea",
+    "/Users/everettkotler/Workspace/DeckShep/docs/plans/reviews/herdr-app-agent-controls/consolidated_review_report.md": "16c0a08251cc23cc2537e7681831a1e0e38539b8764573c84db30a62328e2031",
+    "/Users/everettkotler/Workspace/DeckShep/docs/plans/reviews/herdr-app-agent-controls/goldfish_review_report.md": "df0ace369e3dece55839b1f1b5d95f1fd7b68fe6f0f2d51f802ac4b2154e531e",
+    "/Users/everettkotler/Workspace/DeckShep/docs/plans/reviews/herdr-app-agent-controls/round-2/herdr-core-README.md": "4100fa22a0e711a90253bbfc2f709b6c73930eb9b37c054443ad99368f212c4a",
+    "/Users/everettkotler/Workspace/DeckShep/docs/plans/reviews/herdr-app-agent-controls/round-2/herdr-core-input.txt": "85d3308b24c1c208694b97215525212f7e56a38aa4dc0695b617afe8ab7569d8",
+    "/Users/everettkotler/Workspace/DeckShep/src/agents/codex/daemon.ts": "9a2a6bae6f5c40971666e7bb866c3c39ebf43ea4fa69ec2a2f3eacd72dcb2126",
+    "/Users/everettkotler/Workspace/DeckShep/src/agents/codex/keyboard-settings.ts": "9495f162d3f48c34992d941dc2a78eb7f333dd820dec7ec3ee04b22efc2380fd",
+    "/Users/everettkotler/Workspace/DeckShep/src/app/controller.ts": "98e9a1e655529510ee684e406903562d1aa57f923680fe3e3939b273a3a6569e",
+    "/Users/everettkotler/Workspace/DeckShep/src/app/delivery.ts": "2533bd3b4aa9292f13a3b930cde845c8d439e6772910160c8db2cb4729adeacf",
+    "/Users/everettkotler/Workspace/DeckShep/src/app/herdr-app-codex.ts": "9bdbafd5562a2952b4620b5b504e8dfc2dfcc3c2228b98ecc97ed1246e4eb384",
+    "/Users/everettkotler/Workspace/DeckShep/src/app/herdr-app-controller.ts": "247e3497ec07735de6a94635f50feb564dbc28ff64646bfd1cb2c5857ba1a0ac",
+    "/Users/everettkotler/Workspace/DeckShep/src/app/herdr-app-diagnostics.ts": "5f1ffee6c2d7774a8eba9a4e95f9de298df48212fbd5913c4de589b0a63b8eaf",
+    "/Users/everettkotler/Workspace/DeckShep/src/app/herdr-app-inspector.ts": "849f267dc9ac81a69dcb80cad8522ca861c5f4ae37cf3bf6bd3d336ce914a84c",
+    "/Users/everettkotler/Workspace/DeckShep/src/app/herdr-app-view.ts": "1070a45d438d198338ce28f422ec5ed69913b95a0728f1e962c843e39113eda4",
+    "/Users/everettkotler/Workspace/DeckShep/src/domain/app-selection.ts": "7fbed42806779b90f7011c8824e58b4536e9db98f302dfb0b40612204bce121c",
+    "/Users/everettkotler/Workspace/DeckShep/src/domain/backend.ts": "ead159e5958fafec9bfda6c749d766b981be297dbe80e5d05b81b598748df35f",
+    "/Users/everettkotler/Workspace/DeckShep/src/domain/capabilities.ts": "8e1e645ac8e225f6c9ba670f9b42a5cc640b4bc1a5e0ff1f7b35ce5c6698837b",
+    "/Users/everettkotler/Workspace/DeckShep/src/domain/layout.ts": "cf76e9f5c770f5d6662335d3b5f542a36988c7f50b5321f105a08948db7de94c",
+    "/Users/everettkotler/Workspace/DeckShep/src/domain/types.ts": "57b3c6dde499bc1723eb4f9e0836a7a259afea1f35eb47871ebe516946642a17",
+    "/Users/everettkotler/Workspace/DeckShep/src/guards/pipeline.ts": "e646a3e684f96b2ab814015c972f7c9c36c6b6a7ed535b904c3f1899f3daff7a",
+    "/Users/everettkotler/Workspace/DeckShep/src/guards/verified-control.ts": "ff68ba40b5d818876eabab751db0cae440f1930ea3ebedfb4ef6585552b3e704",
+    "/Users/everettkotler/Workspace/DeckShep/src/inspector/index.ts": "3d70eefdb4a44799c4fc96502da7677c4222dbec365338e445ddcf3e735a277b",
+    "/Users/everettkotler/Workspace/DeckShep/src/schemas/herdr-app.ts": "1fa8cea6ed02bbc56d127385fa7306498b37177913f74dfd94a801097c2cc047",
+    "/Users/everettkotler/Workspace/DeckShep/src/schemas/index.ts": "da413719f140062b9516ca68826ee8c92951c563ef68d0e12c5c75e8e223d120",
+    "/Users/everettkotler/Workspace/DeckShep/src/terminals/contract/backend.ts": "9f8cbac47ec55cbd15f62ae76124d4272c98e0f8f88e68d62b8b92cefe6e3807",
+    "/Users/everettkotler/Workspace/DeckShep/src/terminals/herdr-app/core-status.ts": "20e8b7745635bacad8cfb50732a792af9ecf33a7f407e089a1b5565466da1376",
+    "/Users/everettkotler/Workspace/DeckShep/src/terminals/herdr-app/selection.ts": "1d78cf4540df65e5c0409ae0e84c0e68584c494f374eeae7cb7a02ba98840635",
+    "/Users/everettkotler/Workspace/DeckShep/tests/e2e/README.md": "8af3f7db630aae5cdd60178f82cfbcf868b687220fa1a4c3a0cce6ef84220a9f",
+    "/Users/everettkotler/Workspace/DeckShep/tests/e2e/herdr-app.spec.ts": "e4067549e49b6eaa4dde0110943f92c80e16a7b115560d17fee96f2534ac6a22",
+    "/Users/everettkotler/Workspace/DeckShep/tests/e2e/virtual-host/deck.ts": "7d5da91dc2a04e9314156091a52460dfc00a1d2eef4efa830a3ee31db85fe646",
+    "/Users/everettkotler/Workspace/DeckShep/tests/e2e/virtual-host/scenario-dependencies.ts": "fdbac741085b3fe83f9b1ce90176afb4afea61c317626f8a1b841caf73fbc3e3",
+    "/Users/everettkotler/Workspace/DeckShep/tests/e2e/virtual-host/scenarios.ts": "c1b75bffc11d00fec0a8643b76965576cf8e57cc9db4012bd88beffc44307086",
+    "/Users/everettkotler/Workspace/DeckShep/tests/helpers/keyboard-screen.ts": "33ad0ba085be3a248baf5a7d1683fd08cb6197e40d40e907ccb6fc53aaba9a56",
+    "/Users/everettkotler/Workspace/DeckShep/tests/helpers/plugin-harness.js": "f5b93a0c7ef17856dc94a6c36783e307ccff74bc6381a5d26f76d652ead34d8d",
+    "/Users/everettkotler/Workspace/DeckShep/tests/integration/daemon-controls.test.js": "4f7e9aaa1f885d38c240d5cc56c3983d8dd4b43c0bcbd9b9b45f407551b22521",
+    "/Users/everettkotler/Workspace/DeckShep/tests/integration/delivery.test.js": "564f9e973cf736959a50fa6d50d88beb2ca2d4bdb09a369b3a0957bcef0a0d64",
+    "/Users/everettkotler/Workspace/DeckShep/tests/integration/herdr-app-controller.test.js": "c21b92c0cb46f18d2021493620010848aade49aafd5165b8ce968f10752421b8",
+    "/Users/everettkotler/Workspace/DeckShep/tests/integration/herdr-app-daemon-controls.test.js": "edb5f173dcf5177569788bdd50c18c813ff2f91af4f1493635448d91091faafd",
+    "/Users/everettkotler/Workspace/DeckShep/tests/integration/inspector.test.js": "060b01005501f02fbf41e03b135b4a9c7a393154fbfd899a82b8b87744e862f4",
+    "/Users/everettkotler/Workspace/DeckShep/tests/integration/verified-controls.test.js": "5a33a89a17543a5a5937c1d97d4f7d99d77d479a72ee984d365db2f5d4b08fc3",
+    "/Users/everettkotler/Workspace/DeckShep/tests/unit/herdr-app-schemas.test.js": "53eb99901bd15137fb747061e59113bfc6ccbe95e1ff4f92e52e0836593957a0",
+    "/Users/everettkotler/Workspace/DeckShep/tests/unit/herdr-app-view.test.js": "95d0e7c5a114d11b85b69a7fc4218cc2d6ea85790dbdb7f56fa0335477f89b49",
+    "/Users/everettkotler/Workspace/DeckShep/tests/unit/rex-keyboard-settings.test.js": "303c0477a80746002d74ac852899dd42f299d55c5960b038d8749386b349120a"
+  },
+  "downloadedContext": [
+    {
+      "url": "https://raw.githubusercontent.com/herdrdev/herdr-core/3965a46caae095a3ead01de237fa13955e52b8c6/crates/herdr-core/src/input.rs",
+      "file": "/Users/everettkotler/Workspace/DeckShep/docs/plans/reviews/herdr-app-agent-controls/round-2/herdr-core-input.txt",
+      "sha256": "85d3308b24c1c208694b97215525212f7e56a38aa4dc0695b617afe8ab7569d8",
+      "source": "hash-verified local cache of fixed upstream revision"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/herdrdev/herdr-core/3965a46caae095a3ead01de237fa13955e52b8c6/schema/README.md",
+      "file": "/Users/everettkotler/Workspace/DeckShep/docs/plans/reviews/herdr-app-agent-controls/round-2/herdr-core-README.md",
+      "sha256": "4100fa22a0e711a90253bbfc2f709b6c73930eb9b37c054443ad99368f212c4a",
+      "source": "hash-verified local cache of fixed upstream revision"
+    }
+  ],
+  "contextPolicy": "Historical review and resolution claims are reserved for independent closure verification after fresh assessments. Stage6 reads only target. Fixed upstream files are included as hash-verified local copies.",
+  "isolation": "All reviewers use fork_turns none. Host instruction-file exclusion is unverified.",
+  "stages": [
+    {
+      "stage": 5,
+      "state": "completed",
+      "report": "zoom_out_report.md",
+      "reviewers": {
+        "zoom-out": "completed",
+        "inventive-catalyst": "completed"
+      },
+      "findingIds": []
+    },
+    {
+      "stage": 6,
+      "state": "completed",
+      "report": "comprehension_report.md",
+      "reviewers": {
+        "comprehension": "completed"
+      },
+      "findingIds": ["C2-1"]
+    },
+    {
+      "stage": 7,
+      "state": "completed",
+      "report": "critic_report.md",
+      "reviewers": {
+        "design": "completed",
+        "structural": "completed",
+        "style": "completed"
+      },
+      "findingIds": ["D2-1", "FS2-1"]
+    },
+    {
+      "stage": 8,
+      "state": "completed",
+      "report": "intermediate_zoom_out_report.md",
+      "reviewers": {
+        "zoom-out": "completed"
+      },
+      "findingIds": ["M2-1", "M2-2", "M2-3"]
+    },
+    {
+      "stage": 9,
+      "state": "completed",
+      "report": "implementation_readiness_report.md",
+      "reviewers": {
+        "implementation-readiness": "completed",
+        "codebase-details": "completed",
+        "style": "completed"
+      },
+      "findingIds": [
+        "R2-1",
+        "B2-1",
+        "B2-2",
+        "B2-3",
+        "IS2-1",
+        "IS2-2",
+        "IS2-3",
+        "IS2-4"
+      ]
+    }
+  ],
+  "closureVerification": {
+    "state": "completed",
+    "reviewer": "controls_r2_closure",
+    "report": "original-findings-verification.md",
+    "originalFindingStatus": {
+      "G01": "addressed",
+      "G02": "addressed",
+      "G03": "addressed",
+      "G04": "addressed",
+      "G05": "addressed",
+      "G06": "addressed",
+      "G07": "addressed",
+      "G08": "addressed",
+      "G09": "addressed",
+      "G10": "addressed",
+      "G11": "addressed"
+    },
+    "newFindingIds": ["V2-1"]
+  },
+  "reviewPolicy": "Report-only. No design edits, runtime tests or remediation loops.",
+  "result": {
+    "originalFindingsAddressed": 11,
+    "consolidatedFindings": 8,
+    "severity": {
+      "Blocker": 0,
+      "Major": 6,
+      "Nit": 2
+    },
+    "report": "consolidated_review_report.md",
+    "hashesVerifiedAtCompletion": true,
+    "runtimeEvidence": false
+  },
+  "postReview": {
+    "date": "2026-11-14",
+    "revisedTargetSha256": "1f72e7c9e30b01de32176853e571bbb30e54e32e252c7de012ffb33292ce927f",
+    "resolution": "goldfish_review_report.md",
+    "finalReview": "../final-implementation-review.md",
+    "originalFindingsAddressed": 11,
+    "freshFindingsAddressed": 8,
+    "implementedCheckpoints": ["P1 passive tracking", "P2 comparison"],
+    "activeRoutesQualified": []
+  }
+}

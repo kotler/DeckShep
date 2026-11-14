@@ -1,3 +1,4 @@
+import { basename } from 'node:path';
 import type {
   AppPaneRef,
   AppPaneStatus,
@@ -41,6 +42,7 @@ function localPanes(world: World): AppPaneStatus[] {
   for (const space of world.spaces) {
     if (spaces.has(space.id)) throw Error('App topology ambiguous');
     spaces.add(space.id);
+    const folderName = basename(space.folder);
     for (const tab of space.tabs) {
       if (tabs.has(tab.id)) throw Error('App topology ambiguous');
       tabs.add(tab.id);
@@ -56,6 +58,7 @@ function localPanes(world: World): AppPaneStatus[] {
             pane: terminal.pane,
             terminal: terminal.terminal,
           },
+          folderName,
           reportedApp: terminal.app,
           reportedStatus: terminal.status,
           name: terminal.name,
@@ -82,10 +85,17 @@ function selectedPane(
   if (
     spaces.length !== 1 ||
     spaces[0].machine !== null ||
-    spaces[0].id !== status.space ||
-    tabs.length !== 1 ||
-    tabs[0].id !== status.tab
+    spaces[0].id !== status.space
   )
+    throw Error('App selection changed');
+  if (
+    !spaces[0].tabs.length &&
+    status.tab === null &&
+    status.focused_pane === null &&
+    status.agent === null
+  )
+    return null;
+  if (tabs.length !== 1 || tabs[0].id !== status.tab)
     throw Error('App selection changed');
   if (
     !tabs[0].terminals.length &&
@@ -99,12 +109,18 @@ function selectedPane(
       target.tab === status.tab &&
       target.pane === status.focused_pane,
   );
-  if (
-    matches.length !== 1 ||
-    (status.agent !== null && status.agent !== matches[0].target.terminal)
-  )
-    throw Error('App selection ambiguous');
-  return matches[0].target;
+  if (matches.length !== 1) throw Error('App selection ambiguous');
+  const [focused] = matches;
+  if (status.agent !== null && status.agent !== focused.target.terminal) {
+    // Herdr's shown_agent() falls back to another live agent when the
+    // focused terminal is a shell. The pane field still identifies the shell.
+    const shown = panes.filter(
+      (p) => p.target.terminal === status.agent && p.reportedStatus,
+    );
+    if (focused.reportedStatus !== null || shown.length !== 1)
+      throw Error('App selection ambiguous');
+  }
+  return focused.target;
 }
 
 /** Read-only selection feedback. No core join, native-focus claim or control

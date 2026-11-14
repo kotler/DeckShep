@@ -2,6 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 const {
   HerdrAppClient,
   HerdrCoreClient,
@@ -164,19 +165,30 @@ test('endpoint checks reject public permissions, regular files, wrong owner and 
   fs.chmodSync(peer.file, 0o666);
   assert.throws(() => inspectSocket(peer.file), /Unsafe/);
   fs.chmodSync(peer.file, 0o755);
-  assert.throws(() => inspectSocket(peer.file), /Unsafe/, 'App stays strict');
-  const core = { ownerOnlyParentSuffices: true };
-  assert(inspectSocket(peer.file, core).identity, 'core: 0755 in 0700 folder');
-  fs.chmodSync(peer.file, 0o777);
-  assert.throws(() => inspectSocket(peer.file, core), /Unsafe/);
-  fs.chmodSync(peer.file, 0o600);
+  assert.throws(
+    () => inspectSocket(peer.file),
+    /Unsafe/,
+    'isolated calibration',
+  );
+  assert(inspectSocket(peer.file, 'app').identity);
+  assert(inspectSocket(peer.file, 'core').identity);
+  const alias = path.join(peer.directory, 'second.sock');
+  fs.linkSync(peer.file, alias);
+  assert.throws(() => inspectSocket(peer.file, 'app'), /Unsafe/);
+  fs.unlinkSync(alias);
+  for (const mode of [0o775, 0o757, 0o777]) {
+    fs.chmodSync(peer.file, mode);
+    assert.throws(() => inspectSocket(peer.file, 'app'), /Unsafe/);
+    assert.throws(() => inspectSocket(peer.file, 'core'), /Unsafe/);
+  }
+  fs.chmodSync(peer.file, 0o755);
   fs.chmodSync(peer.directory, 0o755);
-  assert.throws(() => inspectSocket(peer.file), /Unsafe/);
-  assert.throws(() => inspectSocket(peer.file, core), /Unsafe/);
+  assert.throws(() => inspectSocket(peer.file, 'app'), /Unsafe/);
+  assert.throws(() => inspectSocket(peer.file, 'core'), /Unsafe/);
   fs.chmodSync(peer.directory, 0o700);
   fs.symlinkSync(peer.file, path.join(peer.directory, 'alias.sock'));
   assert.throws(
-    () => inspectSocket(path.join(peer.directory, 'alias.sock')),
+    () => inspectSocket(path.join(peer.directory, 'alias.sock'), 'app'),
     /Unsafe/,
   );
   fs.symlinkSync(peer.directory, path.join(peer.directory, 'alias'));
@@ -204,12 +216,27 @@ test('endpoint checks reject public permissions, regular files, wrong owner and 
         Object.defineProperty(stat, 'uid', { value: stat.uid + 1 });
       return stat;
     };
-    assert.throws(() => inspectSocket(peer.file), /Unsafe/);
+    assert.throws(() => inspectSocket(peer.file, 'app'), /Unsafe/);
   } finally {
     fs.lstatSync = lstat;
   }
   assert.equal(peer.calls.length, 0);
 });
+
+test(
+  'an ACL change invalidates a previously private App socket directory',
+  {
+    skip: process.platform !== 'darwin',
+  },
+  async (t) => {
+    const peer = await fakeServer(t, coreReply);
+    fs.chmodSync(peer.file, 0o755);
+    assert(inspectSocket(peer.file, 'app').identity);
+    execFileSync('/bin/chmod', ['+a', 'everyone allow search', peer.directory]);
+    assert.throws(() => inspectSocket(peer.file, 'app'), /Unsafe/);
+    assert.equal(peer.calls.length, 0);
+  },
+);
 
 for (const [name, reply] of [
   ['malformed', '{bad\n'],

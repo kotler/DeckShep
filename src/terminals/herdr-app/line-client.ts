@@ -50,7 +50,7 @@ export class ReadOnlyLines {
     if (this.#socket || this.#closed)
       throw Error('Herdr App connection closed');
     if (signal?.aborted) throw Error('Herdr App connection cancelled');
-    this.#endpoint = inspectSocket(this.file, this.#policy());
+    this.#endpoint = inspectSocket(this.file, this.protocol);
     return new Promise((resolve, reject) => {
       const finish = (error?: Error) => {
         clearTimeout(timer);
@@ -114,12 +114,9 @@ export class ReadOnlyLines {
       });
     });
   }
-  #policy() {
-    return { ownerOnlyParentSuffices: this.protocol === 'core' };
-  }
   private assertEndpoint(): void {
     if (
-      inspectSocket(this.file, this.#policy()).identity !==
+      inspectSocket(this.file, this.protocol).identity !==
       this.#endpoint?.identity
     )
       throw Error();

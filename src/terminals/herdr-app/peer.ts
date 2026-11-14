@@ -27,6 +27,10 @@ export const APP_FOCUS_RECORDS: readonly AppFocusRecord[] = Object.freeze([]);
 
 export class AppPeerVerifier {
   readonly #records: AppFocusRecord[];
+  #lastBuild?: {
+    file: string;
+    image: Awaited<ReturnType<typeof inspectAppBuild>>;
+  };
   constructor(
     private readonly probe: AppPeerProbe,
     records: readonly AppFocusRecord[] = APP_FOCUS_RECORDS,
@@ -131,7 +135,12 @@ export class AppPeerVerifier {
       if (signal?.aborted) throw Error();
       const before = validate('herdrAppPeer', await probe(socket, signal));
       if (before.uid !== process.getuid?.()) throw Error();
-      const build = await inspectAppBuild(before.executable, this.decoder),
+      // Only reuse the captured file hashes. Kernel peer evidence, approved
+      // identity and the tracked filesystem stamps are checked each exchange.
+      const build =
+          this.#lastBuild?.file === before.executable
+            ? this.#lastBuild.image
+            : await inspectAppBuild(before.executable, this.decoder),
         after = repeat
           ? validate('herdrAppPeer', await probe(socket, signal))
           : before;
@@ -160,6 +169,7 @@ export class AppPeerVerifier {
         build.assertUnchanged();
         recordKey = 'herdr-signed-' + before.cdHash;
       } else if (matches.length !== 1) throw Error();
+      this.#lastBuild = { file: before.executable, image: build };
       return Object.freeze({
         key: createHash('sha256')
           .update(JSON.stringify([endpoint, before, recordKey]))
@@ -168,6 +178,7 @@ export class AppPeerVerifier {
         assertUnchanged: build.assertUnchanged,
       });
     } catch {
+      this.#lastBuild = undefined;
       throw Error('Peer unverified');
     }
   }

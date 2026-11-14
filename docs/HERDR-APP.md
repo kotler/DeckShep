@@ -20,33 +20,51 @@ In an experimental App profile, open any key's setup panel:
 3. Review the checklist. A missing helper, unverified App signature or missing consent
    leaves requests disabled. Consent alone cannot approve a build.
 
+Herdr can recreate `herdr-app.sock` with mode `0755` on restart. DeckShep
+accepts that socket when you own it, it has a single link, and its parent
+directory is yours with mode `0700` and no macOS ACL. DeckShep checks the
+replacement on the next poll. You can leave the socket permissions as created.
+
 The peer helper ships inside DeckShep at `bin/herdr-app-peer`. Setup does not
 install executable code into Herdr, clone a layout, restart an app or change
 hooks. Removing DeckShep removes its helper; see [Uninstall](UNINSTALL.md).
 
 ## Reading the deck
 
-- Each bank shows up to five agent tiles in stable slot order. **Deck only**
-  selects locally. **Request only** offers a plain App focus request. The dot
+- Each bank shows up to five agent tiles in stable slot order. Like Rex, each tile shows the
+  chat title when Herdr supplies a pane name, then the space folder name and agent status.
+  An unnamed pane shows its provider. **Deck only**
+  selects locally. With focus requests enabled and available, tapping an agent asks Herdr to select its pane. The dot
   marks Herdr’s reported selection. **On deck** marks your local choice until
   Herdr reports a selection change.
 - Row two holds **Next agent**, **Page**, **Collapse**, an empty key and
   **Attention**. Next visits agents across banks. Page changes banks locally.
+  Next shows the following destination immediately after a successful press.
+  A destination that closed before the press leaves a gap and gets no request.
+  This includes a terminal that returns to a shell while Herdr still lists its previous provider.
   Collapse clears closed slots. Attention visits another waiting agent first,
   then an errored agent, then a finished agent. Ties follow tile order.
-- On Attention and the locally selected tile, **Deck only** or **Request**
-  above the destination shows what the next tap can do.
-- **Focus requested** acknowledges the request. The dot follows the latest
+- The **On deck** marker sits above the title. After a successful press,
+  Attention shows the next eligible agent or clears. Rapid Next and Page taps
+  during the 350 ms arming interval are ignored. The dot follows the latest
   validated App selection, including the one read just before the request.
   **Focus uncertain** means a write may have reached Herdr.
   DeckShep sends each request once. **Press again** asks you to check the
   newly displayed destination.
 - The optional Core readback shows a separate terminal count in setup.
   Agent names and status on the keys come from the App.
-- On upgrade, Model, Effort and Permissions become inactive, including saved
-  overrides and former opt-ins. The profile retains the saved preferences and
-  actions. Choose **Position default** in the inspector to restore a key’s
-  navigation assignment. Row three defaults to empty.
+- Row three follows Herdr’s reported selection independently of **On deck**.
+  A ready Codex pane shows an informational **Model** key in column one. Its
+  compact cue gives the stable slot number and chat name, with Codex as the
+  fallback. A new App selection reveals its bank once; later Page browsing
+  stays where you put it. The cue remains visible when the target is off-bank.
+  Working, blocked, shell, closed or unreadable targets clear this face.
+- Model is informational and sends no input. Current App/Core interfaces do
+  not establish the recipient guarantees required for a setting change.
+  No current model value is claimed from App titles. Effort, Permissions and
+  saved provider overrides remain inactive, including former opt-ins. Choose
+  **Position default** to restore the informational Model position or a
+  navigation assignment. See the [delivery evaluation](plans/herdr-app-agent-controls/delivery_evaluation.md).
 
 ## Doctor
 

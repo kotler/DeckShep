@@ -1746,8 +1746,14 @@ function createApplication(dependencies: Record<string, any>) {
   ws.on('error', () => dependencies.onError?.());
   schedule(() => {
     for (const runtime of controllers.values())
-      if (runtime.keys.size) void runtime.refresh();
+      if (runtime.scope !== 'herdr-app' && runtime.keys.size)
+        void runtime.refresh();
   }, 2000);
+  if (dependencies.experimentalHerdrApp === true)
+    schedule(() => {
+      const app = controllers.get('herdr-app');
+      if (app?.keys.size) void app.refresh();
+    }, 750);
   schedule(() => {
     for (const runtime of controllers.values())
       if (runtime.keys.size) runtime.render();

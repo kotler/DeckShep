@@ -33,6 +33,58 @@ async function fixture(t, extra = {}) {
   h.tick(350);
   return { h, peer, app: h.controller('herdr-app') };
 }
+test('Model follows the App pane across banks and state changes while local selection and Page preserve its target', async (t) => {
+  const { h, peer, app } = await fixture(t);
+  const model = () => frame(h, 'herdr-app:2,0');
+  assert.match(model(), />Model</);
+  assert.match(model(), />1 · Codex</);
+  assert.equal(app.keys.get('herdr-app:2,0').presented.action, 'none');
+  await h.profilePress('herdr-app', 1, 1);
+  assert.equal(app.getBank(), 1);
+  h.tick(350);
+  await h.profilePress('herdr-app', 0, 0);
+  assert.equal(app.selected().pane, 'p6');
+  assert.match(model(), />1 · Codex</);
+  await h.profilePress('herdr-app', 2, 0);
+  assert.deepEqual(peer.inputs(), []);
+  assert.deepEqual(h.calls, []);
+
+  Object.assign(peer.status, { focused_pane: 'p7', agent: 't7' });
+  await app.refresh();
+  assert.equal(app.getBank(), 1);
+  assert.match(model(), />7 · Pane 7</);
+  h.tick(350);
+  await h.profilePress('herdr-app', 1, 1);
+  assert.equal(app.getBank(), 0);
+  const presented = app.keys.get('herdr-app:2,0').presented;
+  const frames = h.socket.frames.length;
+  await app.refresh();
+  app.render();
+  assert.equal(app.getBank(), 0);
+  assert.equal(
+    app.keys.get('herdr-app:2,0').presented.armedAt,
+    presented.armedAt,
+  );
+  assert.equal(h.socket.frames.length, frames);
+  assert.match(model(), />7 · Pane 7</);
+
+  const selected = peer.world.spaces[0].tabs[0].terminals[6];
+  for (const status of ['working', 'blocked', null]) {
+    selected.status = status;
+    await app.refresh();
+    assert.doesNotMatch(model(), />Model</);
+  }
+  selected.status = 'idle';
+  selected.app = 'claude-code';
+  await app.refresh();
+  assert.doesNotMatch(model(), />Model</);
+  selected.app = 'codex';
+  await app.refresh();
+  assert.match(model(), />Model</);
+  peer.world.spaces[0].tabs[0].terminals.pop();
+  await app.refresh();
+  assert.doesNotMatch(model(), />Model</);
+});
 test('App routing uses real request guards with separate consent, selection/Next and no provider identity', async (t) => {
   const { h, peer, app } = await fixture(t);
   await preferences(h, {
@@ -57,13 +109,11 @@ test('App routing uses real request guards with separate consent, selection/Next
   h.tick(350);
   await h.profilePress('herdr-app', 0, 1);
   assert.deepEqual(peer.inputs(), [{ do: 'pane.focus', args: { pane: 'p2' } }]);
-  assert.match(
-    frame(h, 'herdr-app:0,1'),
-    />Focus<\/text><text[^>]*>requested</,
-  );
-  assert.match(frame(h, 'herdr-app:0,1'), /Not verified/);
-  h.tick(2500);
-  app.render();
+  assert.match(frame(h, 'herdr-app:0,1'), /Pane 2/);
+  assert.match(frame(h, 'herdr-app:0,1'), /Ready/);
+  assert.doesNotMatch(frame(h, 'herdr-app:0,1'), /Not verified/);
+  assert.equal(app.keys.get('herdr-app:0,1').presented.action, 'agent:1');
+  assert.doesNotMatch(frame(h, 'herdr-app:0,1'), /id="selected-agent"/);
   assert.match(frame(h, 'herdr-app:0,1'), />On deck</);
   assert(!Object.hasOwn(app.selected(), 'pid'));
   assert(!Object.hasOwn(app.selected(), 'chatId'));
@@ -72,6 +122,29 @@ test('App routing uses real request guards with separate consent, selection/Next
   assert.equal(peer.inputs().at(-1).args.pane, 'p3');
   assert.equal(h.calls.length, 0);
   assert.equal(h.api.bridge.config.allowClipboardFocus, false);
+});
+test('rapid Next and Page repeats keep the current face without a host alert or a second action', async (t) => {
+  const { h, peer, app } = await fixture(t);
+  await preferences(h, { herdrAppFocusRequestEnabled: true });
+  for (const col of [0, 1]) {
+    h.tick(350);
+    const context = 'herdr-app:1,' + col;
+    await h.profilePress('herdr-app', 1, col);
+    const face = frame(h, context);
+    const writes = peer.inputs().length;
+    const bank = app.getBank();
+    const start = h.socket.frames.length;
+    h.tick(349);
+    await h.profilePress('herdr-app', 1, col);
+    assert.equal(peer.inputs().length, writes);
+    assert.equal(app.getBank(), bank);
+    assert.equal(frame(h, context), face);
+    assert(!h.socket.frames.slice(start).some((f) => f.event === 'showAlert'));
+    h.tick(1);
+    await h.profilePress('herdr-app', 1, col);
+    if (col === 0) assert.equal(peer.inputs().length, writes + 1);
+    else assert.notEqual(app.getBank(), bank);
+  }
 });
 test('App banks and Collapse are local, closed/remapped slots and custom input actions never dispatch', async (t) => {
   const { h, peer, app } = await fixture(t);
@@ -102,6 +175,56 @@ test('App banks and Collapse are local, closed/remapped slots and custom input a
     await h.profilePress('herdr-app', 1, 2);
   }
   assert.deepEqual(peer.inputs(), []);
+});
+
+for (const focus of [false, true]) {
+  for (const closure of ['pane removed', 'agent exited to shell']) {
+    test(`Next reconciles a closed destination before the next poll (${closure}, focus=${focus})`, async (t) => {
+      const { h, app, peer } = await fixture(t);
+      await preferences(h, { herdrAppFocusRequestEnabled: focus });
+      h.tick(350);
+      const terms = peer.world.spaces[0].tabs[0].terminals;
+      if (closure === 'pane removed') terms.splice(1, 1);
+      else terms[1].status = null; // App 0.1.15 retains the old provider here.
+      await h.profilePress('herdr-app', 1, 0);
+      assert.equal(app.selected().pane, 'p1');
+      assert.deepEqual(peer.inputs(), []);
+      assert.match(frame(h, 'herdr-app:0,1'), /Closed pane/);
+      assert.equal(app.keys.get('herdr-app:0,1').presented.action, 'none');
+      assert.equal(app.keys.get('herdr-app:1,2').presented.action, 'collapse');
+      h.tick(350);
+      await h.profilePress('herdr-app', 1, 2);
+      assert.match(frame(h, 'herdr-app:0,1'), /Pane 3/);
+      h.tick(350);
+      await h.profilePress('herdr-app', 1, 0);
+      assert.equal(app.selected().pane, 'p3');
+      assert.equal(app.keys.get('herdr-app:1,0').presented.target.pane, 'p4');
+      h.tick(350);
+      await h.profilePress('herdr-app', 1, 0);
+      assert.equal(app.selected().pane, 'p4');
+      assert.deepEqual(
+        peer.inputs().map((request) => request.args.pane),
+        focus ? ['p3', 'p4'] : [],
+      );
+    });
+  }
+}
+
+test('closing the selected pane during a poll disarms keys and preserves the gap on recovery', async (t) => {
+  const { h, app, peer } = await fixture(t);
+  const delayed = peer.pauseListing();
+  const poll = app.refresh();
+  const release = await delayed;
+  peer.world.spaces[0].tabs[0].terminals.shift();
+  Object.assign(peer.status, { focused_pane: 'p2', agent: 't2' });
+  release();
+  await poll;
+  assert.equal(app.keys.get('herdr-app:1,0').presented.action, 'none');
+  assert.match(frame(h, 'herdr-app:0,0'), /View changed/);
+  await app.refresh();
+  assert.match(frame(h, 'herdr-app:0,0'), /Closed pane/);
+  assert.equal(app.keys.get('herdr-app:1,2').presented.action, 'collapse');
+  assert.equal(app.selected().pane, 'p2');
 });
 test('consent revocation bypasses the event queue and invalidates a paused final App write', async (t) => {
   const { h, peer } = await fixture(t);
@@ -308,35 +431,33 @@ for (const focus of [false, true]) {
     assert.doesNotMatch(frame(h, 'herdr-app:0,0'), /id="selected-agent"/);
     await app.refresh();
     assert.equal(app.selected().pane, 'p6');
-    if (focus) {
-      assert.equal(shown().action, 'none');
-      h.tick(400);
-      const count = peer.peer.calls.length;
-      await h.profilePress('herdr-app', 1, 4);
-      assert.equal(peer.peer.calls.length, count);
-      h.tick(2100);
-      const start = h.socket.frames.length;
-      app.render();
-      assert.deepEqual(
-        h.socket.frames
-          .slice(start)
-          .filter((f) => f.event === 'setImage')
-          .map((f) => f.context),
-        ['herdr-app:1,4'],
-      );
-      assert.equal(shown().target.pane, 'p2');
-      await h.profilePress('herdr-app', 1, 4);
-      assert.equal(peer.peer.calls.length, count);
-    }
+    assert.equal(shown().target.pane, 'p2');
+    assert.match(frame(h, 'herdr-app:1,4'), /Pane 2/);
+    assert.doesNotMatch(
+      frame(h, 'herdr-app:1,4'),
+      /Focus requested|Not verified/,
+    );
+    const count = peer.peer.calls.length;
+    await h.profilePress('herdr-app', 1, 4);
+    assert.equal(peer.peer.calls.length, count);
     h.tick(350);
     await h.profilePress('herdr-app', 1, 1);
     assert.match(frame(h, 'herdr-app:0,0'), /id="selected-agent"/);
     Object.assign(peer.status, { focused_pane: 'p6', agent: 't6' });
     await app.refresh();
-    h.tick(350);
-    await h.profilePress('herdr-app', 1, 1);
+    assert.equal(app.getBank(), 1, 'a new App selection reveals its bank once');
     assert.match(frame(h, 'herdr-app:0,0'), /id="selected-agent"/);
     assert.doesNotMatch(frame(h, 'herdr-app:0,0'), />On deck</);
+    h.tick(350);
+    await h.profilePress('herdr-app', 1, 1);
+    await app.refresh();
+    assert.equal(
+      app.getBank(),
+      0,
+      'identical App polls preserve local browsing',
+    );
+    assert.match(frame(h, 'herdr-app:0,0'), /Codex/);
+    assert.doesNotMatch(frame(h, 'herdr-app:0,0'), /id="selected-agent"/);
     Object.assign(peer.status, { focused_pane: 'p7', agent: 't7' });
     await app.refresh();
     assert.match(frame(h, 'herdr-app:0,1'), /id="selected-agent"/);
@@ -368,7 +489,7 @@ test('wire reorder and status alone preserve Next arming on the displayed destin
   const { h, app, peer } = await fixture(t);
   const terms = peer.world.spaces[0].tabs[0].terminals;
   terms[0].app = null;
-  terms[1].status = null;
+  terms[1].status = 'unrecognized';
   await app.refresh();
   const next = () => app.keys.get('herdr-app:1,0').presented;
   const { stamp, armedAt, target } = next();
@@ -714,7 +835,7 @@ test('helper loss disarms the old verified roster until an independent local obs
   h.tick(350);
   await h.profilePress('herdr-app', 0, 1);
   assert.equal(app.selected().pane, 'p2');
-  assert.match(frame(h, 'herdr-app:0,1'), /Deck only/);
+  assert.match(frame(h, 'herdr-app:0,1'), /On deck/);
   assert.deepEqual(peer.inputs(), []);
 });
 test('verified Attention can finish while an optional Core count remains pending', async (t) => {

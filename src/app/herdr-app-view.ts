@@ -1,10 +1,12 @@
 import type { AppPaneRef, AppPaneStatus } from '../domain/app-selection';
+import type { AppControlProjection } from '../domain/app-controls';
 import {
   appProvider,
-  paneKey,
   destinationName,
+  paneKey,
   type AppTargetConditions,
 } from '../domain/app-navigation';
+import { agentTileLines, ellipsize } from '../domain/labels';
 import { navigationRow } from '../domain/layout';
 import type { KeySpec, AgentFaceState } from '../render/spec';
 export interface AppKey {
@@ -19,7 +21,6 @@ export interface AppKey {
   notice?: {
     until: number;
     message: string;
-    error: boolean;
     generation: number;
   };
 }
@@ -45,6 +46,7 @@ export function defaultAppAction(key: AppKey): string {
   const { row, column } = key.coordinates;
   if (key.settings.action) return String(key.settings.action);
   if (row === 0) return `agent:${column}`;
+  if (row === 2 && column === 0) return 'model';
   return row === 1 ? (navigationRow[column] ?? 'none') : 'none';
 }
 /** App-reported words only pick a colour/label; they never arm a control. */
@@ -79,13 +81,6 @@ export function appState(
     color: palette[key] || FALLBACK_COLORS[key],
   };
 }
-const { ellipsize } = require('../domain/labels') as {
-  ellipsize(text: string, width?: number, fontSize?: number): string;
-};
-/** Same width-based ellipsis as Rex names; `ellipsize` strips bidi/controls. */
-function appName(value: string): string {
-  return ellipsize(value, 120, 26);
-}
 export function appTile(input: {
   key: AppKey;
   pane?: AppPaneStatus;
@@ -93,8 +88,11 @@ export function appTile(input: {
   selected: AppPaneRef | null;
   deckSelected: AppPaneRef | null;
   online: boolean;
+  viewChanging?: boolean;
   consent: boolean;
   mapped?: string;
+  controls?: AppControlProjection | null;
+  controlSlot?: number;
   reason?: string;
   bank: number;
   banks: number;
@@ -118,10 +116,8 @@ export function appTile(input: {
   if (key.notice && key.notice.until > input.now)
     return {
       ...base,
-      lines: key.notice.error
-        ? ['Unavailable', key.notice.message]
-        : [key.notice.message, 'Not verified'],
-      color: key.notice.error ? '#893748' : base.color,
+      lines: ['Unavailable', key.notice.message],
+      color: '#893748',
     };
   const action = defaultAppAction(key);
   if (/^agent:[0-4]$/.test(action)) {
@@ -132,30 +128,54 @@ export function appTile(input: {
       agent: true,
       modeCaption:
         pane && paneKey(pane.target) === paneKey(input.deckSelected)
-          ? input.consent
-            ? 'Request'
-            : 'Deck only'
-          : undefined,
+          ? 'On deck'
+          : pane && !input.consent
+            ? 'Deck only'
+            : undefined,
       icon: pane ? provider || 'blank' : 'empty',
       lines: pane
-        ? [
-            appName(destinationName(pane)),
-            paneKey(pane.target) === paneKey(input.deckSelected)
-              ? 'On deck'
-              : input.consent
-                ? 'Request only'
-                : 'Deck only',
-            state.label,
-          ]
+        ? agentTileLines(destinationName(pane), pane.folderName, state.label)
         : slot
           ? ['Closed pane', 'Collapse']
-          : ['Herdr App', input.online ? 'No agent' : 'Unavailable'],
+          : [
+              'Herdr App',
+              input.online
+                ? 'No agent'
+                : input.viewChanging
+                  ? 'View changed'
+                  : 'Unavailable',
+            ],
       color: pane ? state.color : base.color,
       state: pane ? state.shape : slot ? 'closed' : 'empty',
       badge:
         pane && paneKey(pane.target) === paneKey(input.selected)
           ? 'selected'
           : '',
+    };
+  }
+  // ADR 0007: a reported ready pane can label Model but cannot authorize input.
+  if (
+    key.coordinates.row === 2 &&
+    key.coordinates.column === 0 &&
+    action === 'model' &&
+    input.controls?.model &&
+    input.controls.pane
+  ) {
+    const cue = destinationName(input.controls.pane);
+    return {
+      ...base,
+      icon: 'model',
+      lines: [
+        'Model',
+        ellipsize(
+          input.controlSlot === undefined
+            ? cue
+            : `${input.controlSlot + 1} · ${cue}`,
+          120,
+          22,
+        ),
+      ],
+      dim: true,
     };
   }
   if (input.mapped === 'none') return base;
@@ -172,19 +192,15 @@ export function appTile(input: {
       ...base,
       icon: action,
       modeCaption:
-        action === 'attention'
-          ? input.consent
-            ? 'Request'
-            : 'Deck only'
-          : undefined,
+        action === 'attention' && !input.consent ? 'Deck only' : undefined,
       lines: [
         action === 'next' ? 'Next agent' : 'Attention',
-        appName(destinationName(pane)),
-        action === 'attention'
-          ? input.reason || ''
+        ellipsize(destinationName(pane), 120, 26),
+        ...(action === 'attention'
+          ? [input.reason || '']
           : input.consent
-            ? 'Request only'
-            : 'Deck only',
+            ? []
+            : ['Deck only']),
       ],
     };
   return base;

@@ -150,8 +150,10 @@ test('App disposal cancels an active read and replacement invalidates its endpoi
   for (const socket of peer.clients) socket.destroy();
   await new Promise((resolve) => peer.server.close(resolve));
   await new Promise((resolve) => peer.server.listen(peer.file, resolve));
-  fs.chmodSync(peer.file, 0o600);
-  await client.ls();
+  // Herdr recreates its socket with the ordinary 0022 launch umask.
+  fs.chmodSync(peer.file, 0o755);
+  assert.deepEqual(await client.ls(), f.world);
+  assert.equal(fs.statSync(peer.file).mode & 0o777, 0o755);
   assert(client.generation > generation);
 });
 

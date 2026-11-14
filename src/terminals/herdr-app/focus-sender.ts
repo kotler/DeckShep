@@ -2,6 +2,7 @@ import type {
   AppFocusPermit,
   AppFocusLease,
 } from '../../domain/app-focus-request';
+import { AppTargetChanged } from '../../domain/app-focus-request';
 import { matchesAppTarget } from '../../domain/app-navigation';
 import { AppFocusAuthority } from '../../guards/app-focus-request';
 import { parse, validate, type Boundary, type schemas } from '../../schemas';
@@ -49,7 +50,7 @@ class AppFocusConnection {
   #resolve: ((line: string) => void) | null = null;
   #removeAbort: () => void;
   constructor(file: string, signal: AbortSignal) {
-    this.endpoint = inspectSocket(file);
+    this.endpoint = inspectSocket(file, 'app');
     // Keep our descriptor until post-checks finish, even if the server sends FIN.
     this.socket = createConnection({ path: file, allowHalfOpen: true });
     const abort = () => this.fail();
@@ -86,7 +87,8 @@ class AppFocusConnection {
     if (
       this.#failed ||
       this.socket.destroyed ||
-      inspectSocket(this.endpoint.file).identity !== this.endpoint.identity
+      inspectSocket(this.endpoint.file, 'app').identity !==
+        this.endpoint.identity
     )
       throw Error('App changed');
   }
@@ -199,7 +201,7 @@ export class GuardedAppFocusSender {
           lease.context.slotOrder,
         )
       )
-        throw Error('Target changed');
+        throw new AppTargetChanged(snapshot);
       const reply = await this.#exchange(
         { do: 'pane.focus', args: { pane: lease.context.target.pane } },
         'herdrAppFocusReply',

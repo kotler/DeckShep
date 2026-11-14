@@ -73,7 +73,7 @@ interface SignalInput {
   codexMark: string;
   claudeMark: string;
   busyRing?: string;
-  modeCaption?: 'Deck only' | 'Request';
+  modeCaption?: 'Deck only' | 'On deck';
   appNavigation?: boolean;
   classic?: boolean;
   legacyPaths: Record<string, string>;

@@ -7,6 +7,7 @@ export interface AppPaneRef {
 }
 export interface AppPaneStatus {
   target: AppPaneRef;
+  folderName?: string;
   reportedApp: string | null;
   reportedStatus: string | null;
   name: string | null;

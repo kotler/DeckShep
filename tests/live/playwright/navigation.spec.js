@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { PassThrough } = require('node:stream');
+const { execFileSync } = require('node:child_process');
 const { test, expect } = require('../../../tools/e2e');
 const { VirtualDeck } = require('../../e2e/virtual-host/deck');
 const { prepareVirtualHost } = require('../../e2e/virtual-host/host');
@@ -12,6 +13,7 @@ const { hash, readArtifact } = require('../app-calibration/artifacts.cjs');
 const { appAuthorization } = require('../app-calibration/isolation.cjs');
 const { requestClient } = require('../app-calibration/release-scenarios.cjs');
 const { NavigationChannel } = require('./navigation-channel.cjs');
+const { launchEditor } = require('./editor-launch.cjs');
 const reviewed = require('../../../docs/validation/2026-11-08-herdr-app-installed-release-artifacts.json');
 
 async function connectDeck(page, deck) {
@@ -111,6 +113,7 @@ async function walkthrough(page, run, root) {
     await button.click();
     await refresh();
   }
+  let verifyEditor = async () => {};
   try {
     await deck.reset();
     await consent(false);
@@ -209,7 +212,7 @@ async function walkthrough(page, run, root) {
     });
     await test.step('An agent tile changes the deck marker while the native dot stays put', async () => {
       await clickArmed(tileFor(codex));
-      await waitLabel(tileFor(codex), /On deck.*Deck only/);
+      await waitLabel(tileFor(codex), /On deck/);
       expect(await selected()).toBe(claude.target.pane);
       await waitForDot(claude);
     });
@@ -221,9 +224,16 @@ async function walkthrough(page, run, root) {
       await test.step(
         name + ' requests the displayed pane and Herdr confirms the selection',
         async () => {
-          await waitLabel(key(1, column), /Request/);
+          await waitLabel(
+            key(1, column),
+            name === 'Next'
+              ? /^Next agent(?!.*Deck only)/
+              : /^Attention(?!.*Deck only)/,
+          );
           await clickArmed(key(1, column));
-          await waitLabel(key(1, column), /Focus.*requested.*Not verified/);
+          if (name === 'Next')
+            await waitLabel(key(1, column), /^Next agent(?!.*Deck only)/);
+          else await waitLabel(key(1, column), /^Empty key$/);
           await expect.poll(selected).toBe(target.target.pane);
           // Present the new native selection before capturing the next press.
           // Only a new App observation can move the selection dot.
@@ -231,12 +241,71 @@ async function walkthrough(page, run, root) {
         },
       );
     }
+    await test.step('Informational Model follows the App while an owned editor keeps focus', async () => {
+      const editor = path.join(run.root, 'editor');
+      const editorReport = path.join(run.root, 'state/editor.json');
+      execFileSync(
+        '/usr/bin/clang',
+        [
+          '-fobjc-arc',
+          '-framework',
+          'Cocoa',
+          path.resolve('tests/live/playwright/editor.m'),
+          '-o',
+          editor,
+        ],
+        { stdio: 'pipe', timeout: 20000 },
+      );
+      const child = launchEditor(run, editor, editorReport);
+      const editorState = () => {
+        run.owned.assert(child.pid);
+        if (!fs.existsSync(editorReport)) return null;
+        return JSON.parse(fs.readFileSync(editorReport, 'utf8'));
+      };
+      verifyEditor = async () => {
+        const previous = editorState();
+        await expect
+          .poll(() => editorState()?.samples)
+          .toBeGreaterThan(previous.samples);
+        const state = editorState();
+        expect(state.pid).toBe(child.pid);
+        expect(state.frontmost).toBe(child.pid);
+        expect(state.focused).toBe(true);
+        expect(state.focusLosses).toBe(0);
+        expect(state.keyEvents).toBe(0);
+      };
+      await expect
+        .poll(() => editorState()?.focused, { timeout: 12000 })
+        .toBe(true);
+      await waitLabel(key(2, 0), /^Empty key$/);
+      await clickArmed(key(1, 0));
+      await expect.poll(selected).toBe(codex.target.pane);
+      await waitLabel(key(2, 0), /^Model.*Codex/i);
+      const before = editorState();
+      const presented = deck.snapshot().keys[10];
+      await clickArmed(key(2, 0));
+      await refresh();
+      expect(await selected()).toBe(codex.target.pane);
+      expect(deck.snapshot().keys[10].labels).toEqual(presented.labels);
+      const after = editorState();
+      expect(after.pid).toBe(child.pid);
+      expect(after.frontmost).toBe(child.pid);
+      expect(after.focused).toBe(true);
+      expect(after.focusLosses).toBe(0);
+      expect(after.keyEvents).toBe(0);
+      expect(after.samples).toBeGreaterThan(before.samples);
+      await clickArmed(key(1, 4));
+      await expect.poll(selected).toBe(claude.target.pane);
+      await waitLabel(key(2, 0), /^Empty key$/);
+      await verifyEditor();
+    });
     await test.step('Revoking consent restores local navigation', async () => {
       await consent(false);
       await waitLabel(key(1, 0), /Deck only/);
       await clickArmed(key(1, 0));
       await waitLabel(key(1, 4), /waiting.*Deck only/);
       expect(await selected()).toBe(claude.target.pane);
+      await verifyEditor();
     });
   } finally {
     observer.dispose();

@@ -135,7 +135,15 @@ waiting, errored or done. Hold Next agent for the previous agent and Page for
 the previous page. In the experimental App scope, rows 1–2 use the App's local agent roster and
 stable slots. The dot follows the App report. Attention rechecks the displayed
 agent and reason before selection or a consented focus request. App provider
-settings overrides are inactive (ADR 0007). In Rex, rows 1-2 use Rex discovery, status, titles and physical pane
+settings overrides are inactive (ADR 0007). Row 3 column 1 can show informational
+Model for the App-reported ready Codex pane, with a stable slot/chat cue. It
+always publishes action `none`. App selection changes reveal its bank once;
+identical polls preserve later Page browsing. No active Model route is qualified.
+`tests/unit/herdr-app-model-probes.test.js` records native/API counterexamples.
+The separately authorized live virtual deck also uses a disposable Cocoa editor
+to check passive background tracking and zero editor key events; its OSC status
+fixtures do not establish a real Codex Model change.
+In Rex, rows 1-2 use Rex discovery, status, titles and physical pane
 selection and must not depend on provider hooks or daemons; row 3 carries the
 provider-specific identity and input guards. Zoom and the separate Questions and
 Prompts pages were removed by the owner (2026-11-10); saved overrides for them

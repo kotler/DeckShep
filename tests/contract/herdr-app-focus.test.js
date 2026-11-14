@@ -11,6 +11,7 @@ const { backendCapabilities } = require('../../src/domain/capabilities');
 
 test('guarded delivery writes one explicit pane request; acknowledgement never becomes completed or verified focus', async (t) => {
   const x = await senderFixture(t);
+  fs.chmodSync(x.peer.file, 0o755);
   x.world.spaces[0].tabs[0].terminals.push({
     terminal: 't2',
     pane: 'p2',
@@ -96,7 +97,7 @@ test('replacing the socket before the final write refuses the connected old peer
         replacement.once('error', reject);
         replacement.listen(peer.file, resolve);
       });
-      fs.chmodSync(peer.file, 0o600);
+      fs.chmodSync(peer.file, 0o755);
     },
   });
   t.after(async () => {
@@ -409,7 +410,7 @@ test('ordinary navigation accepts status changes but refuses changed provider or
       x.state.conditions = {
         action,
         provider: 'codex',
-        name: 'codex',
+        name: 'Codex',
         reason: null,
         appSelection: key,
         effectiveSelection: key,

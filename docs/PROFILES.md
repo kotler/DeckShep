@@ -43,8 +43,10 @@ identity and input guards; provider details do not override the Rex agent bar.
 The experimental Herdr App profile uses the same agent and navigation positions.
 Tiles, Next and Attention select locally or request an App pane with verified
 build and consent. Page and Collapse act locally. App keys support taps only.
-Row three defaults to empty, and saved Model, Effort and Permissions overrides
-are inactive. [Herdr App guide](HERDR-APP.md)
+Row three follows the App-selected pane. A reported ready Codex pane shows
+informational Model in column one with a stable slot/chat cue. It sends no
+input. A changed App selection reveals its bank once; later Page browsing is
+preserved. Saved provider overrides remain inactive. [Herdr App guide](HERDR-APP.md)
 
 ## Key map (Stream Deck MK.2, 5×3)
 

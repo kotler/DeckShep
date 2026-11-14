@@ -1,6 +1,13 @@
 import type { AppTargetConditions } from './app-navigation';
 import type { AppPaneRef, AppSelectionSnapshot } from './app-selection';
 
+/** A validated read can retire a stale tile even though its press is refused. */
+export class AppTargetChanged extends Error {
+  constructor(readonly snapshot: AppSelectionSnapshot) {
+    super('Target changed');
+  }
+}
+
 declare const requestPermit: unique symbol;
 /** Deliberately incompatible with provider/verified-focus delivery permits. */
 export interface AppFocusPermit {
