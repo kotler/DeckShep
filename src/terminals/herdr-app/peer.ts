@@ -32,6 +32,12 @@ export class AppPeerVerifier {
     records: readonly AppFocusRecord[] = APP_FOCUS_RECORDS,
     private readonly decoder?: PlistDecoder,
     private readonly sessions?: PeerSessionFactory,
+    private readonly verifyPublisher?: (
+      executable: string,
+      cdHash: string,
+      binarySha256: string,
+      plistSha256: string,
+    ) => Promise<void>,
   ) {
     this.#records = records.map((record) =>
       validate('herdrAppFocusRecord', record),
@@ -42,7 +48,8 @@ export class AppPeerVerifier {
       throw Error('Build mismatch');
   }
   assertConfigured(): void {
-    if (!this.#records.length) throw Error('Build mismatch');
+    if (!this.#records.length && !(this.sessions && this.verifyPublisher))
+      throw Error('Build mismatch');
   }
   async open(
     socket: Socket,
@@ -141,12 +148,23 @@ export class AppPeerVerifier {
           record.executableSha256 === build.executableSha256 &&
           record.plistSha256 === build.plistSha256,
       );
-      if (matches.length !== 1) throw Error();
+      let recordKey = matches[0]?.key;
+      if (!matches.length && this.verifyPublisher && this.sessions) {
+        await this.verifyPublisher(
+          before.executable,
+          before.cdHash,
+          build.executableSha256,
+          build.plistSha256,
+        );
+        if (signal?.aborted) throw Error();
+        build.assertUnchanged();
+        recordKey = 'herdr-signed-' + before.cdHash;
+      } else if (matches.length !== 1) throw Error();
       return Object.freeze({
         key: createHash('sha256')
-          .update(JSON.stringify([endpoint, before, matches[0].key]))
+          .update(JSON.stringify([endpoint, before, recordKey]))
           .digest('hex'),
-        recordKey: matches[0].key,
+        recordKey,
         assertUnchanged: build.assertUnchanged,
       });
     } catch {

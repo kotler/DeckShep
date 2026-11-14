@@ -1,9 +1,11 @@
 # Herdr App preview
 
 The experimental App profile lists local Codex and Claude agents reported by
-Herdr. A validated App connection enables deck-local navigation. Plain focus
-requests additionally require an approved App build and explicit consent. The
-production build record list is empty. Release packages include only Rex.
+Herdr. A validated App connection enables deck-local navigation. The private Stream Deck
+preview accepts signed Herdr App updates without a version pin. With focus
+consent enabled, it verifies the connected process against Herdr’s Developer ID
+and checks the current pane focus command before dispatch. Release packages
+include only Rex.
 
 ## Profile setup
 
@@ -15,7 +17,7 @@ In an experimental App profile, open any key's setup panel:
    and migrations, including older v3 stores. Read-back, input, Claude, Rex and
    Herdr TUI consents do not enable it. Turning it off invalidates a pending
    request immediately.
-3. Review the checklist. A missing helper, unknown App build or missing consent
+3. Review the checklist. A missing helper, unverified App signature or missing consent
    leaves requests disabled. Consent alone cannot approve a build.
 
 The peer helper ships inside DeckShep at `bin/herdr-app-peer`. Setup does not

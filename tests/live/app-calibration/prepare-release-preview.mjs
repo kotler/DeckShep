@@ -37,13 +37,13 @@ export async function prepareReleasePreview(
   const inspectorFile = path.join(plugin, 'inspector.html');
   const inspector = fs.readFileSync(inspectorFile, 'utf8');
   const unapprovedNote =
-    /Plain focus requests\s+also need an approved App build; without one, selection\s+stays on the deck\./;
+    /An approved App\s+build and focus consent also allow one pane focus request\./;
   if (!unapprovedNote.test(inspector)) throw Error('Preview inspector changed');
   fs.writeFileSync(
     inspectorFile,
     inspector.replace(
       unapprovedNote,
-      'Plain focus requests accept only the exact reviewed App build in this private preview.',
+      'With focus consent, this preview verifies Herdr’s publisher signature and checks the pane focus command before sending a request.',
     ),
   );
   const helperSha256 = candidate.helper.sha256;
@@ -80,7 +80,7 @@ export async function prepareReleasePreview(
   const dependencies = path.join(root, 'dependencies.cjs');
   fs.writeFileSync(
     dependencies,
-    `const {releasePreviewBackend}=require(${JSON.stringify(path.resolve('tests/live/app-calibration/release-preview-backend.cjs'))});\nexports.applicationDependencies=()=>({experimentalHerdrApp:true,appFocusBackend:releasePreviewBackend(${JSON.stringify(record)},${JSON.stringify(helperSha256)})});\n`,
+    `const {releasePreviewBackend}=require(${JSON.stringify(path.resolve('tests/live/app-calibration/release-preview-backend.cjs'))});\nexports.applicationDependencies=()=>({experimentalHerdrApp:true,appFocusBackend:releasePreviewBackend(${JSON.stringify(helperSha256)})});\n`,
     { mode: 0o600 },
   );
   try {
@@ -130,7 +130,8 @@ export async function prepareReleasePreview(
         productionApproved: false,
         verifiedFocus: false,
         expiresAt: null,
-        record,
+        calibrationRecord: record,
+        focusCompatibility: 'publisher-and-command',
         helperSha256,
         pluginSha256: hash(bytes),
         calibrationSha256: hash(fs.readFileSync(calibrationFile)),

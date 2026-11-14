@@ -41,7 +41,7 @@ test('private release preview needs explicit owner approval, exact candidate byt
     assert.throws(() => reviewReleasePreview(candidate, report, true));
   }
 });
-test('private preview has no calendar cutoff and retains exact record/helper and native session checks', async () => {
+test('private preview has no calendar cutoff and retains publisher, helper and native session checks', async () => {
   const source = path.resolve(
     'tests/live/app-calibration/release-preview-backend.cjs',
   );
@@ -78,7 +78,8 @@ test('private preview has no calendar cutoff and retains exact record/helper and
       if (name.endsWith('/peer'))
         return {
           AppPeerVerifier: class {
-            constructor(_probe, records, _decoder, sessions) {
+            constructor(_probe, records, _decoder, sessions, verifyPublisher) {
+              this.verifyPublisher = verifyPublisher;
               this.records = records;
               this.sessions = sessions;
             }
@@ -95,16 +96,13 @@ test('private preview has no calendar cutoff and retains exact record/helper and
       return localRequire(name);
     },
   });
-  const record = reviewReleasePreview(candidate, calibration, true);
-  const backend = module.exports.releasePreviewBackend(
-    record,
-    candidate.helper.sha256,
-  );
+  const backend = module.exports.releasePreviewBackend(candidate.helper.sha256);
   assert.equal(backend.kind, 'fixture-app-hardware-test');
   assert.equal(backend.recordCount, 1);
   assert.throws(() => backend.create({ herdrApp: {} }, {}));
   const sender = backend.create({ herdrApp: { home: '/synthetic/app' } }, {});
-  assert.equal(sender.verifier.records[0], record);
+  assert.equal(sender.verifier.records.length, 0);
+  assert.equal(typeof sender.verifier.verifyPublisher, 'function');
   const session = await sender.verifier.sessions(
     {},
     new AbortController().signal,
@@ -118,4 +116,89 @@ test('private preview has no calendar cutoff and retains exact record/helper and
   assert.equal(backend.recordCount, 1);
   await session.dispose();
   assert.equal(disposed, 1);
+});
+
+test('publisher check binds the socket hash and signed bundle, rechecking updated builds', async () => {
+  const {
+    publisherCheck,
+  } = require('../live/app-calibration/release-preview-backend.cjs');
+  const file = '/Applications/Herdr.app/Contents/MacOS/Herdr';
+  const calls = [];
+  const verify = publisherCheck(async (command, args) => {
+    calls.push([command, args]);
+    if (args[3].includes('b'.repeat(40))) throw Error('Signature rejected');
+  });
+  const first = 'a'.repeat(40),
+    next = 'c'.repeat(40);
+  await verify(file, first, 'exe', 'plist');
+  assert.deepEqual(calls[0], [
+    '/usr/bin/codesign',
+    [
+      '--verify',
+      '--strict',
+      '-R',
+      '=anchor apple generic and identifier "dev.herdr.app" and certificate leaf[subject.OU] = "2W9652Q7QR" and cdhash H"' +
+        first +
+        '"',
+      '/Applications/Herdr.app',
+    ],
+  ]);
+  await verify(file, first, 'exe', 'plist');
+  assert.equal(calls.length, 1);
+  await assert.rejects(verify(file, 'b'.repeat(40), 'new', 'plist'));
+  await verify(file, next, 'new', 'new-plist');
+  assert.equal(calls.length, 3);
+  await assert.rejects(verify(file, 'invalid', 'new', 'new-plist'));
+});
+
+test('publisher policy accepts a later release only with a verified retained peer', async (t) => {
+  const { fixtureBuild } = require('../helpers/herdr-app-focus');
+  const { AppPeerVerifier } = require('../../src/terminals/herdr-app/peer');
+  const f = fixtureBuild(t);
+  fs.writeFileSync(
+    f.plist,
+    JSON.stringify({
+      ...f.metadata,
+      CFBundleShortVersionString: '0.1.15',
+      CFBundleVersion: '0.1.15',
+    }),
+  );
+  const captured = f.evidence;
+  let published = true;
+  const sessions = async () => ({
+    captured,
+    check: async () => captured,
+    finish: async () => captured,
+    dispose: async () => {},
+  });
+  const verify = async (file, cdHash) => {
+    assert.equal(file, f.executable);
+    assert.equal(cdHash, captured.cdHash);
+    if (!published) throw Error('Invalid signature');
+  };
+  const verifier = new AppPeerVerifier(
+    async () => captured,
+    [],
+    f.decoder,
+    sessions,
+    verify,
+  );
+  const peer = await verifier.open({}, 'fixture-endpoint');
+  assert.equal(peer.binding.recordKey, 'herdr-signed-' + captured.cdHash);
+  await peer.finish();
+  await peer.dispose();
+  published = false;
+  await assert.rejects(
+    verifier.open({}, 'fixture-endpoint'),
+    /Peer unverified/,
+  );
+  assert.throws(() =>
+    new AppPeerVerifier(
+      async () => captured,
+      [],
+      f.decoder,
+      undefined,
+      verify,
+    ).assertConfigured(),
+  );
 });
