@@ -15,6 +15,7 @@ const {
 const { spawnSync } = require('node:child_process');
 const { setTimeout: delay } = require('node:timers/promises');
 const { checkPicker } = require('./rex-picker.cjs');
+const { readRexApi } = require('../../src/terminals/rex/diagnostics');
 const rex =
   '/Applications/Rex Beta.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex';
 const reason = authorization('rex');
@@ -181,6 +182,30 @@ test(
     assert(
       screen.includes('DeckShep-test-marker'),
       'Disposable pane displays the test input',
+    );
+    // Check the production read contract on the owned server, never the user's
+    // default endpoint. An API revision alone grants no input capability.
+    const api = await readRexApi(rex, async (_file, args) => command(args));
+    const frame = JSON.parse(
+      command([
+        'block',
+        'call',
+        ...target,
+        'format',
+        JSON.stringify({ format: 'vt', extra_cursor: true, max_bytes: 960000 }),
+      ]),
+    );
+    assert.equal(frame.id, undefined);
+    assert.equal(typeof frame.content, 'string');
+    assert(frame.content.includes('DeckShep-test-marker'));
+    assert.match(frame.content, /\x1b\[\d+;\d+H$/);
+    const status = JSON.parse(
+      command(['block', 'call', ...target, 'program_status']),
+    );
+    assert.equal(status.id, undefined);
+    assert(Array.isArray(status.records));
+    t.diagnostic(
+      `Owned Rex API ${api.revision}, minimum ${api.minimum}; process, format/cursor and program status verified`,
     );
     if (providers) {
       const cases = ['permissions', 'plan', 'interrupt', 'queue', 'choice'];
