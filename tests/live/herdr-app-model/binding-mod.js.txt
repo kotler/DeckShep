@@ -1,0 +1,56 @@
+import { View, div } from 'gpui-kit';
+import * as herdr from 'herdr';
+
+// Test-owned, observation-only mod. No exec/hc/run, terminal input or focus calls.
+export default class DeckShepBindingProbe extends View {
+  init(_props, cx) {
+    this.sequence = 0;
+    this.previous = '{}';
+    this.focusKey = '';
+    this.focusRevision = 0;
+    cx.spawn(async () => {
+      await this.publish();
+      for (;;) {
+        const command = await herdr.nextCommand();
+        if (command === 'snapshot') await this.publish();
+      }
+    });
+  }
+  selected() {
+    const focused = herdr.focused();
+    const terminal = herdr.terminals().find((t) => t.address === focused?.terminal);
+    const key = JSON.stringify([focused?.space, focused?.tab, focused?.pane, focused?.terminal, terminal?.pid, terminal?.created_ms]);
+    if (key !== this.focusKey) { this.focusKey = key; this.focusRevision++; }
+    return focused;
+  }
+  async publish() {
+    const focused = this.selected();
+    const win = herdr.window();
+    const state = {
+      protocol: 1,
+      sequence: ++this.sequence,
+      focusRevision: this.focusRevision,
+      exports: Object.keys(herdr).sort(),
+      focusedKeys: Object.keys(focused || {}).sort(),
+      windowKeys: Object.keys(win || {}).sort(),
+      focused: focused && {
+        space: focused.space, tab: focused.tab, pane: focused.pane,
+        terminal: focused.terminal, shown: focused.shown, agent: focused.agent,
+      },
+      panes: herdr.panes().map((p) => ({
+        pane: p.pane, terminal: p.terminal, tab: p.tab, focused: p.focused,
+      })),
+      terminals: herdr.terminals().map((t) => ({
+        address: t.address, pid: t.pid == null ? null : t.pid,
+        created_ms: t.created_ms, keys: Object.keys(t).sort(),
+      })),
+    };
+    const next = JSON.stringify(state);
+    await herdr.writeTextFile(herdr.appHome() + '/data/deckshep-binding-probe.json', next, this.previous);
+    this.previous = next;
+  }
+  render() {
+    this.selected(); herdr.panes(); herdr.terminals(); herdr.window();
+    return div().child('DeckShep isolated binding probe');
+  }
+}

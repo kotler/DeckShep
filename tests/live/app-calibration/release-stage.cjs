@@ -9,6 +9,26 @@ const {
 } = require('./release-artifacts.cjs');
 const { validate } = require('../../../src/schemas');
 
+const reviewedReleases = [
+  require('../../../docs/validation/2026-11-08-herdr-app-installed-release-artifacts.json'),
+  require('../../../docs/validation/2026-11-15-herdr-app-0.1.16-core-0.1.21-artifacts.json'),
+];
+
+/** Test authorization still comes from the live flags. This proves which
+ * statically inspected pair the caller supplied before any native launch. */
+function reviewedRelease(directory) {
+  if (!directory) throw Error('Reviewed signed App/Core candidate required');
+  privateDirectory(directory);
+  const digest = hash(
+    readArtifact(path.join(directory, 'release-candidate.json'), 65536),
+  );
+  const record = reviewedReleases.find(
+    (value) => value.candidateReportSha256 === digest,
+  );
+  if (!record) throw Error('Reviewed signed App/Core candidate required');
+  return record;
+}
+
 /** Separate release loader: a source manifest cannot select it. Re-attest whole
  * signed bundles and match the reviewed report before creating any authority. */
 async function stageRelease(directory, destination, effects = {}) {
@@ -25,11 +45,12 @@ async function stageRelease(directory, destination, effects = {}) {
     },
     effects,
   );
-  if (
-    !isDeepStrictEqual(report, expected) ||
-    report.app.version !== '0.1.14' ||
-    report.core.version !== '0.1.19'
-  )
+  const pair = reviewedReleases.find(
+    (value) =>
+      value.app.version === report.app.version &&
+      value.core.version === report.core.version,
+  );
+  if (!isDeepStrictEqual(report, expected) || !pair)
     throw Error('Release candidate changed');
   const app = path.join(destination, 'Herdr.app/Contents/MacOS/Herdr');
   const core = path.join(
@@ -39,7 +60,7 @@ async function stageRelease(directory, destination, effects = {}) {
   const helper = path.join(destination, 'herdr-app-peer');
   const appRecord = validate('herdrAppFocusRecord', {
     contract: 1,
-    key: 'herdr-app-release-0.1.14-request-only',
+    key: `herdr-app-release-${report.app.version}-request-only`,
     bundleId: report.app.bundleId,
     executable: 'Herdr',
     version: report.app.version,
@@ -93,8 +114,8 @@ async function stageRelease(directory, destination, effects = {}) {
     assertUnchanged,
     verifyTrees,
     manifest: {
-      appSource: '2405bf388c568c3ed479f05b8e405ccfa44b3f2c',
-      coreSource: '06793ede1bedb1fed8d22d3cae476d3eb239edf0',
+      appSource: pair.sourceReview.app,
+      coreSource: pair.sourceReview.core,
       appRecord,
       appTreeSha256: report.app.treeSha256,
       core: {
@@ -107,4 +128,4 @@ async function stageRelease(directory, destination, effects = {}) {
     },
   };
 }
-module.exports = { stageRelease };
+module.exports = { stageRelease, reviewedRelease };

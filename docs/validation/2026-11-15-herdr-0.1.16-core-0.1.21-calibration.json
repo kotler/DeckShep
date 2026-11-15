@@ -1,0 +1,100 @@
+{
+  "schema": 1,
+  "outcome": "passed",
+  "productionApproved": false,
+  "verifiedFocus": false,
+  "buildMode": "installed-release-contained",
+  "failures": [],
+  "cleanup": true,
+  "settingsUnchanged": true,
+  "limits": {
+    "armingMs": 350,
+    "deliveryMs": 1000,
+    "setupExchangeMs": 3000,
+    "readinessMs": 10000
+  },
+  "builds": {
+    "appSource": "034f8b85f7e6bb71f8ff55cb4a80c548b2578c0f",
+    "coreSource": "1b0393f80c35b1dae34f37934d33d0144a8fc8d7",
+    "app": {
+      "contract": 1,
+      "bundleId": "dev.herdr.app",
+      "executable": "Herdr",
+      "version": "0.1.16",
+      "build": "0.1.16",
+      "executableSha256": "985e70ce4d78c58ceb1e5e6ea2ccb03231d46fef18a0e04ec6ca5380a4099805",
+      "plistSha256": "ccb58f6e3cbeefb6f43612ebfa95d784c6fb938a3b701909ba106a7ec863b8a6",
+      "cdHash": "d3580a0126f503295e6e9719eb985d091ff59703"
+    },
+    "appTreeSha256": "dfbae2aa8b23c8e6ff731424275a2715af7a79f5c7105af33a062d038d1d2082",
+    "core": {
+      "version": "0.1.21",
+      "sha256": "8df48976b421aa60c0508e0807017f1cea75ca8d6ef43dd8d439786b3724e929",
+      "cdHash": "0ceca91b0c34d921df4d82e82026e3d400e73730"
+    },
+    "helperSha256": "358e58767c775833ee27af88e33485f7a3a06bac8c9b5b2801228f80e0058be5"
+  },
+  "initialView": {
+    "overlays": 0,
+    "floats": 0,
+    "errors": 0
+  },
+  "scenarios": {
+    "core": {
+      "version": "0.1.21",
+      "generation": 1,
+      "methodsCount": 32,
+      "methodsSha256": "193ca745c3262057466386d5a9af2ab499bf6e37903eeaf30620b8b6b876cd8d",
+      "featuresCount": 8,
+      "featuresSha256": "7004b2305a18db24b92a241357b6620f1eed02dad552b99ca71456c8e47ddfd8"
+    },
+    "panes": 2,
+    "requests": [
+      {
+        "status": "requested",
+        "elapsedMs": 289.99,
+        "acknowledged": true,
+        "modelSelectedTarget": true
+      },
+      {
+        "status": "requested",
+        "elapsedMs": 290.28,
+        "acknowledged": true,
+        "modelSelectedTarget": true
+      }
+    ],
+    "refusals": [
+      "future-press",
+      "reused-permit",
+      "stale-generation",
+      "revoked-consent"
+    ],
+    "verifiedFocus": false
+  },
+  "releaseScenarios": {
+    "unknownBuildRefused": true,
+    "reconnectStable": true,
+    "minimizeAcknowledged": true,
+    "minimizedRequestAcknowledged": true,
+    "verifiedFocus": false,
+    "preRestartBindingRefused": true,
+    "preRestartPressRefused": true,
+    "restartRestoredPanes": 2,
+    "freshPostRestartRequestAcknowledged": true
+  },
+  "containment": {
+    "insideWrite": true,
+    "outsideWriteDenied": true,
+    "outsideReadDenied": true,
+    "feedConnect": true,
+    "otherNetworkDenied": true,
+    "childExecDenied": true,
+    "launchServicesDenied": true
+  },
+  "policySha256": "cda2db0affd1b37aee514ea808723ccec7fab4ea83a55c7f5db9e9fd2a244cb9",
+  "catShellSha256": "1c4383fb34a9f8d7ed93baeb37a3358a5a298af2666fab86bae66888c64db96c",
+  "releaseFeed": {
+    "requests": 2,
+    "refused": 0
+  }
+}

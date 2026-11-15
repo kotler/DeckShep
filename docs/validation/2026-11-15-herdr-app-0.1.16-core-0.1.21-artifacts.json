@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "date": "2026-11-15",
+  "scope": "installed-release-static-preparation",
+  "buildMode": "installed-release-candidate",
+  "candidateOnly": true,
+  "nativeExecution": false,
+  "approvedForLiveRun": false,
+  "productionApproved": false,
+  "verifiedFocus": false,
+  "runningPairEstablished": false,
+  "sourceAndCopiesStable": true,
+  "app": {
+    "bundleId": "dev.herdr.app",
+    "version": "0.1.16",
+    "build": "0.1.16",
+    "executableSha256": "985e70ce4d78c58ceb1e5e6ea2ccb03231d46fef18a0e04ec6ca5380a4099805",
+    "plistSha256": "ccb58f6e3cbeefb6f43612ebfa95d784c6fb938a3b701909ba106a7ec863b8a6",
+    "treeSha256": "dfbae2aa8b23c8e6ff731424275a2715af7a79f5c7105af33a062d038d1d2082",
+    "files": 6,
+    "signature": {
+      "valid": true,
+      "cdHash": "d3580a0126f503295e6e9719eb985d091ff59703",
+      "teamIdentifier": "2W9652Q7QR",
+      "publisherRequirementVerified": true
+    }
+  },
+  "core": {
+    "bundleId": "dev.herdr.core",
+    "version": "0.1.21",
+    "build": "0.1.21",
+    "executableSha256": "8df48976b421aa60c0508e0807017f1cea75ca8d6ef43dd8d439786b3724e929",
+    "plistSha256": "0f861763b82b1a12ddece52c1c2530e30cfa7a719f292cca329fbf22bb873a9a",
+    "treeSha256": "e392da316448fb5bf07c58bb610beb136c8fcdaaaf2d225b166d16ad5a4ae4f2",
+    "files": 4,
+    "signature": {
+      "valid": true,
+      "cdHash": "0ceca91b0c34d921df4d82e82026e3d400e73730",
+      "teamIdentifier": "2W9652Q7QR",
+      "publisherRequirementVerified": true
+    }
+  },
+  "helper": {
+    "protocol": 2,
+    "sha256": "358e58767c775833ee27af88e33485f7a3a06bac8c9b5b2801228f80e0058be5"
+  },
+  "gates": [
+    "updater-containment",
+    "separate-live-authorization",
+    "native-release-calibration"
+  ],
+  "sourceReview": {
+    "app": "034f8b85f7e6bb71f8ff55cb4a80c548b2578c0f",
+    "core": "1b0393f80c35b1dae34f37934d33d0144a8fc8d7",
+    "binaryReproducibilityEstablished": false
+  },
+  "candidateReportSha256": "9c14fe4e0d6d5104174eabc2401eeb83f5574ecc63ed4bafe0ef604077dedda1"
+}

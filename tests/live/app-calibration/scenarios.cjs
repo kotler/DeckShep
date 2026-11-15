@@ -67,6 +67,9 @@ async function calibrate(
     'argv',
     'task',
     'machine',
+    ...(gate.artifacts.manifest.appRecord.version === '0.1.16'
+      ? ['focus']
+      : []),
   ]);
   const initial = await channel.appRead({ ls: true }, 'herdrAppWorld');
   gate.progress = 'scenarios.initial-world';

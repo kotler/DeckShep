@@ -69,6 +69,21 @@ test('release runner refuses before staging, services or process effects without
   assert.equal(report.outcome, 'disabled');
   assert.equal(called, false);
 });
+
+test('private updater reports the explicitly selected test pair', async (t) => {
+  const feed = await releaseFeed({
+    appVersion: '0.1.16',
+    coreVersion: '0.1.21',
+  });
+  t.after(() => feed.close());
+  const app = await (await fetch(feed.url + '/app/latest.json')).json();
+  const core = await (await fetch(feed.url + '/core/latest.json')).json();
+  assert.equal(app.version, '0.1.16');
+  assert.equal(core.version, '0.1.21');
+  assert.deepEqual(app.targets, {});
+  assert.deepEqual(core.targets, {});
+  feed.assertClean();
+});
 test('release window setup admits only the exact owned minimize request', () => {
   const {
     WindowChannel,

@@ -1,5 +1,9 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": { "checkJs": false },
-  "include": ["tests/e2e/**/*.ts", "playwright.config.ts"]
+  "include": [
+    "tests/e2e/**/*.ts",
+    "tests/helpers/herdr-app-mod-stream.ts",
+    "playwright.config.ts"
+  ]
 }

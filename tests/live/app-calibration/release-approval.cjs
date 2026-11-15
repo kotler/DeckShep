@@ -58,7 +58,7 @@ function reviewReleasePreview(candidate, calibration, ownerApproved) {
   )
     throw Error('Release preview evidence required');
   const record = validate('herdrAppFocusRecord', {
-    key: 'herdr-app-release-0.1.14-request-only',
+    key: `herdr-app-release-${candidate.app.version}-request-only`,
     contract: 1,
     bundleId: candidate.app.bundleId,
     executable: 'Herdr',

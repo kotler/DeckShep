@@ -3,6 +3,11 @@
 **Date** 2026-11-14  
 **Status** Active Model remains unqualified for both delivery paths
 
+The later [mod delivery experiment](herdr-mod-model-delivery-prototype.md)
+demonstrated a real CLI Model change and held-helper refusals using existing
+extensions. It is an owner-authorized feasibility prototype, not completion of
+all production prerequisites below. Upstream changes are out of scope.
+
 The existing isolated live suite qualifies App navigation and passive row 3
 projection on the reviewed signed App 0.1.14/Core 0.1.19 pair. Its Codex and
 Claude labels come from disposable OSC status programs. They are not provider

@@ -67,6 +67,7 @@ async function prepare(run, artifactDirectory) {
   run.env = (run.effects.environment ?? appEnvironment)(
     run.root,
     artifacts.core,
+    manifest.appRecord.version,
   );
   if (run.effects.buildMode) run.report.buildMode = run.effects.buildMode;
   run.children = {};

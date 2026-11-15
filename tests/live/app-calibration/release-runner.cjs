@@ -4,7 +4,7 @@ const net = require('node:net');
 const { execFileSync } = require('node:child_process');
 const { appAuthorization, appEnvironment } = require('./isolation.cjs');
 const { runCalibration } = require('./harness.cjs');
-const { stageRelease } = require('./release-stage.cjs');
+const { stageRelease, reviewedRelease } = require('./release-stage.cjs');
 const { releaseFeed, writePolicy } = require('./release-policy.cjs');
 const { hash } = require('./artifacts.cjs');
 const { releaseScenarios } = require('./release-scenarios.cjs');
@@ -76,7 +76,11 @@ async function runReleaseCalibration(
       ? 'Release calibration requires ASW_LIVE_HERDR_APP_RELEASE=1'
       : null);
   if (reason) return { outcome: 'disabled', reason, productionApproved: false };
-  const feed = await releaseFeed(),
+  const reviewed = reviewedRelease(artifactDirectory);
+  const feed = await releaseFeed({
+      appVersion: reviewed.app.version,
+      coreVersion: reviewed.core.version,
+    }),
     blocked = await blockedPort();
   let boundary, policy, policySha256, catShell, catShellSha256;
   try {
@@ -87,14 +91,16 @@ async function runReleaseCalibration(
         buildMode: 'installed-release-contained',
         stageArtifacts: (directory, destination) =>
           stageRelease(directory, destination),
-        environment(root, core) {
+        environment(root, core, appVersion) {
           const state = path.join(root, 'state');
           fs.mkdirSync(state, { mode: 0o700 });
-          const result = appEnvironment(state, core);
+          const result = appEnvironment(state, core, appVersion);
           result.HC_INSTALL_DIR = path.join(state, 'install');
           result.HERDR_RELEASES_URL = feed.url;
           boundary = containmentProbe(root, feed, blocked);
-          catShell = path.join(root, 'cat-shell');
+          // 0.1.16 recognizes POSIX shell basenames before wrapping argv.
+          // This remains our compiled fixed-command shim, with no shell parser.
+          catShell = path.join(root, 'zsh');
           execFileSync(
             '/usr/bin/clang',
             [
@@ -102,6 +108,8 @@ async function runReleaseCalibration(
               '-Wall',
               '-Werror',
               ...(effects.navigation ? ['-DDECKSHEP_NAVIGATION'] : []),
+              ...(effects.modelDelivery ? ['-DDECKSHEP_MODEL_DELIVERY'] : []),
+              ...(effects.inputGateProbe ? ['-DDECKSHEP_INPUT_GATE'] : []),
               path.join(__dirname, 'release-cat-shell.c'),
               '-o',
               catShell,
@@ -110,6 +118,7 @@ async function runReleaseCalibration(
           );
           catShellSha256 = hash(fs.readFileSync(catShell));
           result.SHELL = catShell;
+          if (effects.prepareState) effects.prepareState(root, result);
           return result;
         },
         launch(run, file, args, options) {
@@ -123,8 +132,10 @@ async function runReleaseCalibration(
                 catShell,
                 '/bin/cat',
                 '/usr/bin/curl',
+                ...(effects.additionalExecutables?.(run) ?? []),
               ],
               feed.port,
+              { codexPreferences: effects.modelDelivery === true },
             );
             policySha256 = hash(fs.readFileSync(policy));
           }

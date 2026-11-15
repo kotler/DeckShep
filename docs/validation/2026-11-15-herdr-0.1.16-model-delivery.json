@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "appModExecuted": true,
+  "realCodexMutation": true,
+  "authenticated": false,
+  "background": true,
+  "editorInputEvents": 0,
+  "positive": {
+    "model": "GPT-5.6-Sol",
+    "effort": "high",
+    "writes": 7,
+    "lastWriteMs": 1608
+  },
+  "expired": {
+    "protocol": 1,
+    "kind": "refused",
+    "reason": "expired",
+    "steps": 0,
+    "writes": 0
+  },
+  "moved": {
+    "protocol": 1,
+    "kind": "refused",
+    "reason": "target changed",
+    "steps": 0,
+    "writes": 0
+  },
+  "retired": {
+    "protocol": 1,
+    "kind": "refused",
+    "reason": "retired",
+    "steps": 1,
+    "writes": 0
+  },
+  "heldRetired": {
+    "protocol": 1,
+    "kind": "refused",
+    "reason": "retired",
+    "steps": 2,
+    "writes": 0
+  },
+  "heldFocus": {
+    "protocol": 1,
+    "kind": "refused",
+    "reason": "target changed",
+    "steps": 2,
+    "writes": 0
+  },
+  "heldABA": {
+    "protocol": 1,
+    "kind": "refused",
+    "reason": "target changed",
+    "steps": 2,
+    "writes": 0
+  },
+  "heldExpired": {
+    "protocol": 1,
+    "kind": "refused",
+    "reason": "expired",
+    "steps": 2,
+    "writes": 0
+  },
+  "partial": {
+    "protocol": 1,
+    "kind": "uncertain",
+    "reason": "target changed",
+    "steps": 4,
+    "writes": 2
+  },
+  "defaultsUnchanged": true,
+  "configBytesUnchanged": true,
+  "otherChatUnchanged": true,
+  "cliSha256": "739cda86e15d30a6e2b40cf8dcbbfb988aaf48b305b27065573bb8e9fd41d002",
+  "cliVersion": "0.169.0",
+  "relaySha256": "e839726b8bb6aad541888bfe4352c9c183edcdd7c599f5ca84ef6946a51fa2b2",
+  "modSha256": "f5a2acafa58e6b7d4a5698102092e4b5e3469f899242562e05166ca286cc2530",
+  "route": "mod + local relay + Core attach DATA",
+  "productionQualified": false,
+  "cleanup": true,
+  "settingsUnchanged": true,
+  "builds": {
+    "appSource": "034f8b85f7e6bb71f8ff55cb4a80c548b2578c0f",
+    "coreSource": "1b0393f80c35b1dae34f37934d33d0144a8fc8d7",
+    "app": {
+      "contract": 1,
+      "bundleId": "dev.herdr.app",
+      "executable": "Herdr",
+      "version": "0.1.16",
+      "build": "0.1.16",
+      "executableSha256": "985e70ce4d78c58ceb1e5e6ea2ccb03231d46fef18a0e04ec6ca5380a4099805",
+      "plistSha256": "ccb58f6e3cbeefb6f43612ebfa95d784c6fb938a3b701909ba106a7ec863b8a6",
+      "cdHash": "d3580a0126f503295e6e9719eb985d091ff59703"
+    },
+    "appTreeSha256": "dfbae2aa8b23c8e6ff731424275a2715af7a79f5c7105af33a062d038d1d2082",
+    "core": {
+      "version": "0.1.21",
+      "sha256": "8df48976b421aa60c0508e0807017f1cea75ca8d6ef43dd8d439786b3724e929",
+      "cdHash": "0ceca91b0c34d921df4d82e82026e3d400e73730"
+    },
+    "helperSha256": "358e58767c775833ee27af88e33485f7a3a06bac8c9b5b2801228f80e0058be5"
+  },
+  "outcome": "passed"
+}

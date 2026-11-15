@@ -224,3 +224,85 @@ test('release loader re-attests the exact candidate and retains whole signed cor
     /Release candidate changed/,
   );
 });
+
+test('release loader maps the newly reviewed pair and refuses a mixed pair', async (t) => {
+  const { stageRelease } = require('../live/app-calibration/release-stage.cjs');
+  for (const coreVersion of ['0.1.21', '0.1.19']) {
+    const f = fixture(t);
+    for (const [file, version] of [
+      [f.build.plist, '0.1.16'],
+      [path.join(f.core, 'Contents/Info.plist'), coreVersion],
+    ]) {
+      const plist = JSON.parse(fs.readFileSync(file));
+      plist.CFBundleVersion = plist.CFBundleShortVersionString = version;
+      fs.writeFileSync(file, JSON.stringify(plist));
+    }
+    await prepareReleaseCandidate(f.options, f.effects);
+    const stage = stageRelease(
+      f.options.destination,
+      path.join(f.build.root, 'updated-run-copy'),
+      f.effects,
+    );
+    if (coreVersion === '0.1.19') {
+      await assert.rejects(stage, /candidate changed/);
+      continue;
+    }
+    const result = await stage;
+    assert.equal(result.manifest.appRecord.version, '0.1.16');
+    assert.equal(result.manifest.core.version, '0.1.21');
+    assert.equal(
+      result.manifest.appSource,
+      '034f8b85f7e6bb71f8ff55cb4a80c548b2578c0f',
+    );
+    assert.equal(
+      result.manifest.coreSource,
+      '1b0393f80c35b1dae34f37934d33d0144a8fc8d7',
+    );
+    result.verifyTrees();
+  }
+});
+
+test('reviewed candidate selection rejects a substituted report before launch', (t) => {
+  const {
+    reviewedRelease,
+  } = require('../live/app-calibration/release-stage.cjs');
+  const f = fixture(t);
+  fs.mkdirSync(f.options.destination, { mode: 0o700 });
+  fs.writeFileSync(
+    path.join(f.options.destination, 'release-candidate.json'),
+    JSON.stringify({ app: { version: '0.1.16' }, core: { version: '0.1.21' } }),
+    { mode: 0o600 },
+  );
+  assert.throws(
+    () => reviewedRelease(f.options.destination),
+    /Reviewed signed/,
+  );
+  assert.throws(() => reviewedRelease(undefined), /Reviewed signed/);
+});
+
+test('reviewed candidate selection accepts the recorded bytes and rejects changed bytes', (t) => {
+  const {
+    reviewedRelease,
+  } = require('../live/app-calibration/release-stage.cjs');
+  const record = require('../../docs/validation/2026-11-15-herdr-app-0.1.16-core-0.1.21-artifacts.json');
+  const candidate = Object.fromEntries(
+    Object.entries(record).filter(
+      ([key]) =>
+        !['date', 'scope', 'sourceReview', 'candidateReportSha256'].includes(
+          key,
+        ),
+    ),
+  );
+  const f = fixture(t);
+  fs.mkdirSync(f.options.destination, { mode: 0o700 });
+  const file = path.join(f.options.destination, 'release-candidate.json');
+  fs.writeFileSync(file, JSON.stringify(candidate, null, 2) + '\n', {
+    mode: 0o600,
+  });
+  assert.equal(reviewedRelease(f.options.destination).app.version, '0.1.16');
+  fs.appendFileSync(file, '\n');
+  assert.throws(
+    () => reviewedRelease(f.options.destination),
+    /Reviewed signed/,
+  );
+});

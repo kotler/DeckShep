@@ -11,7 +11,12 @@ function quoted(value) {
 /** No executable stages, shell, open, launchctl, generic network or user HOME.
  * Bundles are read-only even to the App updater. Only runtime state is writable.
  * This is a test policy, not a production security boundary or public API. */
-function releasePolicy(root, executables, port) {
+function releasePolicy(
+  root,
+  executables,
+  port,
+  { codexPreferences = false } = {},
+) {
   privateDirectory(root);
   if (!Number.isInteger(port) || port < 1024 || port > 65535)
     throw Error('Unsafe release policy');
@@ -49,6 +54,15 @@ function releasePolicy(root, executables, port) {
       '(version 1)',
       '(deny default)',
       '(deny lsopen appleevent-send)',
+      ...(codexPreferences
+        ? [
+            '(allow user-preference-read (preference-domain "com.openai.codex"))',
+            '(allow system-info (info-type "vfs.disk-space"))',
+            '(allow ipc-posix-shm-read* (ipc-posix-name "apple.cfprefs.' +
+              process.getuid() +
+              'v1") (ipc-posix-name "apple.cfprefs.daemonv1"))',
+          ]
+        : []),
       '(import "dyld-support.sb")',
       '(allow mach-bootstrap syscall*)',
       '(allow file-map-executable (subpath "/System") (subpath "/usr/lib") ' +
@@ -95,12 +109,16 @@ function releasePolicy(root, executables, port) {
     ].join('\n') + '\n'
   );
 }
-async function releaseFeed({ limit = 8 } = {}) {
+async function releaseFeed({
+  limit = 8,
+  appVersion = '0.1.14',
+  coreVersion = '0.1.19',
+} = {}) {
   let requests = 0,
     refused = 0;
   const routes = {
-    '/app/latest.json': { version: '0.1.14', targets: {} },
-    '/core/latest.json': { version: '0.1.19', generation: 1, targets: {} },
+    '/app/latest.json': { version: appVersion, targets: {} },
+    '/core/latest.json': { version: coreVersion, generation: 1, targets: {} },
   };
   const server = http.createServer((request, response) => {
     requests++;
@@ -143,9 +161,9 @@ async function releaseFeed({ limit = 8 } = {}) {
       }),
   };
 }
-function writePolicy(root, executables, port) {
+function writePolicy(root, executables, port, options) {
   const file = path.join(root, 'release.sb');
-  fs.writeFileSync(file, releasePolicy(root, executables, port), {
+  fs.writeFileSync(file, releasePolicy(root, executables, port, options), {
     mode: 0o600,
     flag: 'wx',
   });

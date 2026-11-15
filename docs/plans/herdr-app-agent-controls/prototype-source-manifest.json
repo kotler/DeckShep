@@ -1,0 +1,101 @@
+{
+  "date": "2026-11-14",
+  "scope": "static extension-point inspection; cache text may normalize the final newline",
+  "appHead": "5216e6f9f8c0c281a65e09816c66e4319e671784",
+  "coreHead": "c84d6e76156a6c2aac1da20efbe800f10acfe897",
+  "liveAppVersion": "0.1.14",
+  "liveCoreVersion": "0.1.19",
+  "files": [
+    {
+      "repository": "herdrdev/herdr-app",
+      "revision": "2405bf388c568c3ed479f05b8e405ccfa44b3f2c",
+      "path": "defaults/AGENTS.md",
+      "cachedTextSha256": "8150eec2c1a29861d773cb20846e7d8f81dab0211e3a4a9c14ecc3c0a780bd96",
+      "url": "https://github.com/herdrdev/herdr-app/blob/2405bf388c568c3ed479f05b8e405ccfa44b3f2c/defaults/AGENTS.md"
+    },
+    {
+      "repository": "herdrdev/herdr-app",
+      "revision": "2405bf388c568c3ed479f05b8e405ccfa44b3f2c",
+      "path": "defaults/herdr.d.ts",
+      "cachedTextSha256": "e5996f7526fe55c48b709975b153db61745fa1aa3fc233f13dd48770e4848f67",
+      "url": "https://github.com/herdrdev/herdr-app/blob/2405bf388c568c3ed479f05b8e405ccfa44b3f2c/defaults/herdr.d.ts"
+    },
+    {
+      "repository": "herdrdev/herdr-app",
+      "revision": "2405bf388c568c3ed479f05b8e405ccfa44b3f2c",
+      "path": "src/commands.rs",
+      "cachedTextSha256": "2ea183d3a10e97c1af99bd7a9268fa74507b2c90241bd2d96321488e314d87f9",
+      "url": "https://github.com/herdrdev/herdr-app/blob/2405bf388c568c3ed479f05b8e405ccfa44b3f2c/src/commands.rs"
+    },
+    {
+      "repository": "herdrdev/herdr-app",
+      "revision": "2405bf388c568c3ed479f05b8e405ccfa44b3f2c",
+      "path": "src/hc.rs",
+      "cachedTextSha256": "4d3115e6515e2fbfb0267a990dc02f2748a929760a83d2809874f45779b5e921",
+      "url": "https://github.com/herdrdev/herdr-app/blob/2405bf388c568c3ed479f05b8e405ccfa44b3f2c/src/hc.rs"
+    },
+    {
+      "repository": "herdrdev/herdr-app",
+      "revision": "2405bf388c568c3ed479f05b8e405ccfa44b3f2c",
+      "path": "src/window.rs",
+      "cachedTextSha256": "951a31be067e4b0983e81a1958ef1bcd78ac1b1ccf53f12a697b8f49e778444a",
+      "url": "https://github.com/herdrdev/herdr-app/blob/2405bf388c568c3ed479f05b8e405ccfa44b3f2c/src/window.rs"
+    },
+    {
+      "repository": "herdrdev/herdr-app",
+      "revision": "5216e6f9f8c0c281a65e09816c66e4319e671784",
+      "path": "defaults/herdr.d.ts",
+      "cachedTextSha256": "4ced74091be754afdfafcb8d2e475dc5281972176147e4289af8faa5c9be92b1",
+      "url": "https://github.com/herdrdev/herdr-app/blob/5216e6f9f8c0c281a65e09816c66e4319e671784/defaults/herdr.d.ts"
+    },
+    {
+      "repository": "herdrdev/herdr-app",
+      "revision": "5216e6f9f8c0c281a65e09816c66e4319e671784",
+      "path": "src/hc.rs",
+      "cachedTextSha256": "a36b0743cfdbe6e3e44db60f11529057cbe2944919dfe973fcd8ec874cb45638",
+      "url": "https://github.com/herdrdev/herdr-app/blob/5216e6f9f8c0c281a65e09816c66e4319e671784/src/hc.rs"
+    },
+    {
+      "repository": "herdrdev/herdr-app",
+      "revision": "5216e6f9f8c0c281a65e09816c66e4319e671784",
+      "path": "src/mods.rs",
+      "cachedTextSha256": "878e180d9afdc5ca026117fbbe0c57ab905e27bc27560e7300d5704c5188b5af",
+      "url": "https://github.com/herdrdev/herdr-app/blob/5216e6f9f8c0c281a65e09816c66e4319e671784/src/mods.rs"
+    },
+    {
+      "repository": "herdrdev/herdr-app",
+      "revision": "5216e6f9f8c0c281a65e09816c66e4319e671784",
+      "path": "src/window.rs",
+      "cachedTextSha256": "45002b849a21a38f2df82b129dfa79a186e8648671f6bd667181edb9b393868e",
+      "url": "https://github.com/herdrdev/herdr-app/blob/5216e6f9f8c0c281a65e09816c66e4319e671784/src/window.rs"
+    },
+    {
+      "repository": "herdrdev/herdr-app",
+      "revision": "2405bf388c568c3ed479f05b8e405ccfa44b3f2c",
+      "path": "src/mods.rs",
+      "cachedTextSha256": "9a2df7cf778d668cee7bc0511476fd4218d95f3afd522a7c7b27d13bbab944f7",
+      "url": "https://github.com/herdrdev/herdr-app/blob/2405bf388c568c3ed479f05b8e405ccfa44b3f2c/src/mods.rs"
+    },
+    {
+      "repository": "herdrdev/herdr-core",
+      "revision": "c84d6e76156a6c2aac1da20efbe800f10acfe897",
+      "path": "crates/herdr-core/src/input.rs",
+      "cachedTextSha256": "64578013f198c0c62c3d07ef400a770b3068d44c63b2a9637548696d3ac1cb50",
+      "url": "https://github.com/herdrdev/herdr-core/blob/c84d6e76156a6c2aac1da20efbe800f10acfe897/crates/herdr-core/src/input.rs"
+    },
+    {
+      "repository": "herdrdev/herdr-core",
+      "revision": "c84d6e76156a6c2aac1da20efbe800f10acfe897",
+      "path": "schema/hc.openrpc.json",
+      "cachedTextSha256": "c99dab00c7f818bfc88b39485793b47b421f9348da9ab4e850fc1c0dcb8a7d5a",
+      "url": "https://github.com/herdrdev/herdr-core/blob/c84d6e76156a6c2aac1da20efbe800f10acfe897/schema/hc.openrpc.json"
+    },
+    {
+      "repository": "herdrdev/herdr-app",
+      "revision": "5216e6f9f8c0c281a65e09816c66e4319e671784",
+      "path": "src/commands.rs",
+      "cachedTextSha256": "63a858dc419fb7953c7eb3cd3d726ccc69e53e4d14f8e9e56ac155325357ba4e",
+      "url": "https://github.com/herdrdev/herdr-app/blob/5216e6f9f8c0c281a65e09816c66e4319e671784/src/commands.rs"
+    }
+  ]
+}

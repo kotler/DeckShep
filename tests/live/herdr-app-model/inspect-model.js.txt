@@ -1,0 +1,23 @@
+// Test-only readback: reopen the actual native picker, read current markers,
+// and cancel both menus without applying a setting. Shares Rex's recognizers.
+export async function inspectCodexModel(port) {
+  const initial = await port.read();
+  idle(initial);
+  let m = menu(await command(port, initial, '/model'));
+  if (m.title === 'Select Model') {
+    const all = m.rows.find((row) => row.name === 'All models');
+    if (!all) throw Error('Check models');
+    m = await move(port, m, all);
+    m = menu(await port.key(m.view, 'enter'));
+  }
+  if (m.title !== 'Select Model and Effort' || m.footer !== 'enter select · esc back') throw Error('Check models');
+  const model = current(m).name;
+  m = await move(port, m, current(m));
+  const levels = menu(await port.key(m.view, 'enter'));
+  if (normalize(levels.title) !== normalize('Select Reasoning Level for ' + model)) throw Error('Check reasoning');
+  const effort = normalize(initialEffort(levels).name);
+  const models = menu(await port.key(levels.view, 'escape'));
+  if (current(models).name !== model) throw Error('Check models');
+  idle(await port.key(models.view, 'escape'));
+  return { label: model, state: { model, effort } };
+}

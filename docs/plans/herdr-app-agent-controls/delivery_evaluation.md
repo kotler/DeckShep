@@ -3,6 +3,26 @@
 **Date** 2026-11-14  
 **Scope** Automatic focus tracking and one Rex-equivalent Model control in Herdr App
 
+**Later experiment:** The [mod delivery prototype](herdr-mod-model-delivery-prototype.md)
+proved an actual native Model change through a mod, local relay and existing
+Core attach DATA stream, including background operation. This corrects the
+earlier conclusion that upstream work was necessarily required for delivery.
+The full approved production guard contract remains unqualified, and upstream
+changes are out of scope.
+
+**Production qualification result:** The [native Core gate experiment](../../validation/2026-11-14-herdr-core-input-gate.md)
+subsequently reproduced delivery after the press deadline and after viewer
+closure. Ordinary attach DATA therefore fails the approved retirement/expiry
+contract. Helper checks and disconnects cannot qualify this route. The
+provider API retains its separate application-ordering and identity gaps.
+
+**Updated native pair:** The November 15 authorized run against signed App
+0.1.16/Core 0.1.21 passed lifecycle calibration and real background Model
+delivery, and reproduced late input on both native transports. Virtual-deck
+navigation also failed its editor foreground assertion with Chrome frontmost.
+See the [updated validation](../../validation/2026-11-15-herdr-app-0.1.16-core-0.1.21.md)
+for each run's outcome and retained evidence.
+
 ## Result
 
 Both delivery paths were evaluated through repository source, existing fixture tests and focused in-memory probes. Each needs additional capability before it meets the approved requirements. Keep delivery selection open. The next technical work is to establish an authoritative App-to-Core binding and a recipient that enforces the captured focus/session/state when Model first takes effect. The passive tracker can be developed independently. [Technical plan](../HERDR-APP-AGENT-CONTROLS-DESIGN.md#technical-plan)
@@ -114,3 +134,9 @@ by a supported recipient mapping. Keep informational Model, both delivery
 paths and background/Rex-equivalence requirements. The
 [native validation runbook](native-model-validation.md) specifies the future
 owned-session experiment without approximating missing guarantees.
+
+The subsequent [Herdr-side prototype](herdr-model-prototype.md) exercises an
+actual observation mod in the isolated App and a guarded reference receiver
+for each candidate. Existing extension points cover background observations;
+the required binding/continuity and conditional-commit interfaces still need
+upstream work or equivalent integration inside the owning components.

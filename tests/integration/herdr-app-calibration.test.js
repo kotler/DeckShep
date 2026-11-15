@@ -96,6 +96,23 @@ test('disposable setup seeds only the reviewed welcome/version state and preserv
   assert.deepEqual(report.initialView, { overlays: 0, floats: 0, errors: 0 });
 });
 
+test('disposable setup seeds the selected App version in its own home', (t) => {
+  const root = fs.mkdtempSync('/private/tmp/dsh-app-version-');
+  fs.chmodSync(root, 0o700);
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const env = appEnvironment(root, root + '/herdr-core', '0.1.16');
+  assert.deepEqual(
+    JSON.parse(
+      fs.readFileSync(path.join(env.HERDR_APP_HOME, 'update-notes.json')),
+    ),
+    { last_run: '0.1.16', presented: [] },
+  );
+  assert.deepEqual(
+    JSON.parse(fs.readFileSync(path.join(env.HERDR_APP_HOME, 'shared.json'))),
+    { 'frame.welcomed': 'test' },
+  );
+});
+
 test('unowned App/core peers receive no request bytes and every failure cleans up with settings checks', async (t) => {
   for (const kind of ['core', 'app']) {
     const fixture = calibrationFixture(t, {

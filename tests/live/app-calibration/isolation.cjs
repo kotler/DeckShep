@@ -15,7 +15,7 @@ function appAuthorization(env = process.env) {
       : null)
   );
 }
-function appEnvironment(root, core) {
+function appEnvironment(root, core, appVersion = '0.1.14') {
   privateDirectory(root);
   const env = isolatedEnvironment(root, {});
   Object.assign(env, {
@@ -54,7 +54,7 @@ function appEnvironment(root, core) {
   // DeckShep consent. Matching last_run avoids the release-notes popup too.
   for (const [name, value] of Object.entries({
     'shared.json': { 'frame.welcomed': 'test' },
-    'update-notes.json': { last_run: '0.1.14', presented: [] },
+    'update-notes.json': { last_run: appVersion, presented: [] },
   }))
     fs.writeFileSync(
       path.join(env.HERDR_APP_HOME, name),

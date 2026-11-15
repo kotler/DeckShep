@@ -1,0 +1,83 @@
+import { View, div } from 'gpui-kit';
+import * as herdr from 'herdr';
+// __CODEX_CYCLE__: injected from the unchanged Rex keyboard-settings module.
+
+export default class DeckShepModelPrototype extends View {
+  init(_props, cx) {
+    this.previous = '{}';
+    this.consumed = new Set();
+    this.focusKey = '';
+    this.focusRevision = 0;
+    cx.spawn(async () => {
+      for (;;) {
+        const command = await herdr.nextCommand();
+        if (command === 'model' || command === 'inspect') await this.model(command);
+      }
+    });
+  }
+  selected() {
+    const f = herdr.focused();
+    const t = herdr.terminals().find((t) => t.address === f?.terminal);
+    const focused = f && { space: f.space, tab: f.tab, pane: f.pane, terminal: f.terminal };
+    const key = JSON.stringify([focused, t?.pid, t?.created_ms]);
+    if (key !== this.focusKey) { this.focusKey = key; this.focusRevision++; }
+    return { focused, pid: t?.pid, created_ms: t?.created_ms, revision: this.focusRevision };
+  }
+  async model(command = 'model') {
+    const request = JSON.parse(await herdr.readTextFile(herdr.appHome() + '/data/model-request.json'));
+    if (!request || request.protocol !== 1 || typeof request.nonce !== 'string') return;
+    if (this.consumed.has(request.nonce)) return;
+    this.consumed.add(request.nonce);
+    let steps = 0;
+    let effects = 0;
+    let inputPending = false;
+    const initial = this.selected();
+    const check = () => {
+      const now = Date.now(), s = this.selected();
+      if (now < request.pressedAt || now >= request.pressedAt + 2000) throw Error('expired');
+      if (JSON.stringify(s.focused) !== JSON.stringify(request.focused) ||
+          s.pid !== request.pid || s.created_ms !== request.created_ms ||
+          s.revision !== initial.revision) throw Error('target changed');
+      return s;
+    };
+    const call = async (op, view, value) => {
+      const selected = check();
+      if (op !== 'read') inputPending = true;
+      const reply = await herdr.exec(herdr.appHome() + '/data/model-relay', [JSON.stringify({
+        protocol: 1, nonce: request.nonce, step: ++steps, op,
+        selected, hash: view?.hash || null, value: value || null,
+      })], { timeout: 3000 });
+      if (reply.code !== 0) throw Error('relay unavailable');
+      const result = JSON.parse(reply.stdout);
+      if (!Number.isInteger(result.writes) || result.writes < effects) throw Error('relay unavailable');
+      effects = result.writes;
+      inputPending = false;
+      if (!result.ok) throw Error(result.reason);
+      check();
+      return result.view;
+    };
+    let result;
+    try {
+      check();
+      const port = {
+        read: () => call('read'),
+        key: (view, key) => call('key', view, key),
+        paste: (view, text) => call('paste', view, text),
+      };
+      const value = command === 'inspect' ? await CodexSettings.inspectCodexModel(port) : await CodexSettings.cycleCodexSetting(port, 'model');
+      result = { protocol: 1, nonce: request.nonce, kind: 'confirmed', label: value.label, ...(value.state ? { state: value.state } : {}), steps };
+    } catch (error) {
+      // Keep provider text, folders and paths out of the retained result.
+      const known = ['expired', 'target changed', 'view changed', 'retired', 'relay unavailable'];
+      const reason = known.includes(error.message) ? error.message : 'picker refused';
+      result = { protocol: 1, nonce: request.nonce, kind: effects || inputPending ? 'uncertain' : 'refused', reason, steps };
+    }
+    const next = JSON.stringify(result);
+    await herdr.writeTextFile(herdr.appHome() + '/data/model-result.json', next, this.previous);
+    this.previous = next;
+  }
+  render() {
+    this.selected();
+    return div().child('DeckShep isolated Model prototype');
+  }
+}

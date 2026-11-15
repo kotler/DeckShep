@@ -1,0 +1,30 @@
+{
+  "version": "codex-cli 0.169.0",
+  "scope": "offline schema only; no daemon or credentials",
+  "params": [
+    "approvalPolicy",
+    "approvalsReviewer",
+    "collaborationMode",
+    "cwd",
+    "disabledPluginIds",
+    "effort",
+    "environments",
+    "model",
+    "multiAgentMode",
+    "permissions",
+    "personality",
+    "sandboxPolicy",
+    "serviceTier",
+    "summary",
+    "threadId"
+  ],
+  "relatedMethods": [
+    "account/gatewayOAuth/cancel",
+    "account/login/cancel",
+    "thread/sample/cancel",
+    "thread/settings/update",
+    "turn/settings/update",
+    "userVerification/cancel"
+  ],
+  "schemaSha256": "b47eb1e37bf93ba91e01df12ed56ddd55c23d1f31ea04f91c77aa812bda9fd3a"
+}
