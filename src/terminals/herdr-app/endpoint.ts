@@ -83,14 +83,13 @@ export function inspectSocket(
       !socket.isSocket() ||
       socket.uid !== uid ||
       socket.mode & 0o022 ||
+      // ADR 0008: the private App home protects every socket mode, including
+      // 0600 sockets. POSIX mode alone does not account for macOS ACL grants.
+      (policy === 'app' &&
+        (socket.nlink !== 1 || !privateAppDirectory(parent, directory))) ||
       (socket.mode & 0o077 &&
         policy !== 'core' &&
-        !(
-          policy === 'app' &&
-          (socket.mode & 0o7777) === 0o755 &&
-          socket.nlink === 1 &&
-          privateAppDirectory(parent, directory)
-        ))
+        !(policy === 'app' && (socket.mode & 0o7777) === 0o755))
     )
       throw Error();
     return {

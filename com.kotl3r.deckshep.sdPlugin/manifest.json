@@ -26,9 +26,7 @@
       "Name": "DeckShep Key",
       "UUID": "com.kotl3r.deckshep.key",
       "Icon": "action-icon",
-      "Controllers": [
-        "Keypad"
-      ],
+      "Controllers": ["Keypad"],
       "PropertyInspectorPath": "inspector.html",
       "States": [
         {

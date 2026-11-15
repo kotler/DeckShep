@@ -22,9 +22,11 @@ stay outside the shipped bundle. Package audits reject their fixture marker.
 ## Verification performed
 
 - Focused navigation, setup, preferences and distribution regressions passed all
-  69 tests.
-- Full coverage run passed 770 tests, with four intentional live-test skips and
-  zero failures across 774 tests. Lines/statements 95.79%, functions 92.22%,
+  69 tests. After review, the transport/focus/lifecycle/controller run passed all
+  82 tests, including ACL and hard-link regressions for 0600/0700/0755 sockets.
+  The new 0600/0700 ACL cases failed before the fix and passed after it.
+- Final coverage run passed 772 tests, with four intentional live-test skips and
+  zero failures across 776 tests. Lines/statements 95.79%, functions 92.22%,
   branches 88.22%. All existing thresholds were preserved.
 - Typecheck, lint, formatting, dependency boundaries, unused-code scan, version
   identity and generated compatibility checks passed.
@@ -45,6 +47,16 @@ stay outside the shipped bundle. Package audits reject their fixture marker.
 `origin/main` was fetched during preparation. It remained the branch’s existing
 base, with no intervening upstream commits. No push, merge, tag or publication
 was performed.
+
+## Review closure
+
+The independent Standards and Spec reviews have no open findings. Both detected
+the App-home ACL bypass, and Standards also found local paths in five older
+review records. The guard and privacy fixes are covered in the
+[review record](../plans/reviews/herdr-app-navigation/release-review.md).
+Commit conventions pass against the fetched main branch. Unrelated pre-existing
+root scratch reports are preserved outside the release commit set; a clean
+temporary checkout is used for candidate packaging.
 
 ## Native evidence and remaining launch review
 

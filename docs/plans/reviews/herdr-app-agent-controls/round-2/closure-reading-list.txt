@@ -1,2 +1,2 @@
-/Users/everettkotler/Workspace/DeckShep/docs/plans/reviews/herdr-app-agent-controls/consolidated_review_report.md
-/Users/everettkotler/Workspace/DeckShep/docs/plans/reviews/herdr-app-agent-controls/goldfish_review_report.md
+docs/plans/reviews/herdr-app-agent-controls/consolidated_review_report.md
+docs/plans/reviews/herdr-app-agent-controls/goldfish_review_report.md

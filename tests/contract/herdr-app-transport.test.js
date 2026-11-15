@@ -174,7 +174,10 @@ test('endpoint checks reject public permissions, regular files, wrong owner and 
   assert(inspectSocket(peer.file, 'core').identity);
   const alias = path.join(peer.directory, 'second.sock');
   fs.linkSync(peer.file, alias);
-  assert.throws(() => inspectSocket(peer.file, 'app'), /Unsafe/);
+  for (const mode of [0o600, 0o700, 0o755]) {
+    fs.chmodSync(peer.file, mode);
+    assert.throws(() => inspectSocket(peer.file, 'app'), /Unsafe/);
+  }
   fs.unlinkSync(alias);
   for (const mode of [0o775, 0o757, 0o777]) {
     fs.chmodSync(peer.file, mode);
@@ -223,20 +226,23 @@ test('endpoint checks reject public permissions, regular files, wrong owner and 
   assert.equal(peer.calls.length, 0);
 });
 
-test(
-  'an ACL change invalidates a previously private App socket directory',
-  {
-    skip: process.platform !== 'darwin',
-  },
-  async (t) => {
-    const peer = await fakeServer(t, coreReply);
-    fs.chmodSync(peer.file, 0o755);
-    assert(inspectSocket(peer.file, 'app').identity);
-    execFileSync('/bin/chmod', ['+a', 'everyone allow search', peer.directory]);
-    assert.throws(() => inspectSocket(peer.file, 'app'), /Unsafe/);
-    assert.equal(peer.calls.length, 0);
-  },
-);
+for (const mode of [0o600, 0o700, 0o755])
+  test(
+    `an ACL change invalidates an App socket directory with mode ${mode.toString(8)}`,
+    { skip: process.platform !== 'darwin' },
+    async (t) => {
+      const peer = await fakeServer(t, coreReply);
+      fs.chmodSync(peer.file, mode);
+      assert(inspectSocket(peer.file, 'app').identity);
+      execFileSync('/bin/chmod', [
+        '+a',
+        'everyone allow search',
+        peer.directory,
+      ]);
+      assert.throws(() => inspectSocket(peer.file, 'app'), /Unsafe/);
+      assert.equal(peer.calls.length, 0);
+    },
+  );
 
 for (const [name, reply] of [
   ['malformed', '{bad\n'],
