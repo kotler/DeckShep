@@ -5,6 +5,7 @@ import { releasePolicy } from './release-policy.mjs';
 import { preserveInstallerHelperModes } from './installer-modes.mjs';
 import { zip, tree, readRegular } from './archive.mjs';
 import { releaseReadinessFailures } from './release-readiness.mjs';
+import { verifyNativeHelpers } from './native-helpers.mjs';
 import {
   root,
   PAYLOAD,
@@ -66,17 +67,7 @@ if (option('--verify')) {
     '--no-update-check',
     '--no-file-list',
   ]);
-  for (const architecture of ['arm64', 'x86_64'])
-    for (const helper of [
-      'visible-pane',
-      'herdr-app-peer',
-      'codex-hook-process',
-    ])
-      run('lipo', [
-        path.join(plugin, 'bin', helper),
-        '-verify_arch',
-        architecture,
-      ]);
+  verifyNativeHelpers(path.join(plugin, 'bin'));
   const installerFile = path.join(root, 'dist', INSTALLER);
   fs.writeFileSync(
     installerFile,

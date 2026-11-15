@@ -16,8 +16,7 @@ const { spawnSync } = require('node:child_process');
 const { setTimeout: delay } = require('node:timers/promises');
 const { checkPicker } = require('./rex-picker.cjs');
 const { readRexApi } = require('../../src/terminals/rex/diagnostics');
-const rex =
-  '/Applications/Rex Beta.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex';
+const { discoverRex } = require('../../src/platform/paths');
 const reason = authorization('rex');
 
 function run(file, args, options) {
@@ -57,6 +56,8 @@ test(
     timeout: process.env.ASW_LIVE_REX_STATES === '1' ? 600000 : 60000,
   },
   async (t) => {
+    // Discovery is inside the authorized callback, never during skipped fixture/CI runs.
+    const { binary: rex } = await discoverRex(process.env.ASW_REX_PATH);
     const before = settingsHashes(os.homedir()),
       directory = fs.realpathSync(
         fs.mkdtempSync(path.join('/tmp', 'asw-rex-live-')),
@@ -74,6 +75,11 @@ test(
       }
     });
     const options = { env: isolatedEnvironment(directory), cwd: directory };
+    const version = /^rex ([0-9A-Za-z.+-]{1,80})$/m.exec(
+      run(rex, ['--autostart=false', 'version'], options),
+    );
+    assert(version, 'Rex CLI version unavailable');
+    t.diagnostic('Rex CLI ' + version[1]);
     const repo = path.join(directory, 'repo');
     fs.mkdirSync(repo, { mode: 0o700 });
     run('/usr/bin/git', ['init', '--quiet', repo], options);

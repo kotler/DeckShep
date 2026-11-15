@@ -5,6 +5,8 @@ The installed plugin uses Stream Deck's own Node runtime.
 
 ```sh
 npm ci
+npm run hooks:install
+npm run privacy:source
 npm run lint
 npm run format:check
 npm run typecheck
@@ -24,9 +26,26 @@ inspector fixtures and typed ESLint rules; it is not the type-check command.
 
 These commands build locally and run isolated fixtures. They do not install the
 plugin or authorize live testing. Coverage thresholds must not be lowered.
-Read [AGENTS.md](AGENTS.md) for architecture and standing safety requirements.
+Read [AGENTS.md](AGENTS.md) for standing safety requirements and
+[the architecture reference](docs/agents/architecture.md) for module and key behavior.
 Use Conventional Commits, separate logic, moves, formatting and documentation,
 and describe behavior changes, validation, golden changes and open questions.
+
+## Source privacy and PR triage
+
+For read-only GitHub PR triage, use `npm run github:prs` (current origin) or
+`npm run github:prs -- --repo owner/repository --limit 100`. It requests metadata,
+check summaries and review decisions/thread counts without PR bodies or patches.
+The JSON reports inventory/check/review completeness; missing or incomplete
+checks never count as passed. Inspect a selected PR's body or diff separately.
+This is a status summary, not a merge-readiness verdict.
+
+The optional clone-local pre-commit hook scans staged source, including staged
+exception policy. `privacy:source` scans tracked working files and runs in CI.
+Findings report file/line only, never matched private text. Keep synthetic
+exceptions scoped to an exact file and account with a reason. If custom hooks
+already exist, integrate `node scripts/source-privacy.mjs --staged` there;
+`hooks:install` refuses to overwrite them.
 
 ## Browser fixture preview
 
@@ -129,3 +148,19 @@ third-party attribution intact. The DeckShep name and key-and-crook artwork are
 reserved; renamed forks must replace them as described in [TRADEMARKS.md](TRADEMARKS.md).
 Provider marks remain their owners' trademarks with permission pending.
 Publishing, merging, releases and Marketplace submission remain maintainer actions.
+
+## Code and review conventions
+
+
+- `src/domain`, `src/guards`, `src/platform`, `src/terminals/rex` and
+  `src/terminals/herdr-tui` are strictly typed with ES imports;
+  `no-explicit-any` is an error there. `src/app` and `src/agents` still carry
+  untyped legacy code (`any`, `require`); type what you touch and write new
+  modules without `any`.
+- No `@ts-expect-error`, `@ts-ignore` or lint suppressions.
+- Keep pure logic out of the controller closure: captions and colours belong in
+  `key-face.ts`, ranking and layout tables in `src/domain`, drawing in
+  `src/render`.
+- Comments explain why a guard exists (link the ADR or validation record).
+- Do not record validation in `docs/validation/` as passed unless it actually
+  ran. Fixture and browser tests grant no native or hardware claim.

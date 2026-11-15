@@ -20,10 +20,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run privacy:source
       - run: npm run lint
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm run deps
+      - run: npm run knip
       - run: npm run version:check
       - run: npm run compatibility:check
       - run: npm run marketplace:media && npm run marketplace:check

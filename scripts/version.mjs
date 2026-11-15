@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { formatJson } from './json-format.mjs';
 const files = [
   'package.json',
   'com.kotl3r.deckshep.sdPlugin/package.json',
@@ -40,7 +41,7 @@ else {
           data.packages['com.kotl3r.deckshep.sdPlugin'].version = value;
       }
     }
-    fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n');
+    fs.writeFileSync(file, await formatJson(data, file));
   }
   checkVersions();
   console.log('Synchronized root, manifest, plugin and lockfile versions');

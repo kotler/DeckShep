@@ -1,0 +1,50 @@
+[
+  {
+    "file": "tests/integration/guided-controller.test.js",
+    "root": "home",
+    "account": "private",
+    "reason": "Synthetic forbidden-path fixture"
+  },
+  {
+    "file": "tests/integration/mixed-agents.test.js",
+    "root": "Users",
+    "account": "u",
+    "reason": "Synthetic process identity fixture"
+  },
+  {
+    "file": "tests/integration/setup-panel.test.js",
+    "root": "home",
+    "account": "token",
+    "reason": "Synthetic secret-path fixture"
+  },
+  {
+    "file": "tests/live/rex-browser-deck.cjs",
+    "root": "home",
+    "account": ".claude",
+    "reason": "Suffix assertion for the disposable home"
+  },
+  {
+    "file": "tests/live/rex-picker.cjs",
+    "root": "home",
+    "account": ".claude",
+    "reason": "Suffix assertion for the disposable home"
+  },
+  {
+    "file": "tests/unit/codex-hook-races.test.js",
+    "root": "home",
+    "account": "secret",
+    "reason": "Synthetic exception privacy fixture"
+  },
+  {
+    "file": "tests/unit/rex-api-diagnostics.test.js",
+    "root": "home",
+    "account": "server.log",
+    "reason": "Synthetic log-path fixture"
+  },
+  {
+    "file": "tests/unit/rex-api-diagnostics.test.js",
+    "root": "home",
+    "account": "secret",
+    "reason": "Synthetic exception privacy fixture"
+  }
+]

@@ -46,15 +46,24 @@ prints a fixed test marker, and persistent approval rules must remain unchanged.
 Native identity transitions require explicit reselection in the driver; production
 stale-input guards remain enabled. Mutations are never retried.
 
-The Rex test launches the installed macOS Rex Beta CLI as a foreground server.
+The Rex test resolves the installed CLI using production discovery (explicit
+`ASW_REX_PATH`, unique Spotlight result, then Beta/stable installation fallbacks).
+Ambiguous discovery refuses. Discovery runs only inside the authorized test.
+It launches that CLI as a foreground server.
 It creates a temporary Git repository, checks that the owned server holds its
 private Unix socket before each CLI request, and verifies input in an owned
 cat pane. Run just this scenario with current authorization:
 
 ```sh
 ASW_LIVE=1 ASW_LIVE_REX=1 ASW_LIVE_AUTHORIZATION=test-owned-only \
-  node --import tsx --test tests/live/rex.test.js
+  npm run test:rex:smoke
 ```
+
+This dedicated command never supplies authorization flags. It forces provider,
+state, browser and hook cases off, including inherited flags, and preserves the
+existing owned PID/socket proof, private environment and settings fingerprints.
+Use the exact-file invocation below for separately authorized provider cases:
+`node --import tsx --test tests/live/rex.test.js`.
 
 Add `ASW_LIVE_REX_PROVIDERS=1 ASW_LIVE_AUTH=signed-in` for the native picker
 checks using disposable Codex Luna (with `--no-daemon`) and Claude Haiku panes.

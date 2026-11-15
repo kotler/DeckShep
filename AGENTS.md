@@ -1,231 +1,93 @@
 # DeckShep standing instructions
 
-DeckShep is a macOS Stream Deck plugin (`com.kotl3r.deckshep`) for the 15-key
-Stream Deck MK.2. It controls coding agents (Codex CLI, Claude Code) that are
-already running in a terminal multiplexer: **Rex** and **Herdr App** navigation
-(packaged in 1.5.0), plus **Herdr TUI** (source-only experimental). Herdr App
-agent input controls are deferred (ADR 0008). Most of the code is
-_guards_: proof that a key press still targets the same agent, process, pane and
-state it was rendered for before any input reaches a terminal.
+DeckShep is a macOS Stream Deck MK.2 plugin (`com.kotl3r.deckshep`) for Codex CLI
+and Claude Code. Releases ship Rex controls and Herdr App navigation (ADR 0008).
+Herdr TUI is source-only experimental; App agent input remains disabled. Keep
+deferred code and tests. Update these instructions when owner decisions change.
 
-These instructions apply to every agent working in this repository. Keep them
-current when commands, architecture or owner decisions change.
+## Required safeguards
 
-## Commands
+- Guards are the product. Preserve identity/process, focus, stale-press,
+  digest/cursor, generation/visibility checks, the 350 ms arming delay,
+  single-use permits and no-retry delivery. A new input path uses the existing
+  `src/app/delivery.ts` `deliver()`. Presses retain the key-down context and
+  refuse after `QUEUE_STALE_MS` (2000 ms). Tests must fail if protection is lost.
+- Consent defaults stay off: clipboard/visible-pane access, Herdr title
+  identity, Claude native controls and Claude/Codex hooks are opt-in.
+- Preserve installed identities: plugin/action UUIDs, `PROFILE_IDS`/`PAGE_IDS`,
+  UUID5 key ActionIDs, `profileScope`, settings v2/v1 migration, config keys,
+  existing ControlIds and hook entry paths. Read `docs/IDENTITY.md` before
+  touching persistence or packaging. New ControlIds may be added.
+- DeckShep never writes a Claude/Codex status line; it only restores a recorded
+  original. Codex setup edits its own `hooks.json` entries, never `config.toml`.
+- Rex navigation uses Rex discovery, status, titles and physical pane selection,
+  independent of provider hooks/daemons. App navigation grants no provider input
+  capability; its third row defaults to blank. Package audits reject experimental
+  flags and nonempty/enabled App defaults. Removed Zoom/Questions/Prompts overrides
+  remain inactive (owner decision, 2026-11-10).
+- Key feedback is at most 15 characters, never cut mid-word; inspector messages
+  at most 160. Text stays at least 20 SVG units, wrapping or ellipsizing dynamic
+  content. State must have a shape cue as well as colour.
+- Keep prompts, transcripts, tokens and private home/workspace paths out of
+  source, logs, errors and artifacts. Run `npm run hooks:install` once per clone;
+  it preserves existing custom hooks. `privacy:source` checks tracked source;
+  the hook checks staged bytes. Synthetic exceptions require one exact file,
+  account and reason in `.source-privacy.json`. Keep package privacy audits.
 
-Node 22.13+ (`.nvmrc` selects 22) and macOS Command Line Tools (Swift builds the
-helpers in `native/`). The root is an npm workspace
-(`com.kotl3r.deckshep.sdPlugin`, `tools`); dev tools run through `scripts/tool.mjs`.
+## Verification and authorization
 
-```sh
-npm ci
-npm test                                   # all node:test groups (tests/**/*.test.js via tsx)
-node --import tsx --test tests/unit/attention.test.js                 # one file
-node --import tsx --test --test-name-pattern="<regex>" <file>         # one test
-npm run test:golden                        # golden layouts, routing, native traces, refusals
-npm run test:coverage                      # c8; thresholds in .c8rc.json
-npm run typecheck                          # strict TS, src + tsconfig.e2e.json; no suppressions
-npm run lint && npm run format:check       # golden JSON must stay byte-stable
-npm run deps                               # dependency-cruiser layer rules
-npm run knip                               # unused files/deps; confirm with rg before deleting
-npm run version:check && npm run compatibility:check
-npm run compat:codex                       # installed Codex still offers every app-server method in use
-npm run build                              # or: npm run build -- --universal (never installs or restarts)
-npm run test:bundled                       # tests against the built bundle
-npm run package                            # validate, pack and audit locally; never uploads
-npm run clean                              # removes only dist/ and coverage/
-npm run deck:preview                       # synthetic 15-key browser deck on a random loopback URL
-npm run e2e:install && npm run test:e2e    # Playwright virtual deck (macOS baselines)
-```
+Use Node selected by `.nvmrc` and macOS Command Line Tools. `package.json` scripts
+are the command authority. Read `CONTRIBUTING.md` before coding, reviewing or
+selecting validation; it owns code conventions and check guidance.
+Run checks appropriate to the change and required CI checks. Keep coverage
+thresholds. Confirm with `rg` before deleting anything Knip reports unused.
 
-CI (`.github/workflows/ci.yml`, macos-15) runs lint, format:check, typecheck,
-deps, version and compatibility checks, `marketplace:media && marketplace:check`,
-test:coverage, test:bundled, npm audit, commitlint, a universal build, Elgato
-validate and package, plus a separate e2e job.
+Default tests may touch only their own processes, temporary homes, files and
+private sockets. Never start, stop, attach to or send input to the developer's
+existing Rex, Herdr, Codex daemon or agents. Installation, `npm run dev`,
+`streamdeck restart`, optional setup/configure commands and migrations against
+the real HOME are never verification shortcuts.
 
-Regenerate golden fixtures only on purpose, with `ASW_UPDATE_GOLDEN=1` (see
-`tests/fixtures/golden/README.md`), and read the diff. `npm run test:e2e:update`
-regenerates the OS-specific screenshots; `tests/e2e/expected/svg-sha256.json` is
-regenerated separately (see `tests/e2e/README.md`). Do either only for an
-intended visual change and say so in the PR. Never lower a coverage threshold to
-hide a regression.
+Live tests require **current explicit authorization**, `ASW_LIVE=1`,
+`ASW_LIVE_AUTHORIZATION=test-owned-only`, owned PID/socket proof and isolated
+resources. Rex additionally requires `ASW_LIVE_REX=1`; Herdr App requires its
+`ASW_LIVE_HERDR_APP=1` / `ASW_LIVE_HERDR_APP_RELEASE=1` gates. Live tests never
+run in CI. Historical logs and inherited flags are not current permission.
+`test:rex:smoke` retains these gates and excludes provider/hook/inference cases.
+Read `tests/live/README.md` for native tests and `tests/e2e/README.md` for the
+separately authorized live App deck, artifact inputs and additional flags.
 
-### Never run as verification
+Regenerate golden JSON only for an intended behavior change with
+`ASW_UPDATE_GOLDEN=1`; inspect the diff and follow `tests/fixtures/golden/README.md`.
+For intentional browser visuals, follow `tests/e2e/README.md`: OS PNG baselines
+and normalized SVG hashes update separately. Mention baseline changes in the PR.
+Only record validation that actually ran; fixture/browser tests prove no native
+or hardware behavior.
 
-`scripts/install.mjs`, `npm run dev`, `streamdeck restart`,
-`scripts/migrate-upgrade.mjs` against the real HOME, optional setup/configure
-commands, or anything in `tests/live/` (`npm run test:live`). Live tests need
-`ASW_LIVE=1` **and** explicit current authorization (Rex also `ASW_LIVE_REX=1`
-plus PID ownership proof; Herdr App `ASW_LIVE_HERDR_APP=1` /
-`ASW_LIVE_HERDR_APP_RELEASE=1`). Never start, stop, attach to or send input to
-the developer's existing Rex, Herdr, Codex daemon or agents. Fixture tests may
-only touch their own process and private temp sockets and files. Historical
-validation logs are evidence, not permission to rerun anything. The separately
-authorized `npm run test:e2e:herdr-app-live` uses the reviewed signed pair.
-See `tests/e2e/README.md` for its artifact input and invocation.
+## Read when changing an area
 
-## Architecture
+- Architecture, events, layout or rendering: `docs/agents/architecture.md` and
+  relevant `docs/adr/*`. Generated plugin-root JS comes from build/bundle scripts.
+- Provider controls or hooks: `docs/CODEX-HOOKS.md`, `docs/CLAUDE.md` and ADR 0003.
+- Profiles, settings or installation: `docs/PROFILES.md` and `docs/IDENTITY.md`.
+- Herdr App navigation: ADR 0004/0007/0008, `docs/plans/HERDR-APP-PLAN.md` and
+  `tests/live/APP-CALIBRATION.md`.
+- App input work: `docs/plans/HERDR-APP-MODEL-PRODUCTION-PLAN.md` and
+  `docs/plans/herdr-app-agent-controls/herdr-mod-model-delivery-prototype.md`.
+  Core 0.1.21 accepted input after expiry/writer closure; App 0.1.16's full
+  navigation run failed its background-editor assertion. Preserve these limits;
+  successful mod probes grant no production capability. Upstream changes are out
+  of scope.
+- Release preparation or downloaded verification: `docs/RELEASING.md`.
+- Issue/spec work: `docs/agents/issue-tracker.md` (GitHub Issues),
+  `docs/agents/triage-labels.md` (five default labels).
+- Terminology or decisions: `docs/agents/domain.md`, root `GLOSSARY.md`, `docs/adr/`.
+  `docs/plans/REFACTOR-PLAN.md` is historical.
 
-Two independent axes, composed only in `src/app` (ADR 0001):
+## Owner decisions
 
-- **Terminal backends** (`src/terminals/{rex,herdr-tui,herdr-app}`, contract in
-  `src/terminals/contract`) own discovery, topology, native focus, reads and
-  delivery.
-- **Providers** (`src/agents/{codex,claude}`, interface in `src/agents/shared`)
-  own identity, state and control semantics.
-- A control is available only where provider support meets _verified_ backend
-  capabilities (ADR 0003). Herdr TUI has no verified composer cursor.
-
-Layers. `npm run deps` (`.dependency-cruiser.cjs`) enforces that domain imports
-nothing, guards import only domain, agents and terminals never import each
-other, app or plugin, and only plugin imports the Stream Deck SDK; the other
-rows are conventions:
-
-| Layer | Holds | May import |
-| --- | --- | --- |
-| `src/domain` | types, layout tables, labels, capabilities, navigation ranking | nothing |
-| `src/guards` | press pipeline, permits, context stamps | domain |
-| `src/platform` | exec, paths, process info | node builtins, domain |
-| `src/agents/*`, `src/terminals/*` | providers and backends | domain, guards, platform, schemas; never each other, app or plugin |
-| `src/render` | `KeySpec`, frame cache, text metrics, SVG drawing | domain, platform |
-| `src/app` | controllers, delivery, key faces, gestures, preferences, setup | everything except plugin |
-| `src/plugin` | entry points | the only place that imports `@elgato/streamdeck` |
-
-### Event and render flow
-
-- `src/plugin/entry.mts` forwards host events (`willAppear`, `willDisappear`,
-  `didReceiveSettings`, `keyDown`, `keyUp`, `sendToPlugin`) to
-  `app.receive(event)` as objects, validated against the `hostEvent` schema.
-  The app sends typed `HostFrame`s (`src/app/host-frame.ts`) through
-  `HostPort.deliver`; string sockets remain for test fixtures.
-- Presses run on one serial queue in `src/app/controller.ts`. A press acts on
-  the context _presented at key-down_ (`k.presented`, `pressedAt`); it is never
-  re-captured at execution time. A press that waited more than
-  `QUEUE_STALE_MS` (2000) is refused with "Press again".
-- `src/app/press-gesture.ts` turns key-down/key-up into `tap` or `hold`
-  (`HOLD_MS` 450). A key with no hold action taps on key-down. A hold replaces
-  only the action and passes the same guards. No holds in the `herdr-app` scope.
-- Input reaches a terminal only through the guarded `deliver()` in
-  `src/app/delivery.ts`, with a single-use permit and no retries (ADR 0002).
-- Rendering: `render()` gathers per-key inputs, `src/app/key-face.ts` (pure)
-  returns a `KeySpec` (`src/render/spec.ts`), and `src/render/frame.ts` caches
-  the encoded image by spec. A tick that changes nothing builds and sends
-  nothing. `src/render/signal.ts` draws the default style.
-- External data is validated at the boundary with zod schemas in `src/schemas`
-  (ADR 0006).
-
-`scripts/build.mjs` and `bundle.mjs` (Rollup) bundle the TypeScript into the
-plugin folder; root JS in `com.kotl3r.deckshep.sdPlugin/` (`claude-hook.js`,
-`configure-claude.js`, `codex-hook.js`, `configure-codex.js`, `inspector.js`,
-`preferences.js`) is **generated**.
-
-### Key map (5×3, one page, no folders)
-
-| | Column 1 | Column 2 | Column 3 | Column 4 | Column 5 |
-| --- | --- | --- | --- | --- | --- |
-| Row 1 | Agent | Agent | Agent | Agent | Agent |
-| Row 2 | Next agent | Page | Collapse | | Attention |
-| Row 3, ready | Model | Effort | Permissions | Mode | Interrupt |
-| Row 3, working | Steer | Queue | Permissions | | Interrupt |
-| Row 3, background | | | Permissions | | Stop |
-| Row 3, question or approval | Up | Down | Confirm | Esc | Interrupt or Toggle |
-
-Row 2 keys appear only when useful: Next with two or more agents, Page with
-more than one bank of five, Collapse with gaps, Attention when another agent is
-waiting, errored or done. Hold Next agent for the previous agent and Page for
-the previous page. In the Herdr App scope, rows 1–2 use the App's local agent
-roster and stable slots. The dot follows the App report. Attention rechecks the
-displayed target and reason before selection or a consented focus request.
-App provider overrides stay inactive and the third row defaults to blank.
-App selection changes reveal its bank once; identical polls preserve later Page
-browsing. Production verifies Herdr’s publisher, live peer, helper and command
-contract without a marketing-version pin. It grants no provider capability.
-
-Before extending App input, read
-`docs/plans/HERDR-APP-MODEL-PRODUCTION-PLAN.md` and
-`docs/plans/herdr-app-agent-controls/herdr-mod-model-delivery-prototype.md`.
-The test-only mod/Model and fixed Core input-gate probes are described in
-`tests/e2e/README.md`. Native evidence on Core 0.1.21 includes input after expiry
-and writer closure; a successful prototype is no input qualification. The
-App 0.1.16 full navigation run also failed its background-editor assertion.
-Preserve that open evidence when reviewing launch readiness.
-
-In Rex, rows 1-2 use Rex discovery, status, titles and physical pane
-selection and must not depend on provider hooks or daemons; row 3 carries the
-provider-specific identity and input guards. Zoom and the separate Questions and
-Prompts pages were removed by the owner (2026-11-10); saved overrides for them
-stay inactive.
-
-Read before changing an area: `docs/adr/*`, `docs/IDENTITY.md`,
-`docs/CODEX-HOOKS.md`, `docs/CLAUDE.md` (Claude provider capabilities),
-`docs/PROFILES.md`, and for Herdr App ADR 0004/0007/0008,
-`docs/plans/HERDR-APP-PLAN.md` and `tests/live/APP-CALIBRATION.md`. E2E details
-are in `tests/e2e/README.md`. `docs/plans/REFACTOR-PLAN.md` is historical.
-
-## Load-bearing behavior
-
-Refactoring is fine, including restructuring guards, files and modules. These
-are things a refactor can break without an obvious test failure, so change them
-on purpose:
-
-- **Guards are the product.** Stale-press, identity/process, focus,
-  digest/cursor and generation/visibility checks, single-use permits, the
-  350 ms arming delay and no-retry delivery stop input from reaching the wrong
-  agent. Keep what they protect, and make sure a test fails if that protection
-  is lost. A new input path goes through the existing `deliver()`.
-- **Consent defaults are off.** Clipboard/visible-pane consent, Herdr title
-  identity, Claude native controls and Claude/Codex hooks are all opt-in. Fewer
-  setup steps never imply consent.
-- **Golden fixtures** (`tests/fixtures/golden/*.json`) capture layout, routing,
-  native traces and refusal captions. Regenerate only for an intended change,
-  check the diff and mention it in the PR.
-- **Persisted identities break installed users if they change**: plugin UUID
-  `com.kotl3r.deckshep`, action UUID `com.kotl3r.deckshep.key`,
-  `PROFILE_IDS`/`PAGE_IDS`, per-key UUID5 ActionIDs, `profileScope`, the
-  global-settings v2/v1 migration, config-key names, existing ControlId strings
-  (saved as per-key overrides) and the hook entry paths (`codex-hook.js`,
-  `configure-codex.js`, `claude-hook.js`). New ControlIds may be added. See
-  `docs/IDENTITY.md`.
-- **Status lines**: DeckShep never writes a Claude Code or Codex status line; it
-  only restores a recorded original. `tests/unit/claude-no-statusline.test.js`
-  and a source scan for `/statusline` enforce this. Codex setup edits only its
-  own entries in `hooks.json`, never `config.toml`.
-- **Release scope**: 1.5.0 builds ship Rex and Herdr App navigation
-  (`RELEASE_BACKENDS` in `scripts/profiles.mjs`, ADR 0008). Herdr TUI stays
-  experimental behind `experimental.herdr`; App provider input stays disabled.
-  Package audits reject experimental flags and nonempty/enabled App defaults.
-  Keep deferred code and tests in source.
-- **Display limits**: key feedback is at most 15 characters and never cut
-  mid-word (`keyMessage` in `src/domain/labels.ts`); inspector messages are at
-  most 160. Key text is never drawn below 20 SVG units (10 px): fixed captions
-  must fit, dynamic text wraps at a space or ends with an ellipsis. Agent state
-  is shown by shape as well as colour.
-- **Privacy**: keep prompts, transcripts, tokens and home/workspace paths out of
-  logs, errors and packaged artifacts. The package audits
-  (privacy/path/default/version) enforce this.
-
-## Code conventions
-
-- `src/domain`, `src/guards`, `src/platform`, `src/terminals/rex` and
-  `src/terminals/herdr-tui` are strictly typed with ES imports;
-  `no-explicit-any` is an error there. `src/app` and `src/agents` still carry
-  untyped legacy code (`any`, `require`); type what you touch and write new
-  modules without `any`.
-- No `@ts-expect-error`, `@ts-ignore` or lint suppressions.
-- Keep pure logic out of the controller closure: captions and colours belong in
-  `key-face.ts`, ranking and layout tables in `src/domain`, drawing in
-  `src/render`.
-- Comments explain why a guard exists (link the ADR or validation record).
-- Do not record validation in `docs/validation/` as passed unless it actually
-  ran. Fixture and browser tests grant no native or hardware claim.
-
-## Process
-
-- Conventional Commits (commitlint runs in CI).
-- PR descriptions note any behavior change, golden-fixture and e2e-baseline
-  changes, and test/coverage impact.
-- Push, merge, release, repository visibility changes, marketplace submissions,
-  display-name changes and anything involving licensing or trademarks need owner
-  direction. The software is Apache-2.0 with NOTICE; the DeckShep name and
-  branding are reserved (`TRADEMARKS.md`); provider trademark permission is
-  still pending.
+Use Conventional Commits. PR descriptions state behavior, golden/e2e baseline
+changes and test/coverage impact. Push, merge, release, visibility, Marketplace,
+display-name, licensing or trademark changes need owner direction. Apache-2.0
+and NOTICE apply; DeckShep branding is reserved (`TRADEMARKS.md`); provider mark
+permission remains pending.

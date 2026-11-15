@@ -24,6 +24,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run privacy:source && npm run knip
       - run: npm run lint && npm run format:check && npm run typecheck && npm run deps
       - run: npm run version:check && npm run compatibility:check
       - run: npm run test:coverage && npm run test:bundled
@@ -51,6 +52,8 @@ jobs:
             echo 'Developer ID unavailable; using ad-hoc helper signing.'
           fi
       - run: npm run package -- --release --tag "$RELEASE_TAG" --require-clean
+      - name: Verify packaged provenance, signatures and peer pin
+        run: npm run --silent release:verify -- "dist/deckshep-${RELEASE_TAG#v}-macos.zip" --release --tag "$RELEASE_TAG" --commit "$(git rev-parse HEAD)" > dist/verification.json
       - name: Optional notarization
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -70,7 +73,7 @@ jobs:
           if [[ "$RELEASE_TAG" == *-beta.* ]]; then
             RELEASE_FLAGS+=(--prerelease)
           fi
-          gh release create "$RELEASE_TAG" dist/deckshep-*-macos.zip dist/*.sha256 dist/SHA256SUMS "${RELEASE_FLAGS[@]}" --title "$RELEASE_TAG" --notes-file docs/RELEASE-NOTES.md
+          gh release create "$RELEASE_TAG" dist/deckshep-*-macos.zip dist/*.sha256 dist/SHA256SUMS dist/verification.json "${RELEASE_FLAGS[@]}" --title "$RELEASE_TAG" --notes-file docs/RELEASE-NOTES.md
       - name: Remove temporary signing material
         if: always()
         run: |

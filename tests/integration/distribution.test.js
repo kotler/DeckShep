@@ -489,6 +489,128 @@ test('complete archives verify stable public-release provenance and reject stabl
   assert.equal(A.verifyBundle(archive()).tag, info.tag);
 });
 
+test('deep release verification checks provenance, checksums, each helper slice, signatures and the packaged peer pin', async (t) => {
+  const { verifyRelease } = await import('../../scripts/release.mjs');
+  const { files, Z, A, P, prefix, version } = await installerFiles(t);
+  const directory = temporary(t),
+    tag = 'v' + version + '-beta.1',
+    commit = 'a'.repeat(40);
+  const payload = new Map(
+    A.PAYLOAD.map((name) => [name, Buffer.from('fixture')]),
+  );
+  for (const [index, backend] of P.RELEASE_BACKENDS.entries())
+    payload.set(
+      A.PROFILES[index],
+      P.profileArchive(directory, backend, version + '.0'),
+    );
+  const info = {
+    tag,
+    packageVersion: version,
+    pluginVersion: version + '.0',
+    gitCommit: commit,
+    workingTreeDirty: false,
+    distribution: 'private-review',
+    helperArchitectures: ['arm64', 'x86_64'],
+  };
+  const peerHash = A.digest(files.get(prefix + 'bin/herdr-app-peer'));
+  files.set(
+    prefix + 'bin/plugin.js',
+    Buffer.from('const peerPin = ' + JSON.stringify(peerHash)),
+  );
+  const file = path.join(directory, `deckshep-${tag.slice(1)}-macos.zip`);
+  const write = () => {
+    payload.set(A.INSTALLER, installerZip(Z, files));
+    payload.set('BUILD-INFO.json', json(info));
+    payload.set(
+      'SHA256SUMS',
+      Buffer.from(
+        A.PAYLOAD.map(
+          (name) => A.digest(payload.get(name)) + '  ' + name + '\n',
+        ).join(''),
+      ),
+    );
+    const bytes = Z.zip(payload);
+    fs.writeFileSync(file, bytes);
+    fs.writeFileSync(
+      file + '.sha256',
+      A.digest(bytes) + '  ' + path.basename(file) + '\n',
+    );
+    return A.digest(bytes);
+  };
+  const calls = [],
+    run = (command, args) => {
+      calls.push([command, args]);
+      assert(fs.existsSync(args[0] === '--verify' ? args[2] : args[0]));
+    };
+  const hash = write(),
+    receipt = verifyRelease(file, { tag, commit, sha256: hash, run });
+  assert.equal(receipt.sha256, hash);
+  assert.equal(receipt.gitCommit, commit);
+  assert.equal(calls.length, 9);
+  assert.equal(calls.filter(([command]) => command === 'codesign').length, 3);
+  for (const [, args] of calls.filter(([command]) => command === 'lipo')) {
+    assert.equal(args.length, 3);
+    assert.equal(args[1], '-verify_arch');
+  }
+  for (const helper of ['visible-pane', 'herdr-app-peer', 'codex-hook-process'])
+    assert.deepEqual(
+      calls
+        .filter(
+          ([command, args]) =>
+            command === 'lipo' && path.basename(args[0]) === helper,
+        )
+        .map(([, args]) => args[2]),
+      ['arm64', 'x86_64'],
+    );
+  assert.equal(fs.existsSync(path.dirname(calls[0][1][0])), false);
+  assert.throws(
+    () => verifyRelease(file, { tag, commit: 'b'.repeat(40), run }),
+    /provenance/,
+  );
+  assert.throws(
+    () => verifyRelease(file, { tag, commit, sha256: '0'.repeat(64), run }),
+    /checksum/,
+  );
+  assert.throws(
+    () => verifyRelease(file, { tag, commit, release: true, run }),
+    /provenance/,
+  );
+  assert.throws(
+    () => verifyRelease(file, { tag, commit: 'short', run }),
+    /exact tag/,
+  );
+  fs.writeFileSync(
+    file + '.sha256',
+    '0'.repeat(64) + '  ' + path.basename(file) + '\n',
+  );
+  assert.throws(() => verifyRelease(file, { tag, commit, run }), /checksum/);
+  write();
+  info.helperArchitectures = ['arm64'];
+  write();
+  assert.throws(() => verifyRelease(file, { tag, commit, run }), /provenance/);
+  info.helperArchitectures = ['arm64', 'x86_64'];
+  files.set(prefix + 'bin/herdr-app-peer', Buffer.from('modified helper'));
+  write();
+  assert.throws(() => verifyRelease(file, { tag, commit, run }), /peer helper/);
+  files.set(prefix + 'bin/herdr-app-peer', Buffer.from('fixture'));
+  write();
+  const failedCalls = [];
+  assert.throws(
+    () =>
+      verifyRelease(file, {
+        tag,
+        commit,
+        run: (command, args) => {
+          failedCalls.push([command, args]);
+          if (command === 'codesign') throw Error('Invalid signature');
+        },
+      }),
+    /Invalid signature/,
+  );
+  assert.equal(failedCalls.length, 3);
+  assert.equal(fs.existsSync(path.dirname(failedCalls[0][1][0])), false);
+});
+
 test('release builds ship Rex and Herdr App navigation, with Herdr TUI only in explicit source previews', async () => {
   const [, A, P] = await api();
   const released = ['rex', 'herdr-app'];
