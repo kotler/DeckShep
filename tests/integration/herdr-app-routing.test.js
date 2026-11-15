@@ -49,7 +49,7 @@ test('App owns routed key contexts and settings without using legacy discovery, 
   );
   await app.settled();
   assert(app.bridge.generation > before);
-  assert.equal(app.bridge.config.herdrApp.inputEnabled, true);
+  assert.equal(app.bridge.config.herdrApp.inputEnabled, false);
   assert.equal(h.api.bridge.config.claude.enabled, false);
   for (const kind of [
     'doctor',

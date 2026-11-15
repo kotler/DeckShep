@@ -99,7 +99,9 @@ The startup baseline leaves all five contextual keys blank until Rex has a selec
 ## Live Herdr App navigation
 
 The separate `npm run test:e2e:herdr-app-live` suite runs the virtual deck
-against test-owned copies of the reviewed signed App 0.1.14 and Core 0.1.19.
+against test-owned copies of a reviewed signed pair. Recorded pairs are
+App 0.1.14/Core 0.1.19 and App 0.1.16/Core 0.1.21. Candidate report hashes select
+the pair before launch, and signed copies are re-attested during staging.
 The release launcher verifies the copies, contains the updater and checks
 process and socket ownership. Its two calibration terminals stay plain.
 Two additional disposable programs emit fixed OSC 7501 reports for idle Codex
@@ -118,18 +120,46 @@ npm run test:e2e:herdr-app-live
 Chromium clicks the virtual deck on a real clock. The test checks local
 selection, consented Next and Attention requests and consent revocation. It
 also compiles a disposable Cocoa editor/input observer and verifies that
-informational Model follows the App selection while that editor retains
-keyboard focus. Its input counter must remain zero. The editor is registered
+navigation follows the App selection while that editor retains keyboard
+focus. Default bottom-row keys remain blank and inert. Its input counter must remain zero. The editor is registered
 with the launcher's owned-process cleanup and uses the private test HOME.
 An independent peer-verified App read checks which pane Herdr selected.
 A pass also requires verified cleanup and unchanged tracked settings.
 Live browser artifacts use `test-results-live/`, separate from synthetic runs.
 The ordinary Playwright suite keeps the synthetic stale-press and timing cases
-and tests the off-bank Model cue, inert presses, selection following and state
-retirement. No screenshots or golden fixtures need regeneration for these
+and tests inert bottom-row keys, selection following and later Page browsing. No screenshots or golden fixtures need regeneration for these
 dedicated assertions.
 
 The OSC programs are status fixtures, not Codex or Claude CLI sessions. This
-live run validates App navigation and passive control projection. It cannot
+live run checks App navigation and background behavior. It cannot
 qualify a Model setting mutation. Both active candidates remain gated by the
 [native Model validation runbook](../../docs/plans/herdr-app-agent-controls/native-model-validation.md).
+
+With current authorization, adding `ASW_HERDR_APP_MODEL_PROTOTYPE=1` to the live
+invocation installs an observation-only mod in the disposable App home. It
+compares the selected pane's cached process facts with the owned Core while
+the disposable editor stays frontmost, including an away-and-back selection.
+It also runs native/API reference receivers in memory with the Rex parser.
+These reference cycles do not mutate a real Codex session. Sanitized prototype
+evidence is retained under `test-results-live/` only after verified cleanup and
+unchanged settings. See the [prototype result](../../docs/plans/herdr-app-agent-controls/herdr-model-prototype.md).
+
+A separate `ASW_HERDR_APP_MOD_MODEL=1` test exercises real Model delivery through
+a non-focusable Herdr mod and local relay. It also requires
+`ASW_HERDR_APP_MOD_CODEX=/absolute/path/to/codex`. The test copies that executable
+into its owned root, records its version/hash, uses a credential-free offline
+provider and `--no-daemon`, and drives the same Rex picker algorithm from a
+browser test key. A separate picker inspection verifies model and effort.
+Held-helper focus/ABA, retirement and expiry cases refuse without input; a
+partial cycle stays uncertain without cleanup keys. The owned editor remains
+frontmost. This is a prototype adapter, not production controller or hardware
+qualification. See the [mod delivery report](../../docs/plans/herdr-app-agent-controls/herdr-mod-model-delivery-prototype.md)
+for invocation and remaining Core-recipient/binding limits.
+
+The separate flag `ASW_HERDR_APP_INPUT_GATE=1` runs a bounded Core input-gate
+experiment against a disposable raw input recorder. It requires the same live
+authorization and reviewed signed candidate. A competing fixed key sequence
+holds ordinary viewer DATA while the test crosses the original press deadline
+or closes the viewer. Receipt timestamps and a same-connection RPC fence
+measure actual delayed effects. The native run reproduced delivery after both
+expiry and writer close. See the [input-gate validation](../../docs/validation/2026-11-14-herdr-core-input-gate.md).

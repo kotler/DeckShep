@@ -23,3 +23,30 @@ LCD and installed profile path. Record exact versions and outcome per release.
 Install/upgrade, fresh-account setup and Intel helper execution are separate
 release checks, not additional physical control presses. Never reuse historical
 scratch agents as implicit permission for a smoke run.
+
+## Herdr App navigation candidate (1.5.0)
+
+Run against a separately authorized test-owned instance. Keep the exact App/Core
+versions, package checksum and outcome with the result. These are pending manual
+checks, not a passing record.
+
+1. Install/upgrade the candidate and select the bundled Herdr App profile.
+   Verify the existing Rex profile, customized keys and settings are preserved.
+2. Set the intended absolute App home. With focus consent off, selection is
+   deck-local and the App is unchanged. Enable plain focus requests explicitly.
+3. Verify chat-name titles, folder subtitles, status and the App selection dot.
+   Tap agent tiles, Next and Attention. Check waiting/error/done ranking across
+   banks. Page and Collapse only change the deck.
+4. Exit an agent to its shell, then close a pane. Verify the gap and Collapse.
+   Press a key captured before closure and confirm it cannot navigate elsewhere.
+5. Tap Next and Page rapidly. The current destination stays legible and arming
+   taps are ignored. Revoke consent during a pending request and verify no write.
+6. Keep a separate editor frontmost while navigating. Check reported App
+   selection independently and record editor focus and key events. Preserve any
+   activation failure, including the unresolved Chrome assertion in the native
+   0.1.16 record. Include minimized, hidden and dialog cases in launch review.
+7. Restart only the owned App. Old presses expire; the recreated owned socket
+   reconnects without permission edits. Restore consent-off state and clean up.
+8. Check all five default bottom-row keys are blank for ready, working and
+   waiting Codex/Claude panes. Saved Model/Permissions/Interrupt overrides remain
+   inactive. Rex controls retain their existing behavior.

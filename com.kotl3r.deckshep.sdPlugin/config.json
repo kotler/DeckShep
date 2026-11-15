@@ -81,5 +81,12 @@
   "experimental": {
     "herdr": false,
     "herdrApp": false
+  },
+  "herdrApp": {
+    "home": "",
+    "coreSocketPath": "",
+    "readbackEnabled": false,
+    "focusRequestEnabled": false,
+    "inputEnabled": false
   }
 }

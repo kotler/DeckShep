@@ -1,6 +1,6 @@
 {
   "product": "DeckShep",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "license": {
     "spdx": "Apache-2.0",
     "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
@@ -11,10 +11,10 @@
     "trademarkPermission": "pending"
   },
   "launchValidation": {
-    "version": "1.4.0",
-    "ownerVerified": true,
-    "reviewedAt": "2026-11-12",
-    "evidence": "docs/validation/2026-11-12-rex-beta-execution.md"
+    "version": "1.5.0",
+    "ownerVerified": false,
+    "reviewedAt": null,
+    "evidence": "docs/validation/2026-11-15-herdr-navigation-release-prep.md"
   },
   "support": {
     "issues": {

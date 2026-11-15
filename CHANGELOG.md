@@ -5,6 +5,31 @@ preview artifacts use `-beta.N` release tags.
 
 ## [Unreleased]
 
+## [1.5.0] — release candidate, not published
+
+### Added
+
+- Package the Herdr App navigation profile alongside Rex. Agent tiles show the
+  chat name, folder and App-reported state. Next, Page, Collapse and Attention
+  retain stable slots, recheck destinations and refuse stale presses.
+- Accept signed Herdr App updates through the verified socket peer, retained
+  native helper and current pane.focus command. Focus requests require separate
+  default-off consent. Socket recreation needs no manual permission changes
+  inside an owned private App home.
+
+### Scope
+
+- Herdr App’s bottom row stays blank. Model and all other agent input controls
+  are deferred; saved preview input/provider opt-ins grant no runtime capability.
+- Rex behavior and persisted identities are unchanged. Herdr TUI remains an
+  experimental source build. No Herdr mod is installed.
+- Native lifecycle calibration passed on App 0.1.16 / Core 0.1.21. The full live
+  virtual-deck background-editor assertion failed with Chrome frontmost; its
+  cause remains unresolved. Hardware, clean-Mac and Intel execution claims
+  require their own evidence.
+
+## Earlier development changes
+
 ### Changed
 
 - Add an Attention key at row 2, column 5. It appears only when another agent

@@ -96,13 +96,15 @@ function profileConfig(base: Config, saved: unknown, scope: string): Config {
     backend: 'herdr-app',
     allowClipboardFocus: false,
     bringToFront: false,
-    claude: { ...config.claude, enabled: app.claudeEnabled === true },
+    claude: { ...config.claude, enabled: false },
     herdrApp: {
       home: app.herdrAppHome ?? '',
       coreSocketPath: app.herdrAppCoreSocketPath ?? '',
       readbackEnabled: app.herdrAppReadbackEnabled === true,
       focusRequestEnabled: app.herdrAppFocusRequestEnabled === true,
-      inputEnabled: app.herdrAppInputEnabled === true,
+      // Preserve stored preview choices for round trips, but the navigation
+      // release grants no provider consent or input capability (ADR 0008).
+      inputEnabled: false,
     },
   };
 }

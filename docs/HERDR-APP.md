@@ -1,15 +1,19 @@
-# Herdr App preview
+# Herdr App navigation
 
-The experimental App profile lists local Codex and Claude agents reported by
-Herdr. A validated App connection enables deck-local navigation. The private Stream Deck
-preview accepts signed Herdr App updates without a version pin. With focus
-consent enabled, it verifies the connected process against Herdr’s Developer ID
-and checks the current pane focus command before dispatch. Release packages
-include only Rex.
+DeckShep 1.5.0 adds the **Herdr App** profile alongside Rex. It lists local Codex
+and Claude agents reported by Herdr and provides agent selection, Next, Page,
+Collapse and Attention. Agent input controls are deferred. The bottom row is
+blank, including Model; saved provider overrides remain inactive.
+
+With focus consent enabled, DeckShep verifies the connected process against
+Herdr’s Developer ID and checks the current pane focus command before sending
+one request. Signed App updates are accepted without a version pin. A request
+acknowledgement and Herdr’s reported selection do not verify OS keyboard focus.
+See [the release decision](adr/0008-herdr-app-navigation-release.md).
 
 ## Profile setup
 
-In an experimental App profile, open any key's setup panel:
+In the Herdr App profile, open any key's setup panel:
 
 1. Choose the absolute App home for the intended instance. Relative paths and
    `~` are refused. This setting stays with the App profile.
@@ -53,23 +57,16 @@ hooks. Removing DeckShep removes its helper; see [Uninstall](UNINSTALL.md).
   newly displayed destination.
 - The optional Core readback shows a separate terminal count in setup.
   Agent names and status on the keys come from the App.
-- Row three follows Herdr’s reported selection independently of **On deck**.
-  A ready Codex pane shows an informational **Model** key in column one. Its
-  compact cue gives the stable slot number and chat name, with Codex as the
-  fallback. A new App selection reveals its bank once; later Page browsing
-  stays where you put it. The cue remains visible when the target is off-bank.
-  Working, blocked, shell, closed or unreadable targets clear this face.
-- Model is informational and sends no input. Current App/Core interfaces do
-  not establish the recipient guarantees required for a setting change.
-  No current model value is claimed from App titles. Effort, Permissions and
-  saved provider overrides remain inactive, including former opt-ins. Choose
-  **Position default** to restore the informational Model position or a
-  navigation assignment. See the [delivery evaluation](plans/herdr-app-agent-controls/delivery_evaluation.md).
+- A changed App selection reveals its bank once. Later Page browsing stays
+  where you put it. The selection dot follows Herdr’s report while the App is in
+  the background. Navigation sends no agent keystrokes.
+- Model, Effort, Permissions, Mode, Interrupt and question controls are reserved
+  for a later release. Use the agent’s keyboard for those actions.
 
 ## Doctor
 
 The App profile's **Refresh status** checklist reports its own home/consent,
-packaged helper, available request-build records and last App peer/build match.
+packaged helper, navigation signature policy and last App peer/build match.
 It does not run Rex/TUI discovery or provider setup.
 
 For passive App-only CLI reporting from a built or installed plugin:
@@ -78,11 +75,13 @@ For passive App-only CLI reporting from a built or installed plugin:
 node <installed-plugin>/bin/doctor.js --herdr-app --json
 ```
 
-The CLI checks only the plugin's helper and static build records. It does not
-connect to an App and leaves profile-specific home/consent unknown; view those
-in the selected App profile's setup panel. Reports omit local paths and terminal
-content. [Isolated source-build calibration](validation/2026-11-08-herdr-app-peer-session.md)
-has passed with the persistent helper. This does not approve production builds
-or establish hardware/keyboard focus. The separate
-[hardware test build](HERDR-APP-HARDWARE-TEST.md) accepts only a launcher-owned
-private App/core session and explicit request consent.
+The CLI checks only the plugin's helper and navigation signature policy. It does
+not connect to an App and leaves profile-specific home and consent unknown;
+view those in the selected App profile's setup panel. Reports omit local paths
+and terminal content.
+
+Native lifecycle calibration passed on signed App 0.1.16 / Core 0.1.21, including
+restart, stale-target refusal and cleanup. The live virtual-deck test failed its
+background-editor assertion with Chrome frontmost. The activation cause remains
+unresolved. This release preparation does not claim a passing hardware or full
+native end-to-end run. See [the exact validation record](validation/2026-11-15-herdr-app-0.1.16-core-0.1.21.md).

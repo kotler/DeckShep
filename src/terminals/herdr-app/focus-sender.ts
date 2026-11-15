@@ -129,8 +129,8 @@ class AppFocusConnection {
   }
 }
 
-/** Unwired request-only backend. No provider input, OS activation or verified
- * focus operation can be expressed here. Production build records stay empty. */
+/** Navigation-only backend. No provider input, OS activation or verified
+ * keyboard-focus operation can be expressed here. */
 export class GuardedAppFocusSender {
   readonly #file: string;
   readonly #active = new Set<AppFocusConnection>();

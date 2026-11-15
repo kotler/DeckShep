@@ -67,7 +67,10 @@ migration, config semantics or stable Claude helper paths as routine cleanup.
 Fresh clipboard checks, Herdr title identity and Claude hooks/controls stay off.
 The owner-approved prelaunch IDs are documented in [IDENTITY.md](docs/IDENTITY.md);
 old preview profiles require recreation and exact hook removal before new setup.
-Herdr App remains a disabled fixture foundation with no production capabilities.
+Herdr App ships navigation only in 1.5.0. Its separate plain-focus request
+contract verifies the connected publisher and command, with default-off consent.
+Provider input capabilities remain empty and the default third row stays blank.
+See [ADR 0008](docs/adr/0008-herdr-app-navigation-release.md).
 
 Default tests use temporary homes, sockets and test-owned processes only. Never
 attach to, start, stop, restart or send input to a developer's existing Rex,

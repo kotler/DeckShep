@@ -35,6 +35,15 @@ export const DOCS = [
   'docs/adr/0002-guard-pipeline-and-single-deliver.md',
   'docs/adr/0003-capability-gated-controls.md',
   'docs/adr/0004-herdr-app-backend.md',
+  'docs/adr/0007-herdr-app-0.1.14-source-review.md',
+  'docs/adr/0008-herdr-app-navigation-release.md',
+  'docs/validation/2026-11-15-herdr-navigation-release-prep.md',
+  'docs/validation/2026-11-15-herdr-app-0.1.16-core-0.1.21.md',
+  'docs/validation/2026-11-15-herdr-app-0.1.16-core-0.1.21-artifacts.json',
+  'docs/validation/2026-11-15-herdr-0.1.16-core-0.1.21-calibration.json',
+  'docs/validation/2026-11-15-herdr-0.1.16-navigation.json',
+  'docs/validation/2026-11-15-herdr-0.1.16-model-delivery.json',
+  'docs/validation/2026-11-15-herdr-core-0.1.21-input-gate.json',
   'docs/adr/0005-official-sdk-and-bundles.md',
   'docs/adr/0006-external-boundary-validation.md',
   'README.md',
@@ -83,6 +92,7 @@ const fixtureMarkers = [
   'virtual-app-peer-',
   'fixture-post-close-peer-lease',
   'fixture-app-hardware-test',
+  'fixture-model-authority',
 ];
 export function assertProductionBundle(bytes) {
   // Generic state names (question/approval/offline) and backend ID herdr-tui
@@ -158,7 +168,16 @@ export function auditInstaller(data) {
     config.focusRoutingVerified ||
     config.claude?.enabled ||
     config.experimental?.herdr ||
-    config.experimental?.herdrApp
+    config.experimental?.herdrApp ||
+    (config.herdrApp !== undefined &&
+      JSON.stringify(config.herdrApp) !==
+        JSON.stringify({
+          home: '',
+          coreSocketPath: '',
+          readbackEnabled: false,
+          focusRequestEnabled: false,
+          inputEnabled: false,
+        }))
   )
     throw Error(
       'Package must use fresh Rex defaults with consent and title matching off',

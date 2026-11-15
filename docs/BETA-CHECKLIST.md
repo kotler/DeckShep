@@ -34,25 +34,33 @@ is not authorization to reuse a running agent.
 - [ ] Exercise Rex quit/reopen only in a disposable environment.
 - [ ] Finish validation cleanup and compare original settings fingerprints.
 
-## Deferred with Herdr (not in the first release)
+## Herdr App navigation release
 
-The first release ships only the Rex profile (owner decision, 2026-11-10).
-These gates move to the Herdr release:
+- [x] Isolated signed App 0.1.16 / Core 0.1.21 lifecycle, restart/reconnect and
+  stale-target calibration, with owned cleanup and unchanged tracked settings.
+- [ ] Resolve or explicitly review the live virtual-deck background-editor
+  assertion that failed with Chrome frontmost. See the [native record](validation/2026-11-15-herdr-app-0.1.16-core-0.1.21.md).
+- [ ] Physical agent selection, Next/Page rapid presses, closed-slot Collapse,
+  Attention ranking and profile switching with the navigation-only package.
+- [ ] Validate hidden/minimized/full-screen and dialog behavior for plain requests.
+  Acknowledgements never prove keyboard focus.
+- [ ] Fresh-account install/upgrade with the bundled Herdr App profile, separate
+  consent and unchanged Rex customization.
 
-- [ ] Herdr overflow banks, closed-slot Collapse and outer-terminal presentation.
-- [ ] Herdr reconnect and multiple attached clients in an isolated environment.
-- [ ] Separately authorize and run the source-only Herdr App calibration harness; review ownership, latency, cleanup and settings fingerprints before considering any build record.
-- [ ] Validate App focus requests across windows/screens, hidden/minimized/full-screen states, dialogs and restart/reconnect; acknowledgements never prove keyboard focus.
-- [ ] Review release-build updater isolation separately; source-build calibration cannot approve the installed release.
-- [ ] Physical profile switching between Rex and Herdr.
+## Deferred Herdr controls
+
+Herdr TUI distribution and Herdr App agent input stay deferred. The input-gate
+characterization reproduced delayed effects after expiry and writer closure on
+Core 0.1.21. Model and other provider controls require their own qualification.
+See [the controls production plan](plans/HERDR-APP-MODEL-PRODUCTION-PLAN.md).
 
 Live tests require fresh explicit authorization, `ASW_LIVE=1`, isolated sockets and
 only test-owned PIDs. Do not operate existing agents or the user's shared daemon.
 
 ## Owner release decisions
 
-The owner selected DeckShep, profiles Rex / Herdr (first release: Rex only,
-2026-11-10), Apache-2.0 with NOTICE,
+The owner selected DeckShep, profiles Rex / Herdr App for the 1.5.0 navigation scope
+(owner direction, 2026-11-15), Apache-2.0 with NOTICE,
 reserved DeckShep branding, GitHub Releases and a free Marketplace listing.
 Public support channels, exact-version launch validation, snapshot review,
 private vulnerability reporting, signing/notarization and publication timing

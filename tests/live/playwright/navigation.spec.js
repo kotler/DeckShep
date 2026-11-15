@@ -9,12 +9,19 @@ const {
   runReleaseCalibration,
 } = require('../app-calibration/release-runner.cjs');
 const { holdHardwareRun } = require('../app-calibration/hardware-runner.cjs');
-const { hash, readArtifact } = require('../app-calibration/artifacts.cjs');
+const { reviewedRelease } = require('../app-calibration/release-stage.cjs');
 const { appAuthorization } = require('../app-calibration/isolation.cjs');
 const { requestClient } = require('../app-calibration/release-scenarios.cjs');
 const { NavigationChannel } = require('./navigation-channel.cjs');
 const { launchEditor } = require('./editor-launch.cjs');
-const reviewed = require('../../../docs/validation/2026-11-08-herdr-app-installed-release-artifacts.json');
+const {
+  prepareBindingMod,
+  BindingProbeChannel,
+} = require('../herdr-app-model/binding-probe.cjs');
+const {
+  GuardedModelPrototype,
+} = require('../../helpers/herdr-app-guarded-model-prototype');
+const modelPrototype = process.env.ASW_HERDR_APP_MODEL_PROTOTYPE === '1';
 
 async function connectDeck(page, deck) {
   // Only this browser context can send events. The native run exposes no
@@ -54,7 +61,8 @@ async function connectDeck(page, deck) {
   await page.evaluate(() => globalThis.deck.ready);
 }
 
-async function walkthrough(page, run, root) {
+async function walkthrough(page, run, root, diagnostics = {}) {
+  let prototypeEvidence;
   const { manifest, helper } = run.artifacts;
   const fixture = path.join(root, 'dependencies.cjs');
   const factory = require.resolve('../app-calibration/hardware-backend.cjs');
@@ -241,7 +249,7 @@ async function walkthrough(page, run, root) {
         },
       );
     }
-    await test.step('Informational Model follows the App while an owned editor keeps focus', async () => {
+    await test.step('Navigation follows the App while an owned editor keeps focus', async () => {
       const editor = path.join(run.root, 'editor');
       const editorReport = path.join(run.root, 'state/editor.json');
       execFileSync(
@@ -268,6 +276,12 @@ async function walkthrough(page, run, root) {
           .poll(() => editorState()?.samples)
           .toBeGreaterThan(previous.samples);
         const state = editorState();
+        diagnostics.background = {
+          editorFrontmost: state.frontmost === child.pid,
+          focused: state.focused,
+          focusLosses: state.focusLosses,
+          keyEvents: state.keyEvents,
+        };
         expect(state.pid).toBe(child.pid);
         expect(state.frontmost).toBe(child.pid);
         expect(state.focused).toBe(true);
@@ -277,10 +291,16 @@ async function walkthrough(page, run, root) {
       await expect
         .poll(() => editorState()?.focused, { timeout: 12000 })
         .toBe(true);
+      const bindingProbe = modelPrototype
+        ? new BindingProbeChannel(run.gate)
+        : null;
+      const waitingSnapshot = bindingProbe
+        ? await bindingProbe.snapshot()
+        : null;
       await waitLabel(key(2, 0), /^Empty key$/);
       await clickArmed(key(1, 0));
       await expect.poll(selected).toBe(codex.target.pane);
-      await waitLabel(key(2, 0), /^Model.*Codex/i);
+      await waitLabel(key(2, 0), /^Empty key$/);
       const before = editorState();
       const presented = deck.snapshot().keys[10];
       await clickArmed(key(2, 0));
@@ -294,6 +314,72 @@ async function walkthrough(page, run, root) {
       expect(after.focusLosses).toBe(0);
       expect(after.keyEvents).toBe(0);
       expect(after.samples).toBeGreaterThan(before.samples);
+      if (bindingProbe) {
+        await test.step('Existing mod exports provide background observations but no guarded Model authority', async () => {
+          const snapshot = await bindingProbe.snapshot(
+            waitingSnapshot.sequence,
+          );
+          expect(waitingSnapshot.focused.pane).toBe(claude.target.pane);
+          expect(snapshot.focused.pane).toBe(codex.target.pane);
+          const candidate = snapshot.terminals.find(
+            (t) => t.address === snapshot.focused.terminal,
+          );
+          const core = await bindingProbe.coreTerminal(candidate.address);
+          run.gate.captureDescendants();
+          run.owned.assert(candidate.pid);
+          expect(candidate.pid).toBe(core.terminal.pid);
+          expect(candidate.created_ms).toBe(core.terminal.created_ms);
+          for (const missing of [
+            'coreId',
+            'connectionEpoch',
+            'focusRevision',
+            'readyRevision',
+            'chatId',
+          ])
+            expect(snapshot.focusedKeys).not.toContain(missing);
+          expect(snapshot.exports).not.toContain('conditionalModel');
+          await clickArmed(key(1, 4));
+          await expect.poll(selected).toBe(claude.target.pane);
+          await waitForDot(claude);
+          await clickArmed(key(1, 0));
+          await expect.poll(selected).toBe(codex.target.pane);
+          await waitForDot(codex);
+          await waitLabel(key(2, 0), /^Empty key$/);
+          const returned = await bindingProbe.snapshot(snapshot.sequence);
+          expect(returned.focused).toEqual(snapshot.focused);
+          const reference = [];
+          for (const route of ['native', 'api']) {
+            const authority = new GuardedModelPrototype();
+            authority.now += 350;
+            const result = await authority.run(route);
+            expect(result.kind).toBe('confirmed');
+            expect(result.model).toBe('Beta');
+            expect(result.effort).toBe('High');
+            reference.push({
+              route,
+              ...result,
+              evidence: 'in-memory receiver with Rex parser; not real Codex',
+            });
+          }
+          await verifyEditor();
+          prototypeEvidence = {
+            schema: 1,
+            appModExecuted: true,
+            background: true,
+            editorInputEvents: editorState().keyEvents,
+            cachedProcessFactsAgree: true,
+            bindingQualified: false,
+            realCodexMutation: false,
+            exports: snapshot.exports,
+            focusedKeys: snapshot.focusedKeys,
+            terminalKeys: candidate.keys,
+            coreVersion: core.hello.version,
+            observedFocusABA: true,
+            cachedSnapshotAfterABAMatches: true,
+            reference,
+          };
+        });
+      }
       await clickArmed(key(1, 4));
       await expect.poll(selected).toBe(claude.target.pane);
       await waitLabel(key(2, 0), /^Empty key$/);
@@ -311,6 +397,7 @@ async function walkthrough(page, run, root) {
     observer.dispose();
     await deck.stop();
   }
+  return prototypeEvidence;
 }
 
 const reason =
@@ -323,28 +410,21 @@ test('virtual Stream Deck navigates the owned, signed Herdr App', async ({
   page,
 }) => {
   const artifactDirectory = process.env.ASW_HERDR_APP_RELEASE_ARTIFACTS;
-  if (
-    !artifactDirectory ||
-    hash(
-      readArtifact(
-        path.join(artifactDirectory, 'release-candidate.json'),
-        65536,
-      ),
-    ) !== reviewed.candidateReportSha256
-  )
-    throw Error('The reviewed signed App/Core candidate directory is required');
+  reviewedRelease(artifactDirectory);
   const root = fs.mkdtempSync('/private/tmp/dsh-pw-');
-  let browserError;
+  let browserError, prototypeEvidence;
+  const diagnostics = {};
   const report = await runReleaseCalibration(
     { artifactDirectory },
     {
       runRoot: path.join(root, 'session'),
+      prepareState: modelPrototype ? prepareBindingMod : undefined,
       async navigation(run) {
         const input = new PassThrough();
         const held = holdHardwareRun(run, root, { input, ready: () => {} });
-        const work = walkthrough(page, run, root);
+        const work = walkthrough(page, run, root, diagnostics);
         try {
-          await Promise.race([
+          prototypeEvidence = await Promise.race([
             work,
             held.then(() => {
               throw Error('Owned session ended');
@@ -366,6 +446,19 @@ test('virtual Stream Deck navigates the owned, signed Herdr App', async ({
     },
   );
   if (report.cleanup) fs.rmSync(root, { recursive: true, force: true });
+  const navigationFile = test.info().outputPath('herdr-app-navigation.json');
+  fs.writeFileSync(
+    navigationFile,
+    JSON.stringify(
+      { ...report, browserAssertionsPassed: !browserError, ...diagnostics },
+      null,
+      2,
+    ),
+  );
+  await test.info().attach('herdr-app-navigation', {
+    path: navigationFile,
+    contentType: 'application/json',
+  });
   expect(report.cleanup).toBe(true);
   expect(report.settingsUnchanged).toBe(true);
   if (browserError) throw browserError;
@@ -373,4 +466,26 @@ test('virtual Stream Deck navigates the owned, signed Herdr App', async ({
     [],
   );
   expect(report.outcome).toBe('passed');
+  if (modelPrototype) {
+    expect(prototypeEvidence?.appModExecuted).toBe(true);
+    const file = test.info().outputPath('herdr-model-binding-prototype.json');
+    fs.writeFileSync(
+      file,
+      JSON.stringify(
+        {
+          ...prototypeEvidence,
+          cleanup: report.cleanup,
+          settingsUnchanged: report.settingsUnchanged,
+          builds: report.builds,
+          outcome: report.outcome,
+        },
+        null,
+        2,
+      ),
+    );
+    await test.info().attach('herdr-model-binding-prototype', {
+      path: file,
+      contentType: 'application/json',
+    });
+  }
 });

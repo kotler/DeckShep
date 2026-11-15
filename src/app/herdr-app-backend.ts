@@ -6,13 +6,12 @@ import type { AppFocusAuthority } from '../guards/app-focus-request';
 import { pluginDirectory } from '../platform/paths';
 import { nativeAppPeerProbe } from '../platform/app-peer';
 import { nativeAppPeerSession } from '../platform/app-peer-session';
-import {
-  APP_FOCUS_RECORDS,
-  AppPeerVerifier,
-} from '../terminals/herdr-app/peer';
+import { AppPeerVerifier } from '../terminals/herdr-app/peer';
+import { publisherCheck } from '../terminals/herdr-app/publisher';
 import { GuardedAppFocusSender } from '../terminals/herdr-app/focus-sender';
 
 export interface AppFocusBackendFactory {
+  /** Navigation trust policies, including the released publisher rule. */
   readonly recordCount: number;
   helperAvailable(): boolean;
   create(config: Config, authority: AppFocusAuthority): AppFocusPort;
@@ -38,9 +37,7 @@ export function appPeerHelperAvailable(directory = pluginDirectory): boolean {
   }
 }
 export const appFocusBackend: AppFocusBackendFactory = {
-  get recordCount() {
-    return APP_FOCUS_RECORDS.length;
-  },
+  recordCount: 1,
   helperAvailable: () => appPeerHelperAvailable(),
   create(config, authority) {
     if (!config.herdrApp?.home || !appPeerHelperAvailable())
@@ -49,9 +46,10 @@ export const appFocusBackend: AppFocusBackendFactory = {
     return new GuardedAppFocusSender(
       new AppPeerVerifier(
         nativeAppPeerProbe(helper),
-        APP_FOCUS_RECORDS,
+        [],
         undefined,
         nativeAppPeerSession(helper),
+        publisherCheck(),
       ),
       authority,
       { appHome: config.herdrApp.home },

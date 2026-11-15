@@ -161,6 +161,7 @@ test(
       'fixtureAck',
       'fixture-post-close-peer-lease',
       'fixture-app-hardware-test',
+      'fixture-model-authority',
       ...scenarioNames.filter(
         (name) => name.includes('-') && name !== 'herdr-tui',
       ),

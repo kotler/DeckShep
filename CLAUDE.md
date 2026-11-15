@@ -3,8 +3,9 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 DeckShep is a macOS Stream Deck plugin (`com.kotl3r.deckshep`) that controls coding agents
-(Codex CLI, Claude Code) already running in a terminal multiplexer: **Rex** (released),
-**Herdr TUI / Herdr App** (in source, experimental, not packaged). Most of the code is
+(Codex CLI, Claude Code) already running in a terminal multiplexer: **Rex** and
+**Herdr App** navigation (packaged in 1.5.0), plus **Herdr TUI** (source-only
+experimental). Herdr App agent input controls are deferred (ADR 0008). Most of the code is
 *guards*: proof that a key press still targets the same agent, process, pane and state it
 was rendered for before any input reaches a terminal.
 
@@ -84,12 +85,11 @@ the boundary with zod schemas in `src/schemas` (ADR 0006).
 The TypeScript source is bundled by `scripts/build.mjs`/`bundle.mjs` (Rollup) into the plugin folder;
 root JS in `com.kotl3r.deckshep.sdPlugin/` (e.g. `claude-hook.js`, `configure-claude.js`, `inspector.js`)
 is **generated**. `codex-hook.js`, `configure-codex.js`, `claude-hook.js` are stable integration entry
-paths — keep them stable or provide a tested migration. `scripts/profiles.mjs` `RELEASE_BACKENDS` limits
-release builds to Rex; Herdr stays behind `experimental.herdr` / `experimental.herdrApp` (default false,
-package audits refuse them).
+paths — keep them stable or provide a tested migration. `scripts/profiles.mjs` `RELEASE_BACKENDS` ships Rex and Herdr App navigation. Herdr TUI stays behind `experimental.herdr`
+(default false). Package audits reject experimental flags and enabled App consent/input defaults.
 
 Read before changing an area: `docs/adr/*`, `docs/IDENTITY.md`, `docs/CODEX-HOOKS.md`, `docs/CLAUDE.md`
-(Claude provider capabilities), `docs/plans/REFACTOR-PLAN.md`, and for Herdr App ADR 0004/0007,
+(Claude provider capabilities), `docs/plans/REFACTOR-PLAN.md`, and for Herdr App ADR 0004/0007/0008,
 `docs/plans/HERDR-APP-PLAN.md`, `tests/live/APP-CALIBRATION.md`. E2E details: `tests/e2e/README.md`.
 
 ## Safety limits
@@ -118,9 +118,9 @@ refactor can break without any test failing in an obvious way, so change them on
 - **Status lines**: DeckShep doesn't write Claude Code or Codex status lines (it only restores a
   recorded original). Tests enforce this (`tests/unit/claude-no-statusline.test.js` and a source scan
   for `/statusline`). Codex setup edits only its own entries in `hooks.json`, never `config.toml`.
-- **Release scope**: release builds ship only Rex (`RELEASE_BACKENDS` in `scripts/profiles.mjs`).
-  Herdr stays in source behind `experimental.herdr` / `experimental.herdrApp`; package audits
-  refuse those flags.
+- **Release scope**: 1.5.0 ships Rex and Herdr App navigation (ADR 0008). Herdr TUI stays
+  source-only behind `experimental.herdr`; App agent input remains disabled. Package audits refuse
+  experimental flags and nonempty/enabled App defaults.
 - **Display limits**: key errors are at most 15 characters, inspector messages at most 160.
 
 ## Conventions
@@ -128,3 +128,17 @@ refactor can break without any test failing in an obvious way, so change them on
 - Conventional Commits (commitlint runs in CI).
 - PR descriptions note any behavior change, golden-fixture changes and test/coverage impact.
 - Don't record validation in `docs/validation/` as passed unless it actually ran.
+
+## Agent skills
+
+### Issue tracker
+
+Track issues and specs in GitHub Issues for `kotler/DeckShep`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the five default triage labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Use one root `GLOSSARY.md` and the existing `docs/adr/`. See `docs/agents/domain.md`.

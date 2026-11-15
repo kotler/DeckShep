@@ -22,8 +22,8 @@ export function herdrAppChecks(state: AppDiagnosticState) {
       ok: state.recordCount > 0,
       reason:
         state.recordCount > 0
-          ? 'Request-only App build records available'
-          : 'No App build approved; focus requests disabled',
+          ? 'App navigation signature policy available'
+          : 'No App navigation policy; focus requests disabled',
     },
     {
       id: 'herdr-app-home',

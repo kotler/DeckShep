@@ -33,18 +33,17 @@ async function fixture(t, extra = {}) {
   h.tick(350);
   return { h, peer, app: h.controller('herdr-app') };
 }
-test('Model follows the App pane across banks and state changes while local selection and Page preserve its target', async (t) => {
+test('navigation follows App selection across banks, preserves later Page browsing and leaves provider controls blank', async (t) => {
   const { h, peer, app } = await fixture(t);
   const model = () => frame(h, 'herdr-app:2,0');
-  assert.match(model(), />Model</);
-  assert.match(model(), />1 · Codex</);
+  assert.doesNotMatch(model(), />Model</);
   assert.equal(app.keys.get('herdr-app:2,0').presented.action, 'none');
   await h.profilePress('herdr-app', 1, 1);
   assert.equal(app.getBank(), 1);
   h.tick(350);
   await h.profilePress('herdr-app', 0, 0);
   assert.equal(app.selected().pane, 'p6');
-  assert.match(model(), />1 · Codex</);
+  assert.doesNotMatch(model(), />Model</);
   await h.profilePress('herdr-app', 2, 0);
   assert.deepEqual(peer.inputs(), []);
   assert.deepEqual(h.calls, []);
@@ -52,7 +51,7 @@ test('Model follows the App pane across banks and state changes while local sele
   Object.assign(peer.status, { focused_pane: 'p7', agent: 't7' });
   await app.refresh();
   assert.equal(app.getBank(), 1);
-  assert.match(model(), />7 · Pane 7</);
+  assert.doesNotMatch(model(), />Model</);
   h.tick(350);
   await h.profilePress('herdr-app', 1, 1);
   assert.equal(app.getBank(), 0);
@@ -66,7 +65,7 @@ test('Model follows the App pane across banks and state changes while local sele
     presented.armedAt,
   );
   assert.equal(h.socket.frames.length, frames);
-  assert.match(model(), />7 · Pane 7</);
+  assert.doesNotMatch(model(), />Model</);
 
   const selected = peer.world.spaces[0].tabs[0].terminals[6];
   for (const status of ['working', 'blocked', null]) {
@@ -80,7 +79,7 @@ test('Model follows the App pane across banks and state changes while local sele
   assert.doesNotMatch(model(), />Model</);
   selected.app = 'codex';
   await app.refresh();
-  assert.match(model(), />Model</);
+  assert.doesNotMatch(model(), />Model</);
   peer.world.spaces[0].tabs[0].terminals.pop();
   await app.refresh();
   assert.doesNotMatch(model(), />Model</);
@@ -278,9 +277,9 @@ test('profile disappearance, new appearance and configuration changes refuse cap
   await press;
   assert.deepEqual(peer.inputs(), []);
 });
-test('empty production records block focus (discovery is read-only) even with configured home and all opt-ins enabled', async () => {
+test('production navigation requires a live verified App even when home and all opt-ins are configured', async () => {
   assert.deepEqual(APP_FOCUS_RECORDS, []);
-  assert.equal(appFocusBackend.recordCount, 0);
+  assert.equal(appFocusBackend.recordCount, 1);
   const h = harness({ experimentalHerdrApp: true });
   await h.appear('herdr-app');
   await preferences(h, {

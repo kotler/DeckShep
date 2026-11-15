@@ -102,7 +102,7 @@ const scenes = {
   thumbnail: {
     headline: ['Your agents.', 'At your fingertips.'],
     subhead: [
-      'Local controls for Rex and Herdr.',
+      'Rex controls and Herdr App navigation.',
       'A clear view of the agent you select.',
     ],
   },
@@ -110,14 +110,14 @@ const scenes = {
     headline: ['See the agent.', 'Choose the next move.'],
     subhead: [
       'Project, status and selection on the keys.',
-      'Separate Rex and Herdr profiles.',
+      'Separate Rex and Herdr App profiles.',
     ],
   },
   'gallery-context': {
     headline: ['Controls that follow', 'the selected agent.'],
     subhead: [
-      'Model, Effort and Zoom when supported.',
-      'Experimental features require setup.',
+      'Model and Effort in the Rex profile.',
+      'Herdr App agent controls are deferred.',
     ],
   },
   'gallery-questions': {

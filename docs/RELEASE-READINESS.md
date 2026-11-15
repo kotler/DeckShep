@@ -34,8 +34,10 @@ Marketplace eligibility is reviewed separately. Provider trademark permission is
 independent checks: Claude controls/questions/approvals on hardware, mixed-agent
 navigation, hook lifecycle and custom bindings, a clean Mac install and upgrade, Intel
 execution, optional signing/notarization and cleanup fingerprints. Do not claim
-these passed from fixtures or a universal build. The first release ships only
-the Rex profile; Herdr gates are deferred with it.
+these passed from fixtures or a universal build. Version 1.5.0 prepares Rex and Herdr App navigation. Herdr App input controls
+and Herdr TUI distribution remain deferred. The App 0.1.16 / Core 0.1.21 native
+record includes a failed background-editor assertion. Preserve that open item
+when reviewing exact-version launch evidence.
 
 The owner approved launch validation for the 1.4.0 Rex beta and selected
 `kotler/DeckShep` Issues. Signed-out access was verified on November 12, 2026. Before publishing a release,

@@ -178,47 +178,29 @@ test('App navigation preserves mode, destination, reason and state at legible si
   }
 });
 
-test('informational Model keeps a compact target cue legible in both styles and ignores provider overrides elsewhere', () => {
-  const { projectAppControls } = require('../../src/domain/app-controls');
-  const { svg } = require('../../src/render/visuals');
-  const { controls } = projectAppControls(
-    null,
-    {
-      selected: target,
-      panes: [
-        { target, name: 'Fix', reportedApp: 'codex', reportedStatus: 'idle' },
-      ],
-    },
-    'source',
-  );
+test('navigation release keeps default bottom-row keys and saved provider overrides blank', () => {
   for (const style of ['classic', 'signal']) {
-    const shown = tile(undefined, {
-      key: { settings: {}, coordinates: { row: 2, column: 0 } },
-      controls,
-      controlSlot: 5,
-      mapped: 'none',
-      style,
-    });
-    assert.deepEqual(shown.lines, ['Model', '6 · Fix']);
-    assert.equal(shown.dim, true);
-    const image = svg(shown);
-    assert.match(image, />Model</);
-    assert.match(image, />6 · Fix</);
-    assert(
-      [...image.matchAll(/font-size="(\d+)"/g)].every(
-        ([, size]) => Number(size) >= 20,
-      ),
-    );
+    for (const action of [
+      undefined,
+      'model',
+      'effort',
+      'permissions',
+      'interrupt',
+      'steer',
+      'queue',
+    ]) {
+      for (let column = 0; column < 5; column++) {
+        const shown = tile(undefined, {
+          key: {
+            settings: action ? { action } : {},
+            coordinates: { row: 2, column },
+          },
+          mapped: 'none',
+          style,
+        });
+        assert.deepEqual(shown.lines, []);
+        assert.equal(shown.icon, 'blank');
+      }
+    }
   }
-  assert.deepEqual(
-    tile(undefined, {
-      key: {
-        settings: { action: 'model' },
-        coordinates: { row: 1, column: 3 },
-      },
-      controls,
-      mapped: 'none',
-    }).lines,
-    [],
-  );
 });

@@ -34,19 +34,14 @@ export async function prepareReleasePreview(
     recursive: true,
     dereference: false,
   });
-  const inspectorFile = path.join(plugin, 'inspector.html');
-  const inspector = fs.readFileSync(inspectorFile, 'utf8');
-  const unapprovedNote =
-    /An approved App\s+build and focus consent also allow one pane focus request\./;
-  if (!unapprovedNote.test(inspector)) throw Error('Preview inspector changed');
-  fs.writeFileSync(
-    inspectorFile,
-    inspector.replace(
-      unapprovedNote,
-      'With focus consent, this preview verifies Herdr’s publisher signature and checks the pane focus command before sending a request.',
-    ),
-  );
   const helperSha256 = candidate.helper.sha256;
+  // A rebuild can change signed helper bytes. Ship the exact helper used by
+  // the reviewed native calibration, then bind the preview bundle to its hash.
+  fs.copyFileSync(
+    path.join(root, 'validated-artifacts/herdr-app-peer'),
+    path.join(plugin, 'bin/herdr-app-peer'),
+  );
+  fs.chmodSync(path.join(plugin, 'bin/herdr-app-peer'), 0o755);
   if (
     hash(fs.readFileSync(path.join(plugin, 'bin/herdr-app-peer'))) !==
     helperSha256
@@ -68,6 +63,9 @@ export async function prepareReleasePreview(
   fs.writeFileSync(
     path.join(plugin, 'profiles/Herdr App.streamDeckProfile'),
     profileArchive(root, 'herdr-app', manifest.Version),
+  );
+  manifest.Profiles = manifest.Profiles.filter(
+    (profile) => profile.Name !== 'profiles/Herdr App',
   );
   manifest.Profiles.push({
     Name: 'profiles/Herdr App',

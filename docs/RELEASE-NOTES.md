@@ -1,3 +1,22 @@
+## 1.5.0 Herdr App navigation — release candidate
+
+- Adds the Herdr App profile alongside Rex, with chat/folder agent tiles,
+  stable slots, Next, Page, Collapse and Attention. App gestures are tap-only.
+- Pane requests require explicit consent and a verified Herdr publisher,
+  live socket peer, packaged helper and current command contract. Signed App
+  updates are accepted without a version pin. The dot follows App selection;
+  acknowledgement does not verify keyboard focus.
+- Agent controls will follow later. Herdr App’s bottom row is blank and saved
+  provider overrides stay inactive. Rex controls are unchanged. Herdr TUI is
+  still source-only. No mod, hooks or code is installed into Herdr.
+- Setup and upgrade preserve existing identities, Rex settings and explicit
+  consents. See [Herdr App setup](HERDR-APP.md).
+- The [native record](validation/2026-11-15-herdr-app-0.1.16-core-0.1.21.md)
+  distinguishes passing lifecycle calibration from the failed background-editor
+  assertion. Publication and exact-version launch approval remain pending.
+
+Earlier entries describe historical release scopes.
+
 ## Rex-only first release — development update
 
 - Zoom has been removed from the deck and inspector action choices. Reviewer

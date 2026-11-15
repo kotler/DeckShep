@@ -5,8 +5,8 @@ Stream Deck MK.2. Independent fresh-account installation and Intel execution
 still need release validation.
 
 1. Extract the ZIP and open `com.kotl3r.deckshep.streamDeckPlugin`.
-2. Accept the bundled **Rex** profile, which uses the new DeckShep
-   identity. Choose Rex on the deck. Older preview profiles are not converted;
+2. Accept the bundled **Rex** and **Herdr App** profiles, which use the DeckShep
+   identity. Choose Rex for the setup below, or follow [Herdr App setup](HERDR-APP.md) for navigation only. Older preview profiles are not converted;
    follow [the identity-reset instructions](IDENTITY.md) first.
 3. Select a key in Stream Deck to open its setup panel. Open Rex and enable
    Remote Control there if it is not already enabled.
@@ -32,7 +32,7 @@ Initial terminal installation, Remote Control, macOS permissions and selecting a
 ready agent are prerequisites; the five-action target still needs an independent
 fresh-account walkthrough.
 
-Herdr is not part of the first release. A source build with
+Herdr TUI remains experimental. A source build with
 `experimental.herdr: true` in `config.json` adds its profile. There, choose
 **Herdr**, select a private session socket in the panel,
 and explicitly enable thread-ID title matching after `/title thread-id` in each

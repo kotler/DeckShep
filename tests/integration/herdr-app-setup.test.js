@@ -40,7 +40,7 @@ test('App helper diagnostics inspect only the fixed owned plugin file and reject
   fs.mkdirSync(helper);
   assert.equal(appPeerHelperAvailable(plugin), false);
 });
-test('a packaged-helper factory uses its fixed path and still cannot probe or connect with empty production records', async (t) => {
+test('the released navigation factory uses only its fixed helper path and refuses a missing App endpoint', async (t) => {
   const plugin = directory(t),
     helper = path.join(plugin, 'bin/herdr-app-peer');
   fs.mkdirSync(path.dirname(helper), { mode: 0o700 });
@@ -73,7 +73,7 @@ test('a packaged-helper factory uses its fixed path and still cannot probe or co
     },
   });
   const backend = exports.appFocusBackend;
-  assert.equal(backend.recordCount, 0);
+  assert.equal(backend.recordCount, 1);
   assert.throws(
     () => backend.create({ herdrApp: { home: '' } }, {}),
     /unavailable/,
@@ -83,11 +83,11 @@ test('a packaged-helper factory uses its fixed path and still cannot probe or co
     {},
   );
   assert(selectedHelper === helper);
-  await assert.rejects(sender.observe(), /Build mismatch/);
+  await assert.rejects(sender.observe(), /unavailable/);
   assert.equal(probes, 0);
   sender.dispose();
 });
-test('App setup/doctor reports profile consent and disabled build state without querying Rex/TUI or exposing paths', async () => {
+test('App setup/doctor reports navigation policy and separate consent without querying Rex/TUI or exposing paths', async () => {
   const h = harness({ experimentalHerdrApp: true });
   await h.appear('herdr-app');
   const context = 'herdr-app:0,0';
@@ -126,7 +126,7 @@ test('App setup/doctor reports profile consent and disabled build state without 
   );
   assert.equal(
     report.checks.find((check) => check.id === 'herdr-app-builds').ok,
-    false,
+    true,
   );
   assert(!JSON.stringify(report).includes('/sample/app'));
   const positive = herdrAppChecks({
@@ -176,7 +176,7 @@ test('App CLI doctor uses passive App-only reporting with a private HOME and no 
   assert(report.every((check) => check.id.startsWith('herdr-app-')));
   assert.equal(
     report.find((check) => check.id === 'herdr-app-builds').ok,
-    false,
+    true,
   );
   assert(
     report

@@ -207,6 +207,9 @@ test('older v3 stores gain no focus-request consent and request-only consent nei
     migrated.profiles['herdr-app'].herdrAppFocusRequestEnabled,
     false,
   );
+  const oldConfig = codec.profileConfig(base, migrated, 'herdr-app');
+  assert.equal(oldConfig.herdrApp.inputEnabled, false);
+  assert.equal(oldConfig.claude.enabled, false);
   const fresh = codec.update(codec.store(), 'herdr-app', {
     herdrAppFocusRequestEnabled: true,
   });

@@ -2,6 +2,10 @@
 
 Status: source spike complete; native validation remains required.
 
+Current distribution is superseded by [ADR 0008](0008-herdr-app-navigation-release.md).
+Version 1.5.0 prepares App navigation for release; provider input remains disabled.
+The historical milestones and evidence limits below remain recorded.
+
 Revision, 2026-11-08: [ADR 0007](0007-herdr-app-0.1.14-source-review.md)
 pins App 0.1.14 and the core 0.1.18 release, distinguishes the earlier
 development snapshots, and records the control/read/isolation constraints.

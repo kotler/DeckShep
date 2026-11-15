@@ -1,5 +1,4 @@
 import type { AppPaneRef, AppPaneStatus } from '../domain/app-selection';
-import type { AppControlProjection } from '../domain/app-controls';
 import {
   appProvider,
   destinationName,
@@ -46,7 +45,6 @@ export function defaultAppAction(key: AppKey): string {
   const { row, column } = key.coordinates;
   if (key.settings.action) return String(key.settings.action);
   if (row === 0) return `agent:${column}`;
-  if (row === 2 && column === 0) return 'model';
   return row === 1 ? (navigationRow[column] ?? 'none') : 'none';
 }
 /** App-reported words only pick a colour/label; they never arm a control. */
@@ -91,8 +89,6 @@ export function appTile(input: {
   viewChanging?: boolean;
   consent: boolean;
   mapped?: string;
-  controls?: AppControlProjection | null;
-  controlSlot?: number;
   reason?: string;
   bank: number;
   banks: number;
@@ -153,31 +149,8 @@ export function appTile(input: {
           : '',
     };
   }
-  // ADR 0007: a reported ready pane can label Model but cannot authorize input.
-  if (
-    key.coordinates.row === 2 &&
-    key.coordinates.column === 0 &&
-    action === 'model' &&
-    input.controls?.model &&
-    input.controls.pane
-  ) {
-    const cue = destinationName(input.controls.pane);
-    return {
-      ...base,
-      icon: 'model',
-      lines: [
-        'Model',
-        ellipsize(
-          input.controlSlot === undefined
-            ? cue
-            : `${input.controlSlot + 1} · ${cue}`,
-          120,
-          22,
-        ),
-      ],
-      dim: true,
-    };
-  }
+  // Navigation release (ADR 0008). Saved provider overrides cannot reveal a
+  // setting or input route; the third row stays blank at its default positions.
   if (input.mapped === 'none') return base;
   if (action === 'collapse')
     return { ...base, icon: 'collapse', lines: ['Collapse'] };

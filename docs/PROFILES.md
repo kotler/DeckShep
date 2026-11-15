@@ -1,12 +1,10 @@
 # Rex and Herdr profiles
 
-> **First release: Rex only.** The owner limited the first release to the **Rex**
-> profile on 2026-11-10. Default and release builds package only Rex. Source
-> builds add **Herdr** with `experimental.herdr: true` in `config.json`; its
-> profile, page and key IDs are unchanged for a later release. The rest of this
-> page describes that preview.
-
-Version 1.3.1 provided two profiles: **Rex** and **Herdr**. Use the profile selector at the top of Stream Deck’s editor to switch. Both use the same 15-key dynamic Home layout. No key is consumed by a backend switch. Page cycles groups of five agents and appears only when there is more than one group; separate Questions and Prompts pages have been removed.
+Version 1.5.0 packages **Rex** and **Herdr App** for the 15-key Stream Deck MK.2.
+Select a profile at the top of Stream Deck’s editor. Each has independent
+connection settings, consent, selection and banks. Herdr TUI stays experimental
+and is available only in a source build with `experimental.herdr: true`.
+Profile, page and key identities remain unchanged.
 
 Each profile pins its controller. The key settings show a read-only **Controller for this profile** field. Configure Rex visible-pane consent and bring-to-front behavior in Rex; configure the explicit Herdr session socket and title matching in Herdr. Claude native-control opt-in is separate for each controller. Animation and Review/Tests/Continue prompt text are shared.
 
@@ -40,18 +38,17 @@ removes closed slots after fresh Rex discovery. Missing titles fall back to the
 Rex session label or Codex/Claude Code. Row 3 keeps provider-specific settings,
 identity and input guards; provider details do not override the Rex agent bar.
 
-The experimental Herdr App profile uses the same agent and navigation positions.
-Tiles, Next and Attention select locally or request an App pane with verified
-build and consent. Page and Collapse act locally. App keys support taps only.
-Row three follows the App-selected pane. A reported ready Codex pane shows
-informational Model in column one with a stable slot/chat cue. It sends no
-input. A changed App selection reveals its bank once; later Page browsing is
-preserved. Saved provider overrides remain inactive. [Herdr App guide](HERDR-APP.md)
+The Herdr App profile uses the same agent and navigation positions. Tiles,
+Next and Attention select locally or request an App pane with verified publisher
+and separate consent. Page and Collapse act locally. App keys support taps
+only. A changed App selection reveals its bank once; later Page browsing is
+preserved. The third row is blank while agent controls are deferred, and saved
+provider overrides stay inactive. [Herdr App guide](HERDR-APP.md)
 
 ## Key map (Stream Deck MK.2, 5×3)
 
 One page, no folders. Row 1 shows agents, row 2 navigates, row 3 controls the
-selected agent.
+selected agent in Rex. Herdr App’s third row stays blank.
 
 | | Column 1 | Column 2 | Column 3 | Column 4 | Column 5 |
 | --- | --- | --- | --- | --- | --- |
@@ -89,7 +86,7 @@ Error, ring Unknown.
 
 ## Install or upgrade
 
-A downloaded 1.3.1 bundle includes both `.streamDeckProfile` files. Import each profile you want to use. On upgrade, keep your existing Rex profile and import **Herdr** once. The source installer adds only missing profile UUIDs and preserves existing layouts, including customized Rex keys. It backs up profiles and the previous plugin first.
+The 1.5.0 bundle includes **Rex** and **Herdr App** `.streamDeckProfile` files. Import each profile you want to use. On upgrade, keep your existing Rex profile and import **Herdr App** once. The source installer adds only missing profile UUIDs and preserves existing layouts, including customized Rex keys. It backs up profiles and the previous plugin first.
 
 Older unmarked keys safely default to Rex, even if the former global controller preference was Herdr. The first load migrates explicit consent, custom prompts and Herdr connection preferences to versioned settings. A legacy preference projection is retained for older-plugin rollback; restore your backup when you need an exact rollback of all settings.
 
@@ -99,10 +96,10 @@ Copied scoped keys retain their controller binding. Newly dragged or legacy unma
 
 See [uninstall instructions](UNINSTALL.md) to remove either profile or the shared plugin. Claude and mixed-agent controls remain a development preview with automated coverage only; separate profiles do not establish native-control compatibility.
 
-## Herdr App preview
+## Herdr App settings
 
-The explicitly enabled experimental build can add the already-reserved **Herdr App**
-profile. Default builds contain only Rex. Its home and plain-focus-request
-consent are independent; no migration grants consent. App-reported panes and deck
-selection are separate from provider/chat identity. A validated App view enables local navigation. Plain focus requests require explicit
-consent and a matching build record. The production record list is empty. See [App setup](HERDR-APP.md).
+The App home and plain-focus-request consent are independent of Rex and TUI.
+Fresh installs and migrations grant no App consent. App-reported panes and deck
+selection stay separate from provider/chat identity. Plain focus requests require
+explicit consent, a verified connected publisher and a matching command contract.
+See [App setup](HERDR-APP.md).

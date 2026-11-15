@@ -2,8 +2,9 @@
 
 DeckShep is a macOS Stream Deck plugin (`com.kotl3r.deckshep`) for the 15-key
 Stream Deck MK.2. It controls coding agents (Codex CLI, Claude Code) that are
-already running in a terminal multiplexer: **Rex** (released), and **Herdr TUI**
-and **Herdr App** (in source, experimental, not packaged). Most of the code is
+already running in a terminal multiplexer: **Rex** and **Herdr App** navigation
+(packaged in 1.5.0), plus **Herdr TUI** (source-only experimental). Herdr App
+agent input controls are deferred (ADR 0008). Most of the code is
 _guards_: proof that a key press still targets the same agent, process, pane and
 state it was rendered for before any input reaches a terminal.
 
@@ -132,17 +133,23 @@ plugin folder; root JS in `com.kotl3r.deckshep.sdPlugin/` (`claude-hook.js`,
 Row 2 keys appear only when useful: Next with two or more agents, Page with
 more than one bank of five, Collapse with gaps, Attention when another agent is
 waiting, errored or done. Hold Next agent for the previous agent and Page for
-the previous page. In the experimental App scope, rows 1–2 use the App's local agent roster and
-stable slots. The dot follows the App report. Attention rechecks the displayed
-agent and reason before selection or a consented focus request. App provider
-settings overrides are inactive (ADR 0007). Row 3 column 1 can show informational
-Model for the App-reported ready Codex pane, with a stable slot/chat cue. It
-always publishes action `none`. App selection changes reveal its bank once;
-identical polls preserve later Page browsing. No active Model route is qualified.
-`tests/unit/herdr-app-model-probes.test.js` records native/API counterexamples.
-The separately authorized live virtual deck also uses a disposable Cocoa editor
-to check passive background tracking and zero editor key events; its OSC status
-fixtures do not establish a real Codex Model change.
+the previous page. In the Herdr App scope, rows 1–2 use the App's local agent
+roster and stable slots. The dot follows the App report. Attention rechecks the
+displayed target and reason before selection or a consented focus request.
+App provider overrides stay inactive and the third row defaults to blank.
+App selection changes reveal its bank once; identical polls preserve later Page
+browsing. Production verifies Herdr’s publisher, live peer, helper and command
+contract without a marketing-version pin. It grants no provider capability.
+
+Before extending App input, read
+`docs/plans/HERDR-APP-MODEL-PRODUCTION-PLAN.md` and
+`docs/plans/herdr-app-agent-controls/herdr-mod-model-delivery-prototype.md`.
+The test-only mod/Model and fixed Core input-gate probes are described in
+`tests/e2e/README.md`. Native evidence on Core 0.1.21 includes input after expiry
+and writer closure; a successful prototype is no input qualification. The
+App 0.1.16 full navigation run also failed its background-editor assertion.
+Preserve that open evidence when reviewing launch readiness.
+
 In Rex, rows 1-2 use Rex discovery, status, titles and physical pane
 selection and must not depend on provider hooks or daemons; row 3 carries the
 provider-specific identity and input guards. Zoom and the separate Questions and
@@ -151,7 +158,7 @@ stay inactive.
 
 Read before changing an area: `docs/adr/*`, `docs/IDENTITY.md`,
 `docs/CODEX-HOOKS.md`, `docs/CLAUDE.md` (Claude provider capabilities),
-`docs/PROFILES.md`, and for Herdr App ADR 0004/0007,
+`docs/PROFILES.md`, and for Herdr App ADR 0004/0007/0008,
 `docs/plans/HERDR-APP-PLAN.md` and `tests/live/APP-CALIBRATION.md`. E2E details
 are in `tests/e2e/README.md`. `docs/plans/REFACTOR-PLAN.md` is historical.
 
@@ -183,10 +190,11 @@ on purpose:
   only restores a recorded original. `tests/unit/claude-no-statusline.test.js`
   and a source scan for `/statusline` enforce this. Codex setup edits only its
   own entries in `hooks.json`, never `config.toml`.
-- **Release scope**: release builds ship only Rex (`RELEASE_BACKENDS` in
-  `scripts/profiles.mjs`). Herdr stays in source behind `experimental.herdr` /
-  `experimental.herdrApp` (default false; package audits refuse them). Do not
-  delete Herdr code or tests.
+- **Release scope**: 1.5.0 builds ship Rex and Herdr App navigation
+  (`RELEASE_BACKENDS` in `scripts/profiles.mjs`, ADR 0008). Herdr TUI stays
+  experimental behind `experimental.herdr`; App provider input stays disabled.
+  Package audits reject experimental flags and nonempty/enabled App defaults.
+  Keep deferred code and tests in source.
 - **Display limits**: key feedback is at most 15 characters and never cut
   mid-word (`keyMessage` in `src/domain/labels.ts`); inspector messages are at
   most 160. Key text is never drawn below 20 SVG units (10 px): fixed captions

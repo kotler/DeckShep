@@ -1,5 +1,9 @@
 # 0007 — Herdr App 0.1.14 source review and isolation boundary
 
+The later [navigation release decision](0008-herdr-app-navigation-release.md)
+supersedes experimental-only distribution. This source review and its provider
+input/read-back limits remain historical evidence.
+
 Status: Phase 0 source review complete, 2026-11-08; owner review pending.
 Native validation has not run. This ADR grants no production capability and
 creates no verified-version/control record. It supplements [ADR 0004](0004-herdr-app-backend.md).

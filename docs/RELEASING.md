@@ -23,8 +23,8 @@ npm run knip
 npm run version:check
 npm run compatibility:check
 npm run test:bundled
-npm run package -- --tag v1.4.0-beta.1 --require-clean
-node scripts/package.mjs --verify dist/deckshep-1.4.0-beta.1-macos.zip
+npm run package -- --tag v1.5.0-beta.1 --require-clean
+node scripts/package.mjs --verify dist/deckshep-1.5.0-beta.1-macos.zip
 ```
 
 The default packaging path is `private-review`, with `vX.Y.Z-beta.N` tags only.
@@ -41,7 +41,7 @@ notices. Nothing installs or uploads. Universal output does not prove Intel exec
 `release/readiness.json`; see [RELEASE-READINESS.md](RELEASE-READINESS.md). The evidence includes signed-out access to the public Issues tracker.
 Never mark records verified just to make a release job pass.
 
-Once reviewed, `npm run package -- --release --tag v1.4.0 --require-clean` is the
+Once reviewed, `npm run package -- --release --tag v1.5.0 --require-clean` is the
 stable path. `--release` always requires clean provenance, even without
 `--require-clean`. Reviewed betas may also use it. `BUILD-INFO.json` records
 `public-release` or `private-review`; legacy beta provenance without that field

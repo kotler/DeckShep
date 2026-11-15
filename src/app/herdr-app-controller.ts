@@ -223,7 +223,6 @@ export class HerdrAppController {
       this.#bank,
       key.settings.action,
       action,
-      defaultAppAction(key) === 'model' ? this.#controls?.revision : null,
       conditions,
       paneKey(pane?.target),
       focus,
@@ -302,10 +301,6 @@ export class HerdrAppController {
         viewChanging: !this.#snapshot && this.#slotEpoch > 0,
         consent: shown.focus,
         mapped: shown.action,
-        controls: this.#controls,
-        controlSlot: this.#controls?.pane
-          ? this.#roster.indices.get(paneKey(this.#controls.pane.target))
-          : undefined,
         reason: shown.conditions?.reason ?? undefined,
         bank: this.#bank,
         banks: this.#banks(),

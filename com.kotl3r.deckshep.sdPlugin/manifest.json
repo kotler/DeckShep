@@ -2,7 +2,7 @@
   "Name": "DeckShep",
   "UUID": "com.kotl3r.deckshep",
   "Author": "Everett Kotler",
-  "Version": "1.4.1.0",
+  "Version": "1.5.0.0",
   "Description": "Local Stream Deck controls for coding agents in Rex and Herdr",
   "Icon": "icon",
   "Category": "DeckShep",
@@ -26,7 +26,9 @@
       "Name": "DeckShep Key",
       "UUID": "com.kotl3r.deckshep.key",
       "Icon": "action-icon",
-      "Controllers": ["Keypad"],
+      "Controllers": [
+        "Keypad"
+      ],
       "PropertyInspectorPath": "inspector.html",
       "States": [
         {

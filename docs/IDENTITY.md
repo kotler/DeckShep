@@ -18,7 +18,8 @@ Profile and page UUIDs are UUID5 values calculated with the URL namespace and
 `com.kotl3r.deckshep/page/<backend>`. Per-key ActionIDs use
 `com.kotl3r.deckshep/<backend>/key/<index>`, including Rex. The values are fixed
 in `scripts/profiles.mjs` and independently checked by identity tests. The
-experimental Herdr App profile also has a new reserved identity and stays off.
+Herdr App profile uses its already-reserved identity in the 1.5.0 navigation
+release. Herdr TUI’s reserved identity remains unchanged.
 
 ## Moving from an older private preview
 

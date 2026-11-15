@@ -200,32 +200,32 @@ function world(panes: ReturnType<typeof pane>[], selected = 1) {
     app: { epoch: 1, panes, selected: pane(selected).target },
   };
 }
-test('Model identifies the App target while browsing another bank and follows App selection and state', async ({
+test('App selection reveals its bank once while bottom-row controls stay blank', async ({
   page,
 }) => {
   await app(page, false);
   const panes = Array.from({ length: 7 }, (_, i) => pane(i + 1));
   await command(page, 'setScenario', world(panes));
   const model = page.getByTestId('key-2-0');
-  await expect(model).toHaveAccessibleName('Model · 1 · Pane 1');
+  await expect(model).toHaveAccessibleName('Empty key');
   await command(page, 'press', 1, 1);
   await command(page, 'advance', 350);
   await command(page, 'press', 0, 0);
   await expect(page.getByTestId('key-0-0')).toHaveAccessibleName(
     /Pane 6.*On deck/,
   );
-  await expect(model).toHaveAccessibleName('Model · 1 · Pane 1');
+  await expect(model).toHaveAccessibleName('Empty key');
   await model.click();
   expect(await trace(page)).toEqual([]);
 
   await command(page, 'setScenario', world(panes, 7));
   await expect(page.getByTestId('key-0-1')).toHaveAccessibleName(/Pane 7/);
-  await expect(model).toHaveAccessibleName('Model · 7 · Pane 7');
+  await expect(model).toHaveAccessibleName('Empty key');
   await command(page, 'advance', 350);
   await command(page, 'press', 1, 1);
   await command(page, 'setScenario', world(panes, 7));
   await expect(page.getByTestId('key-0-0')).toHaveAccessibleName(/Pane 1/);
-  await expect(model).toHaveAccessibleName('Model · 7 · Pane 7');
+  await expect(model).toHaveAccessibleName('Empty key');
   for (const status of ['working', 'blocked']) {
     await command(
       page,

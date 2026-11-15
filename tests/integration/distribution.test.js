@@ -175,6 +175,11 @@ test('installer requires safe defaults, exact entry points, profiles and consist
     { herdr: { socketPath: '/tmp/private.sock', titleIdentity: true } },
     { experimental: { herdr: true } },
     { experimental: { herdrApp: true } },
+    { herdrApp: { home: '/sample/app', focusRequestEnabled: true } },
+    { herdrApp: { home: '', inputEnabled: true } },
+    {
+      herdrApp: { coreSocketPath: '/sample/core.sock', readbackEnabled: true },
+    },
   ]) {
     const changed = new Map(files),
       config = {
@@ -199,7 +204,7 @@ test('installer requires safe defaults, exact entry points, profiles and consist
       /Missing plugin entry/,
     );
   }
-  // The first release is Rex-only: a registered Herdr profile is refused.
+  // Herdr TUI is still experimental: registering its profile is refused.
   const withHerdr = new Map(files),
     manifest = JSON.parse(withHerdr.get(prefix + 'manifest.json'));
   manifest.Profiles.push({
@@ -227,7 +232,7 @@ test('DeckShep profiles preserve their new IDs, UUID5 ActionIDs, version, scope 
     ids = [];
   // Independently calculated with Python uuid.uuid5(NAMESPACE_URL, ...).
   assert.equal(P.actionId(0, 'rex'), 'c74c571c-67a2-59ae-a0cb-d3425b4ec652');
-  for (const backend of ['rex', 'herdr']) {
+  for (const backend of ['rex', 'herdr', 'herdr-app']) {
     const directory = P.profile(root, P.deviceTemplate, backend, '1.3.4.0'),
       data = () => Z.zip(Z.tree(directory, path.basename(directory) + '/'));
     A.auditProfile(data(), '1.3.4.0', backend);
@@ -256,9 +261,9 @@ test('DeckShep profiles preserve their new IDs, UUID5 ActionIDs, version, scope 
     );
     assert.throws(() => A.auditProfile(data(), '1.3.4.0', backend));
   }
-  assert.equal(new Set(ids).size, 30);
+  assert.equal(new Set(ids).size, 45);
 });
-test('upgrade in temporary HOME adds bundled entries without a Herdr profile or changing customized Rex keys, config or Claude hook records', async (t) => {
+test('upgrade in temporary HOME adds Herdr App without a Herdr TUI profile or changing customized Rex keys, config or Claude hook records', async (t) => {
   const [Z, A, P, I] = await api(),
     root = temporary(t),
     home = path.join(root, 'home'),
@@ -326,6 +331,11 @@ test('upgrade in temporary HOME adds bundled entries without a Herdr profile or 
   assert(fs.existsSync(path.join(dest, 'claude-hook.js')));
   assert(
     !fs.existsSync(path.join(profiles, P.PROFILE_IDS.herdr + '.sdProfile')),
+  );
+  assert(
+    fs.existsSync(
+      path.join(profiles, P.PROFILE_IDS['herdr-app'] + '.sdProfile'),
+    ),
   );
   assert(fs.existsSync(result.backup));
   assert(!fs.existsSync(path.join(root, 'checkout/backups')));
@@ -479,23 +489,31 @@ test('complete archives verify stable public-release provenance and reject stabl
   assert.equal(A.verifyBundle(archive()).tag, info.tag);
 });
 
-test('release builds ship only the Rex profile unless a preview flag is set', async () => {
+test('release builds ship Rex and Herdr App navigation, with Herdr TUI only in explicit source previews', async () => {
   const [, A, P] = await api();
-  assert.deepEqual([...P.RELEASE_BACKENDS], ['rex']);
-  assert.deepEqual(A.PROFILES, ['Rex.streamDeckProfile']);
-  assert.deepEqual(P.buildBackends(), ['rex']);
-  assert.deepEqual(P.buildBackends({ herdr: false, herdrApp: false }), ['rex']);
-  assert.deepEqual(P.buildBackends({ herdr: true }), ['rex', 'herdr']);
-  assert.deepEqual(P.buildBackends({ herdr: true, herdrApp: true }), [
-    'rex',
-    'herdr',
-    'herdr-app',
+  const released = ['rex', 'herdr-app'];
+  assert.deepEqual([...P.RELEASE_BACKENDS], released);
+  assert.deepEqual(A.PROFILES, [
+    'Rex.streamDeckProfile',
+    'Herdr App.streamDeckProfile',
   ]);
-  // Profile identities stay fixed for a later Herdr release.
+  assert.deepEqual(P.buildBackends(), released);
+  assert.deepEqual(
+    P.buildBackends({ herdr: false, herdrApp: false }),
+    released,
+  );
+  assert.deepEqual(P.buildBackends({ herdrApp: true }), released);
+  assert.deepEqual(P.buildBackends({ herdr: true }), [...released, 'herdr']);
+  assert.deepEqual(P.buildBackends({ herdr: true, herdrApp: true }), [
+    ...released,
+    'herdr',
+  ]);
   assert.equal(P.PROFILE_IDS.herdr, 'AB25F8CF-5D02-51A5-8904-F666E35A500A');
   assert.equal(
     require('../../com.kotl3r.deckshep.sdPlugin/config.json').experimental
       .herdr,
     false,
   );
+  const { applicationDependencies } = require('../../src/plugin/dependencies');
+  assert.deepEqual(applicationDependencies(), { experimentalHerdrApp: true });
 });

@@ -22,7 +22,8 @@ export interface AppPeerConnection {
   finish(): Promise<void>;
   dispose(): Promise<void>;
 }
-// Source inspection and fixtures cannot authorize a production App build.
+// Exact records serve calibration. Released navigation verifies the publisher;
+// neither policy authorizes provider input or verified keyboard focus.
 export const APP_FOCUS_RECORDS: readonly AppFocusRecord[] = Object.freeze([]);
 
 export class AppPeerVerifier {
