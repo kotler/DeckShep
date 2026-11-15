@@ -1,4 +1,4 @@
-## 1.5.0 Herdr App navigation — release candidate
+## 1.5.0 beta 1 — Herdr App navigation
 
 - Adds the Herdr App profile alongside Rex, with chat/folder agent tiles,
   stable slots, Next, Page, Collapse and Attention. App gestures are tap-only.
@@ -13,7 +13,13 @@
   consents. See [Herdr App setup](HERDR-APP.md).
 - The [native record](validation/2026-11-15-herdr-app-0.1.16-core-0.1.21.md)
   distinguishes passing lifecycle calibration from the failed background-editor
-  assertion. Publication and exact-version launch approval remain pending.
+  assertion. The owner authorized publishing this beta with those limits
+  retained; no new native keyboard-focus pass is claimed.
+
+- Includes the five reviewed Dependabot updates. All 772 runnable repository
+  tests, 61 synthetic Playwright cases and four bundled golden tests passed.
+  The installed Rex 0.1.0-preview.19 read-contract smoke passed in a private,
+  test-owned server. Native agent control and hardware limits remain unchanged.
 
 Earlier entries describe historical release scopes.
 

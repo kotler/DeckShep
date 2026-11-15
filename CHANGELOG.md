@@ -5,7 +5,7 @@ preview artifacts use `-beta.N` release tags.
 
 ## [Unreleased]
 
-## [1.5.0] — release candidate, not published
+## [1.5.0-beta.1] — 2026-11-15
 
 ### Added
 
@@ -27,6 +27,14 @@ preview artifacts use `-beta.N` release tags.
   virtual-deck background-editor assertion failed with Chrome frontmost; its
   cause remains unresolved. Hardware, clean-Mac and Intel execution claims
   require their own evidence.
+
+### Dependencies and validation
+
+- Update Knip to 6.45.1, Prettier to 3.10.0, ws to 8.22.2, TypeScript ESLint
+  to 8.72.2 and Rollup to 4.68.2.
+- Repeat the automated suite and run the owned-server read-contract smoke
+  against installed Rex 0.1.0-preview.19 (App build 1973, API revision 14).
+  Provider controls and GUI focus retain their separate native checks.
 
 ## Earlier development changes
 

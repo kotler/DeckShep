@@ -12,8 +12,8 @@
   },
   "launchValidation": {
     "version": "1.5.0",
-    "ownerVerified": false,
-    "reviewedAt": null,
+    "ownerVerified": true,
+    "reviewedAt": "2026-11-15",
     "evidence": "docs/validation/2026-11-15-herdr-navigation-release-prep.md"
   },
   "support": {

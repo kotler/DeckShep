@@ -1,8 +1,8 @@
 # Herdr App navigation release preparation — 1.5.0
 
 Prepared November 15, 2026 on `codex/herdr-app-navigation`. This is a local
-candidate record. Publication and exact-version owner launch approval remain
-pending in `release/readiness.json`.
+candidate record. Publication and exact-version owner launch approval were pending at initial
+preparation; the subsequent owner direction is recorded below.
 
 ## Scope
 
@@ -45,7 +45,7 @@ stay outside the shipped bundle. Package audits reject their fixture marker.
   launch review. The prior 1.4.0 approval was not carried into 1.5.0.
 
 `origin/main` was fetched during preparation. It remained the branch’s existing
-base, with no intervening upstream commits. No push, merge, tag or publication
+base, with no intervening upstream commits. During the initial preparation, no push, merge, tag or publication
 was performed.
 
 ## Review closure
@@ -81,3 +81,54 @@ The local candidate is `dist/deckshep-1.5.0-beta.1-macos.zip`, with its adjacent
 actual commit and dirty state. This is a private-review artifact; packaging
 performs no installation or upload. Final checksum verification uses
 `node scripts/package.mjs --verify <candidate-zip>`.
+
+## Subsequent dependency integration and installed Rex regression
+
+The owner subsequently requested merging navigation into main and all five
+Dependabot updates. The isolated integration branch includes PR #15 Knip 6.45.1,
+#16 Prettier 3.10.0, #17 ws 8.22.2, #18 TypeScript ESLint 8.72.2 and #19 Rollup
+4.68.2. Overlapping manifests and lock records were resolved by retaining 1.5.0,
+Herdr test dependencies and the semantic union of the five original updates.
+Both independent review axes found no remaining dependency findings.
+
+A clean install returned zero vulnerabilities. The combined changes passed the
+772-test coverage run (four skipped), all 61 synthetic Playwright tests, four
+bundled golden tests, lint, formatting, typecheck, dependency boundaries, Knip,
+version/compatibility checks, commit conventions, universal build, Marketplace
+media checks and audited private-review packaging. Coverage and all golden,
+normalized SVG and PNG baselines were unchanged.
+
+The owner also requested a quick regression against installed Rex. The installed
+application reports App version 0.1.0/build 1973 and CLI
+0.1.0-preview.19, commit `ad5a836cb95bf1685a2b2976762949c44f1d0828`, built
+2026-11-13. The baseline owned-server smoke passed, then the extended smoke
+passed against the same installed executable. Diagnostics reported API revision
+14, minimum 0. The test verified private listener/PID ownership, disposable
+session/terminal creation, foreground process, marker send/capture, VT content
+and cursor, program-status reads, owned cleanup and unchanged settings hashes.
+
+The run used only a newly owned foreground server, private socket/home/state,
+and a disposable cat process. Providers, inference, browser state tests and hooks
+were disabled. It operated no existing Rex session or agent and makes no GUI,
+physical Stream Deck or native Codex/Claude control claim. The Herdr native
+background-editor assertion remains open; publication approval is recorded below.
+
+## Owner publication authorization
+
+After requesting all Dependabot changes be merged and the installed Rex smoke,
+the owner directed: “after the merge tag and publish a release”. This records
+approval to publish the prepared navigation-only 1.5.0 beta. The planned tag is
+`v1.5.0-beta.1`. `release/readiness.json` records the current exact version and
+November 15 review date, with this file as evidence. The earlier 1.4.0 approval
+was not reused.
+
+The owner had been shown the candidate, passing repository/browser/package
+checks and the unresolved Herdr background-editor assertion. That assertion
+stays failed and agent input stays deferred. This authorization supplies no
+additional native, hardware, clean-Mac or Intel test result. All golden and e2e
+baselines remain unchanged. No Marketplace submission is authorized here.
+
+GitHub private vulnerability reporting was enabled and its API state verified
+as enabled before publication, satisfying the existing owner publication task.
+The release workflow builds a draft from the exact tag. The downloaded archive,
+provenance and checksums must be verified before publishing that draft.

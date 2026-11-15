@@ -50,3 +50,14 @@ owner review; see [MARKETPLACE.md](MARKETPLACE.md).
 Local beta packaging remains available without changing any pending approval.
 Stable packaging requires `--release` and a clean source commit; the workflow
 uses the same evidence gate and creates drafts only. See [RELEASING.md](RELEASING.md).
+
+## 1.5.0 beta 1 publication decision
+
+On November 15, 2026 the owner explicitly requested tagging and publishing after
+merging the navigation release and Dependabot updates. That direction records
+exact-version beta publication approval in `release/readiness.json`; it does not
+turn the disclosed Herdr background-editor failure, hardware, clean-Mac or Intel
+checks into passes. Private vulnerability reporting was enabled and verified
+through GitHub’s API before publication. The prepared artifact and source audits
+passed. See [the release evidence](validation/2026-11-15-herdr-navigation-release-prep.md).
+Marketplace submission and provider trademark permission remain separate.

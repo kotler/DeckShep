@@ -1,12 +1,11 @@
 # Security
 
 The primary hazard is delivering input to the wrong pane or agent. Report a
-suspected guard bypass through **GitHub private vulnerability reporting** on the
-public repository's Security → Report a vulnerability page once the owner has
-enabled it. That reporting route is not verified as available yet; enabling
-and verifying them is an owner publication task. Never file exploit details in a
-public Issue. If private reporting is unavailable, wait for the owner-verified
-private support route documented in [SUPPORT.md](docs/SUPPORT.md).
+suspected guard bypass through [GitHub private vulnerability reporting](https://github.com/kotler/DeckShep/security/advisories/new).
+The route was enabled and verified through GitHub’s API on November 15, 2026.
+Never file exploit details in a public Issue. If the private route becomes
+unavailable, follow [SUPPORT.md](docs/SUPPORT.md) and wait for a maintainer’s
+private reporting route before sharing exploit details.
 
 Include the affected DeckShep/upstream versions, the guard involved and a minimal
 synthetic reproduction. Do not include prompt contents, transcripts, credentials,
@@ -28,16 +27,17 @@ commitment is made. Historical validation logs are not permission for live tests
 | Test touches a real session | Fixture-only default tests; compile-time host substitution; explicit live gates, private sockets/homes, PID ancestry and settings fingerprints |
 | Dependency or release artifact changes | Locked tooling, npm audit for shipped dependencies, weekly updates, nested archive/CRC/checksum/version/default audits and draft-only releases |
 
-Herdr App has no production transport or input capabilities. Source-level input
-APIs do not satisfy native identity/focus requirements. Fresh-account installs,
-Intel execution and optional Developer ID/notarization remain separate release
-evidence, never inferred from fixture tests.
+Herdr App has a separate production navigation transport. Provider input and
+verified keyboard-focus capabilities remain disabled. Source-level input APIs
+do not satisfy native identity/focus requirements. Fresh-account installs,
+Intel execution and optional Developer ID/notarization retain their own evidence.
 
-The private Herdr App request preview retains exact App executable/plist hashes,
-dynamic signing evidence, original per-connection audit identity and single-use
-consent/press guards. The owner approved one macOS container exception: canonical
-`/Applications`, root/admin ownership, exact 0775 mode, and no positive ACL grants.
-All bundle files/directories and other ancestors keep their shared-write refusal.
-GID and the exceptional container's full metadata stamp are retained to invalidate
-ACL/group/container changes. App home/socket remain owner-only. This exception
-grants no production App record, terminal read, verified keyboard focus or input.
+App navigation verifies the connected publisher, executable/plist hashes,
+retained per-connection kernel peer and single-use consent/press guards without
+a marketing-version pin. The owner approved one macOS container exception:
+canonical `/Applications`, root/admin ownership, exact 0775 mode, and no positive
+ACL grants. All bundle files/directories and other ancestors retain shared-write
+refusal. The exceptional container’s full metadata stamp detects ACL/group or
+container changes. The App home remains private with no ACL. Socket ownership
+and single-link checks apply to private modes and Herdr’s recreated 0755 sockets.
+This transport grants plain pane requests only.

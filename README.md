@@ -4,7 +4,7 @@ DeckShep puts the Codex CLI and Claude Code sessions you already run in Rex on y
 
 ![DeckShep’s virtual Rex profile with two Codex sessions, a white dot on the selected agent, and ready-state controls along the bottom row](tests/e2e/__screenshots__/idle-darwin.png)
 
-**Release preparation.** Version 1.5.0 adds [Herdr App navigation](docs/HERDR-APP.md), with agent tiles, Next, Page, Collapse and Attention. Its bottom row stays blank while agent controls are deferred. Rex retains its existing controls. The public download below is the earlier Rex beta; 1.5.0 has not been published. Herdr TUI remains experimental.
+**Beta scope.** Version 1.5.0 beta 1 adds [Herdr App navigation](docs/HERDR-APP.md), with agent tiles, Next, Page, Collapse and Attention. Its bottom row stays blank while agent controls are deferred. Rex retains its existing controls. Herdr TUI remains experimental.
 
 ## Get started
 
@@ -14,9 +14,9 @@ You’ll need Rex, Codex CLI or native Claude Code, the Elgato Stream Deck app, 
 
 If you customized an earlier installation, back it up before upgrading. [Upgrade and restore instructions](docs/INSTALL.md#upgrading-a-customized-deckshep-installation)
 
-1. [Download DeckShep 1.4.0 Rex beta 1 for macOS (ZIP)](https://github.com/kotler/DeckShep/releases/download/v1.4.0-beta.1/deckshep-1.4.0-beta.1-macos.zip).
+1. [Download DeckShep 1.5.0 beta 1 for macOS (ZIP)](https://github.com/kotler/DeckShep/releases/download/v1.5.0-beta.1/deckshep-1.5.0-beta.1-macos.zip).
 2. Extract the ZIP and double-click `com.kotl3r.deckshep.streamDeckPlugin`.
-3. Accept the bundled **Rex** profile in the Stream Deck app. Source builds of 1.5.0 also include **Herdr App**; choose that profile and follow its [setup guide](docs/HERDR-APP.md).
+3. Accept the bundled **Rex** and **Herdr App** profiles in the Stream Deck app. Choose Rex for agent controls, or Herdr App for navigation and follow its [setup guide](docs/HERDR-APP.md).
 
 <details>
 <summary>Install from a source checkout</summary>
