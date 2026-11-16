@@ -88,8 +88,17 @@ contract without a marketing-version pin. It grants no provider capability.
 The controller uses one frozen roster view for key faces and press capture.
 An acknowledged focus request reconciles the preflight App observation and the
 deck choice together. Suspension keeps slot order for recovery, while source
-retirement resets the roster. The controller owns source lifetime and fresh
-press checks, including Next and Attention ranking against the captured slots.
+retirement resets the roster. The controller rechecks Next and Attention
+ranking against the captured slots using a fresh App observation.
+
+`src/app/herdr-app-source.ts` owns the verified port and independent App reader,
+shared polls and retirement. Presses capture its source identity as well as the
+endpoint generation. Retirement releases poll waiters immediately and rejects
+late completions. A press waits within its original deadline before requesting
+a fresh read. The controller applies source outcomes to the roster and retains
+the press guards and explicit guarded focus delivery. An initial connection
+probe can await an independent fallback before its first observation. Replacing
+an established source releases its callers before the fallback observation.
 
 Before extending App input, read
 `docs/plans/HERDR-APP-MODEL-PRODUCTION-PLAN.md` and

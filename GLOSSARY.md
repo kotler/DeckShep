@@ -4,6 +4,10 @@ DeckShep presents agent navigation and controls on a Stream Deck.
 
 ## Language
 
+**Herdr App observation source** is the reader supplying Herdr App’s reported
+pane roster and selection. Reports belong to that source’s lifetime and expire
+when it is retired.
+
 **Herdr App roster** is the stable order of agent slots on the Herdr App profile.
 A bank is a group of five slots shown together. A confirmed deck selection
 reveals the chosen agent’s bank and sets the starting point for Next. The
