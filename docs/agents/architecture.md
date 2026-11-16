@@ -52,7 +52,9 @@ rows are conventions:
   process. The controller waits for the post-picker pane observation before
   repainting. Optional Codex metadata refreshes independently and cannot hold
   the completed frame or press queue. The next settings press still requires
-  fresh pane evidence.
+  fresh pane evidence. Before its first verified Codex view, a torn passive
+  read gets one recovery read after 50 ms, with focus and lifetime rechecked
+  before and after it. A failed recovery exposes no digest and grants no input.
 - Rendering: `render()` gathers per-key inputs, `src/app/key-face.ts` (pure)
   returns a `KeySpec` (`src/render/spec.ts`), and `src/render/frame.ts` caches
   the encoded image by spec. A tick that changes nothing builds and sends

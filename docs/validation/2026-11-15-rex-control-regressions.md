@@ -93,3 +93,34 @@ runtime bytes matched the tested build.
 
 Runtime SHA-256:
 `ebf766400472378cb0520da1c3283ba5b7770a55e1e07556c1aa544cf2ae53fa`.
+
+## Fresh Codex startup follow-up
+
+After that installation, the owner reported Model, Effort, Permissions and Mode
+headings without subtitles on a fresh Codex session. A Model press showed
+**Unavailable / Agent view…** and left the native screen unchanged.
+
+A controller fixture reproduced that symptom by tearing only the first passive
+pane read. With no previous complete observation, the ready keys had no view
+digest; the first Model press correctly refused before sending anything. The
+regression failed before the fix and passed afterward. This establishes the
+failure mechanism in the fixture; no native capture establishes why the owner's
+initial read failed.
+
+The observation module now makes one recovery read after 50 ms when its initial
+Codex view is unreadable but process proof exists. It rechecks the observation
+lifetime, visibility, pane, process identity, chat, directory and state before
+starting that read and before publishing. The reader obtains fresh process proof.
+Retirement releases waiters immediately and prevents a delayed recovery read.
+Recovery never repeats an input. If both reads fail, a Model press still refuses
+without sending anything, even if a later native read succeeds. A torn warm read
+still loses its digest and retains only its existing bounded display captions.
+
+The final follow-up checks passed: 852 fixture tests with four live-only skips,
+95.36% line coverage and 88.51% branch coverage; all 61 browser tests; and four
+bundled golden tests. Lint, formatting, types, dependency boundaries, Knip,
+source privacy, version, compatibility, Marketplace checks and both dependency
+audits passed. No thresholds, golden JSON, SVG hashes or PNG baselines changed.
+The controller regressions also cover switching agents and back, every offered
+setting and bound/unbound Interrupt. No further live tests ran, as requested.
+Fresh native startup and physical deck behavior still need the owner's check.
