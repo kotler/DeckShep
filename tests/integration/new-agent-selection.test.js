@@ -223,3 +223,86 @@ test('Codex permission caption survives rediscovery before the next pane read fi
     undefined,
   );
 });
+
+test('a pending Rex settings read cannot publish after Codex metadata replaces the chat in the live roster', async () => {
+  const { KeyboardScreen } = require('../helpers/keyboard-screen');
+  const screen = new KeyboardScreen();
+  const h = harness({ fixtureConsent: true });
+  h.change('a', { rexSettings: {} });
+  const bridge = h.api.bridge;
+  bridge.inspectKeyboardProcess = async (pid) => ({
+    pid,
+    codex: true,
+    image: 'codex',
+    startedAt: 'start',
+  });
+  const pending = Promise.withResolvers();
+  bridge.readKeyboardView = () => pending.promise;
+  await h.api.refresh();
+  const live = bridge.agents.find((agent) => agent.block === 'a');
+  live.chatId = 'replacement';
+  pending.resolve(screen.view());
+  await new Promise(setImmediate);
+  assert.deepEqual(live.rexSettings, {});
+  h.api.render();
+  assert.equal(
+    h.api.keys.get('2,1').presented.target?.rexSettings?.viewHash,
+    undefined,
+  );
+});
+
+test('a settings completion rehydrates Codex identity when metadata is still finishing on an older roster', async () => {
+  const { KeyboardScreen } = require('../helpers/keyboard-screen');
+  const screen = new KeyboardScreen();
+  const publishMetadata = Promise.withResolvers();
+  const finishMetadata = Promise.withResolvers();
+  let cachedChat = 'chat-a';
+  const h = harness({
+    fixtureConsent: true,
+    metadataFactory: () => ({
+      hydrate(agents) {
+        for (const agent of agents) agent.chatId = cachedChat;
+      },
+      async refresh(agents) {
+        await publishMetadata.promise;
+        cachedChat = 'chat-b';
+        agents[0].chatId = cachedChat;
+        await finishMetadata.promise;
+        return agents;
+      },
+    }),
+  });
+  h.change('a', { rexSettings: {} });
+  const bridge = h.api.bridge;
+  bridge.inspectKeyboardProcess = async (pid) => ({
+    pid,
+    codex: true,
+    image: 'codex',
+    startedAt: 'start',
+  });
+  const settingsRead = Promise.withResolvers();
+  bridge.readKeyboardView = () => settingsRead.promise;
+  try {
+    await h.api.refresh();
+    const old = bridge.agents[0];
+    await h.api.refresh();
+    const current = bridge.agents[0];
+    assert.notEqual(current, old);
+    publishMetadata.resolve();
+    await new Promise(setImmediate);
+    assert.equal(old.chatId, 'chat-b');
+    assert.equal(current.chatId, 'chat-a');
+    settingsRead.resolve(screen.view());
+    await new Promise(setImmediate);
+    assert.equal(current.chatId, 'chat-b');
+    assert.deepEqual(current.rexSettings, {});
+    assert.equal(
+      h.api.keys.get('2,1').presented.target?.rexSettings?.viewHash,
+      undefined,
+    );
+  } finally {
+    settingsRead.resolve(screen.view());
+    finishMetadata.resolve();
+    await new Promise(setImmediate);
+  }
+});

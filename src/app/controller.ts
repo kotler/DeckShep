@@ -65,6 +65,7 @@ const { Controller } = require('./profile-controller');
 const { CodexProvider } = require('../agents/codex/provider.ts');
 const { ClaudeProvider } = require('../agents/claude/provider.ts');
 import { keyFace } from './key-face';
+import { RexSettingsObservations } from './rex-settings-observations';
 import { holdActionOf } from '../domain/layout';
 import { controlBlocker } from '../domain/blockers';
 import { createPressGestures } from './press-gesture';
@@ -369,6 +370,7 @@ function createApplication(dependencies: Record<string, any>) {
       const next: any = preferences.profileConfig(diskConfig, saved, scope);
       if (backendKey(next) !== (bridge as any).backendKey) {
         if (actionBusy || setupBusy) return;
+        observations?.clear();
         bridge = makeBridge(next);
         metadata = makeMetadata(bridge);
         if (metadataBusy) metadataAgain = true;
@@ -388,6 +390,8 @@ function createApplication(dependencies: Record<string, any>) {
           k.feedback = null;
         }
       }
+      if (config.allowClipboardFocus && !next.allowClipboardFocus)
+        observations?.clear();
       config = next;
       bridge.config = config;
     }
@@ -753,145 +757,49 @@ function createApplication(dependencies: Record<string, any>) {
         }
       }
     }
-    let settingsRead:
-      | {
-          source: any;
-          target: any;
-          pending: boolean;
-          values: any;
-          readAt: number;
-          chatId?: string | null;
-          lastPermissions?: { process: string; label: string };
-          lastEffort?: { process: string; label: string };
-        }
-      | undefined;
-    function observeFocusedSettings(source: any, agent: any) {
-      const live = source.agents?.find((item: any) =>
-        sameNavigationTarget(item, agent),
+    function currentSettingsFocus() {
+      if (!keys.size || !config.allowClipboardFocus) return;
+      const agent: AgentSnapshot | undefined = bridge.agents?.find(
+        (item: AgentSnapshot) =>
+          sameNavigationTarget(bridge.lastNavigationTarget, item),
       );
-      if (
-        !live?.rexSettings ||
-        !(
-          ['idle', 'done', 'error'].includes(agent.state) ||
-          (agent.app === 'claude-code' &&
-            agent.state === 'unknown' &&
-            !live.chatId) ||
-          (agent.state === 'working' &&
-            ['codex', 'claude-code'].includes(agent.app))
-        )
-      ) {
-        settingsRead = undefined;
-        return;
-      }
-      // Discovery returns a fresh pane before render restores cached Codex
-      // metadata. Compare the same identity at both ends of the poll.
-      if (agent.app === 'codex') hydrateMetadata([live]);
-      if (
-        settingsRead?.source !== source ||
-        !sameNavigationTarget(settingsRead?.target, agent) ||
-        settingsRead?.target.cwd !== agent.cwd ||
-        settingsRead?.target.state !== agent.state ||
-        (agent.app === 'codex' && live.chatId !== settingsRead?.chatId) ||
-        (agent.app === 'codex' &&
-          agent.state === 'working' &&
-          agent.statusAt !== settingsRead?.target.statusAt)
-      )
-        settingsRead = {
-          source,
-          target: agent,
-          chatId: live.chatId,
-          pending: false,
-          values: {},
-          readAt: 0,
-        };
-      const record = settingsRead!;
-      live.rexSettings = record.values;
-      if (record.pending) return;
-      record.pending = true;
-      // A slow or missing provider frame must not delay the dot or row 2.
-      return observeSettings(source, agent)
-        .then((values: any) => {
-          if (
-            settingsRead !== record ||
-            bridge !== source ||
-            !keys.size ||
-            !config.allowClipboardFocus ||
-            !sameNavigationTarget(source.lastNavigationTarget, agent)
-          )
-            return;
-          const current = source.agents?.find(
-            (item: any) =>
-              sameNavigationTarget(item, agent) && item.cwd === agent.cwd,
-          );
-          if (current) {
-            if (agent.app === 'codex') {
-              if (record.lastPermissions?.process !== values.process)
-                record.lastPermissions = undefined;
-              if (values.viewHash && values.process) {
-                if (values.permissions)
-                  record.lastPermissions = {
-                    process: values.process,
-                    label: values.permissions,
-                  };
-                else if (record.lastPermissions)
-                  values.permissions = record.lastPermissions.label + '?';
-              }
-            }
-            // A transient repaint may lose the frame, but should not blank a
-            // known caption between polls. Never retain a hash or grant input
-            // from this display-only grace period, or cross a process change.
-            if (
-              !values.viewHash &&
-              values.process &&
-              values.process === record.values.process &&
-              clock() - record.readAt < 4500
-            ) {
-              for (const field of ['model', 'effort', 'permissions', 'plan'])
-                values[field] = record.values[field];
-              values.permissionsHidden = record.values.permissionsHidden;
-            } else if (values.viewHash) record.readAt = clock();
-            if (agent.app === 'claude-code') {
-              if (
-                !values.process ||
-                values.process !== record.lastEffort?.process
-              )
-                record.lastEffort = undefined;
-              if (
-                values.process &&
-                values.viewHash &&
-                values.effort &&
-                values.effortHidden === false
-              )
-                record.lastEffort = {
-                  process: values.process,
-                  label: values.effort,
-                };
-              if (values.effortHidden && record.lastEffort)
-                values.effort = record.lastEffort.label + '?';
-            }
-            record.values = values;
-            current.rexSettings = values;
-            render();
-          }
-        })
-        .finally(() => {
-          record.pending = false;
-        });
+      // Metadata can finish against an older roster. Hydrate the current entry
+      // before either read capture or publication (ADR 0002).
+      if (agent?.app === 'codex') hydrateMetadata([agent]);
+      if (agent) return { source: bridge as object, visibility, agent };
     }
+    const observations =
+      scope === 'rex'
+        ? new RexSettingsObservations({
+            currentFocus: currentSettingsFocus,
+            read: observeSettings,
+            clock,
+            published(agent, values) {
+              agent.rexSettings = values;
+              render();
+            },
+          })
+        : undefined;
     async function followRexSelection(waitForSettings: boolean) {
-      if (scope !== 'rex') return;
+      if (!observations) return;
       if (!config.allowClipboardFocus) {
-        settingsRead = undefined;
+        observations.clear();
         bridge.resetDisplayFocus?.();
         bridge.lastNavigationTarget = null;
         return;
       }
       const source = bridge,
+        startedVisibility = visibility,
         previous = navigationTarget(),
         previousProof = source.lastTarget;
       try {
         const agent = await source.displayedAgent();
-        if (source !== bridge || !config.allowClipboardFocus || !keys.size)
+        if (
+          source !== bridge ||
+          startedVisibility !== visibility ||
+          !config.allowClipboardFocus ||
+          !keys.size
+        )
           return;
         bridge.lastTarget = sameNavigationTarget(previousProof, agent)
           ? previousProof
@@ -908,11 +816,11 @@ function createApplication(dependencies: Record<string, any>) {
           );
           if (slot >= 0) bank = Math.floor(slot / 5);
         }
-        const observation = observeFocusedSettings(source, agent);
+        const observation = observations.observe(currentSettingsFocus());
         if (waitForSettings) await observation;
       } catch {
-        if (source !== bridge) return;
-        settingsRead = undefined;
+        if (source !== bridge || startedVisibility !== visibility) return;
+        observations.clear();
         // Shells, closed panes and unavailable native focus never retain a dot.
         bridge.lastNavigationTarget = null;
         bridge.lastTarget = null;
@@ -966,7 +874,7 @@ function createApplication(dependencies: Record<string, any>) {
         offline = true;
         bridge.agents = [];
         if (scope === 'rex') {
-          settingsRead = undefined;
+          observations?.clear();
           bridge.resetDisplayFocus?.();
           bridge.navigationAgents = [];
           bridge.lastNavigationTarget = null;
@@ -1145,69 +1053,8 @@ function createApplication(dependencies: Record<string, any>) {
           result = await bridge.withContext(display, () => perform(a, display));
         } else result = await perform(a, display);
         guards.postflight(display);
-        if (
-          settingsRead &&
-          display.target?.app === 'claude-code' &&
-          sameNavigationTarget(settingsRead.target, display.target) &&
-          settingsRead.values.process &&
-          settingsRead.values.process === display.target.rexSettings?.process
-        ) {
-          if (a === 'effort' && result?.label)
-            settingsRead.lastEffort = {
-              process: settingsRead.values.process,
-              label: result.label,
-            };
-          if (a === 'model')
-            settingsRead.lastEffort = result?.appliedEffort
-              ? {
-                  process: settingsRead.values.process,
-                  label: result.appliedEffort,
-                }
-              : undefined;
-          if (a === 'model' || a === 'effort') {
-            // A poll begun before the picker closed must not publish its old
-            // digest for the next key. Keep only the process-bound effort hint.
-            settingsRead = {
-              ...settingsRead,
-              values: {},
-              readAt: 0,
-              pending: false,
-            };
-            refreshSettings = true;
-          }
-        }
-        if (
-          a === 'permissions' &&
-          display.target?.app === 'codex' &&
-          result?.label &&
-          settingsRead?.values.process &&
-          settingsRead.values.process === display.target.rexSettings?.process &&
-          sameNavigationTarget(settingsRead.target, display.target) &&
-          settingsRead.chatId === display.target.chatId
-        ) {
-          // Ignore any passive picker read begun before the new selection.
-          settingsRead = {
-            ...settingsRead,
-            pending: false,
-            lastPermissions: {
-              process: settingsRead.values.process,
-              label: result.label,
-            },
-          };
-        }
-        if (
-          display.target?.app === 'codex' &&
-          rexSettingsAction(a) &&
-          settingsRead
-        ) {
-          settingsRead = {
-            ...settingsRead,
-            pending: false,
-            values: {},
-            readAt: 0,
-          };
-          refreshSettings = true;
-        }
+        refreshSettings =
+          observations?.pickerConfirmed(display.target, a, result) ?? false;
         completed = true;
         k.feedback = null;
         if (result)
@@ -1511,7 +1358,6 @@ function createApplication(dependencies: Record<string, any>) {
       const hadConsent: any = config.allowClipboardFocus;
       loadConfig();
       if (scope === 'rex' && hadConsent && !config.allowClipboardFocus) {
-        settingsRead = undefined;
         bridge.lastTarget = null;
         bridge.lastNavigationTarget = null;
         bridge.draft = null;
@@ -1527,6 +1373,7 @@ function createApplication(dependencies: Record<string, any>) {
     function detach(context: any) {
       keys.delete(context);
       if (!keys.size) {
+        observations?.clear();
         visibility++;
         bridge.draft = null;
         bridge.picker = null;
