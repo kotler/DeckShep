@@ -82,3 +82,14 @@ driver neither borrowed a refresh token nor ran login against the regular HOME.
 The owner then requested finishing without further live testing. The test-owned
 processes were cleaned up. These results do not qualify the complete native matrix,
 Mac GUI focus, USB routing or physical MK.2 timing.
+
+## Installed update
+
+The guarded local installer refreshed version `1.5.0.0` after the owner chose
+to finish without another native run. It verified preservation of all six
+existing profiles (76 files), the integration setup record and merged settings,
+plus a complete backup. Stream Deck and the plugin runtime reopened. Installed
+runtime bytes matched the tested build.
+
+Runtime SHA-256:
+`ebf766400472378cb0520da1c3283ba5b7770a55e1e07556c1aa544cf2ae53fa`.
