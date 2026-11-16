@@ -878,6 +878,27 @@ test('the tile acknowledgement reconciles its preflight App selection before rec
   await app.refresh();
   assert.equal(app.selected().pane, 'p2');
 });
+test('an acknowledged tile in another bank keeps the deck choice across identical App polls', async (t) => {
+  const { h, app, peer } = await fixture(t);
+  await preferences(h, { herdrAppFocusRequestEnabled: true });
+  h.tick(350);
+  await h.profilePress('herdr-app', 1, 1);
+  h.tick(350);
+  Object.assign(peer.status, { focused_pane: 'p3', agent: 't3' });
+  await h.profilePress('herdr-app', 0, 1);
+  assert.equal(app.getBank(), 1);
+  assert.equal(app.selected().pane, 'p7');
+  assert.match(frame(h, 'herdr-app:0,1'), />On deck</);
+  assert.equal(app.keys.get('herdr-app:1,0').presented.target.pane, 'p1');
+  await app.refresh();
+  assert.equal(app.getBank(), 1);
+  assert.equal(app.selected().pane, 'p7');
+  h.tick(350);
+  await h.profilePress('herdr-app', 1, 1);
+  assert.equal(app.getBank(), 0);
+  assert.match(frame(h, 'herdr-app:0,2'), /id="selected-agent"/);
+  assert.deepEqual(peer.inputs(), [{ do: 'pane.focus', args: { pane: 'p7' } }]);
+});
 for (const during of ['poll', 'preflight']) {
   test(`a verified press deadline during an outstanding ${during} shows Press again without dispatch`, async (t) => {
     const { h, app, peer } = await fixture(t);

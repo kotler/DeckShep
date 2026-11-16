@@ -3,17 +3,13 @@ import type { Config } from '../domain/types';
 import type { AppFocusPort, AppFocusState } from '../domain/app-focus-request';
 import { AppTargetChanged } from '../domain/app-focus-request';
 import type { AppPaneRef, AppSelectionSnapshot } from '../domain/app-selection';
-import {
-  projectAppControls,
-  type AppControlProjection,
-} from '../domain/app-controls';
+import { AppRoster, type AppRosterView } from '../domain/app-roster';
 import type { AppCoreStatusPort } from '../terminals/herdr-app/core-status';
 import { AppFocusAuthority } from '../guards/app-focus-request';
 import type { AppFocusBackendFactory } from './herdr-app-backend';
 import { appInspectorRequest } from './herdr-app-inspector';
 import type { FrameCache } from '../render/frame';
 import {
-  appRoster,
   appProvider,
   destinationName,
   matchesAppTarget,
@@ -86,17 +82,12 @@ export class HerdrAppController {
   #port: AppFocusPort | null = null;
   #observer: AppSelectionObserver | null = null;
   #snapshot: AppSelectionSnapshot | null = null;
-  #controls: AppControlProjection | null = null;
   #coreReader: AppCoreStatusPort | null = null;
-  #roster = appRoster([], null, null);
+  readonly #roster = new AppRoster();
   #coreCount: number | undefined;
   #coreReading: AppCoreStatusPort | null = null;
-  #slots: AppPaneRef[] = [];
   #slotEpoch = 0;
-  #selection: AppPaneRef | null = null;
-  #bank = 0;
   #refreshing: Promise<void> | null = null;
-  #layoutStamp = '';
   #active: string | null = null;
   #settingsError = false;
   #message = '';
@@ -122,10 +113,10 @@ export class HerdrAppController {
     return 0;
   }
   getBank() {
-    return this.#bank;
+    return this.#roster.view.bank;
   }
   setBank(value: number) {
-    this.#bank = Math.max(0, Math.min(Math.floor(value), this.#banks() - 1));
+    this.#roster.setBank(value);
   }
   settled() {
     return this.options.settled();
@@ -137,10 +128,7 @@ export class HerdrAppController {
     return Promise.resolve();
   }
   selected() {
-    return this.#selection ?? this.#snapshot?.selected ?? null;
-  }
-  #banks() {
-    return Math.max(1, Math.ceil(this.#slots.length / 5));
+    return this.#roster.view.selected;
   }
   #focusCapable() {
     return (
@@ -157,30 +145,15 @@ export class HerdrAppController {
       this.options.backend.helperAvailable()
     );
   }
-  #project() {
-    this.#roster = appRoster(this.#slots, this.#snapshot, this.selected());
-    this.#slots = this.#roster.slots;
-    this.#layoutStamp = digest(
-      this.#roster.entries.map((p) => paneKey(p?.target)),
-    );
-    this.setBank(this.#bank);
-  }
   #focusConsented() {
     return (
       this.#online() &&
       this.options.config().herdrApp?.focusRequestEnabled === true
     );
   }
-  #pane(action: string) {
-    if (action === 'next') return this.#roster.next;
-    if (action === 'attention') return this.#roster.attention?.agent;
-    if (/^agent:[0-4]$/.test(action))
-      return this.#roster.entries[this.#bank * 5 + Number(action.slice(6))];
-    return undefined;
-  }
-  mapping(key: AppKey) {
+  mapping(key: AppKey, view: AppRosterView = this.#roster.view) {
     if (
-      !this.#snapshot ||
+      !view.available ||
       this.#settingsError ||
       (key.notice &&
         key.notice.until > this.options.clock() &&
@@ -188,29 +161,30 @@ export class HerdrAppController {
     )
       return 'none';
     const action = defaultAppAction(key);
-    if (action === 'collapse')
-      return this.#slots.length > this.#roster.occupied.length
-        ? action
-        : 'none';
-    if (action === 'banknext') return this.#banks() > 1 ? action : 'none';
+    if (action === 'collapse') return view.canCollapse ? action : 'none';
+    if (action === 'banknext') return view.banks > 1 ? action : 'none';
     // The App cannot bind its pane to a Core connection (ADR 0007). Saved provider overrides stay inert.
-    return this.#pane(action) ? action : 'none';
+    return view.destinations[action] ? action : 'none';
   }
-  #presentation(key: AppKey, focus: boolean): AppPresentation {
-    const action = this.mapping(key),
-      pane = this.#pane(action);
+  #presentation(
+    key: AppKey,
+    focus: boolean,
+    view: AppRosterView,
+  ): AppPresentation {
+    const action = this.mapping(key, view),
+      pane = view.destinations[action];
     const conditions: AppTargetConditions | null = pane
       ? {
           action: action === 'next' || action === 'attention' ? action : 'tile',
           provider: appProvider(pane.reportedApp),
           name: destinationName(pane),
-          reason: action === 'attention' ? this.#roster.attention.kind : null,
+          reason: action === 'attention' ? view.attention!.kind : null,
           appSelection: action.startsWith('agent:')
             ? ''
-            : paneKey(this.#snapshot?.selected),
+            : paneKey(view.appSelected),
           effectiveSelection: action.startsWith('agent:')
             ? ''
-            : paneKey(this.selected()),
+            : paneKey(view.selected),
         }
       : null;
     const endpointGeneration = this.#snapshot?.endpointGeneration ?? 0;
@@ -220,13 +194,13 @@ export class HerdrAppController {
       this.#port?.peerKey,
       this.#port?.recordKey,
       this.#backendKey,
-      this.#bank,
+      view.bank,
       key.settings.action,
       action,
       conditions,
       paneKey(pane?.target),
       focus,
-      action === 'collapse' || action === 'banknext' ? this.#layoutStamp : null,
+      action === 'collapse' || action === 'banknext' ? view.layoutKey : null,
     ]);
     if (key.signature !== signature) {
       key.signature = signature;
@@ -246,7 +220,7 @@ export class HerdrAppController {
           : this.options.clock() + 350,
       conditions,
       slotOrder:
-        action === 'next' || action === 'attention' ? this.#slots : undefined,
+        action === 'next' || action === 'attention' ? view.slots : undefined,
       focus,
       target: pane?.target ?? null,
       endpointGeneration,
@@ -275,6 +249,7 @@ export class HerdrAppController {
       this.#stop();
       return;
     }
+    const view = this.#roster.view;
     const focus =
       !!this.#snapshot &&
       !!this.#port &&
@@ -286,24 +261,24 @@ export class HerdrAppController {
           key.notice.until <= this.options.clock())
       )
         delete key.notice;
-      const shown = (key.presented = this.#presentation(key, focus));
+      const shown = (key.presented = this.#presentation(key, focus, view));
       const action = defaultAppAction(key);
       const spec = appTile({
         key,
-        pane: this.#pane(action),
+        pane: view.destinations[action],
         slot:
-          this.#snapshot && action.startsWith('agent:')
-            ? this.#slots[this.#bank * 5 + Number(action.slice(6))]
+          view.available && /^agent:[0-4]$/.test(action)
+            ? view.tiles[Number(action.slice(6))].slot
             : undefined,
-        selected: this.#snapshot?.selected ?? null,
-        deckSelected: this.#selection,
-        online: !!this.#snapshot,
+        selected: view.appSelected,
+        deckSelected: view.deckSelected,
+        online: view.available,
         viewChanging: !this.#snapshot && this.#slotEpoch > 0,
         consent: shown.focus,
         mapped: shown.action,
         reason: shown.conditions?.reason ?? undefined,
-        bank: this.#bank,
-        banks: this.#banks(),
+        bank: view.bank,
+        banks: view.banks,
         now: this.options.clock(),
         palette: this.#config.palette as Record<string, string>,
         style: this.#config.appearance?.style,
@@ -328,18 +303,14 @@ export class HerdrAppController {
     this.#observer?.dispose();
     this.#observer = null;
     this.#snapshot = null;
-    this.#controls = null;
     this.#message = '';
     this.#coreReader?.close();
     this.#coreReader = null;
     this.#coreReading = null;
     this.#coreCount = undefined;
-    this.#selection = null;
     this.#generation = this.options.nextGeneration();
-    this.#slots = [];
     this.#slotEpoch = 0;
-    this.#bank = 0;
-    this.#project();
+    this.#roster.reset();
     this.render();
   }
   applySettings() {
@@ -379,41 +350,22 @@ export class HerdrAppController {
     this.#refreshing = pending;
     return pending;
   }
-  #accept(snapshot: AppSelectionSnapshot) {
+  #accept(snapshot: AppSelectionSnapshot, confirmed?: AppPaneRef) {
     if (this.#slotEpoch && this.#slotEpoch !== snapshot.endpointGeneration) {
       this.#generation = this.options.nextGeneration();
-      this.#slots = [];
-      this.#bank = 0;
-      this.#selection = null;
+      this.#roster.reset();
     }
-    if (paneKey(this.#snapshot?.selected) !== paneKey(snapshot.selected))
-      this.#selection = null;
+    if (confirmed) this.#roster.acknowledgeFocus(snapshot, confirmed);
+    else this.#roster.observe(snapshot);
     this.#snapshot = snapshot;
     this.#slotEpoch = snapshot.endpointGeneration;
-    this.#project();
-    if (this.#selection && !this.#roster.live.has(paneKey(this.#selection))) {
-      this.#selection = null;
-      this.#project();
-    }
-    const { controls, reveal } = projectAppControls(
-      this.#controls,
-      snapshot,
-      `${this.#generation}:${snapshot.endpointGeneration}`,
-    );
-    this.#controls = controls;
-    if (reveal) {
-      const index = this.#roster.indices.get(paneKey(reveal));
-      if (index !== undefined) this.setBank(Math.floor(index / 5));
-    }
   }
   // A pane can close between status and ls. Disarm the whole presentation,
   // but keep the slot order for the next valid observation of this source.
   #suspendView() {
     this.#snapshot = null;
-    this.#controls = null;
-    this.#selection = null;
     this.#generation = this.options.nextGeneration();
-    this.#project();
+    this.#roster.suspend();
     this.render();
   }
   async #read(retryVerification: boolean) {
@@ -470,16 +422,6 @@ export class HerdrAppController {
       if (this.#observer && changingView(error)) this.#suspendView();
       else this.#stop(false);
     }
-  }
-  /** Local deck selection only: no App request, focus claim or authority. */
-  #select(display: AppPresentation) {
-    if (!display.target) throw Error('Request stale');
-    this.#selection = structuredClone(display.target);
-    this.#bank = Math.floor(
-      (this.#roster.indices.get(paneKey(display.target)) ?? 0) / 5,
-    );
-    this.#project();
-    this.#message = 'Deck selected; App focus unchanged';
   }
   /** Only publish the Core count while its separate readback consent is current. */
   #coreAllowed(config = this.#config) {
@@ -571,12 +513,9 @@ export class HerdrAppController {
         await waitForPoll(this.#refreshing, signal);
         this.#assertShown(context, display);
       }
-      if (display.action === 'banknext')
-        this.#bank = (this.#bank + 1) % this.#banks();
-      else if (display.action === 'collapse') {
-        this.#slots = this.#roster.occupied.map((p) => p.target);
-        this.#project();
-      } else {
+      if (display.action === 'banknext') this.#roster.page();
+      else if (display.action === 'collapse') this.#roster.collapse();
+      else {
         if (!display.target || !display.conditions)
           throw Error('Request stale');
         if (display.focus) {
@@ -600,8 +539,7 @@ export class HerdrAppController {
           } catch {
             throw Error('Focus uncertain');
           }
-          this.#accept(preflight);
-          this.#select(display);
+          this.#accept(preflight, display.target);
           this.#message = 'Focus requested; keyboard focus is not verified';
         } else {
           const source = this.#port ?? this.#observer;
@@ -629,7 +567,8 @@ export class HerdrAppController {
             )
           )
             throw Error('Request stale');
-          this.#select(display);
+          this.#roster.select(display.target);
+          this.#message = 'Deck selected; App focus unchanged';
         }
       }
     } catch (error) {
@@ -729,8 +668,8 @@ export class HerdrAppController {
       save: this.options.save,
       state: () => ({
         preferences: this.options.view(this.#config),
-        panes: this.#roster.occupied.length,
-        codex: this.#roster.occupied.filter(
+        panes: this.#roster.view.agents.length,
+        codex: this.#roster.view.agents.filter(
           (p) => appProvider(p.reportedApp) === 'codex',
         ).length,
         coreCount: this.#coreCount,
