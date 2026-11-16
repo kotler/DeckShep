@@ -218,9 +218,9 @@ async function walkthrough(page, run, root, diagnostics = {}) {
       await waitLabel(key(1, 4), /^Empty key$/);
       expect(await selected()).toBe(claude.target.pane);
     });
-    await test.step('An agent tile changes the deck marker while the native dot stays put', async () => {
+    await test.step('An agent tile advances the local destination while the native dot stays put', async () => {
       await clickArmed(tileFor(codex));
-      await waitLabel(tileFor(codex), /On deck/);
+      await waitLabel(key(1, 0), /^Next agent.*Claude/i);
       expect(await selected()).toBe(claude.target.pane);
       await waitForDot(claude);
     });

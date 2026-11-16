@@ -12,7 +12,6 @@ function tile(pane, extra = {}) {
     pane,
     slot: pane?.target,
     selected: null,
-    deckSelected: null,
     preview: false,
     online: true,
     consent: true,
@@ -138,9 +137,7 @@ test('App navigation preserves mode, destination, reason and state at legible si
   };
   for (const style of ['classic', 'signal']) {
     for (const consent of [false, true]) {
-      const selected = svg(
-        tile(pane, { style, consent, selected: target, deckSelected: target }),
-      );
+      const selected = svg(tile(pane, { style, consent, selected: target }));
       const attention = svg(
         tile(pane, {
           style,
@@ -151,16 +148,13 @@ test('App navigation preserves mode, destination, reason and state at legible si
         }),
       );
       const waiting = svg(
-        tile(
-          { ...pane, reportedStatus: 'blocked' },
-          { style, consent, deckSelected: target },
-        ),
+        tile({ ...pane, reportedStatus: 'blocked' }, { style, consent }),
       );
       assert.match(waiting, /id="state-question"/);
       for (const face of [selected, attention, waiting]) {
         assert.match(face, />Job</);
         assert.doesNotMatch(face, />Request(?: only)?</);
-        if (face === attention && !consent) assert.match(face, />Deck only</);
+        if (!consent) assert.match(face, />Deck only</);
         else assert.doesNotMatch(face, />Deck only</);
         assert(
           [...face.matchAll(/font-size="(\d+)"/g)].every(
@@ -168,7 +162,7 @@ test('App navigation preserves mode, destination, reason and state at legible si
           ),
         );
       }
-      assert.match(selected, />On deck</);
+      assert.doesNotMatch(selected, />On deck</);
       assert.match(selected, /id="state-done"/);
       assert.match(selected, /id="selected-agent"/);
       assert.match(attention, />Attention</);

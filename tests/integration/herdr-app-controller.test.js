@@ -113,7 +113,7 @@ test('App routing uses real request guards with separate consent, selection/Next
   assert.doesNotMatch(frame(h, 'herdr-app:0,1'), /Not verified/);
   assert.equal(app.keys.get('herdr-app:0,1').presented.action, 'agent:1');
   assert.doesNotMatch(frame(h, 'herdr-app:0,1'), /id="selected-agent"/);
-  assert.match(frame(h, 'herdr-app:0,1'), />On deck</);
+  assert.doesNotMatch(frame(h, 'herdr-app:0,1'), />On deck</);
   assert(!Object.hasOwn(app.selected(), 'pid'));
   assert(!Object.hasOwn(app.selected(), 'chatId'));
   h.tick(350);
@@ -426,7 +426,7 @@ for (const focus of [false, true]) {
     ]);
     assert.equal(app.getBank(), 1);
     assert.equal(app.selected().pane, 'p6');
-    assert.match(frame(h, 'herdr-app:0,0'), />On deck</);
+    assert.doesNotMatch(frame(h, 'herdr-app:0,0'), />On deck</);
     assert.doesNotMatch(frame(h, 'herdr-app:0,0'), /id="selected-agent"/);
     await app.refresh();
     assert.equal(app.selected().pane, 'p6');
@@ -877,7 +877,7 @@ test('helper loss disarms the old verified roster until an independent local obs
   h.tick(350);
   await h.profilePress('herdr-app', 0, 1);
   assert.equal(app.selected().pane, 'p2');
-  assert.match(frame(h, 'herdr-app:0,1'), /On deck/);
+  assert.doesNotMatch(frame(h, 'herdr-app:0,1'), /On deck/);
   assert.deepEqual(peer.inputs(), []);
 });
 test('verified Attention can finish while an optional Core count remains pending', async (t) => {
@@ -931,7 +931,7 @@ test('an acknowledged tile in another bank keeps the deck choice across identica
   await h.profilePress('herdr-app', 0, 1);
   assert.equal(app.getBank(), 1);
   assert.equal(app.selected().pane, 'p7');
-  assert.match(frame(h, 'herdr-app:0,1'), />On deck</);
+  assert.doesNotMatch(frame(h, 'herdr-app:0,1'), />On deck</);
   assert.equal(app.keys.get('herdr-app:1,0').presented.target.pane, 'p1');
   await app.refresh();
   assert.equal(app.getBank(), 1);

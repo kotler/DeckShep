@@ -19,7 +19,7 @@ test('clicking virtual deck keys switches from local selection to a consented fo
   const second = page.getByTestId('key-0-1');
   await second.click();
   await expect(second).toHaveAccessibleName(
-    /^Pane 2 · DeckShep · Ready · On deck$/,
+    /^Pane 2 · DeckShep · Ready · Deck only$/,
   );
   expect(await trace(page)).toEqual([]);
 
@@ -71,12 +71,7 @@ test('App tile acknowledgement keeps its name and status visible with a separate
   await command(page, 'advance', 350);
   await command(page, 'press', 0, 1);
   expect(await trace(page)).toEqual([['pane.focus', 'p2']]);
-  expect(await labels(page, 0, 1)).toEqual([
-    'Pane 2',
-    'DeckShep',
-    'Ready',
-    'On deck',
-  ]);
+  expect(await labels(page, 0, 1)).toEqual(['Pane 2', 'DeckShep', 'Ready']);
   await expect(page.getByTestId('key-0-1')).toHaveAttribute(
     'data-selected',
     'false',
@@ -178,7 +173,7 @@ for (const consent of [false, true]) {
       'Review',
       'No folder',
       'Waiting',
-      'On deck',
+      ...(consent ? [] : ['Deck only']),
     ]);
     expect(await labels(page, 1, 4)).toEqual([]);
     expect(await trace(page)).toEqual(consent ? [['pane.focus', 'p6']] : []);
@@ -212,7 +207,7 @@ test('App selection reveals its bank once while bottom-row controls stay blank',
   await command(page, 'advance', 350);
   await command(page, 'press', 0, 0);
   await expect(page.getByTestId('key-0-0')).toHaveAccessibleName(
-    /Pane 6.*On deck/,
+    /Pane 6.*Deck only/,
   );
   await expect(model).toHaveAccessibleName('Empty key');
   await model.click();
@@ -328,7 +323,5 @@ test('a fresh tile preflight updates the App dot independently of the acknowledg
   expect(ack.keys[2].selected).toBe(true);
   await command(page, 'setScenario', changed);
   await command(page, 'advance', 2500);
-  expect(await labels(page, 0, 1)).toEqual(
-    expect.arrayContaining(['On deck', 'Ready']),
-  );
+  expect(await labels(page, 0, 1)).toEqual(['Pane 2', 'No folder', 'Ready']);
 });

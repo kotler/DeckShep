@@ -241,7 +241,6 @@ export class HerdrAppController {
             ? view.tiles[Number(action.slice(6))].slot
             : undefined,
         selected: view.appSelected,
-        deckSelected: view.deckSelected,
         online: view.available,
         viewChanging: !this.#source.snapshot && this.#slotEpoch > 0,
         consent: shown.focus,

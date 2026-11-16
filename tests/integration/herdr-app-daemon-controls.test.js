@@ -84,7 +84,8 @@ test('without an approved build App panes are discovered read-only and agent key
 
   await h.profilePress('herdr-app', 0, 1);
   assert.deepEqual(h.controller('herdr-app').selected(), ref(2));
-  assert.match(frame(h, 'herdr-app:0,1'), />On deck</);
+  assert.match(frame(h, 'herdr-app:0,1'), />Deck only</);
+  assert.doesNotMatch(frame(h, 'herdr-app:0,1'), />On deck</);
   await h.profilePress('herdr-app', 1, 2);
   assert.deepEqual(runs, [], 'controls stay inactive without input consent');
   assert.equal(h.calls.length, 0);

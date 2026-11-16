@@ -85,7 +85,6 @@ export function appTile(input: {
   pane?: AppPaneStatus;
   slot?: AppPaneRef;
   selected: AppPaneRef | null;
-  deckSelected: AppPaneRef | null;
   online: boolean;
   viewChanging?: boolean;
   consent: boolean;
@@ -123,12 +122,7 @@ export function appTile(input: {
     return {
       ...base,
       agent: true,
-      modeCaption:
-        pane && paneKey(pane.target) === paneKey(input.deckSelected)
-          ? 'On deck'
-          : pane && !input.consent
-            ? 'Deck only'
-            : undefined,
+      modeCaption: pane && !input.consent ? 'Deck only' : undefined,
       icon: pane ? provider || 'blank' : 'empty',
       lines: pane
         ? agentTileLines(destinationName(pane), pane.folderName, state.label)
