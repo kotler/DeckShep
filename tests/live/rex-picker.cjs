@@ -10,6 +10,9 @@ async function checkPicker({
   large = false,
   scenario,
   hookPlugin,
+  prepareOnly = false,
+  companion,
+  onCycle,
 }) {
   const streamAtLaunch =
     provider === 'codex' && scenario?.startsWith('interrupt-stream');
@@ -331,41 +334,59 @@ async function checkPicker({
         digest,
       } = require('../../src/agents/codex/hook-contract');
       const dir = path.join(hookPlugin, 'state/codex');
-      const reports = fs
-        .readdirSync(dir)
-        .filter((name) => /^\d+-[a-f0-9-]{36}\.json$/.test(name))
-        .map((name) =>
-          hookRecord.parse(
-            require('../../src/agents/codex/hook-files').readPrivate(
-              path.join(dir, name),
+      const reports = () =>
+        fs
+          .readdirSync(dir)
+          .filter((name) => /^\d+-[a-f0-9-]{36}\.json$/.test(name))
+          .map((name) =>
+            hookRecord.parse(
+              require('../../src/agents/codex/hook-files').readPrivate(
+                path.join(dir, name),
+              ),
             ),
-          ),
-        );
-      assert(
-        reports.some(
+          );
+      const reported = () =>
+        reports().some(
           (r) =>
             r.block === block &&
             r.session === topology.session_id &&
             r.cwdHash === digest(repo) &&
             !r.ended,
-        ),
+        );
+      // After trust is stored, a fresh no-daemon CLI may not publish a session
+      // identity until its first prompt. Prime only this owned disposable pane.
+      if (!reported()) {
+        const typed = await deliver(view, 'send', 'Reply only with OK.');
+        await deliver(typed, 'send-key', 'enter', false);
+        const until = Date.now() + 45000;
+        while (Date.now() < until) {
+          const output = await setup.screen(target);
+          if (/^\s*(?:•\s*)?OK[.!]?\s*$/im.test(output)) break;
+          await delay(250);
+        }
+        await delay(1500);
+        view = await read();
+        await assertEmpty(view);
+      }
+      assert(
+        reported(),
         'Expected a live Codex hook report for this disposable pane',
       );
     }
   }
+  const pane = { provider, topology, block, repo, assertOwnedPane, read };
+  if (prepareOnly) return pane;
   const pressDeck = (action) =>
     require('./rex-browser-deck.cjs').checkBrowserDeck({
-      provider,
+      ...pane,
       action,
-      topology,
-      block,
-      repo,
       command,
-      assertOwnedPane,
-      read,
       hookPlugin,
+      companion,
+      onCycle,
     });
   if (scenario === 'browser-ready') return pressDeck('ready');
+  if (scenario === 'effort-max') return pressDeck('effort-cycle');
   if (scenario)
     return require('./rex-states.cjs').checkState({
       scenario,

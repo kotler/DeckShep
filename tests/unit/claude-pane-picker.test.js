@@ -592,6 +592,63 @@ test('only the captured effort badge may expire on the equal-width slider divide
   );
 });
 
+test('the native max diamond badge is observed and may expire without changing the effort selection', () => {
+  const { nativeEffort } = require('../../src/agents/claude/keyboard-mode');
+  const {
+    effortFrameIdentity,
+    idleEffortIdentity,
+  } = require('../../src/agents/claude/effort-slider');
+  const badge = '◈ max · /effort',
+    border = '─'.repeat(60);
+  const text = [badge, border, '❯ ', border, '? for shortcuts'].join('\n');
+  const vt = text + '\x1b[3;3H';
+  assert.equal(nativeEffort({ text }), 'max');
+  assert.equal(readClaudeSettings({ text }).effort, 'max');
+  const hidden = vt.replace(badge, ''),
+    hiddenText = text.replace(badge, '');
+  assert.equal(
+    idleEffortIdentity(vt, text),
+    idleEffortIdentity(hidden, hiddenText),
+  );
+  const reset = '\x1b[0m',
+    color = '\x1b[38;2;177;185;249m';
+  const prefix = reset + color + '▔'.repeat(60);
+  const visible =
+    prefix +
+    '\x1b[1C' +
+    reset +
+    '\x1b[38;2;153;153;153m' +
+    badge +
+    reset +
+    color +
+    ' ▔' +
+    reset;
+  const expired = prefix + '▔'.repeat(badge.length + 3) + reset;
+  const footer =
+    '←/→ to adjust · Enter to confirm · s for this session only · Esc to cancel';
+  const frame = (row) =>
+    row + '\r\nEffort\n────────▲\nlow   medium   high   xhigh   max\n' + footer;
+  assert.equal(
+    effortFrameIdentity(frame(visible), footer, 'max'),
+    effortFrameIdentity(frame(expired), footer, 'max'),
+  );
+  assert.notEqual(
+    effortFrameIdentity(frame(visible), footer, 'high'),
+    effortFrameIdentity(frame(expired), footer, 'high'),
+  );
+  assert.notEqual(
+    effortFrameIdentity(frame(visible), footer, 'max'),
+    effortFrameIdentity(frame(expired).replace('▲', '▶'), footer, 'max'),
+  );
+  assert.notEqual(
+    idleEffortIdentity(vt, text),
+    idleEffortIdentity(
+      vt.replace('❯ ', '❯ draft'),
+      text.replace('❯ ', '❯ draft'),
+    ),
+  );
+});
+
 test('Effort retries a torn slider observation without repeating a write', async () => {
   const screen = new ClaudeKeyboardScreen();
   screen.nativeEffort = true;

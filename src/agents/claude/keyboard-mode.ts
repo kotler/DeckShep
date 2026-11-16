@@ -11,7 +11,7 @@ export function nativeEffort(view: View) {
     .slice(0, lower)
     .findLastIndex((line) => composerBorder.test(line.trim()));
   const badge = lines.slice(0, upper).findLast((line) => line.trim());
-  return /^\s*[○◯◐◑◒◓◔◕◉●◎]\s+(low|medium|high|xhigh|max)\s*·\s*\/effort\s*$/i
+  return /^\s*[○◯◐◑◒◓◔◕◉●◎◈]\s+(low|medium|high|xhigh|max)\s*·\s*\/effort\s*$/i
     .exec(badge || '')?.[1]
     .toLowerCase();
 }

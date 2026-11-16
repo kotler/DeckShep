@@ -64,6 +64,32 @@ test('unrecognized text next to the native agent shortcut or warning blocks writ
     assert.deepEqual(screen.trace, []);
   }
 });
+test('Codex Mode and all settings accept the native mode badge beside shortcuts and warnings', async () => {
+  const { screen, port } = fixture();
+  screen.showShortcutRow = true;
+  screen.modeOnShortcutRow = true;
+  assert.equal((await cycleCodexSetting(port, 'plan')).label, 'Plan');
+  assert.equal(readCodexSettings(screen.view()).plan, 'Plan');
+  for (const action of ['model', 'effort', 'permissions'])
+    await cycleCodexSetting(port, action);
+  await cycleCodexSetting(port, 'plan');
+  assert.equal(screen.plan, false);
+  for (const tail of [
+    '← for agents · ? for shortcuts  Plan mode (⇧tab to cycle) draft · ⚠ 1 warning · f2 to view',
+    'draft Plan mode (⇧tab to cycle) · ⚠ 1 warning · f2 to view',
+    '← for agents · ? for shortcuts  Plan mode (⇧tab to cycle) · ⚠ 1 warning · f2 to view draft',
+  ]) {
+    const bad = fixture();
+    const read = async () => ({
+      ...bad.screen.view(),
+      text: bad.screen.view().text + '\n  ' + tail,
+    });
+    await assert.rejects(cycleCodexSetting({ ...bad.port, read }, 'model'), {
+      keyLabel: 'Check Codex',
+    });
+    assert.deepEqual(bad.screen.trace, []);
+  }
+});
 test('model reads missing effort from native pickers and applies only to this session; Effort never changes model', async () => {
   const { screen, port } = fixture();
   screen.hideFooter = true;

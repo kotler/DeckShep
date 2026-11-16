@@ -89,11 +89,17 @@ function singleLine(p: ReturnType<typeof prompt>) {
   );
 }
 function nativeHintRow(line: string) {
-  // The warning stays right-aligned when typing hides the idle shortcuts.
+  // Mode and warnings stay right-aligned when typing hides the idle shortcuts.
   const hint = line
     .trim()
-    .replace(/(?:^|\s+)⚠\s+\d+ warnings? · f2 to view$/i, '');
-  return hint === '' || /^(?:← for agents · )?\? for shortcuts$/i.test(hint);
+    .replace(/(?:^|\s+(?:·\s+)?)⚠\s+\d+ warnings? · f2 to view$/i, '')
+    .trimEnd();
+  return (
+    hint === '' ||
+    /^(?:(?:← for agents · )?\? for shortcuts(?:\s+(?:Plan|Default) mode(?: \((?:⇧tab|shift\+tab) to cycle\))?)?|(?:Plan|Default) mode(?: \((?:⇧tab|shift\+tab) to cycle\))?)$/i.test(
+      hint,
+    )
+  );
 }
 function idle(view: View) {
   const p = prompt(view);

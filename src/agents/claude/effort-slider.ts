@@ -130,7 +130,7 @@ export function idleEffortIdentity(vt: string, text: string) {
   )
     return vt;
   const index = row - 2;
-  const badge = /^[○◯◐◑◒◓◔◕◉●◎] (low|medium|high|xhigh|max) · \/effort$/;
+  const badge = /^[○◯◐◑◒◓◔◕◉●◎◈] (low|medium|high|xhigh|max) · \/effort$/;
   const modelNotice =
     /^Model set to [a-z][a-z0-9 .-]{0,40} \(claude-[a-z0-9.-]+\) for this session only$/i;
   const plainText = lines[index]?.trim() || '';
@@ -185,7 +185,7 @@ export function effortFrameIdentity(
       .slice(0, heading)
       .findLastIndex((row) => row.includes('▔'));
     const badge =
-      /^(\x1b\[0m)(\x1b\[38;2;\d{1,3};\d{1,3};\d{1,3}m)(▔+)\x1b\[1C\x1b\[0m\x1b\[38;2;\d{1,3};\d{1,3};\d{1,3}m([○◯◐◑◒◓◔◕◉●◎] (low|medium|high|xhigh|max) · \/effort)\x1b\[0m\2 ▔(\x1b\[0m\r?)$/;
+      /^(\x1b\[0m)(\x1b\[38;2;\d{1,3};\d{1,3};\d{1,3}m)(▔+)\x1b\[1C\x1b\[0m\x1b\[38;2;\d{1,3};\d{1,3};\d{1,3}m([○◯◐◑◒◓◔◕◉●◎◈] (low|medium|high|xhigh|max) · \/effort)\x1b\[0m\2 ▔(\x1b\[0m\r?)$/;
     const match = badge.exec(rows[index] || '');
     if (match && match[5] === initialLevel)
       rows[index] =

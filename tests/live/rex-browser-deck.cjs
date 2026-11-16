@@ -28,20 +28,40 @@ async function checkBrowserDeck({
   assertOwnedPane,
   read,
   hookPlugin,
+  companion,
+  onCycle,
 }) {
+  const panes = [
+    { provider, topology, block, repo, assertOwnedPane, read },
+    ...(companion ? [companion] : []),
+  ];
+  let active = panes[0];
+  const cycles = [];
   const session = topology.session_id;
   const route = ['-s', session, '-b', block];
-  const inspect = () =>
-    JSON.parse(command(['session', 'inspect', session, '--json']));
+  function paneFor(sessionId, blockId) {
+    const pane = panes.find(
+      (pane) =>
+        pane.topology.session_id === sessionId &&
+        (blockId === undefined || pane.block === blockId),
+    );
+    assert(pane, 'Request escaped the owned pane set');
+    pane.assertOwnedPane();
+    return pane;
+  }
+  const inspect = (pane = active) =>
+    JSON.parse(
+      command(['session', 'inspect', pane.topology.session_id, '--json']),
+    );
   function visible() {
-    assertOwnedPane();
+    active.assertOwnedPane();
     const current = inspect();
     assert.equal(
       current.windows.find((w) => w.window_id === current.active_window_id)
         ?.focused_block_id,
-      block,
+      active.block,
     );
-    return block;
+    return active.block;
   }
   let escapes = 0,
     publish,
@@ -86,13 +106,32 @@ async function checkBrowserDeck({
       const bridge = new Bridge(
         config,
         async (args, input) => {
-          if (args[0] === 'ls') return { sessions: [{ session_id: session }] };
+          if (args[0] === 'ls')
+            return {
+              sessions: panes.map((pane) => ({
+                session_id: pane.topology.session_id,
+              })),
+            };
           if (args[0] === 'session') {
-            assert.deepEqual(args, ['session', 'inspect', session, '--json']);
-            return inspect();
+            const pane = paneFor(args[2]);
+            assert.deepEqual(args, [
+              'session',
+              'inspect',
+              pane.topology.session_id,
+              '--json',
+            ]);
+            return inspect(pane);
           }
           if (args[0] === 'block') {
-            assert.deepEqual(args.slice(0, 6), ['block', 'call', ...route]);
+            const pane = paneFor(args[3], args[5]);
+            assert.deepEqual(args.slice(0, 6), [
+              'block',
+              'call',
+              '-s',
+              pane.topology.session_id,
+              '-b',
+              pane.block,
+            ]);
             assert(
               [
                 'process',
@@ -105,8 +144,35 @@ async function checkBrowserDeck({
             );
             return JSON.parse(command(args));
           }
+          if (args[0] === '-C') {
+            const pane = paneFor(args[4]?.replace(/^session_id=/, ''));
+            assert.deepEqual(args, [
+              '-C',
+              'test-display',
+              'do',
+              'session.select',
+              'session_id=' + pane.topology.session_id,
+              'window_id=' + pane.topology.active_window_id,
+            ]);
+            // The headless server has no GUI client. Only display selection is
+            // substituted; focus and subsequent reads/writes use the owned CLI.
+            active = pane;
+            return null;
+          }
+          if (args[0] === 'focus') {
+            const pane = paneFor(args[2], args[3]);
+            assert.equal(active, pane);
+            return command(args);
+          }
           assert(['send', 'send-key'].includes(args[0]));
-          assert.deepEqual(args.slice(1, 5), route);
+          const pane = paneFor(args[2], args[4]);
+          assert.equal(active, pane);
+          assert.deepEqual(args.slice(1, 5), [
+            '-s',
+            pane.topology.session_id,
+            '-b',
+            pane.block,
+          ]);
           visible();
           if (args[0] === 'send-key' && args[5] === 'escape') escapes++;
           command(args, input);
@@ -119,16 +185,14 @@ async function checkBrowserDeck({
       );
       bridge.client = async () => ({
         client_id: 'test-display',
-        session_ids: [session],
+        session_ids: panes.map((pane) => pane.topology.session_id),
       });
       bridge.inspectKeyboardProcess = (pid) =>
         require('../../src/agents/codex/hook-process').inspectProcess(
           pid,
           (_, args, options) =>
             require('../../src/platform/exec').exec(
-              path.resolve(
-                'dist/com.kotl3r.deckshep.sdPlugin/bin/codex-hook-process',
-              ),
+              path.join(repo, '../codex-hook-process'),
               args,
               options,
             ),
@@ -244,19 +308,19 @@ async function checkBrowserDeck({
         );
       return;
     }
-    async function press(column, heading) {
-      const index = 10 + column;
-      const key = page.getByTestId('key-2-' + column);
+    async function pressAt(row, column, heading) {
+      const index = row * 5 + column;
+      const key = page.getByTestId('key-' + row + '-' + column);
       // A newly opened pane can acquire its first status or hook record after
       // the first paint. Wait for the actual key, never retry a press.
       const deadline = Date.now() + 5000;
       do {
         await runtime.refresh(false, true);
         publish();
-        if (snapshot().keys[index].labels[0] === heading) break;
+        if (!heading || snapshot().keys[index].labels[0] === heading) break;
         await delay(200);
       } while (Date.now() < deadline);
-      if (snapshot().keys[index].labels[0] !== heading) {
+      if (heading && snapshot().keys[index].labels[0] !== heading) {
         const live = runtime.bridge.agents[0] || {};
         throw Error(
           JSON.stringify({
@@ -274,13 +338,20 @@ async function checkBrowserDeck({
           }),
         );
       }
-      await page.waitForFunction(
-        ({ index, heading }) =>
-          globalThis.deck.keys()[index].labels[0] === heading,
-        { index, heading },
-        { timeout: 2000 },
-      );
+      if (heading)
+        await page.waitForFunction(
+          ({ index, heading }) =>
+            globalThis.deck.keys()[index].labels[0] === heading,
+          { index, heading },
+          { timeout: 2000 },
+        );
       await delay(350);
+      while (
+        Date.now() < (runtime.keys.get(String(index))?.presented?.armedAt || 0)
+      )
+        await delay(
+          runtime.keys.get(String(index)).presented.armedAt - Date.now() + 1,
+        );
       const keyUp = new Promise((resolve) => {
         released = resolve;
       });
@@ -325,6 +396,103 @@ async function checkBrowserDeck({
         publish();
       }
       return '';
+    }
+    const press = (column, heading) => pressAt(2, column, heading);
+    if ((companion && action === 'ready') || action === 'effort-cycle') {
+      const visits =
+        action === 'effort-cycle'
+          ? [panes[0]]
+          : [panes[0], companion, panes[0]];
+      for (const pane of visits) {
+        const index = runtime.bridge.slots.findIndex(
+          (slot) =>
+            slot.session === pane.topology.session_id &&
+            slot.block === pane.block,
+        );
+        assert(index >= 0 && index < 5);
+        await pressAt(0, index);
+        assert.equal(active, pane);
+        await runtime.refresh(true, true);
+        publish();
+        assert(
+          snapshot().keys[index].selected,
+          'Selection dot did not follow the owned agent',
+        );
+        const settings =
+          pane.provider === 'codex' ? readCodexSettings : readClaudeSettings;
+        for (const [column, heading, field] of action === 'effort-cycle'
+          ? [[1, 'Effort', 'effort']]
+          : [
+              [0, 'Model', 'model'],
+              [1, 'Effort', 'effort'],
+              [2, 'Permissions', 'permissions'],
+              ...(pane.provider === 'codex' ? [[3, 'Mode', 'plan']] : []),
+            ]) {
+          const seen = new Set();
+          let first,
+            wrapped = false;
+          for (let step = 0; step < 50; step++) {
+            const label = await press(column, heading);
+            assert(
+              label || field === 'plan',
+              heading + ' did not update its face',
+            );
+            let native = settings(await pane.read())[field];
+            if (pane.provider === 'codex' && field === 'permissions') {
+              const route = ['-s', pane.topology.session_id, '-b', pane.block];
+              visible();
+              command(['send', ...route, '/permissions']);
+              await delay(250);
+              visible();
+              command(['send-key', ...route, 'enter']);
+              await delay(600);
+              native = settings(await pane.read()).permissions;
+              assert(native, 'Native permission selection was not readable');
+              visible();
+              command(['send-key', ...route, 'escape']);
+            }
+            const observed = runtime.selected()?.rexSettings?.[field];
+            const value = String(native || observed || label || 'default')
+              .toLowerCase()
+              .replace(/\?$/, '');
+            const caption = label.toLowerCase();
+            assert(
+              caption === value ||
+                (caption.endsWith('…') &&
+                  value.startsWith(caption.slice(0, -1))) ||
+                (!caption && field === 'plan'),
+              heading + ' face disagreed with its native setting',
+            );
+            if (first === undefined) first = value;
+            else if (value === first) {
+              wrapped = true;
+              break;
+            }
+            assert(
+              !seen.has(value),
+              heading + ' repeated before completing its cycle',
+            );
+            seen.add(value);
+            if (native && observed)
+              assert.equal(
+                String(observed).replace(/\?$/, '').toLowerCase(),
+                native.toLowerCase(),
+              );
+            assert.notEqual(value, 'full access');
+          }
+          assert(
+            wrapped && seen.size >= 2,
+            heading + ' did not complete a native option cycle',
+          );
+          cycles.push({
+            provider: pane.provider,
+            button: heading,
+            options: seen.size,
+          });
+          onCycle?.(cycles.at(-1));
+        }
+      }
+      return { cycles };
     }
     if (['queue', 'down', 'confirm', 'submit'].includes(action)) {
       const [column, heading] = {

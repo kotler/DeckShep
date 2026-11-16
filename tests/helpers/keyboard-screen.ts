@@ -12,6 +12,7 @@ export class KeyboardScreen {
   draft = '';
   hideFooter = false;
   showShortcutRow = false;
+  modeOnShortcutRow = false;
   models = ['GPT-6-Sol', 'GPT-6-Astra'];
   levels = ['Low', 'High', 'Extra high'];
   profiles = ['Ask for approval', 'Approve for me', 'Full Access', 'Read Only'];
@@ -22,7 +23,9 @@ export class KeyboardScreen {
       : this.models[this.model] +
         ' ' +
         this.levels[this.effort].toLowerCase() +
-        (this.plan ? '     Plan mode (⇧tab to cycle)' : '');
+        (this.plan && !this.modeOnShortcutRow
+          ? '     Plan mode (⇧tab to cycle)'
+          : '');
     const hint =
       this.command || this.draft ? '' : '← for agents · ? for shortcuts';
     let text =
@@ -33,7 +36,14 @@ export class KeyboardScreen {
       (this.showShortcutRow && !this.hideFooter
         ? ' · fixture · Fixture chat\n  ' +
           hint +
-          '             ⚠ 1 warning · f2 to view'
+          (this.plan && this.modeOnShortcutRow
+            ? this.command || this.draft
+              ? '        Plan mode'
+              : '        Plan mode (⇧tab to cycle) ·'
+            : '') +
+          (this.plan && this.modeOnShortcutRow && (this.command || this.draft)
+            ? ''
+            : '             ⚠ 1 warning · f2 to view')
         : '');
     if (this.surface === 'working')
       text =

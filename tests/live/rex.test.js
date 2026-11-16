@@ -53,7 +53,7 @@ test(
   'live Rex: owned foreground server creates and reads a disposable terminal',
   {
     skip: reason || false,
-    timeout: process.env.ASW_LIVE_REX_STATES === '1' ? 600000 : 60000,
+    timeout: process.env.ASW_LIVE_REX_STATES === '1' ? 2400000 : 60000,
   },
   async (t) => {
     // Discovery is inside the authorized callback, never during skipped fixture/CI runs.
@@ -84,6 +84,13 @@ test(
     fs.mkdirSync(repo, { mode: 0o700 });
     run('/usr/bin/git', ['init', '--quiet', repo], options);
     const providers = process.env.ASW_LIVE_REX_PROVIDERS === '1';
+    if (providers)
+      fs.copyFileSync(
+        path.resolve(
+          'dist/com.kotl3r.deckshep.sdPlugin/bin/codex-hook-process',
+        ),
+        path.join(directory, 'codex-hook-process'),
+      );
     let hookPlugin;
     const claudeHooks = process.env.ASW_LIVE_REX_CLAUDE_HOOKS === '1';
     const codexHooks = process.env.ASW_LIVE_REX_CODEX_HOOKS === '1';
@@ -220,7 +227,13 @@ test(
       if (selectedCases) {
         const names = ['codex', 'claude'].flatMap((provider) =>
           (provider === 'claude'
-            ? [...cases, 'effort', 'effort-fresh', 'effort-history']
+            ? [
+                ...cases,
+                'effort',
+                'effort-fresh',
+                'effort-history',
+                'effort-max',
+              ]
             : [...cases, 'interrupt-stream', 'interrupt-stream-early']
           ).map((name) => provider + '-' + name),
         );
@@ -233,9 +246,20 @@ test(
         ['codex', ['--model', 'gpt-6-luna', '--no-daemon']],
         ['claude', ['--model', 'haiku']],
       ]) {
+        const release = /\b\d+\.\d+\.\d+[0-9A-Za-z.+-]*/.exec(
+          run(provider, ['--version'], options),
+        );
+        assert(release, 'Provider CLI version unavailable');
+        t.diagnostic(provider + ' CLI ' + release[0]);
         if (process.env.ASW_LIVE_REX_STATES === '1') {
           for (const scenario of provider === 'claude'
-            ? [...cases, 'effort', 'effort-fresh', 'effort-history']
+            ? [
+                ...cases,
+                'effort',
+                'effort-fresh',
+                'effort-history',
+                'effort-max',
+              ]
             : [...cases, 'interrupt-stream', 'interrupt-stream-early']) {
             if (
               selectedCases &&
@@ -273,7 +297,30 @@ test(
                 });
                 resume = ['--resume', sessionId];
               }
-              await checkPicker({
+              const companion =
+                scenario === 'browser-ready'
+                  ? await checkPicker({
+                      provider: provider === 'codex' ? 'claude' : 'codex',
+                      args:
+                        provider === 'codex'
+                          ? ['--model', 'haiku']
+                          : ['--model', 'gpt-6-luna', '--no-daemon'],
+                      scenario: 'companion-' + provider,
+                      prepareOnly: true,
+                      command,
+                      repo,
+                      owned,
+                      hookPlugin:
+                        provider === 'codex' && !claudeHooks
+                          ? undefined
+                          : hookPlugin,
+                      large: true,
+                    })
+                  : undefined;
+              const result = await checkPicker({
+                companion,
+                onCycle: (cycle) =>
+                  console.log('Native cycle ' + JSON.stringify(cycle)),
                 hookPlugin:
                   provider === 'claude' && !claudeHooks
                     ? undefined
@@ -282,12 +329,14 @@ test(
                 args:
                   scenario === 'effort-fresh'
                     ? []
-                    : scenario.startsWith('effort')
-                      ? ['--model', 'sonnet', '--effort', 'xhigh', ...resume]
-                      : provider === 'claude' &&
-                          ['queue', 'interrupt'].includes(scenario)
-                        ? [...args, '--allowedTools', 'Bash(sleep 14)']
-                        : args,
+                    : scenario === 'effort-max'
+                      ? ['--model', 'opus', '--effort', 'max']
+                      : scenario.startsWith('effort')
+                        ? ['--model', 'sonnet', '--effort', 'xhigh', ...resume]
+                        : provider === 'claude' &&
+                            ['queue', 'interrupt'].includes(scenario)
+                          ? [...args, '--allowedTools', 'Bash(sleep 14)']
+                          : args,
                 command,
                 repo,
                 owned,
@@ -296,6 +345,7 @@ test(
                   !['effort', 'interrupt'].includes(scenario),
                 scenario,
               });
+              if (result?.cycles) t.diagnostic(JSON.stringify(result.cycles));
             });
           }
           continue;

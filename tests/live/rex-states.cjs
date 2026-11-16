@@ -449,13 +449,7 @@ async function checkState({
           assert.equal(currentPid, pid);
           owned.assert(pid);
           return inspectProcess(pid, (_file, args, options) =>
-            exec(
-              path.resolve(
-                'dist/com.kotl3r.deckshep.sdPlugin/bin/codex-hook-process',
-              ),
-              args,
-              options,
-            ),
+            exec(path.join(repo, '../codex-hook-process'), args, options),
           );
         };
       } else {

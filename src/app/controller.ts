@@ -849,10 +849,12 @@ function createApplication(dependencies: Record<string, any>) {
           scope === 'herdr-app' &&
           !bridge.delivery.backend.capabilities.has('discover');
         const metadataUpdate = refreshMetadata(forceMetadata);
+        // Rex settings already awaited their pane observation. Optional Codex
+        // metadata must not hold the press queue or its completed frame.
         // Discovery publishes a provider-free pane. For an already hook-bound
         // selection, finish verifying its identity before repainting row three.
         if (
-          waitForSettings ||
+          (waitForSettings && scope !== 'rex') ||
           (bridge.lastTarget?.app === 'claude-code' &&
             bridge.lastTarget.nativeIdentity)
         )
