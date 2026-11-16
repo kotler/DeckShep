@@ -1,6 +1,7 @@
 import { sameNavigationTarget } from '../domain/navigation';
 import type { AgentSnapshot } from '../domain/types';
 import { rexSettingsAction } from './rex-keyboard-settings';
+import { setTimeout as pause } from 'node:timers/promises';
 
 type Settings = NonNullable<AgentSnapshot['rexSettings']>;
 interface Focus {
@@ -133,12 +134,24 @@ export class RexSettingsObservations {
 
   async #read(record: Observation, agent: AgentSnapshot) {
     try {
-      const values = await this.options.read(record.source, agent);
-      if (this.#record !== record) return;
-      const focus = this.options.currentFocus();
-      if (!focus || !eligible(focus.agent) || !matches(record, focus)) {
-        this.clear();
-        return;
+      let values = await this.options.read(record.source, agent);
+      let focus = this.#currentFocus(record);
+      if (!focus) return;
+      if (
+        agent.app === 'codex' &&
+        record.readAt === 0 &&
+        values.process &&
+        !values.viewHash &&
+        values.why === 'view-unreadable'
+      ) {
+        // The first prompt can repaint during Rex's snapshot reads. Recover
+        // one passive observation; never reuse a digest or repeat an input.
+        await pause(50);
+        focus = this.#currentFocus(record);
+        if (!focus) return;
+        values = await this.options.read(record.source, { ...focus.agent });
+        focus = this.#currentFocus(record);
+        if (!focus) return;
       }
       retainCaptions(record, values, this.options.clock());
       record.values = values;
@@ -147,6 +160,16 @@ export class RexSettingsObservations {
     } finally {
       record.pending = undefined;
     }
+  }
+
+  #currentFocus(record: Observation) {
+    if (this.#record !== record) return;
+    const focus = this.options.currentFocus();
+    if (!focus || !eligible(focus.agent) || !matches(record, focus)) {
+      this.clear();
+      return;
+    }
+    return focus;
   }
 
   pickerConfirmed(

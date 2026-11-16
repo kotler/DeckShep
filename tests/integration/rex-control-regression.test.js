@@ -26,7 +26,10 @@ class ClaudeScreen extends ClaudeKeyboardScreen {
   }
 }
 
-async function fixture(count = 2, { mixed = false, bound = false } = {}) {
+async function fixture(
+  count = 2,
+  { mixed = false, bound = false, initialReadFailures = 0 } = {},
+) {
   let metadataGate;
   const h = harness({
     fs: {
@@ -80,7 +83,13 @@ async function fixture(count = 2, { mixed = false, bound = false } = {}) {
     const agent = h.live.find((item) => item.block === target.block);
     return agent && { ...agent };
   };
-  b.readKeyboardView = async (agent) => screens.get(agent.block).view();
+  b.readKeyboardView = async (agent) => {
+    if (initialReadFailures > 0) {
+      initialReadFailures--;
+      throw Error('Rex view changed');
+    }
+    return screens.get(agent.block).view();
+  };
   b.readKeyboardText = async (agent) => screens.get(agent.block).view().text;
   const original = b.run.bind(b);
   b.run = (args, input, target) => {
@@ -140,6 +149,38 @@ async function fixture(count = 2, { mixed = false, bound = false } = {}) {
     },
   };
 }
+
+test('a fresh Codex pane recovers a torn first read before its first Model press', async () => {
+  const f = await fixture(1, { initialReadFailures: 1 });
+  // Initialization observes the pane independently of the host event queue.
+  // Wait for its frame without another poll or a provider turn fixing it.
+  const deadline = Date.now() + 1000;
+  while (f.face(2, 0)[1] !== 'GPT-6-Sol' && Date.now() < deadline)
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  f.h.tick(500);
+  const before = f.screens.get('a').model;
+  await f.press(0);
+  assert.deepEqual(
+    f.h.socket.frames.filter((frame) => frame.event === 'showAlert'),
+    [],
+    'the first press must not fail with Agent view changed',
+  );
+  assert.notEqual(f.screens.get('a').model, before);
+  assert.equal(f.screens.get('a').command, '');
+  assert.equal(f.face(2, 0)[1], 'GPT-6-Astra');
+});
+
+test('a failed startup recovery still refuses a Model press without its captured digest', async () => {
+  const f = await fixture(1, { initialReadFailures: 2 });
+  await f.h.api.refresh(false, true);
+  f.h.tick(500);
+  const before = f.h.calls.length;
+  await f.press(0);
+  assert.equal(f.h.api.keys.get('rex:2,0').feedback.message, 'Agent view…');
+  assert.equal(f.h.calls.length, before);
+  assert.equal(f.screens.get('a').model, 0);
+  assert.equal(f.screens.get('a').command, '');
+});
 
 test('a Codex setting updates its face and releases the press while optional metadata is pending', async () => {
   const f = await fixture(1);
