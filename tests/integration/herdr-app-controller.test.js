@@ -644,6 +644,49 @@ test('a late reader cannot replace a new source with the same numeric endpoint g
   assert.equal(key.presented.conditions.name, 'New view');
   assert.equal(app.keys.get('herdr-app:1,1').presented.action, 'none');
 });
+test(
+  'source replacement releases a waiting poll and queued press before the retired reader finishes',
+  { timeout: 5000 },
+  async () => {
+    const view = observerFixture();
+    const h = harness({
+      experimentalHerdrApp: true,
+      appSelectionReader: view.reader,
+    });
+    await h.appear('herdr-app');
+    await preferences(h, { herdrAppHome: '/fixture/one' });
+    h.tick(350);
+    const app = h.controller('herdr-app');
+    const captured = app.keys.get('herdr-app:1,4').presented;
+    const release = view.pause();
+    const retired = app.refresh();
+    const press = h.profilePress('herdr-app', 1, 4);
+    try {
+      await new Promise(setImmediate);
+      view.panes.splice(2);
+      view.panes[1].name = 'Replacement';
+      await preferences(h, { herdrAppHome: '/fixture/two' });
+      await Promise.all([retired, press]);
+      const shown = app.keys.get('herdr-app:0,1').presented;
+      assert.equal(shown.endpointGeneration, captured.endpointGeneration);
+      assert.notEqual(shown.sourceId, captured.sourceId);
+      assert.equal(shown.conditions.name, 'Replacement');
+      assert.equal(app.selected().pane, 'p1');
+      release();
+      await new Promise(setImmediate);
+      assert.equal(
+        app.keys.get('herdr-app:0,1').presented.conditions.name,
+        'Replacement',
+      );
+      assert.equal(app.keys.get('herdr-app:1,4').presented.action, 'none');
+      assert.deepEqual(h.calls, []);
+    } finally {
+      release();
+      await retired;
+      await press;
+    }
+  },
+);
 test('closing an idle third agent redraws only that slot and Collapse, with zero warm-cache draws', async () => {
   const view = observerFixture();
   view.panes.splice(3);

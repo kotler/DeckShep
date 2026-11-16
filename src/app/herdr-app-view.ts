@@ -24,6 +24,7 @@ export interface AppKey {
   };
 }
 export interface AppPresentation {
+  sourceId: number;
   action: string;
   appearance: number;
   visibility: number;
