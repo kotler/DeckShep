@@ -124,3 +124,12 @@ audits passed. No thresholds, golden JSON, SVG hashes or PNG baselines changed.
 The controller regressions also cover switching agents and back, every offered
 setting and bound/unbound Interrupt. No further live tests ran, as requested.
 Fresh native startup and physical deck behavior still need the owner's check.
+
+The follow-up universal build, Elgato validation and package privacy/identity
+audits passed. The guarded installer then installed this build and verified all
+six profiles (76 files), the integration setup record, merged settings, runtime
+bytes and backup. Stream Deck and the DeckShep runtime reopened. This is
+installation verification, not a native provider regression run.
+
+Follow-up runtime SHA-256:
+`c0dbc34124b09edcb9369f0615c509e934c8180efffdcc410a78817678d85feb`.
