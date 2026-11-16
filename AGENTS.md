@@ -25,6 +25,8 @@ deferred code and tests. Update these instructions when owner decisions change.
   capability; its third row defaults to blank. Package audits reject experimental
   flags and nonempty/enabled App defaults. Removed Zoom/Questions/Prompts overrides
   remain inactive (owner decision, 2026-11-10).
+- Herdr agent tiles omit the local-selection caption. Keep the App selection dot
+  and the consent-off **Deck only** caption (owner decision, 2026-11-15).
 - Key feedback is at most 15 characters, never cut mid-word; inspector messages
   at most 160. Text stays at least 20 SVG units, wrapping or ellipsizing dynamic
   content. State must have a shape cue as well as colour.

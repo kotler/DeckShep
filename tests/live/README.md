@@ -33,7 +33,7 @@ the developer's home.
 
 The harness creates a canonical private temporary root, a git repository, an
 allowlisted environment, an owned foreground Codex server and a separate Herdr
-socket. Provider versions and Herdr protocol are pinned. Socket identity is
+socket. Provider versions are recorded and Herdr protocol is pinned. Socket identity is
 rechecked immediately before writes; every discovered agent must have ancestry
 to a process spawned by this run. Settings, auth-file and Keychain fingerprints
 must match afterward. Cleanup waits for agents to exit and bounds graceful server
@@ -100,7 +100,15 @@ installed Stream Deck plugin or capture the developer's active host connection.
 
 For browser-driven native checks, add `ASW_LIVE_REX_BROWSER=1` to the Rex
 state-matrix command. Select `codex-browser-ready,claude-browser-ready` with
-`ASW_LIVE_REX_CASES` for Permissions, Codex Mode, and Effort → Model → Effort.
+`ASW_LIVE_REX_CASES` for full Model, Effort, Permissions and Codex Mode cycles.
+Each case creates an additional disposable agent of the other provider, clicks
+the agent tiles to switch away and back, and repeats the cycles after selection.
+Cycles must wrap without a warning and the displayed value must match the native
+observation, allowing only the renderer's width ellipsis. Full Access stays outside
+the Permissions cycle. These cases make no inference requests unless Codex hooks
+need the short identity-priming prompt described below.
+`claude-effort-max` is a focused browser cycle starting from native max effort.
+It covers the diamond badge and its expiry while the slider is open.
 Queue, choice, and Interrupt cases also use browser clicks with this flag. Playwright clicks
 the rendered web-deck key, forwards its pointer events to the plugin controller,
 and checks the disposable CLI. The headless server supplies an owned pane in
@@ -112,7 +120,9 @@ Set `ASW_LIVE_REX_CODEX_HOOKS=1` for the Codex browser-ready case.
 The harness verifies the private home contains exactly the three expected
 DeckShep commands before trusting them in the disposable CLI. It sends a
 short Luna prompt and checks the resulting hook report against the test pane.
-This exercises keyboard settings with lifecycle hooks installed. The
+Once hook trust is stored, each further no-daemon pane is primed with the same
+short prompt if its SessionStart did not publish an identity. The harness checks
+the report before exercising the pane. This exercises keyboard settings with lifecycle hooks installed. The
 no-daemon launch does not exercise a daemon-backed thread binding.
 Use `ASW_LIVE_REX_CLAUDE_HOOKS=1` to test Claude's Queue and choice keys.
 Without hooks, the browser cases verify those controls stay unavailable.

@@ -49,7 +49,10 @@ rows are conventions:
   shares pending reads for the same focus and rechecks the live roster before
   publishing. A confirmed picker change retires the old read and releases its
   waiters immediately. A brief redraw can preserve a caption for the same
-  process. The next settings press still requires fresh pane evidence.
+  process. The controller waits for the post-picker pane observation before
+  repainting. Optional Codex metadata refreshes independently and cannot hold
+  the completed frame or press queue. The next settings press still requires
+  fresh pane evidence.
 - Rendering: `render()` gathers per-key inputs, `src/app/key-face.ts` (pure)
   returns a `KeySpec` (`src/render/spec.ts`), and `src/render/frame.ts` caches
   the encoded image by spec. A tick that changes nothing builds and sends

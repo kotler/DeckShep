@@ -39,8 +39,8 @@ hooks. Removing DeckShep removes its helper; see [Uninstall](UNINSTALL.md).
   chat title when Herdr supplies a pane name, then the space folder name and agent status.
   An unnamed pane shows its provider. **Deck only**
   selects locally. With focus requests enabled and available, tapping an agent asks Herdr to select its pane. The dot
-  marks Herdr’s reported selection. **On deck** marks your local choice until
-  Herdr reports a selection change.
+  marks Herdr’s reported selection. Your local choice determines the following
+  Next and Attention destinations until Herdr reports a selection change.
 - Row two holds **Next agent**, **Page**, **Collapse**, an empty key and
   **Attention**. Next visits agents across banks. Page changes banks locally.
   Next shows the following destination immediately after a successful press.
@@ -48,8 +48,7 @@ hooks. Removing DeckShep removes its helper; see [Uninstall](UNINSTALL.md).
   This includes a terminal that returns to a shell while Herdr still lists its previous provider.
   Collapse clears closed slots. Attention visits another waiting agent first,
   then an errored agent, then a finished agent. Ties follow tile order.
-- The **On deck** marker sits above the title. After a successful press,
-  Attention shows the next eligible agent or clears. Rapid Next and Page taps
+- After a successful press, Attention shows the next eligible agent or clears. Rapid Next and Page taps
   during the 350 ms arming interval are ignored. The dot follows the latest
   validated App selection, including the one read just before the request.
   **Focus uncertain** means a write may have reached Herdr.

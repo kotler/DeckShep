@@ -19,7 +19,7 @@ off, Next made no change and the UI displayed Consent off. See the
 3. Explicitly check **Allow plain focus requests** to use pane selection/Next.
    The final guard test left this unchecked. Fresh configurations remain off.
 4. Wait at least half a second after appearing/changing context before pressing.
-   Select a pane or press Next. **On deck** marks the local choice above its title.
+   Select a pane or press Next. Next advances from your local choice.
    The white dot follows the selection Herdr reports. Attention shows the next
    eligible agent or clears. Never retry a request reported as uncertain.
 5. Uncheck the consent to stop requests. Local banks and Collapse remain local.
