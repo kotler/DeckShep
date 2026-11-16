@@ -45,6 +45,11 @@ rows are conventions:
   only the action and passes the same guards. No holds in the `herdr-app` scope.
 - Input reaches a terminal only through the guarded `deliver()` in
   `src/app/delivery.ts`, with a single-use permit and no retries (ADR 0002).
+- The Rex controller schedules focused settings reads. `src/app/rex-settings-observations.ts`
+  shares pending reads for the same focus and rechecks the live roster before
+  publishing. A confirmed picker change retires the old read and releases its
+  waiters immediately. A brief redraw can preserve a caption for the same
+  process. The next settings press still requires fresh pane evidence.
 - Rendering: `render()` gathers per-key inputs, `src/app/key-face.ts` (pure)
   returns a `KeySpec` (`src/render/spec.ts`), and `src/render/frame.ts` caches
   the encoded image by spec. A tick that changes nothing builds and sends
@@ -78,6 +83,13 @@ App provider overrides stay inactive and the third row defaults to blank.
 App selection changes reveal its bank once; identical polls preserve later Page
 browsing. Production verifies Herdr’s publisher, live peer, helper and command
 contract without a marketing-version pin. It grants no provider capability.
+
+`src/domain/app-roster.ts` owns App slots, deck selection and bank browsing.
+The controller uses one frozen roster view for key faces and press capture.
+An acknowledged focus request reconciles the preflight App observation and the
+deck choice together. Suspension keeps slot order for recovery, while source
+retirement resets the roster. The controller owns source lifetime and fresh
+press checks, including Next and Attention ranking against the captured slots.
 
 Before extending App input, read
 `docs/plans/HERDR-APP-MODEL-PRODUCTION-PLAN.md` and
