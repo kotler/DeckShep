@@ -64,7 +64,7 @@
     "@types/ws": "8.18.2",
     "@typescript/native": "npm:typescript@7.0.2",
     "@xterm/headless": "6.0.0",
-    "dependency-cruiser": "18.7.2",
+    "dependency-cruiser": "18.8.0",
     "rollup": "4.68.2",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
